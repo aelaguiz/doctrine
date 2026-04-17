@@ -20,14 +20,21 @@ expected_lines = [
   "",
   "### Handoff File",
   "",
-  "- Target: File",
-  "- Path: `handoff_root/HANDOFF.md`",
-  "- Shape: Markdown Document",
-  "- Structure: Handoff Comment",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `handoff_root/HANDOFF.md` |",
+  "| Shape | Markdown Document |",
+  "| Structure | Handoff Comment |",
   "",
-  "#### Structure: Handoff Comment",
+  "#### Artifact Structure",
   "",
-  "Contract Checks: Accept only if the handoff contract passes.",
+  "This artifact must follow the `Handoff Comment` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Contract Checks** | Section | Accept only if the handoff contract passes. |",
+  "| **Invalidations** | Ordered List | Producer Handoff Section Review |",
   "",
   "Invalidations: Producer Handoff; Section Review",
 ]
@@ -40,7 +47,4 @@ prompt = "prompts/INVALID_SEMANTIC_RENDER_PROFILE_MODE.prompt"
 agent = "InvalidSemanticRenderProfileDemo"
 exception_type = "CompileError"
 error_code = "E298"
-message_contains = [
-  "Invalid render_profile mode for analysis.stages",
-  "wire_only",
-]
+location_line = 2

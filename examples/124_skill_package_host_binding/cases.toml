@@ -1,0 +1,98 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "package link stays semantic when a skill only points at a package"
+status = "active"
+kind = "render_contract"
+agent = "LinkOnlyDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the package link.",
+  "",
+  "## Skills",
+  "",
+  "### Link Only Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Run the link-only package.",
+]
+
+[[cases]]
+name = "host-bound package skills keep package and bind metadata out of agent render"
+status = "active"
+kind = "render_contract"
+agent = "BoundDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use the bound package.",
+  "",
+  "## Final Output",
+  "",
+  "### Final Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this contract.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Natural-language markdown |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "",
+  "## Skills",
+  "",
+  "### Host Bound Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Run the host-bound package.",
+]
+
+[[cases]]
+name = "host-bound skill package emits mixed-tree package contract proof"
+status = "active"
+kind = "build_contract"
+build_target = "example_124_skill_package_host_binding"
+
+[[cases]]
+name = "host-bound package fails loud when a required bind is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MISSING_BIND.prompt"
+agent = "BoundDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 20
+
+[[cases]]
+name = "host-bound package fails loud on extra bind keys"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_EXTRA_BIND.prompt"
+agent = "BoundDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 24
+
+[[cases]]
+name = "host-bound package fails loud on wrong bind families"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_WRONG_FAMILY.prompt"
+agent = "BoundDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 22
+
+[[cases]]
+name = "host-bound package fails loud when a referenced child path is not real"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_BAD_HOST_PATH.prompt"
+agent = "InvalidPathDemo"
+exception_type = "CompileError"
+error_code = "E273"
+location_line = 14

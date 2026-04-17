@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _humanize_key, _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
-    CompileError,
     ConfigSpec,
     DisplayValue,
     IndexedUnit,
@@ -12,9 +16,46 @@ from doctrine._compiler.resolved_types import (
     RouteSemanticContext,
 )
 
+_BUILTIN_OUTPUT_SHAPE_NAMES = frozenset(
+    {
+        "MarkdownDocument",
+        "AgentOutputDocument",
+        "Comment",
+        "CommentText",
+        "JsonObject",
+        "PlainText",
+    }
+)
+
 
 class ValidateDisplayMixin:
     """Display and scalar rendering helpers for ValidateMixin."""
+
+    def _try_resolve_output_shape_decl(
+        self,
+        value: model.RecordScalarValue,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputShapeDecl] | None:
+        if isinstance(value, (str, model.AddressableRef)):
+            return None
+        if value.module_parts:
+            return self._resolve_output_shape_decl(value, unit=unit)
+        local_decl = unit.output_shapes_by_name.get(value.declaration_name)
+        if local_decl is not None:
+            return unit, self._resolve_output_shape_decl_body(local_decl, unit=unit)
+        if value.declaration_name in _BUILTIN_OUTPUT_SHAPE_NAMES:
+            return None
+        raise authored_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=(
+                f"Output shape declaration `{value.declaration_name}` does not exist in "
+                "the current module."
+            ),
+            unit=unit,
+            source_span=value.source_span,
+        )
 
     def _expr_ref_matches_route_semantic_ref(
         self,
@@ -61,10 +102,25 @@ class ValidateDisplayMixin:
 
     def _config_spec_from_decl(
         self,
-        decl: model.InputSourceDecl | model.OutputTargetDecl,
+        decl: model.InputSourceDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> ConfigSpec:
+        required_keys, optional_keys = self._config_keys_from_decl(
+            decl,
+            unit=unit,
+            owner_label=owner_label,
+        )
+        return ConfigSpec(title=decl.title, required_keys=required_keys, optional_keys=optional_keys)
+
+    def _config_keys_from_decl(
+        self,
+        decl: model.InputSourceDecl | model.OutputTargetDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[dict[str, str], dict[str, str]]:
         _scalar_items, section_items, extras = self._split_record_items(
             decl.items,
             section_keys={"required", "optional"},
@@ -75,35 +131,69 @@ class ValidateDisplayMixin:
         required_section = section_items.get("required")
         optional_section = section_items.get("optional")
         required_keys = (
-            self._key_labels_from_section(required_section, owner_label=owner_label)
+            self._key_labels_from_section(required_section, unit=unit, owner_label=owner_label)
             if required_section is not None
             else {}
         )
         optional_keys = (
-            self._key_labels_from_section(optional_section, owner_label=owner_label)
+            self._key_labels_from_section(optional_section, unit=unit, owner_label=owner_label)
             if optional_section is not None
             else {}
         )
-        return ConfigSpec(title=decl.title, required_keys=required_keys, optional_keys=optional_keys)
+        return required_keys, optional_keys
 
     def _key_labels_from_section(
         self,
         section: model.RecordSection,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> dict[str, str]:
         labels: dict[str, str] = {}
+        seen_items: dict[str, model.RecordScalar] = {}
         for item in section.items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(
-                    f"Config key declarations must be simple titled scalars in {owner_label}"
+                raise authored_compile_error(
+                    code="E234",
+                    summary="Config key declarations must be simple titled scalars",
+                    detail=(
+                        f"Config key declarations must be simple titled scalars in "
+                        f"`{owner_label}`."
+                    ),
+                    unit=unit,
+                    source_span=getattr(item, "source_span", None) or section.source_span,
                 )
             if not isinstance(item.value, str):
-                raise CompileError(
-                    f"Config key declarations must use string labels in {owner_label}: {item.key}"
+                raise authored_compile_error(
+                    code="E234",
+                    summary="Config key declarations must use string labels",
+                    detail=(
+                        f"Config key declaration `{item.key}` in `{owner_label}` must use "
+                        "a string label."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or section.source_span,
                 )
-            if item.key in labels:
-                raise CompileError(f"Duplicate config key declaration in {owner_label}: {item.key}")
+            first_item = seen_items.get(item.key)
+            if first_item is not None:
+                raise authored_compile_error(
+                    code="E235",
+                    summary="Duplicate config key declaration",
+                    detail=(
+                        f"Config owner `{owner_label}` repeats config key declaration "
+                        f"`{item.key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span or section.source_span,
+                    related=(
+                        authored_related_site(
+                            label=f"first `{item.key}` config key declaration",
+                            unit=unit,
+                            source_span=first_item.source_span,
+                        ),
+                    ),
+                )
+            seen_items[item.key] = item
             labels[item.key] = item.value
         return labels
 
@@ -118,15 +208,17 @@ class ValidateDisplayMixin:
         if isinstance(value, str):
             return value
         if isinstance(value, model.AddressableRef):
-            raise CompileError(
-                f"Output shape must stay typed: {owner_label or surface_label or 'output'}"
+            raise authored_compile_error(
+                code="E275",
+                summary="Output shape must stay typed",
+                detail=f"Output shape must stay typed: {owner_label or surface_label or 'output'}",
+                unit=unit,
+                source_span=value.source_span,
             )
-        if value.module_parts:
-            _target_unit, decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            _target_unit, decl = resolved_shape
             return decl.title
-        local_decl = unit.output_shapes_by_name.get(value.declaration_name)
-        if local_decl is not None:
-            return local_decl.title
         return _humanize_key(value.declaration_name)
 
     def _is_markdown_shape_value(
@@ -140,8 +232,9 @@ class ValidateDisplayMixin:
             return False
         if isinstance(value, str):
             return value in markdown_shape_names
-        if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
-            shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            shape_unit, shape_decl = resolved_shape
             kind_item = next(
                 (
                     item
@@ -168,8 +261,9 @@ class ValidateDisplayMixin:
             return False
         if isinstance(value, str):
             return value in comment_shape_names
-        if self._ref_exists_in_registry(value, unit=unit, registry_name="output_shapes_by_name"):
-            shape_unit, shape_decl = self._resolve_output_shape_decl(value, unit=unit)
+        resolved_shape = self._try_resolve_output_shape_decl(value, unit=unit)
+        if resolved_shape is not None:
+            shape_unit, shape_decl = resolved_shape
             kind_item = next(
                 (
                     item
@@ -242,11 +336,19 @@ class ValidateDisplayMixin:
         if isinstance(value, model.NameRef):
             if value.module_parts and value.module_parts[0] == "route":
                 if owner_label is None or surface_label is None:
-                    raise CompileError(
-                        "Internal compiler error: route refs require an owner label and surface label"
+                    raise compile_error(
+                        code="E901",
+                        summary="Internal compiler error",
+                        detail=(
+                            "Internal compiler error: route refs require an owner label "
+                            "and surface label"
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=value.source_span,
                     )
                 route_value = self._resolve_route_semantic_ref_value(
                     model.AddressableRef(root=value, path=()),
+                    unit=unit,
                     owner_label=owner_label,
                     surface_label=surface_label,
                     route_semantics=route_semantics,
@@ -258,8 +360,15 @@ class ValidateDisplayMixin:
                 return DisplayValue(text=enum_decl.title, kind="title")
             return DisplayValue(text=self._display_ref(value, unit=unit), kind="symbol")
         if owner_label is None or surface_label is None:
-            raise CompileError(
-                "Internal compiler error: addressable refs require an owner label and surface label"
+            raise compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=(
+                    "Internal compiler error: addressable refs require an owner label "
+                    "and surface label"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=value.source_span,
             )
         return self._resolve_addressable_ref_value(
             value,

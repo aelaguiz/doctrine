@@ -14,37 +14,37 @@ Core job: turn an approved lesson manifest into grounded reader copy without cha
 
 #### domain-grounding-kb
 
-##### Purpose
+_Required skill_
+
+**Purpose**
 
 Ground reader-facing domain wording against current source truth.
 
-This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.
-
-##### Use When
+**Use When**
 
 Use this when the lane needs primary-source receipts for reader-facing copy.
 
-##### Requires
+**Requires**
 
 A wording surface or claim that needs domain grounding.
 
-##### Provides
+**Provides**
 
 - The normal repo workflow for grounding domain wording against current source truth.
 - A clear route for collecting the receipts this lane needs.
 
-##### Does Not
+**Does Not**
 
 - Does not change the approved structure.
 - Does not establish final expert authority.
 
 #### domain-copy-rewrite
 
-##### Purpose
+**Purpose**
 
 Rewrite reader-facing domain copy in the repo's expected voice.
 
-##### Use When
+**Use When**
 
 Use this when the job is reader-facing domain wording such as titles, hints, coach text, explanations, and feedback.
 
@@ -52,7 +52,7 @@ Use this when the job is reader-facing domain wording such as titles, hints, coa
 
 #### find-skills
 
-##### Purpose
+**Purpose**
 
 Find the best matching repo skill for the current job.
 
@@ -60,24 +60,24 @@ Find the best matching repo skill for the current job.
 
 #### device-runtime-check
 
-##### Purpose
+**Purpose**
 
 Drive a simulator or device for runtime investigation.
 
-##### Reason
+**Reason**
 
 This role is baseline copy work, not simulator or device investigation.
 
 #### dev-loop-restore
 
-##### Purpose
+**Purpose**
 
 Restore a live development loop.
 
-##### Use When
+**Use When**
 
 Use this only when the job is restoring a live development loop.
 
-##### Reason
+**Reason**
 
 This role is baseline copy work, not development environment repair.

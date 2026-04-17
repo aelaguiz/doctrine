@@ -7,6 +7,8 @@ shipped compiler reuses loaded prompt graphs so larger prompt families remain
 practical, not just toy-sized examples.
 
 For the motivation behind the project, start with [WHY_DOCTRINE.md](WHY_DOCTRINE.md).
+For task-first guidance on which surface to choose, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 For versioning, releases, and upgrade rules, use
 [VERSIONING.md](VERSIONING.md).
 For the numbered teaching corpus, use [../examples/README.md](../examples/README.md).
@@ -26,24 +28,31 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 A prompt file may contain imports and any mix of shipped declarations:
 
-- `render_profile`, `analysis`, `decision`, `schema`, `document`
+- `render_profile`, `analysis`, `decision`, `schema`, `table`, `document`
 - `agent`, `abstract agent`
 - `workflow`, `route_only`, `grounding`
 - `review`, `review_family`, `abstract review`
 - `skill package`
 - `skill`, `skills`
 - `input`, `inputs`, `input source`
-- `output`, `outputs`, `output target`, `output shape`, `json schema`
+- `output`, `outputs`, `output target`, `output shape`, `output schema`
 - `enum`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. `emit_docs` compiles concrete
 agents from the agent entrypoints into runtime Markdown artifacts whose
-basename matches the entrypoint stem. `emit_skill` compiles one top-level
-`skill package` from `SKILL.prompt` into `SKILL.md` plus bundled source-root
-files. Doctrine does that work through shared compilation and indexing so
-module loading happens once per entrypoint and batch emit or verification
-surfaces can fan out safely while preserving deterministic output order.
+basename matches the entrypoint stem. It also emits imported
+directory-backed runtime packages when a selected `AGENTS.prompt` uses them as
+runtime homes. Structured final outputs also emit the exact lowered schema at
+`schemas/<output-slug>.schema.json` beside that Markdown file. When a turn
+also needs final-response, review, route, or resolved previous-turn IO
+metadata, `emit_docs` writes `final_output.contract.json` beside that Markdown
+file. `emit_skill`
+compiles one top-level `skill package` from `SKILL.prompt` into `SKILL.md`
+plus bundled source-root files. Doctrine does that work through shared
+compilation and indexing so module loading happens once per entrypoint and
+batch emit or verification surfaces can fan out safely while preserving
+deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
@@ -80,6 +89,8 @@ Important rules:
 - `abstract <slot_key>` marks an authored slot that concrete children must
   define directly.
 - `inherit <slot_key>` keeps an inherited authored slot unchanged.
+- `inherit {slot_a, slot_b}` is grouped parser sugar for repeated inherited
+  slot accounting in the same authored order.
 - `override <slot_key>:` replaces an inherited authored slot in place.
 - A concrete agent may not define both `workflow:` and `review:`. Review turns
   use `review:` as their main semantic body.
@@ -110,22 +121,44 @@ final_output: AcceptanceReviewResponse
 final_output:
     output: AcceptanceControlFinalResponse
     review_fields:
-        verdict: verdict
+        verdict
         current_artifact: current_artifact
-        next_owner: next_owner
+        next_owner
+```
+
+- On `fields:`, `override fields:`, and `review_fields:`, a bare semantic name
+  like `verdict` is shorthand for the identity bind `verdict: verdict`.
+  Keep `semantic: path` for non-identity binds.
+- Structured final outputs may also bind one `route field` on that same output
+  as the route owner:
+
+```prompt
+final_output:
+    output: WriterDecision
+    route: next_route
 ```
 - Any emitted output may also read shared compiler-owned route semantics
   through `route.exists`, `route.next_owner`, `route.next_owner.key`,
   `route.next_owner.title`, `route.label`, and `route.summary` when the active
   workflow-law, `handoff_routing` law, `route_only`, `grounding`, or review
   branch resolves a real route.
-- When every live routed branch on that turn comes from `route_from`, outputs
-  may also read
+- When every live routed branch on that turn comes from `route_from`, or when
+  `final_output.route:` binds a `route field` on a structured final output,
+  outputs may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - `route.next_owner.*` may stay live across several `route_from` branches. It
   means the selected route owner. `route.label` and `route.summary` still need
   one selected branch.
+- If `emit_docs` writes `final_output.contract.json`, it emits this same route
+  truth as a top-level `route` block. That emitted contract may also carry a
+  `route.selector` object when the route comes from a bound final-output route
+  field. Harnesses should use that block for runtime routing instead of copied
+  owner strings in the payload.
+- In authored guards, `route.exists` means a routed owner exists on that live
+  branch. In emitted `final_output.contract.json`, `route.exists` means the
+  final response carries route semantics at all, even when a nullable route
+  field selected no handoff.
 - Name each `route_from` enum member once. Use `else` at most once.
 - Unguarded `route.*` reads fail loudly when some active branches may not
   route. Guard route-specific readback with `when route.exists:` when the
@@ -152,7 +185,9 @@ final_output:
 
 ```prompt
 workflow SharedTurn: "How To Take A Turn"
-    "Read the current brief before you act."
+    sequence read_first:
+        "Read `home:issue.md` first."
+        "Then read this role's local rules."
 
     next_step: "Next Step"
         route "Return to ReviewLead when ready." -> ReviewLead
@@ -162,6 +197,8 @@ A workflow body may contain:
 
 - prose lines
 - local keyed sections
+- non-section readable blocks such as `sequence`, `bullets`, `checklist`,
+  `definitions`, `table`, `callout`, `code`, and `rule`
 - `use <local_key>: WorkflowRef` composition
 - readable declaration refs inside titled section bodies
 - inline or referenced `skills:` blocks
@@ -173,10 +210,20 @@ Important rules:
 - Keys are the patch identities used by inheritance and addressable refs.
 - Bare workflow roots are composed with `use`; they do not render as readable
   refs inside ordinary workflow section bodies.
+- Workflow roots may own non-section readable blocks directly.
+- Root workflow sections still use the existing `key: "Title"` form. Doctrine
+  does not add a second root `section ...` syntax.
 - Titled workflow section bodies may contain prose, route lines, local nested
   sections, readable declaration refs, and readable block kinds such as
   `section`, `sequence`, `bullets`, `checklist`, `definitions`, `table`,
   `callout`, `code`, and `rule`.
+- `sequence`, `bullets`, and `checklist` keep the authored key, but their
+  title string is optional. If the title is missing, Doctrine renders the
+  list directly inside the current section instead of adding a nested heading.
+- The same title-optional rule applies to `override sequence`, `override
+  bullets`, and `override checklist`.
+- Inherited workflow-root readable blocks use the same explicit patch model as
+  other keyed workflow items. Use `inherit key` or `override <kind> key`.
 - Workflow law may use `route_from` to pick one route from a typed input or
   emitted output fact.
 
@@ -185,6 +232,8 @@ Important rules:
 Inherited workflows use explicit ordered patching:
 
 - `inherit key` keeps an inherited keyed item in place
+- `inherit {first_key, second_key}` keeps several inherited keyed items in
+  the same authored position order
 - `override key:` replaces an inherited keyed item in place
 - `override key: "New Title"` also replaces the rendered title
 - `key: "Title"` introduces a new keyed item
@@ -360,7 +409,7 @@ Important rules:
 - A schema must declare at least one `sections:` or `artifacts:` block.
 - On `output`, `schema:` points at a Doctrine `schema` declaration.
 - On `output shape`, `schema:` remains the owner-aware attachment point for
-  `json schema`.
+  `output schema` when the shape kind is `JsonObject`.
 - Output-attached schemas must still expose at least one section.
 - A markdown-bearing `output` may not attach both `schema:` and `structure:`.
   Pick exactly one artifact owner on that surface.
@@ -370,6 +419,49 @@ Important rules:
   `BuildSurfaceSchema:groups.downstream_rebuild.title`.
 - `review contract:` may point at either a `workflow` or a `schema`.
 
+### Tables
+
+`table` declares a reusable table contract once. Documents can place that
+contract under a local document key.
+
+```prompt
+table ReleaseGates: "Release Gates"
+    columns:
+        gate: "Gate"
+            "What must pass before shipment."
+
+        evidence: "Evidence"
+            "What proves the gate passed."
+
+
+document ReleaseGuide: "Release Guide"
+    table release_gates: ReleaseGates required
+        rows:
+            release_notes:
+                gate: "Release notes"
+                evidence: "Linked to the shipped proof."
+```
+
+Important rules:
+
+- A top-level `table` declaration owns the table title, `columns:`, optional
+  `row_schema:`, and optional default `notes:`.
+- A document use site owns the local key, `required` / `advisory` /
+  `optional`, `when <expr>`, local `rows:`, and local `notes:`.
+- A named document use site uses `table local_key: TableRef`. It does not use
+  a generic `ref:` field.
+- A named use site may be empty. It still renders the normal no-row contract
+  table.
+- A named use site lowers to the same document table shape as an inline table.
+  Rendered Markdown does not change.
+- A child document may still use `override table local_key: TableRef` because
+  named tables keep the existing `table` block kind.
+- Table declarations are addressable roots, such as
+  `ReleaseGates:columns.evidence.title`.
+- Document-local table paths stay addressable under the local key, such as
+  `ReleaseGuide:release_gates.columns.evidence.title` and
+  `ReleaseGuide:release_gates.rows.release_notes`.
+
 ### Documents
 
 `document` declares a reusable markdown structure for markdown-bearing inputs
@@ -377,11 +469,14 @@ and outputs.
 
 ```prompt
 document LessonPlan: "Lesson Plan"
-    section overview: "Overview"
-        "Start with the plan overview."
+    section read_first: "Read First"
+        sequence steps:
+            "Read the learner goal."
+            "Read the current lesson plan."
 
-    sequence steps: "Sequence"
-        "List the lesson steps in order."
+    bullets evidence: "Evidence"
+        "Name the latest status source."
+        "Name the latest review note."
 ```
 
 Important rules:
@@ -391,17 +486,33 @@ Important rules:
   `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, and `rule`.
 - Block headers may carry `required`, `advisory`, or `optional`, plus
   descriptive `when <expr>` metadata.
+- Every non-rule readable block kind has a bare form and a named form.
+  The bare form drops the CNAME key and any heading string (for example,
+  `definitions:`, `callout:`, `table:`, `footnotes:`, `image:`, `code:`,
+  `markdown:`, `html:`). The renderer skips the H3 heading and the
+  `_kind · ..._` descriptor for bare forms. Use the named form (for example,
+  `definitions done_when: "Done When"`) when the block must be addressable
+  from another declaration, when it needs a visible heading, or when the
+  block carries `required`, `advisory`, or `when` metadata.
 - `sequence`, `bullets`, and `checklist` may declare `item_schema:` for typed
   keyed descendants on the list item surface.
-- `table` may declare `row_schema:` alongside `columns:` / `rows:` and may use
-  structured cell bodies when a row needs nested readable content.
+- `sequence`, `bullets`, and `checklist` titles are optional. Keep the key.
+  With a title, the list renders as a nested headed block. Without a title,
+  the list renders directly inside the parent section and is marked
+  anonymous internally.
+- Inline `table` blocks may declare `row_schema:` alongside `columns:` /
+  `rows:` and may use structured cell bodies when a row needs nested readable
+  content. Documents may also use a named top-level table with
+  `table local_key: TableRef`.
 - Raw `markdown`, raw `html`, `footnotes`, and `image` are explicit block
   kinds; they are not silent fallbacks from ordinary prose.
 - `document` inheritance uses the same explicit accounting model as workflows:
   `inherit key` keeps a parent block, `override <kind> key` replaces it in
   place, and changing block kind fails loudly.
-- `structure:` on `input` or `output` points at a named `document`.
-- `structure:` requires a markdown-bearing shape such as `MarkdownDocument` or
+- `inherit {intro, appendix}` is the grouped parser-sugar form when a child
+  keeps several inherited document blocks unchanged.
+- `structure:` on `input` or `output` points at a named `document` and
+  requires a markdown-bearing shape such as `MarkdownDocument` or
   `AgentOutputDocument`.
 - `document` may attach `render_profile:` so downstream markdown-bearing
   surfaces can render the same structure with a different presentation policy.
@@ -478,17 +589,57 @@ Skill relationships are authored where they are used:
 - when Doctrine should own a real skill-package filesystem tree instead of an
   inline reusable capability, use `skill package` in `SKILL.prompt`
 
+Rendered Markdown keeps each inline skill compact:
+
+- the skill title renders as the skill heading
+- `requirement: Required` renders `_Required skill_` under that heading
+- ordinary fields such as `purpose`, `use_when`, and `reason` render as bold
+  labeled blocks instead of deeper nested headings
+- readable blocks attached to the skill reference body, such as `callout`,
+  still render as ordinary readable blocks
+
+When a field is really a list, author a titleless `bullets` or `checklist`
+block inside that field so the emitted Markdown stays easy to scan.
+
+```prompt
+skill RepoSearch: "repo-search"
+    purpose: "Find the right repo surface for the current job."
+
+    use_when: "Use When"
+        bullets cases:
+            "Use this when the job still needs the right repo entrypoint."
+            "Narrow the task before you search if the request is still broad."
+```
+
+Typical emitted shape inside a `skills` block:
+
+```md
+#### repo-search
+_Required skill_
+
+**Purpose**
+Find the right repo surface for the current job.
+
+**Use When**
+- Use this when the job still needs the right repo entrypoint.
+- Narrow the task before you search if the request is still broad.
+```
+
 ## Skill Packages
 
 Doctrine also ships a first-class package surface for real skill bundles.
 
 ```prompt
+from refs.query_patterns import QueryPatterns
+
 skill package GreetingSkill: "Greeting Skill"
     metadata:
         name: "greeting-skill"
         description: "Write short, friendly greetings that sound human."
         version: "1.0.0"
         license: "MIT"
+    emit:
+        "references/query-patterns.md": QueryPatterns
     "Write short, friendly greetings that fit the current conversation."
 ```
 
@@ -500,10 +651,21 @@ Important rules:
   by other readable markdown-bearing surfaces.
 - `metadata:` currently accepts `name`, `description`, `version`, and
   `license`.
+- `emit:` is optional. Use it when a package should emit extra `.md` files
+  from prompt-authored `document` declarations.
+- Each `emit:` entry is `"relative/path.md": DocumentRef`.
+- `emit:` paths must stay under the package source root and end in `.md`.
+- `emit:` refs must point at `document` declarations.
 - If `metadata.name` is omitted, the emitted frontmatter falls back to the
   package declaration key.
 - The directory that contains `SKILL.prompt` is the package source root.
+- Prompt files inside that package may import each other from the package
+  source root with absolute imports such as `from refs.query_patterns import
+  QueryPatterns`, or with relative imports.
 - `SKILL.prompt` compiles to `SKILL.md`.
+- host-bound skill packages also emit `SKILL.contract.json` beside
+  `SKILL.md`.
+- `emit:` writes extra `.md` files under the package-relative paths you name.
 - Any bundled file that is not a `.prompt` file emits under the same relative
   path, byte for byte, so relative Markdown links keep working after emit.
 - Bundled agent prompts under `agents/**/*.prompt` compile to markdown
@@ -511,11 +673,83 @@ Important rules:
 - Other files in the same `agents/` tree still bundle normally.
 - Other descendant prompt-bearing subtrees stay compiler-owned; Doctrine does
   not copy their `.prompt` files through as ordinary bundle files.
+- Package-local import collisions fail loud. Doctrine will not guess between a
+  package-local module and a repo-wide prompt module with the same dotted
+  path.
 - Reserved-path and case-collision errors fail loudly. `SKILL.md` is
   compiler-owned output, not an authored source file.
 - Use inline `skill` and `skills` when the capability only needs reusable
   semantics inside agent doctrine. Use `skill package` when Doctrine should
   author and emit the package tree itself.
+
+### Package Host Binding
+
+Use package host binding when a reusable skill package needs typed host facts
+from the consuming agent without copying that IO prose into every agent home.
+
+Author the package contract once in `SKILL.prompt`:
+
+```prompt
+skill package SectionPipelineSkill: "Section Pipeline Skill"
+    metadata:
+        name: "section-pipeline-skill"
+    host_contract:
+        document section_map: "Section Map"
+        final_output final_response: "Final Response"
+    "Read {{host:section_map.title}}."
+    "Emit through {{host:final_response}}."
+```
+
+Link the inline skill to that package:
+
+```prompt
+skill SectionPipeline: "Section Pipeline"
+    purpose: "Run the section pipeline."
+    package: "section-pipeline-skill"
+```
+
+Bind the host slots where the skill is used:
+
+```prompt
+skills SectionSkills: "Skills"
+    skill section_pipeline: SectionPipeline
+        bind:
+            section_map: SectionMap
+            final_response: final_output
+```
+
+Important rules:
+
+- `host_contract:` is package-scoped. Declare it once on the root
+  `skill package`.
+- `bind:` is call-site scoped. Declare it once on the consuming skill entry.
+- `package:`, `host_contract:`, and `bind:` are semantic only. They do not
+  render into Markdown.
+- The root `SKILL.prompt` body uses `{{host:slot_key}}` and
+  `{{host:slot_key.path.to.child}}` interpolation.
+- Emitted docs and bundled agent prompts use the same `host:` root anywhere
+  that artifact kind already supports normal addressable refs.
+- The first cut supports these host-slot families:
+  - `input`
+  - `output`
+  - `document`
+  - `analysis`
+  - `schema`
+  - `table`
+  - `final_output`
+- Bind targets may point at:
+  - `inputs:key`
+  - `outputs:key`
+  - `analysis`
+  - `final_output`
+  - ordinary declaration refs such as `SectionMap`
+  - addressable child paths on those same roots
+- Every declared host slot must be bound exactly once.
+- Unknown slots, missing binds, extra binds, wrong families, and bad child
+  paths fail loud.
+- When a package has host-binding truth, `SKILL.contract.json` records the
+  package host contract and the host paths used by each emitted prompt-authored
+  artifact.
 
 ## Inputs And Outputs
 
@@ -539,10 +773,65 @@ Important rules:
 - Built-in sources used in the shipped corpus include `Prompt`, `File`, and
   `EnvVar`.
 - Custom sources can be declared with `input source`.
+- When a previous-turn input source resolves one concrete upstream output,
+  `emit_docs` records that derived contract under
+  `final_output.contract.json.io.previous_turn_inputs`.
 - `structure:` may attach a named `document` to a markdown-bearing input.
 - Ordinary record bodies may also reuse readable block kinds such as
   `definitions`, `table`, `callout`, and `code`.
 - `inputs` blocks group and bind inputs with local keys for a concrete turn.
+
+### Omitted Wrapper Titles
+
+`inputs` and `outputs` wrapper sections have three separate title rules:
+
+- `key: "Title"` is the normal long form when you need a local title or local
+  prose.
+- In base `inputs` or `outputs`, `key: SharedDecl` is the short form for one
+  direct declaration ref. Doctrine lowers it through the same omitted-title
+  wrapper rule, so the child declaration still owns the visible heading.
+- In inherited `inputs` or `outputs`, `override key: SharedDecl` is the short
+  form when the child only swaps one direct declaration and keeps the parent
+  title.
+- In inherited `inputs` or `outputs`, `inherit {left_key, right_key}` keeps
+  several wrapper sections with the same explicit accounting model.
+- The multiline title-omitted form still works too. Use it when you need one
+  direct declaration plus local prose around it.
+- If an omitted wrapper title would need a guess, such as multiple direct refs
+  or keyed child sections, Doctrine fails loud.
+- Titleless `sequence`, `bullets`, and `checklist` also lower into their
+  parent. Inherited `override key:` forms are different because they keep an
+  inherited title.
+
+Example:
+
+```prompt
+input LessonsIssueLedger: "Lessons Issue Ledger"
+    source: File
+        path: "catalog/lessons_issue_ledger.json"
+    shape: "JSON Document"
+    requirement: Required
+
+output SectionHandoff: "Section Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+inputs SectionDossierInputs: "Your Inputs"
+    issue_ledger: LessonsIssueLedger
+
+outputs SectionDossierOutputs: "Your Outputs"
+    section_handoff: SectionHandoff
+```
+
+The omitted wrappers render one visible heading each: `Lessons Issue Ledger`
+and `Section Handoff`. The direct declaration bodies render under those
+headings without a second nested heading. If you need local prose before or
+after the declaration, keep the multiline wrapper form.
+
+Concrete shipped proof:
+
+- `examples/117_io_omitted_wrapper_titles`
 
 ### Outputs
 
@@ -561,10 +850,35 @@ Important rules:
 - Built-in targets used in the shipped corpus include `TurnResponse` and
   `File`.
 - Custom targets can be declared with `output target`.
+- A custom `output target` may bind one reusable delivery skill with
+  `delivery_skill:`. Put delivery behavior on the target, not on each output.
 - Output shapes can be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` remains the owner-aware attachment point for
-  `json schema`.
+  `output schema` when the shape kind is `JsonObject`.
+- `output schema` owns the machine-readable payload fields for structured
+  `JsonObject` outputs.
+- `output schema` may also declare an optional `example:` block. When present,
+  Doctrine validates it and renders an `Example` section on structured final
+  outputs.
+- On the current structured-output profile, object properties stay present on
+  the wire. That includes normal fields, route fields, and route-field
+  overrides.
+- Use `nullable` when an `output schema` field or route field may be `null`.
+- `required` and `optional` are retired on this surface. Doctrine still
+  parses them there only so it can raise targeted upgrade errors.
+- Doctrine does not ship `?` shorthand for `output schema` fields.
+- For a local closed string vocabulary inside `output schema`, prefer
+  `type: enum` plus `values:`.
+- In the first cut, legacy `type: string` plus `enum:` still compiles.
+  Both forms lower to the same emitted string-enum wire shape.
+- A structured final output may declare a first-class routed owner with
+  `route field`.
+- A `route field` owns the route choice keys, labels, and named target agents
+  in one place.
+- `route field` still lowers to an ordinary string enum on the wire.
+- Use `nullable` on a `route field` when `null` means "no handoff on this
+  turn." Use the same `nullable` flag on ordinary schema fields.
 - `structure:` on `output` attaches a named `document` when the output shape is
   markdown-bearing.
 - `render_profile:` may attach to a markdown-bearing `output` when exactly one
@@ -573,14 +887,19 @@ Important rules:
   uses, including `definitions`, `properties`, `table`, explicit `guard`
   shells, `callout`, `code`, raw `markdown`, raw `html`, `footnotes`, and
   `image`.
-- `json schema` is subordinate to `output shape`, not a competing output
+- `output schema` is subordinate to `output shape`, not a competing output
   primitive.
 - `outputs` blocks group and bind outputs with local keys for a concrete turn.
 - `final_output:` on an agent designates one emitted `TurnResponse` output as
   the final assistant message.
-- When that designated output's `output shape` carries a `json schema`, the
+- `final_output.route:` may bind one `route field` on that structured final
+  output. That gives the turn one authored route owner without a second
+  `route_from` table.
+- When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
+- If that `output schema` omits `example:`, the structured final-output render
+  still succeeds and skips the `Example` section.
 - On review-driven agents, the designated final output may be either the
   review's `comment_output:` or a second emitted `TurnResponse`.
   `comment_output:` still remains the review carrier for routing and
@@ -588,8 +907,139 @@ Important rules:
 - When that second output uses `review_fields:`, the compiler binds those
   paths to review semantics and emits whether the split final response is
   `control_ready`.
+- `review_fields:` also accepts bare identity binds like `next_owner` when the
+  final-output field key matches the review semantic name.
+- The emitted `final_output.contract.json` companion also carries the
+  top-level `route` block for ordinary finals, `route_only`,
+  `handoff_routing`, `route_from`, routed reviews, and bound final-output
+  route fields.
+- When a route comes from `final_output.route:`, the emitted route contract
+  also carries `route.selector` with the bound field path and null behavior.
+- The same companion file also carries a top-level `io` block.
+  `io.previous_turn_inputs` records resolved previous-turn input contracts.
+  `io.outputs` and `io.output_bindings` record emitted output contracts and
+  readback binding paths.
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
+
+Preferred local inline enum form:
+
+```prompt
+field status: "Status"
+    type: enum
+    values:
+        ok
+        action_required
+```
+
+Nullable field example:
+
+```prompt
+field next_step: "Next Step"
+    type: string
+    nullable
+```
+
+First-class routed final-output form:
+
+```prompt
+output schema WriterDecisionSchema: "Writer Decision Schema"
+    route field next_route: "Next Route"
+        seek_muse: "Send to Muse." -> Muse
+        ready_for_critic: "Send to Critic." -> Critic
+        nullable
+
+    field summary: "Summary"
+        type: string
+
+agent Writer:
+    final_output:
+        output: WriterDecision
+        route: next_route
+```
+
+Shipped Markdown render shape:
+
+- This is emitted output shape only. It does not change the input language.
+- A simple `TurnResponse` ordinary output with only `Target`, `Shape`, and
+  `Requirement` renders as a short bullet contract.
+- Richer single-artifact ordinary outputs still start with one grouped
+  `Contract | Value` table.
+- A `files:` output renders that same contract table, then an `Artifacts`
+  table for the named files.
+- `current_truth`, titled `properties`, parseable `notes`, and
+  `support_files` render as tables when their authored shape is tabular.
+- `trust_surface` keeps its own section, and ordinary output labels render as
+  inline code.
+- If `structure:` only needs titled section summaries, Doctrine renders a
+  compact `Required Structure:` list.
+- `structure:` still renders one `Artifact Structure` section with a summary
+  table and any needed detail blocks when the shape is richer.
+- Compiler-owned `* Binding` wrappers may collapse when they only repeat one
+  direct child section and add no keyed content of their own.
+- If the target declares `delivery_skill:`, the contract table renders one
+  `Delivered Via` row after `Target` and before target config rows.
+
+Example emitted shape:
+
+```md
+### Review Comment
+
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
+```
+
+Target-owned delivery example:
+
+```prompt
+skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"
+
+output LedgerNote: "Ledger Note"
+    target: LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    requirement: Advisory
+```
+
+The emitted output contract starts like this:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Ledger Note Append |
+| Delivered Via | `ledger-note-delivery` |
+| Ledger ID | `current-ledger` |
+| Shape | Markdown Document |
+| Requirement | Advisory |
+```
+
+### Output Inheritance
+
+Inherited outputs use the same explicit patching style Doctrine already uses
+elsewhere:
+
+- `output Child[Parent]: "Title"` inherits from another `output`
+- `inherit key` keeps one inherited top-level output entry
+- `inherit {target, shape, requirement}` keeps several inherited top-level
+  output entries with the same explicit accounting model
+- `override key:` replaces one inherited top-level output entry
+- top-level attachment keys such as `target`, `shape`, `requirement`,
+  `schema`, `structure`, `render_profile`, `trust_surface`, and
+  `standalone_read` follow that same explicit `inherit` or `override` model
+- children must account for every inherited top-level key exactly once
+- inherited parent outputs must use stable keyed top-level items only
+- `outputs[...]` block inheritance is separate from `output[...]` declaration
+  inheritance
+- v1 output inheritance is top-level only; if you need to change
+  `current_truth.invalidations`, override `current_truth` and rewrite that
+  whole top-level section
 
 Output bodies may also contain:
 
@@ -609,7 +1059,9 @@ For the full I/O model, see [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md)
 Imports compose typed declarations across prompt modules.
 
 ```prompt
-import shared.contracts
+import shared.contracts as shared_contracts
+from shared.review import DraftReviewComment
+from shared.review import DraftReviewComment as ImportedComment
 import .local.sibling
 import ..common.roles
 ```
@@ -617,20 +1069,46 @@ import ..common.roles
 Important rules:
 
 - Each prompt file still owns its nearest local `prompts/` tree.
-- Absolute imports may also search explicitly configured shared authored roots
-  from `[tool.doctrine.compile].additional_prompt_roots` in the nearest
-  `pyproject.toml`.
+- Inside one `prompts/` root, an import may resolve to either
+  `<module>.prompt` or `<module>/AGENTS.prompt`.
+- If both shapes exist for the same dotted path, Doctrine fails loudly
+  instead of guessing which one owns the module.
+- Absolute imports search the active roots for the compile. Active roots
+  include the entrypoint-local root, configured shared authored roots from
+  `[tool.doctrine.compile].additional_prompt_roots`, and provider roots passed
+  by an embedding runtime.
 - Each `additional_prompt_roots` entry resolves relative to that
   `pyproject.toml` and must point at an existing directory literally named
   `prompts`.
+- Each provider root must also point at an existing directory literally named
+  `prompts`. Provider roots come from the Python API, not from host TOML.
+- A file-backed `<module>.prompt` import is a compile-time module only.
+- A directory-backed `<module>/AGENTS.prompt` import is a runtime package
+  root for `emit_docs` and the shared runtime frontier that `emit_flow`
+  uses.
+- A sibling `SOUL.prompt` beside a runtime package `AGENTS.prompt` is optional
+  runtime emit input. It is not a second import target.
 - Absolute and relative imports both keep typed declaration identity.
 - Relative imports stay rooted in the importing module's own `prompts/` tree.
-  They do not hop across configured roots.
+  They do not hop across configured or provider roots.
 - `SKILL.prompt` uses the same import rules, including bundled package modules
   such as `agents.cold_reviewer`.
-- Imported symbols are still used through normal declaration refs such as
-  `shared.contracts.ReviewContract`.
-- Duplicate dotted modules across configured roots fail loudly instead of using
+- `import module as alias` keeps the imported module explicit through normal
+  declaration refs such as `shared_contracts.ReviewContract`.
+- `from module import Name` binds the imported declaration on its bare visible
+  name everywhere Doctrine already accepts that declaration kind.
+- `from module import Name as Alias` binds the imported declaration on the
+  renamed visible name.
+- Bare imported symbols follow the same name-resolution path as local refs.
+  That means workflows, review outputs, route targets, output attachments,
+  inheritance parents, addressable roots, and law paths all read the same
+  import scope.
+- `from ... import ...` does not create a visible module path. Keep a normal
+  `import module` line when you also want `module.Name`.
+- Duplicate visible module names, duplicate imported symbol names, and
+  local-versus-imported bare-name conflicts all fail loudly instead of picking
+  one owner by precedence.
+- Duplicate dotted modules across active roots fail loudly instead of using
   root precedence heuristics.
 - Missing modules, missing declarations, duplicate declarations, and module
   cycles still fail loudly.
@@ -649,11 +1127,13 @@ Examples:
 - `DraftSpec`
 - `ReviewComment`
 - `MetadataContract:files.summary`
+- `self:detail_panel.rewrite_detail`
 - `ProjectLead:title`
 - `ProjectLead:key`
 - `ReleaseAnalysis:stages.title`
 - `BuildSurfaceSchema:sections.summary.title`
 - `BuildSurfaceSchema:artifacts.manifest_file.title`
+- `ReleaseGates:columns.evidence.title`
 - `LessonPlan:read_order.first`
 - `LessonPlan:step_arc.columns.coaching_level.title`
 - `NextOwner:section_author.wire`
@@ -663,19 +1143,28 @@ Examples:
 Nested keyed items can be addressed explicitly:
 
 - `Decl:path.to.child`
+- `self:path.to.child`
 - `ProjectLead:key`
 - `Output:detail_panel.rewrite_detail`
 - `Workflow:section.title`
 - `BuildSurfaceSchema:groups.downstream_rebuild.title`
+- `ReleaseGates:columns.evidence.title`
 - `LessonPlan:overview.title`
 - `LessonPlan:step_arc.rows.step_1`
 - `NextOwner:section_author.wire`
 
 Paths follow authored keyed structure only. Trying to descend past a scalar
-leaf fails loudly. Keyed list items, keyed definition items, table columns,
-and table rows are addressable; anonymous list items are not. The first `:`
-separates the root declaration from its path, and any deeper projections use
-dot segments such as `NextOwner:section_author.wire`.
+leaf fails loudly. Keyed list items, keyed definition items, table declaration
+columns, document table columns, and document table rows are addressable;
+anonymous list items are not. The first `:` separates the root declaration
+from its path, and any deeper projections use dot segments such as
+`NextOwner:section_author.wire`.
+
+Inside a declaration-root addressable context, `self:path` is short for the
+current declaration root. Doctrine ships that on named workflow, analysis,
+schema, document, skills, input, and output bodies. If the current surface
+does not carry that root, `self:` fails loud with `E312`. Use an explicit
+`Root:path` ref there.
 
 ### Authored interpolation
 
@@ -683,6 +1172,7 @@ Authored prose surfaces may interpolate declaration data inline:
 
 - `{{Ref}}`
 - `{{Ref:path.to.child}}`
+- `{{self:path.to.child}}`
 - `{{ProjectLead:key}}`
 - `{{AgentRef:name}}`
 - `{{NextOwner:section_author.wire}}`

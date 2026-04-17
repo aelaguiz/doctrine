@@ -8,7 +8,7 @@ UV_RUN := $(UV) run --locked $(PYTHON)
 VERIFY_FLOW_PREREQ := $(UV_RUN) -m doctrine.verify_prereqs --require-flow-renderer
 VSCODE_MAKE := $(MAKE) -C editors/vscode
 
-.PHONY: help setup test tests check verify verify-examples verify-diagnostics build-dist verify-package verify-package-wheel verify-package-sdist release-prepare release-tag release-draft release-publish vscode-tests vscode-package
+.PHONY: help setup test tests check verify verify-examples verify-diagnostics verify-skill-examples build-dist verify-skill-install verify-package verify-package-wheel verify-package-sdist release-prepare release-tag release-draft release-publish vscode-tests vscode-package
 
 help:
 	@printf '%s\n' \
@@ -17,6 +17,8 @@ help:
 		'make test              Alias for make tests.' \
 		'make verify-examples   Run the shipped manifest-backed corpus.' \
 		'make verify-diagnostics Run the diagnostic smoke checks.' \
+		'make verify-skill-examples Parse every fenced ```prompt block in skill-bundled Markdown.' \
+		'make verify-skill-install Run the pinned skills CLI smoke tests for the public install surface.' \
 		'make build-dist        Build the sdist and wheel artifacts.' \
 		'make verify-package    Smoke test wheel and sdist installs outside the repo root.' \
 		'make release-prepare  Validate release inputs and print the release worksheet.' \
@@ -45,7 +47,10 @@ verify-diagnostics:
 	$(VERIFY_FLOW_PREREQ)
 	$(UV_RUN) -m doctrine.diagnostic_smoke
 
-verify: verify-examples verify-diagnostics
+verify-skill-examples:
+	$(UV_RUN) -m doctrine.verify_skill_examples
+
+verify: verify-examples verify-diagnostics verify-skill-examples
 
 check: tests verify
 
@@ -53,13 +58,17 @@ build-dist:
 	rm -rf dist
 	$(UV) build
 
+verify-skill-install:
+	@test -x node_modules/.bin/skills || { printf '%s\n' 'Run npm ci first to install the pinned skills CLI.'; exit 2; }
+	$(UV_RUN) -m unittest tests.test_emit_skill
+
 verify-package-wheel:
 	$(UV_RUN) -m doctrine._package_release smoke --artifact-type wheel
 
 verify-package-sdist:
 	$(UV_RUN) -m doctrine._package_release smoke --artifact-type sdist
 
-verify-package: build-dist verify-package-wheel verify-package-sdist
+verify-package: verify-skill-install build-dist verify-package-wheel verify-package-sdist
 
 release-prepare:
 	@test -n "$(RELEASE)" || { printf '%s\n' 'RELEASE is required.'; exit 2; }

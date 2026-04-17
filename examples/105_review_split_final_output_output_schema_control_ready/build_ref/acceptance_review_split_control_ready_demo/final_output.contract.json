@@ -1,0 +1,129 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "AcceptanceReviewSplitControlReadyDemo",
+    "slug": "acceptance_review_split_control_ready_demo",
+    "entrypoint": "examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "conditional",
+    "has_unrouted_branch": true,
+    "unrouted_review_verdicts": [
+      "changes requested"
+    ],
+    "branches": [
+      {
+        "target": {
+          "key": "ReviewLead",
+          "module_parts": [],
+          "name": "ReviewLead",
+          "title": "Review Lead"
+        },
+        "label": "Accepted plan goes to ReviewLead.",
+        "summary": "Accepted plan goes to ReviewLead. Next owner: Review Lead.",
+        "review_verdict": "accepted",
+        "choice_members": []
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "AcceptanceControlFinalResponse",
+    "declaration_name": "AcceptanceControlFinalResponse",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/acceptance_control_final_response.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "AcceptanceControlFinalResponse",
+        "declaration_name": "AcceptanceControlFinalResponse",
+        "title": "Acceptance Control Final Response",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "AcceptanceControlJson",
+          "title": "Acceptance Control JSON"
+        },
+        "schema": {
+          "name": "AcceptanceControlSchema",
+          "title": "Acceptance Control Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      },
+      {
+        "declaration_key": "AcceptanceReviewComment",
+        "declaration_name": "AcceptanceReviewComment",
+        "title": "Acceptance Review Comment",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "readable_text",
+        "readback_mode": "unsupported",
+        "requires_final_output": true,
+        "shape": {
+          "name": "Comment",
+          "title": "Comment"
+        }
+      }
+    ],
+    "output_bindings": []
+  },
+  "review": {
+    "exists": true,
+    "comment_output": {
+      "declaration_key": "AcceptanceReviewComment",
+      "declaration_name": "AcceptanceReviewComment"
+    },
+    "carrier_fields": {
+      "verdict": "verdict",
+      "reviewed_artifact": "reviewed_artifact",
+      "analysis": "analysis_performed",
+      "readback": "output_contents_that_matter",
+      "current_artifact": "current_artifact",
+      "failing_gates": "failure_detail.failing_gates",
+      "blocked_gate": "failure_detail.blocked_gate",
+      "next_owner": "next_owner"
+    },
+    "final_response": {
+      "mode": "split",
+      "declaration_key": "AcceptanceControlFinalResponse",
+      "declaration_name": "AcceptanceControlFinalResponse",
+      "review_fields": {
+        "verdict": "verdict",
+        "current_artifact": "current_artifact",
+        "next_owner": "next_owner",
+        "blocked_gate": "blocked_gate"
+      },
+      "control_ready": true
+    },
+    "outcomes": {
+      "accept": {
+        "exists": true,
+        "verdict": "accept",
+        "route_behavior": "always"
+      },
+      "changes_requested": {
+        "exists": true,
+        "verdict": "changes_requested",
+        "route_behavior": "never"
+      },
+      "blocked": {
+        "exists": true,
+        "verdict": "changes_requested",
+        "route_behavior": "never"
+      }
+    }
+  }
+}

@@ -88,6 +88,127 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         self.assertIn("- Next Owner Key: ReviewLead", rendered)
         self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
 
+    def test_inherited_workflow_output_can_bind_route_fields_on_routed_branch(self) -> None:
+        agent = self._compile_agent(
+            """
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            output RoutedReply[BaseReply]: "Routed Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+
+                next_owner: route.next_owner
+                next_owner_key: route.next_owner.key
+
+                route_summary: "Route Summary"
+                    "{{route.summary}}"
+
+            workflow RoutedWorkflow: "Routed Workflow"
+                "Always route the turn."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead
+
+            agent RouteBindingDemo:
+                role: "Bind inherited ordinary outputs from compiler-owned route semantics."
+                workflow: RoutedWorkflow
+                outputs: "Outputs"
+                    RoutedReply
+            """,
+            agent_name="RouteBindingDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("- Next Owner: Review Lead", rendered)
+        self.assertIn("- Next Owner Key: ReviewLead", rendered)
+        self.assertIn("Hand off to ReviewLead. Next owner: Review Lead.", rendered)
+
+    def test_active_when_allows_dynamic_json_object_input_fields(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+
+            agent RoutingOwner:
+                role: "Own route-only follow-up."
+                workflow: "Route"
+                    "Take back the same issue."
+
+            output RouteOnlyReply: "Route Only Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            route_only RouteOnlyRepair: "Route Only Repair"
+                facts: RouteFacts
+                when:
+                    live_job == "route_repair"
+                current none
+                handoff_output: RouteOnlyReply
+                routes:
+                    routing_owner -> RoutingOwner
+
+            agent RouteOnlyRepairDemo:
+                role: "Keep route-only host facts readable."
+                workflow: RouteOnlyRepair
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    RouteOnlyReply
+            """,
+            agent_name="RouteOnlyRepairDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "Use this pass only when route facts live job is route_repair.",
+            rendered,
+        )
+
+    def test_active_when_allows_bound_dynamic_json_object_input_fields(self) -> None:
+        agent = self._compile_agent(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+
+            workflow RouteWorkflow: "Route Workflow"
+                law:
+                    active when current_handoff.live_job == "route_repair"
+                    current none
+                    stop "Reply and stop."
+
+            agent RouteBindingDemo:
+                role: "Keep bound route facts readable."
+                workflow: RouteWorkflow
+                inputs: "Inputs"
+                    current_handoff: "Current Handoff"
+                        RouteFacts
+            """,
+            agent_name="RouteBindingDemo",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "Use this pass only when current handoff live job is route_repair.",
+            rendered,
+        )
+
     def test_route_semantics_require_guard_when_some_branches_do_not_route(self) -> None:
         error = self._compile_error(
             """
@@ -130,6 +251,57 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         self.assertIn("route semantics are not live on every branch", str(error))
+        self.assertIn("guard the read with `route.exists`", str(error))
+
+    def test_inherited_route_reads_still_need_route_exists_guard_on_maybe_routed_branches(self) -> None:
+        error = self._compile_error(
+            """
+            input RouteFacts: "Route Facts"
+                source: Prompt
+                shape: JsonObject
+                requirement: Required
+                should_route: "Should Route"
+
+            agent ReviewLead:
+                role: "Own routed follow-up."
+                workflow: "Follow Up"
+                    "Take the routed follow-up."
+
+            output BaseMaybeRoutedReply: "Base Maybe Routed Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+
+            output MaybeRoutedReply[BaseMaybeRoutedReply]: "Maybe Routed Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit next_owner
+
+            workflow MaybeRoutedWorkflow: "Maybe Routed Workflow"
+                "Route only when the host facts require it."
+
+                law:
+                    active when true
+                    current none
+                    stop "Reply and stop."
+                    route "Hand off to ReviewLead." -> ReviewLead when RouteFacts.should_route
+
+            agent MaybeRouteBindingDemo:
+                role: "Fail loud when inherited route reads span unrouted branches."
+                workflow: MaybeRoutedWorkflow
+                inputs: "Inputs"
+                    RouteFacts
+                outputs: "Outputs"
+                    MaybeRoutedReply
+            """,
+            agent_name="MaybeRouteBindingDemo",
+        )
+
+        self.assertIn("route semantics are not live on every branch", str(error))
+        self.assertIn("next_owner", str(error))
         self.assertIn("guard the read with `route.exists`", str(error))
 
     def test_guarded_output_section_can_read_route_semantics(self) -> None:
@@ -224,10 +396,11 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("#### Next Owner", rendered)
-        self.assertIn("Show this only when a routed owner exists.", rendered)
-        self.assertIn("Review Lead", rendered)
-        self.assertNotIn("- Next Owner: Review Lead", rendered)
+        self.assertIn(
+            "- Next Owner: Show this only when a routed owner exists. Review Lead",
+            rendered,
+        )
+        self.assertNotIn("#### Next Owner", rendered)
 
     def test_review_output_can_combine_review_and_route_semantics(self) -> None:
         agent = self._compile_agent(
@@ -543,11 +716,24 @@ class RouteOutputSemanticsTests(unittest.TestCase):
         )
 
         rendered = render_markdown(agent)
-        self.assertIn("#### Kind", rendered)
-        self.assertIn("Show this only when a routed owner exists.", rendered)
-        self.assertIn("Show this only when not (a routed owner exists).", rendered)
-        self.assertIn("#### Next Owner", rendered)
-        self.assertIn("ReviewLead", rendered)
+        self.assertIn(
+            "- Kind: Show this only when a routed owner exists. `handoff`",
+            rendered,
+        )
+        self.assertIn(
+            "- Next Owner: Show this only when a routed owner exists. ReviewLead",
+            rendered,
+        )
+        self.assertIn(
+            "- Kind: Show this only when not (a routed owner exists). `done`",
+            rendered,
+        )
+        self.assertIn(
+            "- Summary: Show this only when not (a routed owner exists). `Write one short closeout summary.`",
+            rendered,
+        )
+        self.assertNotIn("#### Kind", rendered)
+        self.assertNotIn("#### Next Owner", rendered)
 
     def test_handoff_routing_prose_routes_do_not_seed_route_semantics(self) -> None:
         error = self._compile_error(
@@ -647,6 +833,64 @@ class RouteOutputSemanticsTests(unittest.TestCase):
 
         self.assertEqual(error.code, "E344")
         self.assertIn("unsupported statement `current none`", str(error))
+
+    def test_final_output_route_semantics_do_not_leak_to_other_outputs(self) -> None:
+        agent = self._compile_agent(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    nullable
+
+                field summary: "Summary"
+                    type: string
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            output OtherReply: "Other Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                next_owner: route.next_owner
+
+            agent Muse:
+                role: "Help the writer."
+                workflow: "Muse"
+                    "Offer fresh direction."
+
+            agent Critic:
+                role: "Judge the draft."
+                workflow: "Critic"
+                    "Judge the draft."
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                    OtherReply
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        rendered = render_markdown(agent)
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        self.assertIn("- Next Owner: route.next_owner", outputs_block)
+        self.assertNotIn("Next owner: Muse.", outputs_block)
+        self.assertNotIn("Next owner: Critic.", outputs_block)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from doctrine._compiler.resolved_types import ConfigSpec
+from doctrine._compiler.resolved_types import ConfigSpec, ResolvedOutputTargetSpec
 from doctrine._compiler.types import ResolvedRenderProfile
 
 # Canonical constants and small policy helpers previously mixed into shared.py.
@@ -33,8 +33,16 @@ _BUILTIN_INPUT_SOURCES = {
 }
 
 _BUILTIN_OUTPUT_TARGETS = {
-    "TurnResponse": ConfigSpec(title="Turn Response", required_keys={}, optional_keys={}),
-    "File": ConfigSpec(title="File", required_keys={"path": "Path"}, optional_keys={}),
+    "TurnResponse": ResolvedOutputTargetSpec(
+        title="Turn Response",
+        required_keys={},
+        optional_keys={},
+    ),
+    "File": ResolvedOutputTargetSpec(
+        title="File",
+        required_keys={"path": "Path"},
+        optional_keys={},
+    ),
 }
 
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
@@ -65,13 +73,14 @@ _READABLE_DECL_REGISTRIES = (
     ("analysis declaration", "analyses_by_name"),
     ("decision declaration", "decisions_by_name"),
     ("schema declaration", "schemas_by_name"),
+    ("table declaration", "tables_by_name"),
     ("document declaration", "documents_by_name"),
     ("input declaration", "inputs_by_name"),
     ("input source declaration", "input_sources_by_name"),
     ("output declaration", "outputs_by_name"),
     ("output target declaration", "output_targets_by_name"),
     ("output shape declaration", "output_shapes_by_name"),
-    ("json schema declaration", "json_schemas_by_name"),
+    ("output schema declaration", "output_schemas_by_name"),
     ("skill declaration", "skills_by_name"),
     ("enum declaration", "enums_by_name"),
 )

@@ -3,7 +3,7 @@
 # - `output` is the produced-contract primitive
 # - `output target` is the destination kind
 # - `output shape` is the structural form
-# - `json schema` is the strict machine-readable structure when needed
+# - `output schema` is the strict machine-readable structure when needed
 #
 # Simple outputs can stay small.
 # Richer outputs can add more contract detail directly on `output`.
@@ -14,9 +14,20 @@
 # to interpret those prefixes; they are not promoted to separate root
 # declarations here.
 
-json schema LessonManifestSchema: "Lesson Manifest Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/lesson_manifest.schema.json"
+output schema LessonManifestSchema: "Lesson Manifest Schema"
+    field title: "Title"
+        type: string
+
+    field steps: "Steps"
+        type: array
+        items: string
+
+    example:
+        title: "Intro To Pot Odds"
+        steps:
+            - "intro"
+            - "quiz"
+            - "review"
 
 output shape IssueSummaryText: "Issue Summary Text"
     kind: PlainText
@@ -30,7 +41,6 @@ output shape LessonManifestJson: "Lesson Manifest JSON"
     kind: JsonObject
 
     schema: LessonManifestSchema
-    example_file: "examples/lesson_manifest.example.json"
 
     explanation: "Field Notes"
         "`title` is the learner-facing title."

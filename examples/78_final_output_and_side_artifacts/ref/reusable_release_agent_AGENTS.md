@@ -10,10 +10,12 @@ Do the work, inherit the reusable outputs contract, and end with the declared fi
 
 #### Release Notes File
 
-- Target: File
-- Path: `artifacts/RELEASE_NOTES.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `artifacts/RELEASE_NOTES.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 ##### Standalone Read
 

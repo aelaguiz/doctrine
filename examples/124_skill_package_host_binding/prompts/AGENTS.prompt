@@ -1,0 +1,32 @@
+document SectionMap: "Section Map"
+    section title: "Title"
+        "Map title."
+
+output FinalResponse: "Final Response"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+skill LinkOnlySkill: "Link Only Skill"
+    purpose: "Run the link-only package."
+    package: "link-only-skill"
+
+skill HostBoundSkill: "Host Bound Skill"
+    purpose: "Run the host-bound package."
+    package: "host-bound-skill"
+
+agent LinkOnlyDemo:
+    role: "Use the package link."
+    skills: "Skills"
+        skill link_only: LinkOnlySkill
+
+agent BoundDemo:
+    role: "Use the bound package."
+    outputs: "Outputs"
+        FinalResponse
+    final_output: FinalResponse
+    skills: "Skills"
+        skill host_bound: HostBoundSkill
+            bind:
+                section_map: SectionMap
+                final_response: final_output

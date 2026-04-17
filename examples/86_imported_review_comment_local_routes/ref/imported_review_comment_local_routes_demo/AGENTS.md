@@ -38,29 +38,12 @@ Rejected draft goes to DraftAuthor.
 - Shape: Comment
 - Requirement: Required
 
-#### Verdict
-
-Say whether the review accepted the draft or requested changes.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact this review judged.
-
-#### Analysis Performed
-
-Summarize the review analysis that led to the verdict.
-
-#### Output Contents That Matter
-
-Summarize the parts of the draft the next owner must read first.
-
-#### Current Artifact
-
-Name the artifact that remains current after review.
-
-#### Next Owner
-
-Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
+- Verdict: Say whether the review accepted the draft or requested changes.
+- Reviewed Artifact: Name the reviewed artifact this review judged.
+- Analysis Performed: Summarize the review analysis that led to the verdict.
+- Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
+- Current Artifact: Name the artifact that remains current after review.
+- Next Owner: Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
 
 #### Failure Detail
 
@@ -72,8 +55,6 @@ Name the failing review gates in authored order.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
-#### Standalone Read
-
-A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.
+- Standalone Read: A downstream owner should be able to read this review alone and understand the verdict, current artifact, and next owner.

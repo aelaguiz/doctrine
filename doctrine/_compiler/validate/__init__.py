@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
+from doctrine._compiler.output_schema_validation import (
+    OutputSchemaValidationError,
+    validate_lowered_output_schema,
+    validate_output_example_instance,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     FinalOutputJsonShapeSummary,
@@ -52,6 +55,7 @@ class ValidateMixin(
             ("analysis declaration", unit.analyses_by_name),
             ("decision declaration", unit.decisions_by_name),
             ("schema declaration", unit.schemas_by_name),
+            ("table declaration", unit.tables_by_name),
             ("document declaration", unit.documents_by_name),
             ("workflow declaration", unit.workflows_by_name),
             ("route_only declaration", unit.route_onlys_by_name),
@@ -64,7 +68,7 @@ class ValidateMixin(
             ("outputs block", unit.outputs_blocks_by_name),
             ("output target declaration", unit.output_targets_by_name),
             ("output shape declaration", unit.output_shapes_by_name),
-            ("json schema declaration", unit.json_schemas_by_name),
+            ("output schema declaration", unit.output_schemas_by_name),
             ("skill declaration", unit.skills_by_name),
             ("agent declaration", unit.agents_by_name),
             ("enum declaration", unit.enums_by_name),
@@ -122,120 +126,294 @@ class ValidateMixin(
             lines.append("| " + " | ".join(cell.replace("|", "\\|") for cell in row) + " |")
         return tuple(lines)
 
-    def _load_json_schema_payload_rows(
+    def _build_output_schema_payload_rows(
         self,
         *,
-        schema_unit: IndexedUnit,
-        schema_decl: model.JsonSchemaDecl,
-        schema_file: str | None,
-    ) -> tuple[tuple[str, str, str], ...]:
-        if schema_file is None:
-            return ()
-        payload = self._read_required_final_output_support_text(
-            schema_unit,
-            schema_file,
-            owner_label=f"json schema {schema_decl.name}",
+        schema_data: dict[str, object],
+    ) -> tuple[tuple[str, ...], ...]:
+        return self._build_output_schema_payload_rows_for_object(
+            schema_data,
+            root_schema=schema_data,
+            field_prefix=(),
+            visited_refs=(),
         )
-        try:
-            schema_data = json.loads(payload)
-        except json.JSONDecodeError as exc:
-            raise CompileError(
-                "E216 final_output schema file must contain valid JSON object in "
-                f"json schema {schema_decl.name}: {schema_file}"
-            ) from exc
-        if not isinstance(schema_data, dict):
-            raise CompileError(
-                "E216 final_output schema file must contain valid JSON object in "
-                f"json schema {schema_decl.name}: {schema_file}"
-            )
-        properties = schema_data.get("properties")
+
+    def _build_output_schema_payload_rows_for_object(
+        self,
+        object_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+        field_prefix: tuple[str, ...],
+        visited_refs: tuple[str, ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        resolved_object_schema = self._resolve_local_json_schema_refs(
+            object_schema,
+            root_schema=root_schema,
+        )
+        properties = resolved_object_schema.get("properties")
         if not isinstance(properties, dict):
             return ()
-        rows: list[tuple[str, str, str]] = []
+        required_names = resolved_object_schema.get("required")
+        required_set = set(required_names) if isinstance(required_names, list) else set()
+        rows: list[tuple[str, ...]] = []
         for field_name, field_schema in properties.items():
             if not isinstance(field_schema, dict):
                 continue
+            stripped_schema, null_allowed = self._strip_nullable_json_schema(
+                field_schema,
+                root_schema=root_schema,
+            )
+            field_path = (*field_prefix, field_name)
             rows.append(
                 (
-                    f"`{field_name}`",
-                    self._json_schema_type_label(field_schema),
-                    self._json_schema_meaning(field_schema),
+                    f"`{'.'.join(field_path)}`",
+                    self._json_schema_type_label(
+                        stripped_schema,
+                        root_schema=root_schema,
+                    ),
+                    "Yes" if field_name in required_set else "No",
+                    "Yes" if null_allowed else "No",
+                    self._json_schema_meaning(
+                        field_schema,
+                        root_schema=root_schema,
+                    ),
                 )
             )
+            nested_refs = visited_refs
+            schema_ref = stripped_schema.get("$ref")
+            if isinstance(schema_ref, str):
+                if schema_ref in visited_refs:
+                    continue
+                nested_refs = (*visited_refs, schema_ref)
+            nested_schema = self._resolve_local_json_schema_refs(
+                stripped_schema,
+                root_schema=root_schema,
+            )
+            if self._json_schema_allows_type(nested_schema, "object"):
+                rows.extend(
+                    self._build_output_schema_payload_rows_for_object(
+                        nested_schema,
+                        root_schema=root_schema,
+                        field_prefix=field_path,
+                        visited_refs=nested_refs,
+                    )
+                )
         return tuple(rows)
 
-    def _json_schema_type_label(self, field_schema: dict[str, object]) -> str:
-        schema_type = field_schema.get("type")
+    def _json_schema_type_label(
+        self,
+        field_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+    ) -> str:
+        resolved_schema = self._resolve_local_json_schema_refs(
+            field_schema,
+            root_schema=root_schema,
+        )
+        if "anyOf" in resolved_schema:
+            any_of = resolved_schema.get("anyOf")
+            if isinstance(any_of, list):
+                labels = [
+                    self._json_schema_type_label(
+                        branch,
+                        root_schema=root_schema,
+                    )
+                    for branch in any_of
+                    if isinstance(branch, dict) and not self._json_schema_is_null_only(branch)
+                ]
+                labels = [label for label in labels if label]
+                return " | ".join(labels) if labels else "value"
+        schema_type = resolved_schema.get("type")
         if isinstance(schema_type, list):
             labels = []
             for item in schema_type:
                 if item == "array":
-                    labels.append(self._json_schema_array_type_label(field_schema))
+                    labels.append(
+                        self._json_schema_array_type_label(
+                            field_schema,
+                            root_schema=root_schema,
+                        )
+                    )
                     continue
                 labels.append("null" if item == "null" else str(item))
             return " | ".join(labels)
         if isinstance(schema_type, str):
             if schema_type == "array":
-                return self._json_schema_array_type_label(field_schema)
+                return self._json_schema_array_type_label(
+                    field_schema,
+                    root_schema=root_schema,
+                )
             return schema_type
-        if "enum" in field_schema and isinstance(field_schema["enum"], list):
+        if "enum" in resolved_schema and isinstance(resolved_schema["enum"], list):
             return "enum"
         return "value"
 
-    def _json_schema_array_type_label(self, field_schema: dict[str, object]) -> str:
-        items = field_schema.get("items")
+    def _json_schema_array_type_label(
+        self,
+        field_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+    ) -> str:
+        resolved_schema = self._resolve_local_json_schema_refs(
+            field_schema,
+            root_schema=root_schema,
+        )
+        items = resolved_schema.get("items")
         if isinstance(items, dict):
-            item_type = items.get("type")
-            if isinstance(item_type, str):
-                return f"array<{item_type}>"
+            item_label = self._json_schema_type_label(items, root_schema=root_schema)
+            return f"array<{item_label}>"
         return "array"
 
-    def _json_schema_meaning(self, field_schema: dict[str, object]) -> str:
+    def _json_schema_meaning(
+        self,
+        field_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+    ) -> str:
+        resolved_schema = self._resolve_local_json_schema_refs(
+            field_schema,
+            root_schema=root_schema,
+        )
         description = field_schema.get("description")
+        if not isinstance(description, str) or not description.strip():
+            description = resolved_schema.get("description")
         if isinstance(description, str) and description.strip():
             return description.strip()
-        enum_values = field_schema.get("enum")
+        enum_values = resolved_schema.get("enum")
         if isinstance(enum_values, list) and enum_values:
-            rendered = ", ".join(f"`{value}`" for value in enum_values)
+            rendered_values = [value for value in enum_values if value is not None]
+            if not rendered_values:
+                return ""
+            rendered = ", ".join(f"`{value}`" for value in rendered_values)
             return f"One of {rendered}."
         return ""
 
-    def _read_declared_support_text(
+    def _strip_nullable_json_schema(
         self,
-        unit: IndexedUnit,
-        relative_path: str | None,
-    ) -> str | None:
-        if relative_path is None:
-            return None
-        path = self._resolve_declared_support_path(unit, relative_path)
-        try:
-            return path.read_text()
-        except OSError:
-            return None
+        field_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+    ) -> tuple[dict[str, object], bool]:
+        if "anyOf" in field_schema:
+            any_of = field_schema.get("anyOf")
+            if isinstance(any_of, list):
+                non_null = [
+                    branch for branch in any_of
+                    if isinstance(branch, dict) and not self._json_schema_is_null_only(branch)
+                ]
+                null_allowed = len(non_null) != len(any_of)
+                if len(non_null) == 1:
+                    outer = {
+                        key: value
+                        for key, value in field_schema.items()
+                        if key != "anyOf"
+                    }
+                    return ({**outer, **non_null[0]} if outer else non_null[0], null_allowed)
+                return (field_schema, null_allowed)
 
-    def _resolve_declared_support_path(
-        self,
-        unit: IndexedUnit,
-        relative_path: str,
-    ) -> Path:
-        return (unit.prompt_root.parent / relative_path).resolve()
+        schema_type = field_schema.get("type")
+        if isinstance(schema_type, list) and "null" in schema_type:
+            non_null = [item for item in schema_type if item != "null"]
+            if len(non_null) == 1:
+                return ({**field_schema, "type": non_null[0]}, True)
+            return ({**field_schema, "type": non_null}, True)
+        return (field_schema, False)
 
-    def _read_required_final_output_support_text(
+    def _resolve_local_json_schema_refs(
         self,
-        unit: IndexedUnit,
-        relative_path: str,
+        field_schema: dict[str, object],
+        *,
+        root_schema: dict[str, object],
+    ) -> dict[str, object]:
+        ref = field_schema.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/"):
+            return field_schema
+        current: object = root_schema
+        for part in ref[2:].split("/"):
+            key = part.replace("~1", "/").replace("~0", "~")
+            if not isinstance(current, dict) or key not in current:
+                return field_schema
+            current = current[key]
+        if not isinstance(current, dict):
+            return field_schema
+        return current
+
+    def _json_schema_is_null_only(self, field_schema: dict[str, object]) -> bool:
+        schema_type = field_schema.get("type")
+        if schema_type == "null":
+            return True
+        if isinstance(schema_type, list):
+            return all(item == "null" for item in schema_type)
+        return False
+
+    def _json_schema_allows_type(
+        self,
+        field_schema: dict[str, object],
+        target_type: str,
+    ) -> bool:
+        schema_type = field_schema.get("type")
+        if schema_type == target_type:
+            return True
+        if isinstance(schema_type, list):
+            return target_type in schema_type
+        return False
+
+    def _validate_final_output_lowered_schema(
+        self,
+        schema_data: dict[str, object],
         *,
         owner_label: str,
-    ) -> str:
-        text = self._read_declared_support_text(unit, relative_path)
-        if text is not None:
-            return text
-        raise CompileError(
-            "E215 final_output support file is missing or unreadable in "
-            f"{owner_label}: {relative_path}"
-        )
+        path=None,
+        source_span=None,
+    ) -> None:
+        try:
+            validate_lowered_output_schema(schema_data, owner_label=owner_label)
+        except OutputSchemaValidationError as exc:
+            detail = (
+                f"`final_output` lowered schema in {owner_label} is not valid Draft 2020-12 "
+                f"JSON Schema. {exc.detail}"
+                if exc.code == "E217"
+                else f"`final_output` lowered schema in {owner_label} is outside the supported "
+                f"OpenAI structured outputs subset. {exc.detail}"
+            )
+            raise compile_error(
+                code=exc.code,
+                summary=exc.summary,
+                detail=detail,
+                path=path,
+                source_span=source_span,
+                hints=exc.hints,
+            ) from exc
 
-    def _enforce_legacy_role_workflow_order(self, agent: model.Agent) -> None:
+    def _validate_final_output_example_instance(
+        self,
+        example_instance: object,
+        schema_data: dict[str, object],
+        *,
+        owner_label: str,
+        path=None,
+        source_span=None,
+    ) -> None:
+        try:
+            validate_output_example_instance(
+                example_instance,
+                schema_data,
+                owner_label=owner_label,
+            )
+        except OutputSchemaValidationError as exc:
+            raise compile_error(
+                code=exc.code,
+                summary=exc.summary,
+                detail=(
+                    f"`final_output` example in {owner_label} does not match the lowered "
+                    f"schema. {exc.detail}"
+                ),
+                path=path,
+                source_span=source_span,
+                hints=exc.hints,
+            ) from exc
+
+    def _enforce_legacy_role_workflow_order(self, agent: model.Agent, *, unit: IndexedUnit) -> None:
         if len(agent.fields) != 2:
             return
 
@@ -247,20 +425,43 @@ class ValidateMixin(
         if not isinstance(first, model.AuthoredSlotField) or first.key != "workflow":
             return
 
-        raise CompileError(
-            f"Agent {agent.name} is outside the shipped subset: expected `role` followed by `workflow`."
+        raise compile_error(
+            code="E206",
+            summary="Unsupported agent field order",
+            detail=(
+                f"Agent `{agent.name}` is outside the shipped subset. "
+                "Expected `role` followed by `workflow`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=second.source_span,
         )
 
-    def _ensure_valid_authored_slot_key(self, key: str, agent_name: str) -> None:
+    def _ensure_valid_authored_slot_key(
+        self,
+        key: str,
+        agent_name: str,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+    ) -> None:
         if key in _RESERVED_AGENT_FIELD_KEYS:
-            raise CompileError(
-                f"Reserved typed agent field cannot be used as authored slot in {agent_name}: {key}"
+            raise compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    "Reserved typed agent field cannot be used as authored slot "
+                    f"in {agent_name}: {key}"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
             )
 
     def _validate_route_only_guarded_output(
         self,
         output_decl: model.OutputDecl,
         *,
+        unit: IndexedUnit,
+        output_unit: IndexedUnit,
         facts_ref: model.NameRef,
         guarded: tuple[model.RouteOnlyGuard, ...],
         owner_label: str,
@@ -273,15 +474,41 @@ class ValidateMixin(
         for guard in guarded:
             output_guard = top_level_guards.get(guard.key)
             if output_guard is None:
-                raise CompileError(
-                    f"route_only guarded output item is missing from {output_decl.name} in {owner_label}: "
-                    f"{guard.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "route_only guarded output item is missing from "
+                        f"{output_decl.name} in {owner_label}: {guard.key}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=guard.source_span,
+                    related=(
+                        related_prompt_site(
+                            label="output declaration",
+                            path=output_unit.prompt_file.source_path,
+                            source_span=output_decl.source_span,
+                        ),
+                    ),
                 )
             expected_expr = self._prefix_route_only_expr(guard.expr, facts_ref)
             if output_guard.when_expr != expected_expr:
-                raise CompileError(
-                    f"route_only guarded output item does not match output guard in {owner_label}: "
-                    f"{guard.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "route_only guarded output item does not match output guard "
+                        f"in {owner_label}: {guard.key}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=guard.source_span,
+                    related=(
+                        related_prompt_site(
+                            label=f"`{guard.key}` output guard",
+                            path=output_unit.prompt_file.source_path,
+                            source_span=output_guard.source_span,
+                        ),
+                    ),
                 )
 
     def _prefix_route_only_expr(

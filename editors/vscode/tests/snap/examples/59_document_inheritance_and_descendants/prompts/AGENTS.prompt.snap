@@ -53,9 +53,9 @@
 >
 >    table step_arc: "Step Arc" required
 #^^^^ source.doctrine
-#    ^^^^^ source.doctrine keyword.control.doctrine
+#    ^^^^^ source.doctrine keyword.declaration.doctrine
 #         ^ source.doctrine
-#          ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^^^^^^^^ source.doctrine entity.name.type.doctrine
 #                  ^ source.doctrine punctuation.separator.key-value.doctrine
 #                   ^ source.doctrine
 #                    ^ source.doctrine punctuation.definition.string.begin.doctrine

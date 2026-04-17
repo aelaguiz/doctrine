@@ -96,6 +96,22 @@ Leave one honest handoff and stop.
 
 ## Quickstart
 
+Want the Doctrine skill from this repo?
+
+```bash
+npx skills add .
+```
+
+Run that from the Doctrine repo root.
+That one line installs the checked-in `agent-linter` skill from this repo.
+If the CLI asks where to install it, pick the agent you use.
+
+Want a no-prompt Codex install?
+
+```bash
+npx skills add . -g -a codex -y
+```
+
 When Doctrine is installed from a package index, the distribution name is
 `doctrine-agents`. The Python module name stays `doctrine`.
 
@@ -136,10 +152,13 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
 - concrete and abstract `agent` declarations
 - reusable and inherited `workflow` declarations
 - first-class `review` and `abstract review` declarations
-- typed `skills`, `inputs`, `outputs`, and JSON-schema-backed contracts
-- imports, readable refs, interpolation, enums, and workflow law
-- `emit_docs`, `emit_flow`, and `emit_skill`
-- manifest-backed verification through `examples/106_review_split_final_output_json_schema_partial`
+- typed `skills`, `inputs`, `outputs`, direct `output[...]` inheritance,
+  `output schema`, and generated schema contracts
+- imports, directory-backed runtime packages, readable refs, interpolation,
+  enums, and workflow law
+- `emit_docs`, `emit_flow`, `emit_skill`, and structured-output schema
+  validation helpers
+- manifest-backed verification through `examples/115_runtime_agent_packages`
 - a repo-local VS Code extension for `.prompt` files
 
 ## Workflow visualizer
@@ -156,7 +175,9 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 - [docs/VERSIONING.md](docs/VERSIONING.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/WHY_DOCTRINE.md](docs/WHY_DOCTRINE.md)
+- [PRINCIPLES.md](PRINCIPLES.md)
 - [docs/LANGUAGE_REFERENCE.md](docs/LANGUAGE_REFERENCE.md)
+- [docs/AUTHORING_PATTERNS.md](docs/AUTHORING_PATTERNS.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
 - [examples/README.md](examples/README.md)
 - [editors/vscode/README.md](editors/vscode/README.md)

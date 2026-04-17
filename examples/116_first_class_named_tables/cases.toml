@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "named table declarations render through ordinary document tables"
+status = "active"
+kind = "render_contract"
+agent = "NamedTableDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep Evidence and Package Smoke aligned in Release Guide.",
+  "",
+  "## Publish",
+  "",
+  "Write the release guide using the named table contract.",
+  "",
+  "## Outputs",
+  "",
+  "### Release Guide File",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/RELEASE_GUIDE.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Release Guide |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Release Guide` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Summary** | Section | Lead with the release goal and current shipment boundary. |",
+  "| **Release Gates** | Table | Use the columns `Gate` and `Evidence`. |",
+  "",
+  "##### Release Gates Contract",
+  "",
+  "_Required \u00b7 table_",
+  "",
+  "| Gate | Evidence |",
+  "| --- | --- |",
+  "| Release notes | Linked to the shipped proof. |",
+  "| Package smoke | `make verify-package` passed. |",
+]

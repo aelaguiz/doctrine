@@ -16,23 +16,35 @@ Build Tables in Section Concepts Terms File before you finish `section_root/_aut
 
 #### Concepts Terms Skill
 
-##### Purpose
+**Purpose**
 
 Use Concept Ladder Table before you finalize the document.
 
-- Canonical Table: Concept Ladder Table
-- Canonical Path: `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`
+**Canonical Table**
+
+Concept Ladder Table
+
+**Canonical Path**
+
+`section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`
 
 ## Outputs
 
 ### Section Concepts Terms File
 
-- Target: File
-- Path: `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 #### Must Include
+
+| Field | What to write |
+| --- | --- |
+| **Analysis** | See the detail below. |
+| **Concept IDs** | Keep ids stable when the section already has accepted concepts. |
 
 ##### Analysis
 
@@ -41,7 +53,3 @@ Use Concept Ladder Table before you finalize the document.
 ####### Concept Ladder Table
 
 Map what earlier sections already taught and what the learner should learn next.
-
-##### Concept IDs
-
-Keep ids stable when the section already has accepted concepts.

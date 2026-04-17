@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from doctrine import model
 from dataclasses import replace
 
-from doctrine._compiler.naming import _humanize_key
+from doctrine import model
+from doctrine._compiler.final_output_diagnostics import (
+    final_output_compile_error,
+    final_output_related_site,
+)
+from doctrine._compiler.output_diagnostics import output_related_site
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledFinalOutputSpec,
     CompiledReviewSpec,
@@ -19,6 +22,7 @@ from doctrine._compiler.resolved_types import (
     RouteSemanticContext,
 )
 from doctrine._compiler.support_files import _dotted_decl_name
+from doctrine.emit_common import name_slug
 
 
 class CompileFinalOutputMixin:
@@ -41,12 +45,23 @@ class CompileFinalOutputMixin:
             field.value,
             unit=unit,
             owner_label=owner_label,
+            source_span=field.source_span,
         )
         output_key = (output_unit.module_parts, output_decl.name)
         if output_key not in agent_contract.outputs:
-            raise CompileError(
-                "E212 final_output output is not emitted by the concrete turn in "
-                f"agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            raise final_output_compile_error(
+                code="E212",
+                summary="Final output is not emitted by the concrete turn",
+                detail=(
+                    f"Agent `{agent_name}` declares `final_output` as "
+                    f"`{_dotted_decl_name(output_unit.module_parts, output_decl.name)}`, "
+                    "but that output is not emitted by the concrete turn."
+                ),
+                unit=unit,
+                source_span=field.source_span,
+                hints=(
+                    "Add the output to the agent `outputs:` contract, or point `final_output:` at one that already is.",
+                ),
             )
         review_semantics = self._review_output_context_for_key(
             review_output_contexts,
@@ -77,9 +92,33 @@ class CompileFinalOutputMixin:
             or not isinstance(target_item.value, model.NameRef)
             or not self._is_builtin_turn_response_target_ref(target_item.value)
         ):
-            raise CompileError(
-                "E213 final_output must designate one TurnResponse output, not files or another "
-                f"target, in agent {agent_name}: {_dotted_decl_name(output_unit.module_parts, output_decl.name)}"
+            source_span = (
+                files_section.source_span
+                if files_section is not None
+                else getattr(target_item, "source_span", None)
+                or getattr(shape_item, "source_span", None)
+                or output_decl.source_span
+            )
+            raise final_output_compile_error(
+                code="E213",
+                summary="Final output must designate one TurnResponse message",
+                detail=(
+                    f"Agent `{agent_name}` points `final_output` at "
+                    f"`{_dotted_decl_name(output_unit.module_parts, output_decl.name)}`, "
+                    "but the designated output is not one `TurnResponse` assistant message."
+                ),
+                unit=output_unit,
+                source_span=source_span,
+                related=(
+                    final_output_related_site(
+                        label="`final_output` field",
+                        unit=unit,
+                        source_span=field.source_span,
+                    ),
+                ),
+                hints=(
+                    "Use a typed `output` with `target: TurnResponse` and no `files:` bundle.",
+                ),
             )
         explicit_render_profile, render_profile = self._resolve_output_render_profiles(
             output_decl,
@@ -117,12 +156,18 @@ class CompileFinalOutputMixin:
             shape_item.value,
             unit=output_unit,
         )
+        generated_schema_relpath = (
+            self._generated_final_output_schema_relpath(output_decl.name)
+            if json_summary is not None
+            else None
+        )
         section = self._compile_final_output_section(
             output_decl,
             unit=output_unit,
             requirement=requirement,
             shape_title=shape_title,
             json_summary=json_summary,
+            generated_schema_relpath=generated_schema_relpath,
             extras=extras,
             review_contract=review_contract,
             review_semantics=review_semantics,
@@ -138,14 +183,12 @@ class CompileFinalOutputMixin:
             shape_name=shape_name,
             shape_title=shape_title,
             requirement=requirement,
-            format_mode="json_schema" if json_summary is not None else "prose",
+            format_mode="json_object" if json_summary is not None else "prose",
             schema_name=json_summary.schema_decl.name if json_summary is not None else None,
             schema_title=json_summary.schema_decl.title if json_summary is not None else None,
             schema_profile=json_summary.schema_profile if json_summary is not None else None,
-            schema_file=json_summary.schema_file if json_summary is not None else None,
-            example_file=json_summary.example_file if json_summary is not None else None,
-            resolved_schema_file=json_summary.resolved_schema_file if json_summary is not None else None,
-            resolved_example_file=json_summary.resolved_example_file if json_summary is not None else None,
+            generated_schema_relpath=generated_schema_relpath,
+            lowered_schema=json_summary.lowered_schema if json_summary is not None else None,
             section=section,
         )
 
@@ -157,6 +200,7 @@ class CompileFinalOutputMixin:
         requirement: str | None,
         shape_title: str,
         json_summary: FinalOutputJsonShapeSummary | None,
+        generated_schema_relpath: str | None,
         extras: tuple[model.AnyRecordItem, ...],
         review_contract: CompiledReviewSpec | None,
         review_semantics: ReviewSemanticContext | None,
@@ -178,10 +222,8 @@ class CompileFinalOutputMixin:
             metadata_rows.append(("Schema", json_summary.schema_decl.title))
             if json_summary.schema_profile is not None:
                 metadata_rows.append(("Profile", json_summary.schema_profile))
-            if json_summary.schema_file is not None:
-                metadata_rows.append(("Schema file", f"`{json_summary.schema_file}`"))
-            if json_summary.example_file is not None:
-                metadata_rows.append(("Example file", f"`{json_summary.example_file}`"))
+            if generated_schema_relpath is not None:
+                metadata_rows.append(("Generated Schema", f"`{generated_schema_relpath}`"))
         if requirement is not None:
             metadata_rows.append(("Requirement", requirement))
 
@@ -205,7 +247,7 @@ class CompileFinalOutputMixin:
                         title="Payload Fields",
                         body=tuple(
                             self._pipe_table_lines(
-                                ("Field", "Type", "Meaning"),
+                                ("Field", "Type", "Required On Wire", "Null Allowed", "Meaning"),
                                 json_summary.payload_rows,
                             )
                         ),
@@ -228,11 +270,11 @@ class CompileFinalOutputMixin:
                 ]
             )
 
-        review_response_semantics = self._compile_final_output_review_response_semantics(
+        review_response_note_lines = self._compile_final_output_review_response_note_lines(
             review_contract=review_contract,
         )
-        if review_response_semantics is not None:
-            body.extend(["", review_response_semantics])
+        if review_response_note_lines:
+            body.extend(["", *review_response_note_lines])
 
         if output_decl.schema_ref is not None:
             schema_unit, schema_decl = self._resolve_schema_ref(
@@ -241,8 +283,22 @@ class CompileFinalOutputMixin:
             )
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=schema_unit)
             if not resolved_schema.sections:
-                raise CompileError(
-                    f"Output-attached schema must export at least one section in output {output_decl.name}: {schema_decl.name}"
+                raise final_output_compile_error(
+                    code="E302",
+                    summary="Invalid output attachment declaration",
+                    detail=(
+                        "Output-attached schema must export at least one section in output "
+                        f"{output_decl.name}: {schema_decl.name}"
+                    ),
+                    unit=unit,
+                    source_span=output_decl.source_span,
+                    related=(
+                        output_related_site(
+                            label=f"attached schema `{schema_decl.name}`",
+                            unit=schema_unit,
+                            source_span=schema_decl.source_span,
+                        ),
+                    ),
                 )
             body.extend(
                 [
@@ -325,54 +381,32 @@ class CompileFinalOutputMixin:
             ),
         )
 
-    def _compile_final_output_review_response_semantics(
+    def _generated_final_output_schema_relpath(self, output_name: str) -> str:
+        return f"schemas/{name_slug(output_name)}.schema.json"
+
+    def _compile_final_output_review_response_note_lines(
         self,
         *,
         review_contract: CompiledReviewSpec | None,
-    ) -> CompiledSection | None:
+    ) -> tuple[CompiledBodyItem, ...]:
         if review_contract is None or review_contract.final_response.mode != "split":
-            return None
+            return ()
 
-        body: list[CompiledBodyItem] = [
+        lines: list[CompiledBodyItem] = [
             (
                 "This final response is separate from the review carrier: "
                 f"{review_contract.comment_output.output_name}."
             )
         ]
-
-        if review_contract.final_response.review_fields:
-            body.extend(
-                [
-                    "",
-                    *self._pipe_table_lines(
-                        ("Meaning", "Field"),
-                        tuple(
-                            (
-                                _humanize_key(field_name),
-                                f"`{'.'.join(field_path)}`",
-                            )
-                            for field_name, field_path in review_contract.final_response.review_fields
-                        ),
-                    ),
-                ]
-            )
-        else:
-            body.extend(["", "This final response does not carry review fields on its own."])
-
-        body.append("")
         if review_contract.final_response.control_ready:
-            body.append(
+            lines.append(
                 "This final response is control-ready. A host may read it as the review outcome."
             )
         else:
-            body.append(
-                "This final response is not control-ready. Read the review carrier for the full review outcome."
+            lines.append(
+                "Read the review carrier for the full review outcome."
             )
-
-        return CompiledSection(
-            title="Review Response Semantics",
-            body=tuple(body),
-        )
+        return tuple(lines)
 
     def _compile_output_support_items(
         self,

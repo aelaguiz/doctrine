@@ -10,6 +10,9 @@ For the full declaration overview, use
 semantics, use [WORKFLOW_LAW.md](WORKFLOW_LAW.md) and
 [REVIEW_SPEC.md](REVIEW_SPEC.md). For the shipped emit and flow-diagram CLI,
 use [EMIT_GUIDE.md](EMIT_GUIDE.md).
+If you first need help choosing between `output`, `trust_surface`, `schema`,
+`structure`, and `final_output:`, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## Mental Model
 
@@ -32,6 +35,8 @@ This keeps the split clean:
   explicit `guard` shells, `callout`, `code`, raw `markdown`, raw `html`,
   `footnotes`, and `image` may still appear on ordinary record bodies without
   becoming a second structure system
+- named `table` declarations may be reused inside a `document` with a local
+  table key, then lower to the same emitted table shape as inline tables
 - compiler-owned semantics still live in `workflow law` or `review`
 - downstream trust still flows through declared output fields, not through
   hidden side channels
@@ -54,6 +59,9 @@ Important rules:
 - Built-in sources used in the shipped corpus include `Prompt`, `File`, and
   `EnvVar`.
 - Custom sources may be declared with `input source`.
+- When a previous-turn input source resolves one concrete upstream output,
+  `emit_docs` records that derived contract under
+  `final_output.contract.json.io.previous_turn_inputs`.
 - Input bodies hold source-specific configuration plus authored explanatory
   prose.
 - `structure:` may attach a named `document` to a markdown-bearing input shape.
@@ -65,12 +73,17 @@ Important rules:
 Binding example:
 
 ```prompt
-inputs: "Inputs"
-    draft_spec: "Draft Spec Binding"
-        DraftSpec
+inputs SharedInputs: "Inputs"
+    draft_spec: DraftSpec
+
+agent Demo:
+    inputs: SharedInputs
 ```
 
 That local key becomes a usable root for workflow law or review semantics.
+Prefer the one-line form when the wrapper only binds one declaration and adds
+no local prose. Keep the multiline wrapper when you need prose or more than
+one direct item.
 
 ## Outputs
 
@@ -89,10 +102,30 @@ Important rules:
 - Built-in targets used in the shipped corpus include `TurnResponse` and
   `File`.
 - Custom targets may be declared with `output target`.
+- Custom targets may bind one reusable delivery skill with `delivery_skill:`.
+  The output still owns the artifact contract. The target owns where it goes
+  and how delivery is described.
 - Output shapes may be named with `output shape`.
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
-- `schema:` on `output shape` still attaches a `json schema`; the field name is
-  owner-aware rather than globally retyped.
+- `schema:` on `output shape` points at an `output schema` when the shape kind
+  is `JsonObject`.
+- The field name stays owner-aware rather than globally retyped.
+- `output schema` owns the machine-readable payload fields for structured
+  `JsonObject` outputs.
+- `output schema` may also declare an optional `example:` block. When present,
+  Doctrine validates it and renders an `Example` section on structured final
+  outputs.
+- On the current structured-output profile, object properties stay present on
+  the wire. That includes normal fields, route fields, and route-field
+  overrides.
+- Use `nullable` when an `output schema` field or route field may be `null`.
+- `required` and `optional` are retired on this surface. Doctrine still
+  parses them there only so it can raise targeted upgrade errors.
+- Doctrine does not ship `?` shorthand for `output schema` fields.
+- For a local closed string vocabulary inside `output schema`, prefer
+  `type: enum` plus `values:`.
+- In the first cut, legacy `type: string` plus `enum:` still compiles, and
+  both forms lower to the same emitted string-enum wire shape.
 - Doctrine `schema` declarations may now own reusable `sections:`, optional
   `gates:`, first-class `artifacts:`, and reusable `groups:`.
 - Output-attached schemas must still expose at least one section even when the
@@ -105,8 +138,10 @@ Important rules:
 - Ordinary output record bodies may reuse readable block kinds such as
   `definitions`, `properties`, `table`, explicit `guard` shells, `callout`,
   `code`, raw `markdown`, raw `html`, `footnotes`, and `image`.
-- `json schema` still attaches beneath `output shape`; it does not replace
+- `output schema` still attaches beneath `output shape`; it does not replace
   `output`.
+- `output Child[Parent]: "Title"` inherits one ordinary output contract and
+  patches it with explicit top-level `inherit` or `override` entries.
 - `outputs` blocks group outputs and may bind them under local keys for a
   concrete turn.
 - Any emitted output may read shared compiler-owned route semantics through
@@ -114,8 +149,9 @@ Important rules:
   `route.next_owner.title`, `route.label`, and `route.summary` when workflow
   law, `handoff_routing` law, `route_only`, `grounding`, or review resolves a
   real route.
-- When every live routed branch on that turn comes from `route_from`, outputs
-  may also read
+- When every live routed branch on that turn comes from `route_from`, or when
+  `final_output.route:` binds a `route field` on a structured final output,
+  outputs may also read
   `route.choice`, `route.choice.key`, `route.choice.title`, and
   `route.choice.wire`.
 - On `handoff_routing:`, only the slot's `law:` block makes `route.*` live.
@@ -124,6 +160,20 @@ Important rules:
   means the selected route owner.
 - `route.label` and `route.summary` still need one selected branch. Guard them
   with `route.choice` when several route branches stay live.
+- When `emit_docs` writes `final_output.contract.json`, that file includes the
+  same compiler-owned route truth as a top-level `route` block. Harnesses
+  should consume that block for routing. When a route comes from
+  `final_output.route:`, that block also carries `route.selector` with the
+  bound field path and null behavior. Output fields that show a next owner are
+  content, not the route contract.
+- The same companion file also carries a top-level `io` block.
+  `io.previous_turn_inputs` records resolved previous-turn input contracts.
+  `io.outputs` and `io.output_bindings` record emitted output contracts and
+  readback binding paths.
+- In authored output guards, `route.exists` means a routed owner exists on
+  that live branch. In emitted `final_output.contract.json`, `route.exists`
+  means the final response carries route semantics at all, even when an
+  nullable route field selected no handoff.
 - `final_output:` on an agent points at one emitted `TurnResponse` output and
   gives it a dedicated `Final Output` render.
 - On review-driven agents, `final_output:` may reuse `comment_output:` or
@@ -131,6 +181,9 @@ Important rules:
   the review carrier, and a separate `final_output:` still inherits review
   semantic refs, guards, and any shared `route.*` reads that are live on that
   output.
+- The compiler resolves inherited outputs before workflow law, review,
+  `final_output:`, or shared `route.*` semantics attach. Downstream consumers
+  still see one ordinary output contract, not a second model.
 - On split review finals, the block form may also bind review semantics into
   the final response:
 
@@ -143,11 +196,39 @@ final_output:
         next_owner: next_owner
 ```
 
+- Structured final outputs may also bind a routed owner from one route field:
+
+```prompt
+final_output:
+    output: WriterDecision
+    route: next_route
+```
+
 - The compiler emits whether that split final response is `control_ready`.
   Authors do not declare that mode by hand.
-- When that designated output's `output shape` carries a `json schema`, the
+- When that designated output's `output shape` carries an `output schema`, the
   final assistant message is structured JSON. Otherwise it stays ordinary
   prose or markdown according to the output contract.
+- If that `output schema` omits `example:`, Doctrine still emits the payload
+  contract and simply skips the `Example` section.
+
+Preferred local inline enum form:
+
+```prompt
+field route: "Route"
+    type: enum
+    values:
+        follow_up
+        revise
+```
+
+Nullable field example:
+
+```prompt
+field next_step: "Next Step"
+    type: string
+    nullable
+```
 
 Shipped markdown render defaults:
 
@@ -173,6 +254,72 @@ Output bodies can include:
 - guarded output items
 - `standalone_read`
 - `trust_surface`
+
+Shipped ordinary output render shape:
+
+- This is an emitted Markdown rule, not a new input syntax rule.
+- A simple `TurnResponse` ordinary output with only `Target`, `Shape`, and
+  `Requirement` starts with a short bullet contract.
+- Richer single-artifact ordinary outputs still start with one
+  `Contract | Value` table.
+- A `files:` output starts with the same contract table, then an `Artifacts`
+  table.
+- `current_truth`, titled `properties`, parseable `notes`, and
+  `support_files` lower to tables when the authored shape is naturally tabular.
+- `trust_surface` still renders as its own section, but ordinary output labels
+  render as inline code.
+- If `structure:` only needs titled section summaries, Doctrine renders a
+  compact `Required Structure:` list.
+- `structure:` still lowers to one `Artifact Structure` section with a summary
+  table and any needed detail blocks when the shape is richer.
+- Named tables do not add a new emitted shape. They use the same summary row,
+  detail block, row-backed table, or no-row contract table that inline
+  document tables use.
+- A target-owned `delivery_skill:` renders as one `Delivered Via` row after
+  `Target` and before target config rows. The row shows the skill title only;
+  it does not print adapter commands.
+- Compiler-owned `* Binding` wrappers may collapse when they only repeat one
+  direct child section and add no keyed content of their own.
+
+Example emitted shape:
+
+```md
+### Review Comment
+
+- Target: Turn Response
+- Shape: Comment
+- Requirement: Required
+```
+
+Target-owned delivery example:
+
+```prompt
+skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"
+
+output LedgerNote: "Ledger Note"
+    target: LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    requirement: Advisory
+```
+
+That output contract starts with:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Ledger Note Append |
+| Delivered Via | `ledger-note-delivery` |
+| Ledger ID | `current-ledger` |
+| Shape | Markdown Document |
+| Requirement | Advisory |
+```
 
 Typed attachment examples:
 
@@ -215,9 +362,10 @@ Carrier rules:
   expand to concrete member artifacts in authored group order
 - `standalone_read` explains the contract to humans, but it does not create a
   second trust channel
-- compiled `AGENTS.md` plus companion `.contract.json` emission and
-  target-scoped workflow-flow emission are separate build layers configured
-  outside the prompt language; they are not `output target` declarations
+- compiled `AGENTS.md`, emitted structured final-output schema files under
+  `schemas/<output-slug>.schema.json`, and target-scoped workflow-flow
+  emission are separate build layers configured outside the prompt language;
+  they are not `output target` declarations
 
 ## Guarded Output Items
 
@@ -293,7 +441,8 @@ Instead:
 - that separate final output may bind a review-semantic subset through
   `final_output.review_fields:`
 - the emitted companion contract tells hosts whether the split final output is
-  partial or `control_ready`
+  partial or `control_ready`, and its top-level `route` block tells hosts
+  which resolved named agent the final response routes to
 - `review_family` reuses the same `comment_output` and `fields:` surface; it
   does not introduce a second emitted review contract
 - imported reusable `comment_output` declarations may still bind local routed
@@ -353,3 +502,14 @@ Use the numbered corpus when you want the model in proof-sized pieces:
 - `93`: emitted-output route selection on `handoff_routing` plus
   `final_output:`
 - `94`: `route.choice` guards narrowing branch-specific route detail
+- `120`: structured `final_output:` routing owned by one `route field`
+- `121`: nullable `route field` routing where `null` means no handoff
+- `107`: the smallest direct `output[...]` inheritance proof
+- `108`: inherited top-level output attachments such as `render_profile:`,
+  `trust_surface`, and `standalone_read`
+- `109`: imported reusable handoff outputs inherited and extended locally
+- `110`: inherited outputs used through `final_output:`
+- `111`: inherited outputs keeping shared `route.*` readback
+- `112`: fail-loud output inheritance errors
+- `116`: first-class named table declarations reused by local document table
+  keys

@@ -1,0 +1,75 @@
+# This example ships authored `render_profile`, `properties`, and explicit
+# guard shells on a comment output.
+
+render_profile CompactComment:
+    properties -> sentence
+    guarded_sections -> concise_explanatory_shell
+    identity.owner -> title_and_key
+    identity.enum_wire -> wire_only
+
+
+enum NextOwner: "Next Owner"
+    section_author: "Section Author"
+        wire: "section-author"
+
+
+agent ProjectLead: "Project Lead"
+    role: "Own release decisions."
+
+
+output shape WrappedCommentText: "Wrapped Comment Text"
+    kind: CommentText
+
+
+output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    render_profile: CompactComment
+    requirement: Required
+
+    properties summary: "Summary"
+        verdict: "Verdict"
+            "Use changes requested when the contract fails."
+
+        next_owner: "Next Owner"
+            "Route back to {{NextOwner:section_author}} with {{ProjectLead}}."
+
+    guard follow_up when NextOwner.section_author == NextOwner.section_author
+        properties:
+            escalation: "Escalation"
+                "Explain what still blocks the handoff."
+
+
+output WrappedReviewComment: "Wrapped Review Comment"
+    target: TurnResponse
+    shape: WrappedCommentText
+    render_profile: CompactComment
+    requirement: Required
+
+    properties summary: "Summary"
+        verdict: "Verdict"
+            "Use changes requested when the contract fails."
+
+        next_owner: "Next Owner"
+            "Route back to {{NextOwner:section_author}} with {{ProjectLead}}."
+
+    guard follow_up when NextOwner.section_author == NextOwner.section_author
+        properties:
+            escalation: "Escalation"
+                "Explain what still blocks the wrapped handoff."
+
+
+agent ReviewCommentDemo:
+    role: "Use {{ReviewComment:summary.verdict.title}}, {{NextOwner:section_author.wire}}, and {{ProjectLead}} when you write the compact review comment."
+    workflow: "Review"
+        "Write the review comment."
+    outputs: "Outputs"
+        ReviewComment
+
+
+agent WrappedReviewCommentDemo:
+    role: "Use the same compact render profile on a wrapped `CommentText` output shape."
+    workflow: "Review"
+        "Write the wrapped review comment."
+    outputs: "Outputs"
+        WrappedReviewComment

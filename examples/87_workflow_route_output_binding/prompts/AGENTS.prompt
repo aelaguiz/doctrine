@@ -40,6 +40,14 @@ agent WorkflowRouteBindingDemo:
         WorkflowRouteBindingComment
 
 
+agent WorkflowRouteFinalOutputContractDemo:
+    role: "End with compiler-owned workflow route truth in the emitted contract."
+    workflow: RoutedWorkflow
+    outputs: "Outputs"
+        WorkflowRouteBindingComment
+    final_output: WorkflowRouteBindingComment
+
+
 output GuardedWorkflowRouteBindingComment: "Guarded Workflow Route Binding Comment"
     target: TurnResponse
     shape: Comment

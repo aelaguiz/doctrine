@@ -1,0 +1,27 @@
+input LessonsIssueLedger: "Lessons Issue Ledger"
+    "Use this ledger to track repeated section issues."
+    source: File
+        path: "catalog/lessons_issue_ledger.json"
+    shape: "JSON Document"
+    requirement: Required
+    "Keep the ledger current after each section pass."
+
+
+output SectionHandoff: "Section Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+inputs SectionDossierInputs: "Your Inputs"
+    issue_ledger: LessonsIssueLedger
+
+
+outputs SectionDossierOutputs: "Your Outputs"
+    section_handoff: SectionHandoff
+
+
+agent OmittedIoWrapperTitlesDemo:
+    role: "Lower omitted IO wrapper titles into one child-owned heading."
+    inputs: SectionDossierInputs
+    outputs: SectionDossierOutputs

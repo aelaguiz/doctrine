@@ -1,0 +1,13 @@
+from refs.query_patterns import QueryPatterns
+
+skill package HostBoundSkillPackage: "Host Bound Skill"
+    metadata:
+        name: "host-bound-skill"
+        description: "Bind host facts once and reuse them across the whole package."
+    emit:
+        "references/query-patterns.md": QueryPatterns
+    host_contract:
+        document section_map: "Section Map"
+        final_output final_response: "Final Response"
+    "Read {{host:section_map.title}}."
+    "Emit through {{host:final_response}}."

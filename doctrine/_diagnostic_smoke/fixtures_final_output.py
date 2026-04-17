@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+_DEFAULT_EXAMPLE_BODY = object()
+
 
 def _final_output_prose_source() -> str:
     return """output FinalReply: "Final Reply"
@@ -25,17 +27,46 @@ agent HelloAgent:
 
 def _final_output_json_source(
     *,
-    schema_file: str = "schemas/repo_status.schema.json",
-    example_file: str = "examples/repo_status.example.json",
+    schema_body: str | None = None,
+    example_body: str | None | object = _DEFAULT_EXAMPLE_BODY,
 ) -> str:
-    return f"""json schema RepoStatusSchema: "Repo Status Schema"
-    profile: OpenAIStructuredOutput
-    file: "{schema_file}"
+    rendered_schema_body = schema_body or """output schema RepoStatusSchema: "Repo Status Schema"
+    field summary: "Summary"
+        type: string
+        note: "Short natural-language status."
+
+    field status: "Status"
+        type: enum
+        values:
+            ok
+            action_required
+        note: "Current repo outcome."
+
+    field next_step: "Next Step"
+        type: string
+        nullable
+        note: "Null only when no follow-up is needed."
+"""
+    if example_body is _DEFAULT_EXAMPLE_BODY:
+        rendered_example_body: str | None = """example:
+        summary: "Branch is clean and checks passed."
+        status: "ok"
+        next_step: null
+"""
+    else:
+        rendered_example_body = example_body
+    rendered_schema = rendered_schema_body.rstrip()
+    if rendered_example_body is not None:
+        example_lines = rendered_example_body.rstrip().splitlines()
+        if example_lines and not example_lines[0].startswith("    "):
+            example_lines[0] = f"    {example_lines[0]}"
+        rendered_schema = f"{rendered_schema}\n\n" + "\n".join(example_lines)
+
+    return f"""{rendered_schema}
 
 output shape RepoStatusJson: "Repo Status JSON"
     kind: JsonObject
     schema: RepoStatusSchema
-    example_file: "{example_file}"
 
     explanation: "Field Notes"
         "Use the schema fields exactly once."
@@ -82,6 +113,22 @@ agent InvalidFinalOutputAgent:
     role: "Forget to emit the declared final output."
     workflow: "Reply"
         "Reply and stop."
+    final_output: FinalReply
+"""
+
+
+def _final_output_missing_local_shape_source() -> str:
+    return """output FinalReply: "Final Reply"
+    target: TurnResponse
+    shape: MissingShape
+    requirement: Required
+
+agent InvalidFinalOutputAgent:
+    role: "Use a missing local output shape."
+    workflow: "Reply"
+        "Reply and stop."
+    outputs: "Outputs"
+        FinalReply
     final_output: FinalReply
 """
 
@@ -226,14 +273,30 @@ agent SplitReviewFinalOutputAgent:
 
 
 def _final_output_review_split_json_source() -> str:
-    return """json schema AcceptanceControlSchema: "Acceptance Control Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/acceptance_control.schema.json"
+    return """output schema AcceptanceControlSchema: "Acceptance Control Schema"
+    field route: "Route"
+        type: enum
+        values:
+            follow_up
+            revise
+        note: "Control route for the next owner."
+
+    field current_artifact: "Current Artifact"
+        type: string
+        note: "Current artifact after review."
+
+    field next_owner: "Next Owner"
+        type: string
+        note: "Next owner after review."
+
+    example:
+        route: "follow_up"
+        current_artifact: "Draft Plan"
+        next_owner: "ReviewLead"
 
 output shape AcceptanceControlJson: "Acceptance Control JSON"
     kind: JsonObject
     schema: AcceptanceControlSchema
-    example_file: "examples/acceptance_control.example.json"
 
     field_notes: "Field Notes"
         "Keep `current_artifact` aligned with {{fields.current_artifact}}."
@@ -343,4 +406,3 @@ agent ReviewSplitJsonFinalOutputAgent:
         AcceptanceControlFinalResponse
     final_output: AcceptanceControlFinalResponse
 """
-

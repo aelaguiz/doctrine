@@ -2,7 +2,7 @@ Keep closed vocabulary stable while revising the surrounding guidance.
 
 ## Preserve Vocabulary
 
-Current artifact: Review Template.
+The current artifact is Review Template.
 
 Preserve vocabulary `CriticVerdict`.
 
@@ -23,14 +23,10 @@ Preserve vocabulary `CriticVerdict`.
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact remains current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.

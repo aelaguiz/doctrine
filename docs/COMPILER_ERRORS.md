@@ -11,16 +11,25 @@ Every user-facing error should carry:
 - a stable code such as `E101` or `E280`
 - a stage label such as `parse`, `compile`, or `emit`
 - a short summary line
-- optional location, source excerpt, trace, hints, and normalized cause text
+- optional location, source excerpt, related sites, trace, hints, and
+  normalized cause text
 
 The formatter order is canonical:
 - first line: `CODE stage error: summary`
 - then location
-- then detail
 - then source excerpt when we know a line and column
+- then related sites
+- then detail
 - then trace
 - then hints
 - then the normalized low-level cause
+
+Compile diagnostics follow one default policy:
+- use the real authored line when the compiler has a truthful `SourceSpan`
+- add one `Related:` block when the failure depends on another real site
+- keep the location file-scoped when there is no truthful authored line to show
+- prove shipped `compile_fail` cases with `error_code`, `location_line` or
+  `location_path`, and optional `related` sites instead of snippet matching
 
 Stability rules:
 - keep existing error identities stable once they are shipped
@@ -47,7 +56,7 @@ Stability rules:
 | --- | --- | --- |
 | `E001` | Cannot override undefined inherited entry | Used when `override` tries to replace an inherited authored slot, workflow, `skills`, or named IO entry that does not exist. |
 | `E002` | Missing rendered section title | Reserved meaning: a rendered section needs an explicit visible title and the source does not provide one. |
-| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited authored-slot, workflow, `skills`, or named IO entries. |
+| `E003` | Missing inherited entry | Used when explicit inherited patching omits one of the inherited authored-slot, workflow, `skills`, `output`, or named IO entries. |
 
 ### Parse codes
 
@@ -62,7 +71,7 @@ Stability rules:
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
-| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:` or `schema:` plus `structure:`. |
+| `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:`, `schema:` plus `structure:`, or invalid named-table ownership such as `columns:` on a named table use site. |
 
 ### Compile codes
 
@@ -78,18 +87,30 @@ Stability rules:
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
 | `E210` | Abstract authored slot must be defined directly | An inherited abstract authored slot was handled with `inherit` or `override` instead of a direct `slot_key: ...` definition. |
-| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. |
+| `E211` | Final output must point at output declaration | `final_output:` resolved to some declaration kind other than `output`. Related routed-final-output checks still fail loud with direct messages when `final_output.route:` points at a non-structured final output or a field that is not a `route field`. |
 | `E212` | Final output is not emitted by the concrete turn | `final_output:` points at an `output`, but the concrete agent does not emit it through `outputs:`. |
 | `E213` | Final output must designate one TurnResponse message | `final_output:` points at a file bundle or some non-`TurnResponse` target instead of one final assistant message. |
 | `E214` | Retired | Reserved error code. Review-driven `final_output:` may now differ from `comment_output:`. |
-| `E215` | Final output support file is missing or unreadable | A schema-backed `final_output:` declares a schema or example support file that the compiler cannot read. |
-| `E216` | Final output schema file must contain a JSON object | A schema-backed `final_output:` points at a schema file that is not valid JSON object text. |
+| `E215` | Final output `example_file` is retired | A structured `final_output:` still uses `example_file` on `output shape`, which is retired. |
+| `E216` | Final output example does not match the lowered schema | A structured `final_output:` declares an `example:`, but that JSON object does not validate against the lowered schema. |
+| `E217` | Final output lowered schema failed Draft 2020-12 validation | Doctrine lowered an `output schema`, but the resulting JSON Schema is not valid Draft 2020-12. |
+| `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
+| `E227` | Output schema inline enum is missing `values:` | An `output schema` entry uses `type: enum` but does not define a `values:` block. |
+| `E228` | Output schema `values:` requires `type: enum` | An `output schema` entry uses `values:` without the new `type: enum` form. |
+| `E229` | Output schema inline enum form is mixed or invalid | An `output schema` entry mixes `type: enum` with legacy `enum:` or uses legacy `enum:` with the wrong type. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
+| `E236` | Output schema `required` is retired | `required` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to delete it. Output-schema object properties still stay present on the wire today. |
+| `E237` | Output schema `optional` is retired | `optional` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to use `nullable` when the value may be `null`. |
 | `E240`-`E243` | Workflow inheritance and patching errors | These codes cover cyclic workflow inheritance, inheriting undefined keys, kind mismatches, and `inherit` or `override` without an inherited workflow. |
 | `E244`-`E249` | IO block inheritance and typed-field ref errors | These codes cover cyclic `inputs` / `outputs` block inheritance, undefined inherited keys, patching without an inherited IO block, inherited IO blocks without stable keyed sections, and wrong-kind IO refs or patch bases. |
 | `E250` | Cyclic skills inheritance | Top-level `skills` block inheritance forms a cycle. |
+| `E251` | Cyclic output inheritance | Top-level `output` declaration inheritance forms a cycle. |
+| `E252` | Output patch requires an inherited output | `inherit` or `override` was used in an `output` body that does not inherit a parent output. |
+| `E253` | Cannot inherit undefined output entry | An inherited `output` asked for a top-level key the parent output does not define. |
+| `E254` | Inherited output needs keyed top-level entries | A parent `output` used for inheritance contains bare top-level prose or another unkeyed top-level item. |
+| `E255` | Invalid output inheritance patch | An inherited `output` repeats a key, overrides it with the wrong kind, or patches an inherited entry without `override`. |
 | `E260` | Conflicting concrete-turn binding roots | One concrete-turn bound root path resolves to different artifacts inside the same concrete turn. |
 | `E261` | Duplicate workflow item key | One workflow body repeats the same keyed entry. |
 | `E270` | Ambiguous declaration reference | A readable or addressable ref matches more than one visible declaration kind. |
@@ -98,15 +119,15 @@ Stability rules:
 | `E273` | Unknown addressable path | An interpolation or addressable ref asked for a nested path that does not exist on that surface. |
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
-| `E276` | Missing local declaration reference | A local readable, analysis, or addressable ref points at a declaration that does not exist. |
+| `E276` | Missing local declaration reference | A local readable, analysis, named-table, output `shape:` ref, or addressable ref points at a declaration that does not exist. |
 | `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
 | `E283` | Cyclic workflow composition | `use`-based workflow composition forms a cycle. |
 | `E284` | Duplicate record key | A record body repeats the same key where the current surface expects uniqueness. |
-| `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]` or a bad `additional_prompt_roots` entry. |
-| `E286` | Duplicate configured prompts root | A configured additional `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
-| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one configured `prompts/` root. |
+| `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]`, a bad `additional_prompt_roots` entry, or a bad provider prompt root. |
+| `E286` | Duplicate active prompts root | A configured or provider `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
+| `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one active `prompts/` root, or in both a skill-package source root and an active `prompts/` root. |
 | `E288` | Duplicate declaration name | One module defines the same declaration name more than once. |
 | `E289` | Cyclic import module | Import resolution forms a module cycle. |
 | `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |
@@ -116,13 +137,19 @@ Stability rules:
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
 | `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a document block, properties entry, inline schema entry, footnote, or table child. |
 | `E296` | Readable guard reads disallowed source | A readable `when` guard reads emitted output fields or other disallowed sources instead of only declared inputs and enum members. |
-| `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty table, or a multiline inline table cell. |
+| `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty inline or named table, or a multiline inline table cell. |
 | `E298` | Invalid render_profile declaration | A `render_profile` declares an unknown target, unsupported mode, or duplicate target rule. |
 | `E299` | Compile failure | Generic fallback compile code when the failure does not fit a narrower shipped compile code yet. No shipped manifest-backed compile-fail case currently depends on `E299`. |
 | `E301` | Invalid IO bucket item | An `inputs:` or `outputs:` bucket contains an invalid item shape, inline declaration body, or wrong-kind declaration ref. |
 | `E302` | Invalid output attachment declaration | An output attaches an invalid `schema:` or `structure:` surface, such as a sectionless schema or a non-markdown structure target. |
 | `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
+| `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid `emit:` path, points an `emit:` entry at the wrong declaration kind, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
 | `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
+| `E306` | Duplicate module alias | One prompt file binds the same visible import-module name more than once, such as `import shared.review as review` plus another visible `review`. |
+| `E307` | Duplicate imported symbol | One prompt file binds the same visible imported symbol more than once, such as `from shared.review import Comment` plus another visible `Comment`. |
+| `E308` | Ambiguous imported symbol ownership | A bare visible name is both a local declaration and an imported symbol, so Doctrine refuses to guess which owner the ref should use. |
+| `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
+| `E312` | `self:` needs a declaration-root addressable context | `self:` was used on a surface that does not carry a live declaration-root addressable context. Use an explicit `Root:path` ref there. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
@@ -130,12 +157,12 @@ Stability rules:
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
 | `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
-| `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`. |
+| `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`, including `route.choice == OutputSchema.route_field.choice_key` on routed final outputs. |
 | `E339` | Routed next_owner field is not structurally bound | A route-only output includes a `next_owner` field, but that field does not structurally bind the routed target. |
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
 | `E341` | Mode value outside enum | A workflow-law `mode` binding resolved to a value outside the referenced enum. |
 | `E342` | Non-exhaustive mode match | A workflow-law `match` on an enum omitted one or more members without `else`. |
-| `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law and `handoff_routing` law, would supply shared `route.*` truth for the same concrete turn. |
+| `E343` | Multiple route-bearing control surfaces are live | More than one live route-bearing surface, such as `workflow` law, `handoff_routing` law, or `final_output.route:`, would supply shared `route.*` truth for the same concrete turn. |
 | `E344` | `handoff_routing` law uses a non-routing statement | `handoff_routing` law used something outside its route-only subset, such as `current artifact`, `current none`, `own only`, `preserve`, or `invalidate`. |
 | `E345` | Law is not allowed on this authored slot | `law:` was attached to an authored slot other than `workflow:` or `handoff_routing:`. |
 | `E346` | `route_from` selector reads invalid source | A `route_from` selector was not one direct ref to a declared input field, an emitted output field on the concrete turn, or an enum member. |
@@ -215,7 +242,6 @@ Stability rules:
 | `E516` | Pinned D2 renderer failed | `emit_flow` produced `.flow.d2`, but the pinned D2 renderer failed while producing `.flow.svg`. |
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
-| `E519` | Emit contract support file must stay within project root | A machine-readable emitted contract resolved its entrypoint or final-output support file outside the target project's root. |
 | `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
 | `E521` | Emit target entrypoint must stay within project root | A configured emit target resolved its entrypoint outside the owning project's root. |
 | `E522` | Invalid release version | A Doctrine release tag or channel input does not match the shipped release-tag rules. |

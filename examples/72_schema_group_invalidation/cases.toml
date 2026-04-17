@@ -12,9 +12,9 @@ expected_lines = [
   "",
   "## Structure Shift",
   "",
-  "This pass runs only when structure changed.",
+  "Use this pass only when structure changed.",
   "",
-  "Current artifact: Build Plan.",
+  "The current artifact is Build Plan.",
   "",
   "Review Comment is no longer current.",
   "Manifest File is no longer current.",
@@ -37,10 +37,12 @@ expected_lines = [
   "",
   "### Build Plan",
   "",
-  "- Target: File",
-  "- Path: `unit_root/BUILD_PLAN.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/BUILD_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "### Rebuild Handoff",
   "",
@@ -48,24 +50,16 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Invalidations",
-  "",
-  "Name any artifacts that are no longer current.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Invalidations: Name any artifacts that are no longer current.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Invalidations",
+  "- `Current Artifact`",
+  "- `Invalidations`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current now and what is no longer current.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current now and what is no longer current.",
 ]
-
 [[cases]]
 name = "schema group invalidation rejects missing group targets"
 status = "active"
@@ -74,10 +68,7 @@ prompt = "prompts/INVALID_MISSING_SCHEMA_GROUP.prompt"
 agent = "InvalidGroupTargetDemo"
 exception_type = "CompileError"
 error_code = "E373"
-message_contains = [
-  "invalidate target must resolve",
-  "BuildSurfaceSchema.groups.missing_group",
-]
+location_line = 71
 
 [[cases]]
 name = "schema group invalidation rejects groups that contain the current artifact"
@@ -87,6 +78,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_IN_GROUP.prompt"
 agent = "InvalidCurrentArtifactInvalidatedGroupDemo"
 exception_type = "CompileError"
 error_code = "E371"
-message_contains = [
-  "Current artifact invalidated in same branch",
+location_line = 75
+related = [
+    { label = "current artifact statement", line = 74 },
 ]

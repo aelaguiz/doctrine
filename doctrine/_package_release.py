@@ -122,11 +122,29 @@ def smoke_test_distribution(
 
         prompts_root.mkdir(parents=True)
         (prompts_root / "AGENTS.prompt").write_text(
-            'agent HelloWorld:\n'
+            'output schema HelloPayload: "Hello Payload"\n'
+            '    field summary: "Summary"\n'
+            '        type: string\n'
+            "\n"
+            'output shape HelloJson: "Hello JSON"\n'
+            "    kind: JsonObject\n"
+            "    schema: HelloPayload\n"
+            "\n"
+            'output HelloWorldReply: "Hello World Reply"\n'
+            "    target: TurnResponse\n"
+            "    shape: HelloJson\n"
+            "    requirement: Required\n"
+            "\n"
+            "agent HelloWorld:\n"
             '    role: "You are the hello world agent."\n'
             "\n"
             '    workflow: "Instruction"\n'
-            '        "Say hello world."\n',
+            '        "Say hello world."\n'
+            "\n"
+            '    outputs: "Outputs"\n'
+            "        HelloWorldReply\n"
+            "\n"
+            "    final_output: HelloWorldReply\n",
             encoding="utf-8",
         )
         (project_root / "pyproject.toml").write_text(
@@ -161,9 +179,31 @@ def smoke_test_distribution(
             cwd=project_root,
         )
 
-        if not _build_contains_expected_text(output_root, expected_text="Say hello world."):
+        agents_path = output_root / "hello_world" / "AGENTS.md"
+        if not agents_path.is_file():
             raise RuntimeError(
-                f"Smoke output under `{output_root}` did not contain the expected compiled text."
+                f"Smoke output is missing the emitted AGENTS.md file: `{agents_path}`."
+            )
+        agents_text = agents_path.read_text(encoding="utf-8")
+        if "Say hello world." not in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` did not contain the expected compiled text."
+            )
+        if "#### Payload Fields" not in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` is missing the structured payload table."
+            )
+        if "#### Example" in agents_text:
+            raise RuntimeError(
+                f"Smoke output under `{agents_path}` rendered an unexpected Example section."
+            )
+        schema_path = output_root / "hello_world" / "schemas" / "hello_world_reply.schema.json"
+        if not schema_path.is_file():
+            raise RuntimeError(f"Smoke output is missing the emitted schema file: `{schema_path}`.")
+        contract_path = output_root / "hello_world" / "final_output.contract.json"
+        if not contract_path.is_file():
+            raise RuntimeError(
+                f"Smoke output is missing the emitted final-output contract: `{contract_path}`."
             )
 
 
@@ -184,19 +224,6 @@ def _venv_python(venv_root: Path) -> Path:
     if sys.platform == "win32":
         return venv_root / "Scripts" / "python.exe"
     return venv_root / "bin" / "python"
-
-
-def _build_contains_expected_text(output_root: Path, *, expected_text: str) -> bool:
-    for path in output_root.rglob("*"):
-        if not path.is_file():
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        if expected_text in text:
-            return True
-    return False
 
 
 def _run(command: list[str], *, cwd: Path) -> None:

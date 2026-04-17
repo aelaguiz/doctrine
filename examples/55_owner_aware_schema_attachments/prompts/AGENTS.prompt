@@ -1,15 +1,15 @@
 # This example shows the owner-aware `schema:` split:
-# - `output shape.schema` still means `json schema`
+# - `output shape.schema` points at `output schema`
 # - `output.schema` now means Doctrine `schema`
 
-json schema DeliveryJsonSchema: "Delivery JSON Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/delivery.schema.json"
+output schema DeliveryOutputSchema: "Delivery Output Schema"
+    field summary: "Summary"
+        type: string
 
 
 output shape DeliveryPayload: "Delivery Payload"
     kind: JsonObject
-    schema: DeliveryJsonSchema
+    schema: DeliveryOutputSchema
 
 
 schema DeliveryInventory: "Delivery Inventory"

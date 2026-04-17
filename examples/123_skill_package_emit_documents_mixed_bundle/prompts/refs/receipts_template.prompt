@@ -1,0 +1,3 @@
+document ReceiptsTemplate: "Receipts Template"
+    section summary: "Summary"
+        "Keep one clear proof trail for each claim."

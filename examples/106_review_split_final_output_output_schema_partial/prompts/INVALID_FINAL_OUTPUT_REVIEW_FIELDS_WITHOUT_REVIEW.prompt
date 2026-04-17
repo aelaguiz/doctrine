@@ -1,0 +1,19 @@
+output SummaryReply: "Summary Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+    summary: "Summary"
+        "Summarize the result."
+
+
+agent InvalidFinalOutputReviewFieldsWithoutReviewDemo:
+    role: "Answer plainly."
+    workflow: "Reply"
+        "Reply and stop."
+    outputs: "Outputs"
+        SummaryReply
+    final_output:
+        output: SummaryReply
+        review_fields:
+            verdict: summary

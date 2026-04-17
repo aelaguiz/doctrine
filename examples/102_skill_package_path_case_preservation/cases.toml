@@ -13,10 +13,8 @@ status = "active"
 kind = "compile_fail"
 prompt = "prompts/invalid/INVALID_CASE_COLLISION.prompt"
 exception_type = "CompileError"
-message_contains = [
-  "case-collides",
-  "skill.md",
-]
+error_code = "E304"
+location_path = "prompts/invalid/skill.md"
 
 [[cases]]
 name = "bundled files may not collide with compiled agent markdown outputs"
@@ -24,7 +22,8 @@ status = "active"
 kind = "compile_fail"
 prompt = "prompts/invalid_agent_output_collision/SKILL.prompt"
 exception_type = "CompileError"
-message_contains = [
-  "Duplicate skill package bundled path",
-  "agents/reviewer.md",
+error_code = "E304"
+location_path = "prompts/invalid_agent_output_collision/agents/reviewer.md"
+related = [
+    { label = "first bundled source", path = "prompts/invalid_agent_output_collision/agents/reviewer.prompt" },
 ]

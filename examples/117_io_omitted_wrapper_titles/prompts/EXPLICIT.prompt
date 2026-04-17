@@ -1,0 +1,28 @@
+input LessonsIssueLedger: "Lessons Issue Ledger"
+    source: File
+        path: "catalog/lessons_issue_ledger.json"
+    shape: "JSON Document"
+    requirement: Required
+
+
+output SectionHandoff: "Section Handoff"
+    target: TurnResponse
+    shape: "Comment"
+    requirement: Required
+
+
+inputs SectionDossierInputs: "Your Inputs"
+    issue_ledger: "Lessons Issue Ledger"
+        "Use this ledger to track repeated section issues."
+        LessonsIssueLedger
+
+
+outputs SectionDossierOutputs: "Your Outputs"
+    section_handoff: "Section Handoff"
+        SectionHandoff
+
+
+agent ExplicitIoWrapperTitlesDemo:
+    role: "Keep explicit IO wrapper titles as the long form."
+    inputs: SectionDossierInputs
+    outputs: SectionDossierOutputs

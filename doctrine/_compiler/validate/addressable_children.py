@@ -40,6 +40,44 @@ class ValidateAddressableChildrenMixin:
         node: AddressableNode,
     ) -> dict[str, AddressableNode] | None:
         target = node.target
+        if isinstance(target, model.InputDecl):
+            previous_turn_spec = self._active_previous_turn_input_specs.get(
+                (node.unit.module_parts, target.name)
+            )
+            if previous_turn_spec is not None:
+                if previous_turn_spec.derived_contract_mode != "structured_json":
+                    return None
+                scalar_items, _section_items, _extras = self._split_record_items(
+                    previous_turn_spec.output_decl.items,
+                    scalar_keys={"target", "shape", "requirement"},
+                    owner_label=f"output {previous_turn_spec.output_decl.name}",
+                )
+                shape_item = scalar_items.get("shape")
+                if shape_item is None:
+                    return None
+                json_summary = self._resolve_final_output_json_shape_summary(
+                    shape_item.value,
+                    unit=previous_turn_spec.output_unit,
+                )
+                if json_summary is None:
+                    return None
+                output_children = self._get_addressable_children(
+                    AddressableNode(
+                        unit=json_summary.schema_unit,
+                        root_decl=node.root_decl,
+                        target=json_summary.schema_decl,
+                    )
+                )
+                if output_children is None:
+                    return None
+                return {
+                    key: AddressableNode(
+                        unit=child.unit,
+                        root_decl=node.root_decl,
+                        target=child.target,
+                    )
+                    for key, child in output_children.items()
+                }
         if isinstance(target, ReviewSemanticFieldsRoot):
             children: dict[str, AddressableNode] = {}
             output_unit, _output_decl = self._resolve_review_semantic_output_decl(target.context)
@@ -96,13 +134,14 @@ class ValidateAddressableChildrenMixin:
             (
                 model.AnalysisDecl,
                 model.SchemaDecl,
+                model.TableDecl,
                 model.DocumentDecl,
                 model.InputDecl,
                 model.InputSourceDecl,
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
             ),
         ):
@@ -122,13 +161,39 @@ class ValidateAddressableChildrenMixin:
                     unit=node.unit,
                     root_decl=node.root_decl,
                 )
+            if isinstance(target, model.TableDecl):
+                return self._readable_table_data_to_addressable_children(
+                    self._resolve_table_decl_data(target, unit=node.unit),
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
             if isinstance(target, model.DocumentDecl):
                 return self._document_items_to_addressable_children(
                     self._resolve_document_decl(target, unit=node.unit).items,
                     unit=node.unit,
                     root_decl=node.root_decl,
                 )
+            if isinstance(target, model.OutputSchemaDecl):
+                return self._output_schema_items_to_addressable_children(
+                    target.items,
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                )
             return self._record_items_to_addressable_children(
+                target.items,
+                unit=node.unit,
+                root_decl=node.root_decl,
+            )
+        if isinstance(
+            target,
+            (
+                model.OutputSchemaField,
+                model.OutputSchemaDef,
+                model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideDef,
+            ),
+        ):
+            return self._output_schema_items_to_addressable_children(
                 target.items,
                 unit=node.unit,
                 root_decl=node.root_decl,
@@ -294,6 +359,36 @@ class ValidateAddressableChildrenMixin:
                     model.RecordSection,
                     model.GuardedOutputSection,
                     model.GuardedOutputScalar,
+                    model.ReadableBlock,
+                ),
+            ):
+                children[item.key] = AddressableNode(
+                    unit=unit,
+                    root_decl=root_decl,
+                    target=item,
+                )
+        return children
+
+    def _output_schema_items_to_addressable_children(
+        self,
+        items: tuple[object, ...],
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+    ) -> dict[str, AddressableNode]:
+        children: dict[str, AddressableNode] = {}
+        for item in items:
+            if isinstance(
+                item,
+                (
+                    model.RecordScalar,
+                    model.RecordSection,
+                    model.OutputSchemaField,
+                    model.OutputSchemaRouteField,
+                    model.OutputSchemaDef,
+                    model.OutputSchemaOverrideField,
+                    model.OutputSchemaOverrideRouteField,
+                    model.OutputSchemaOverrideDef,
                     model.ReadableBlock,
                 ),
             ):
@@ -488,28 +583,12 @@ class ValidateAddressableChildrenMixin:
                     )
             return children or None
         if block.kind == "table" and isinstance(block.payload, model.ReadableTableData):
-            if block.payload.columns:
-                children["columns"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableColumnsTarget(columns=block.payload.columns),
-                )
-            if block.payload.rows:
-                children["rows"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableRowsTarget(rows=block.payload.rows),
-                )
-            if block.payload.row_schema is not None and "row_schema" not in children:
-                children["row_schema"] = AddressableNode(
-                    unit=unit,
-                    root_decl=root_decl,
-                    target=ReadableSchemaTarget(
-                        title="Row Schema",
-                        entries=block.payload.row_schema.entries,
-                    ),
-                )
-            return children or None
+            return self._readable_table_data_to_addressable_children(
+                block.payload,
+                unit=unit,
+                root_decl=root_decl,
+                seed=children,
+            )
         if block.kind == "footnotes" and isinstance(block.payload, model.ReadableFootnotesData):
             for item in block.payload.entries:
                 children[item.key] = AddressableNode(
@@ -519,3 +598,35 @@ class ValidateAddressableChildrenMixin:
                 )
             return children or None
         return None
+
+    def _readable_table_data_to_addressable_children(
+        self,
+        table: model.ReadableTableData,
+        *,
+        unit: IndexedUnit,
+        root_decl: AddressableRootDecl,
+        seed: dict[str, AddressableNode] | None = None,
+    ) -> dict[str, AddressableNode] | None:
+        children: dict[str, AddressableNode] = dict(seed or {})
+        if table.columns:
+            children["columns"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableColumnsTarget(columns=table.columns),
+            )
+        if table.rows:
+            children["rows"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableRowsTarget(rows=table.rows),
+            )
+        if table.row_schema is not None and "row_schema" not in children:
+            children["row_schema"] = AddressableNode(
+                unit=unit,
+                root_decl=root_decl,
+                target=ReadableSchemaTarget(
+                    title="Row Schema",
+                    entries=table.row_schema.entries,
+                ),
+            )
+        return children or None

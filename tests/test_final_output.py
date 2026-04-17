@@ -5,9 +5,10 @@ import textwrap
 import unittest
 from pathlib import Path
 
+from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
-from doctrine.parser import parse_file
+from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown
 
 
@@ -67,6 +68,68 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIsNone(agent.final_output)
         self.assertNotIn("## Final Output", render_markdown(agent))
 
+    def test_parser_builds_final_output_route_binding(self) -> None:
+        prompt = parse_text(
+            textwrap.dedent(
+                """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """
+            )
+        )
+
+        agent_decl = prompt.declarations[-1]
+        self.assertIsInstance(agent_decl, model.Agent)
+        final_output = next(
+            field for field in agent_decl.fields if isinstance(field, model.FinalOutputField)
+        )
+        self.assertEqual(final_output.value.declaration_name, "WriterDecision")
+        self.assertEqual(final_output.route_path, ("next_route",))
+
+    def test_parser_rejects_duplicate_final_output_route_binding(self) -> None:
+        with self.assertRaisesRegex(
+            Exception,
+            "final_output block may define `route:` only once",
+        ):
+            parse_text(
+                textwrap.dedent(
+                    """
+                output FinalReply: "Final Reply"
+                    target: TurnResponse
+                    shape: CommentText
+                    requirement: Required
+
+                agent Writer:
+                    role: "Write the next turn."
+                    outputs: "Outputs"
+                        FinalReply
+                    final_output:
+                        output: FinalReply
+                        route: next_route
+                        route: retry_route
+                """
+                    )
+            )
+
     def test_prose_final_output_renders_dedicated_section_and_metadata(self) -> None:
         agent = self._compile_agent(
             """
@@ -96,8 +159,6 @@ class FinalOutputTests(unittest.TestCase):
         self.assertEqual(agent.final_output.format_mode, "prose")
         self.assertEqual(agent.final_output.output_name, "FinalReply")
         self.assertEqual(agent.final_output.shape_name, "CommentText")
-        self.assertIsNone(agent.final_output.resolved_schema_file)
-        self.assertIsNone(agent.final_output.resolved_example_file)
 
         rendered = render_markdown(agent)
         self.assertIn("## Final Output", rendered)
@@ -108,17 +169,260 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Read on Its Own", rendered)
         self.assertNotIn("## Outputs", rendered)
 
+    def test_route_field_final_output_emits_selector_metadata_and_keeps_route_semantics_local(self) -> None:
+        agent = self._compile_agent(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                route field next_route: "Next Route"
+                    seek_muse: "Send to Muse." -> Muse
+                    ready_for_critic: "Send to Critic." -> Critic
+                    nullable
+
+                field summary: "Summary"
+                    type: string
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+                muse_route: "Muse Route" when route.choice == WriterDecisionSchema.next_route.seek_muse:
+                    "{{route.summary}}"
+
+                critic_route: "Critic Route" when route.choice == WriterDecisionSchema.next_route.ready_for_critic:
+                    "{{route.next_owner}}"
+
+            output OtherReply: "Other Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+            agent Muse:
+                role: "Help the writer."
+                workflow: "Muse"
+                    "Offer fresh direction."
+
+            agent Critic:
+                role: "Judge the draft."
+                workflow: "Critic"
+                    "Judge the draft."
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                    OtherReply
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIsNotNone(agent.route)
+        self.assertTrue(agent.route.exists)
+        self.assertEqual(agent.route.behavior, "conditional")
+        self.assertTrue(agent.route.has_unrouted_branch)
+        self.assertIsNotNone(agent.route.selector)
+        self.assertEqual(agent.route.selector.surface, "final_output")
+        self.assertEqual(agent.route.selector.field_path, ("next_route",))
+        self.assertEqual(agent.route.selector.null_behavior, "no_route")
+        self.assertEqual(
+            [member.member_key for member in agent.route.branches[0].choice_members],
+            ["seek_muse"],
+        )
+        self.assertIsNone(agent.route.branches[0].choice_members[0].enum_name)
+
+        rendered = render_markdown(agent)
+        final_output_block = rendered.split("## Final Output", 1)[1]
+        outputs_block = rendered.split("## Outputs", 1)[1].split("## Final Output", 1)[0]
+        self.assertIn(
+            "Show this only when route.choice is WriterDecisionSchema.next_route.seek_muse.",
+            final_output_block,
+        )
+        self.assertIn(
+            "Show this only when route.choice is WriterDecisionSchema.next_route.ready_for_critic.",
+            final_output_block,
+        )
+        self.assertNotIn("### Writer Decision", outputs_block)
+        self.assertIn("### Other Reply", outputs_block)
+
+    def test_final_output_route_requires_structured_output_schema(self) -> None:
+        error = self._compile_error(
+            """
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIn("final_output.route requires a structured final output", str(error))
+
+    def test_final_output_route_requires_route_field_binding(self) -> None:
+        error = self._compile_error(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                field next_route: "Next Route"
+                    type: string
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                final_output:
+                    output: WriterDecision
+                    route: next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIn("final_output.route must bind a `route field`", str(error))
+
+    def test_inherited_prose_final_output_renders_dedicated_section_and_metadata(self) -> None:
+        agent = self._compile_agent(
+            """
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+                standalone_read: "Standalone Read"
+                    "The user should understand what changed and what happens next."
+
+            output FinalReply[BaseReply]: "Final Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit standalone_read
+
+                format_notes: "Expected Structure"
+                    "Lead with the shipped outcome."
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        self.assertEqual(agent.final_output.output_name, "FinalReply")
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertIn("### Final Reply", rendered)
+        self.assertIn("| Format | Natural-language markdown |", rendered)
+        self.assertIn("#### Expected Structure", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
+
+    def test_inherited_final_output_keeps_inherited_trust_surface_and_standalone_read(self) -> None:
+        agent = self._compile_agent(
+            """
+            output BaseReply: "Base Reply"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                current_artifact: "Current Artifact"
+                    "Name the artifact that stays current."
+
+                trust_surface:
+                    current_artifact
+
+                standalone_read: "Standalone Read"
+                    "This final reply should stand on its own."
+
+            output FinalReply[BaseReply]: "Final Reply"
+                inherit target
+                inherit shape
+                inherit requirement
+                inherit current_artifact
+                inherit trust_surface
+                inherit standalone_read
+
+                format_notes: "Expected Structure"
+                    "Lead with the shipped outcome."
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn("## Final Output", rendered)
+        self.assertNotIn("## Outputs", rendered)
+        self.assertIn("### Final Reply", rendered)
+        self.assertIn("#### Trust Surface", rendered)
+        self.assertIn("- Current Artifact", rendered)
+        self.assertIn("#### Read on Its Own", rendered)
+
     def test_json_final_output_exposes_schema_metadata_and_payload_preview(self) -> None:
         agent = self._compile_agent(
             """
-            json schema RepoStatusSchema: "Repo Status Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/repo_status.schema.json"
+            output schema RepoStatusSchema: "Repo Status Schema"
+                field summary: "Summary"
+                    type: string
+                    note: "Short natural-language status."
+
+                field status: "Status"
+                    type: enum
+                    values:
+                        ok
+                        action_required
+                    note: "Current repo outcome."
+
+                field next_step: "Next Step"
+                    type: string
+                    nullable
+                    note: "Null only when no follow-up is needed."
+
+                example:
+                    summary: "Branch is clean and checks passed."
+                    status: "ok"
+                    next_step: null
 
             output shape RepoStatusJson: "Repo Status JSON"
                 kind: JsonObject
                 schema: RepoStatusSchema
-                example_file: "examples/repo_status.example.json"
 
                 explanation: "Field Notes"
                     "Use the schema fields exactly once."
@@ -140,122 +444,166 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: RepoStatusFinalResponse
             """,
             agent_name="RepoStatusAgent",
-            extra_files={
-                "schemas/repo_status.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "summary": {
-                          "type": "string",
-                          "description": "Short natural-language status."
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": ["ok", "action_required"],
-                          "description": "Current repo outcome."
-                        },
-                        "next_step": {
-                          "type": ["string", "null"],
-                          "description": "Null only when no follow-up is needed."
-                        }
-                      }
-                    }
-                    """
-                ),
-                "examples/repo_status.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "summary": "Branch is clean and checks passed.",
-                      "status": "ok",
-                      "next_step": null
-                    }
-                    """
-                ),
-            },
         )
 
         self.assertIsNotNone(agent.final_output)
-        self.assertEqual(agent.final_output.format_mode, "json_schema")
+        self.assertEqual(agent.final_output.format_mode, "json_object")
         self.assertEqual(agent.final_output.schema_name, "RepoStatusSchema")
         self.assertEqual(agent.final_output.schema_profile, "OpenAIStructuredOutput")
-        self.assertEqual(agent.final_output.schema_file, "schemas/repo_status.schema.json")
-        self.assertEqual(agent.final_output.example_file, "examples/repo_status.example.json")
-        self.assertIsNotNone(agent.final_output.resolved_schema_file)
-        self.assertIsNotNone(agent.final_output.resolved_example_file)
-        self.assertTrue(agent.final_output.resolved_schema_file.is_absolute())
-        self.assertTrue(agent.final_output.resolved_example_file.is_absolute())
-        self.assertEqual(agent.final_output.resolved_schema_file.name, "repo_status.schema.json")
-        self.assertEqual(agent.final_output.resolved_example_file.name, "repo_status.example.json")
+        self.assertEqual(
+            agent.final_output.generated_schema_relpath,
+            "schemas/repo_status_final_response.schema.json",
+        )
+        self.assertIsNotNone(agent.final_output.lowered_schema)
 
         rendered = render_markdown(agent)
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Repo Status Schema |", rendered)
         self.assertIn("| Profile | OpenAIStructuredOutput |", rendered)
+        self.assertIn(
+            "| Generated Schema | `schemas/repo_status_final_response.schema.json` |",
+            rendered,
+        )
         self.assertIn("#### Payload Fields", rendered)
-        self.assertIn("| `next_step` | string \\| null | Null only when no follow-up is needed. |", rendered)
+        self.assertIn(
+            "| `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |",
+            rendered,
+        )
         self.assertIn("#### Example", rendered)
         self.assertIn("```json", rendered)
 
-    def test_json_final_output_requires_readable_schema_file(self) -> None:
-        # Schema-backed final answers must fail loud when the declared schema file
-        # cannot be read, or the rendered contract silently drops the payload shape.
-        error = self._compile_error(
+    def test_json_final_output_accepts_nullable_enum_and_const_examples(self) -> None:
+        # Nullable enum and const fields are valid structured-output shapes.
+        # Their declared example must validate and the rendered row must stay readable.
+        agent = self._compile_agent(
             """
-            json schema RepoStatusSchema: "Repo Status Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/missing_repo_status.schema.json"
+            output schema StatusSchema: "Status Schema"
+                field status: "Status"
+                    type: enum
+                    values:
+                        ok
+                        blocked
+                    nullable
 
-            output shape RepoStatusJson: "Repo Status JSON"
+                field kind: "Kind"
+                    type: string
+                    const: status_result
+                    nullable
+
+                example:
+                    status: null
+                    kind: null
+
+            output shape StatusJson: "Status JSON"
                 kind: JsonObject
-                schema: RepoStatusSchema
-                example_file: "examples/repo_status.example.json"
+                schema: StatusSchema
 
-            output RepoStatusFinalResponse: "Repo Status Final Response"
+            output StatusFinalResponse: "Status Final Response"
                 target: TurnResponse
-                shape: RepoStatusJson
+                shape: StatusJson
                 requirement: Required
 
-            agent RepoStatusAgent:
-                role: "Report repo status in structured form."
-                workflow: "Summarize"
-                    "Summarize the repo state and end with the declared final output."
+            agent StatusAgent:
+                role: "Report status in structured form."
                 outputs: "Outputs"
-                    RepoStatusFinalResponse
-                final_output: RepoStatusFinalResponse
+                    StatusFinalResponse
+                final_output: StatusFinalResponse
             """,
-            agent_name="RepoStatusAgent",
-            extra_files={
-                "examples/repo_status.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "summary": "Branch is clean and checks passed.",
-                      "status": "ok",
-                      "next_step": null
-                    }
-                    """
-                ),
-            },
+            agent_name="StatusAgent",
         )
 
-        self.assertEqual(error.code, "E215")
-        self.assertIn("missing or unreadable", str(error))
-        self.assertIn("schemas/missing_repo_status.schema.json", str(error))
+        self.assertIsNotNone(agent.final_output)
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+        properties = agent.final_output.lowered_schema["properties"]
+        self.assertEqual(properties["status"]["enum"], ["ok", "blocked", None])
 
-    def test_json_final_output_requires_valid_schema_json(self) -> None:
-        # The final-output contract should fail before render when the declared
-        # schema file is malformed, not silently degrade to metadata-only JSON.
+        rendered = render_markdown(agent)
+        self.assertIn("| `status` | string | Yes | Yes | One of `ok`, `blocked`. |", rendered)
+        self.assertIn("| `kind` | string | Yes | Yes |  |", rendered)
+
+    def test_json_final_output_renders_nested_object_payload_rows(self) -> None:
+        # Nested payload objects are part of the public final-output contract.
+        # The rendered table should expose child fields instead of hiding them.
+        agent = self._compile_agent(
+            """
+            output schema RoutedSchema: "Routed Schema"
+                field summary: "Summary"
+                    type: string
+                    note: "Short user-facing summary."
+
+                field route: "Route"
+                    type: object
+                    note: "Routing facts for the next step."
+
+                    field action: "Action"
+                        type: enum
+                        values:
+                            reply
+                            handoff
+                            end_turn
+                        note: "Chosen route action."
+
+                    field owner: "Owner"
+                        type: string
+                        nullable
+                        note: "Next owner when a handoff is needed."
+
+                    field reason: "Reason"
+                        type: string
+                        note: "Why this route was chosen."
+
+                example:
+                    summary: "Route this to the reviewer."
+                    route:
+                        action: "handoff"
+                        owner: "Reviewer"
+                        reason: "A review is required."
+
+            output shape RoutedJson: "Routed JSON"
+                kind: JsonObject
+                schema: RoutedSchema
+
+            output RoutedFinalResponse: "Routed Final Response"
+                target: TurnResponse
+                shape: RoutedJson
+                requirement: Required
+
+            agent RoutedAgent:
+                role: "Route work in structured form."
+                outputs: "Outputs"
+                    RoutedFinalResponse
+                final_output: RoutedFinalResponse
+            """,
+            agent_name="RoutedAgent",
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "| `route` | object | Yes | No | Routing facts for the next step. |",
+            rendered,
+        )
+        self.assertIn("| `route.action` | string | Yes | No | Chosen route action. |", rendered)
+        self.assertIn(
+            "| `route.owner` | string | Yes | Yes | Next owner when a handoff is needed. |",
+            rendered,
+        )
+        self.assertIn("| `route.reason` | string | Yes | No | Why this route was chosen. |", rendered)
+
+    def test_json_final_output_requires_example_that_matches_lowered_schema(self) -> None:
+        # The final-output example is compiler-owned proof, so it must satisfy
+        # the lowered schema instead of living in an external JSON file.
         error = self._compile_error(
             """
-            json schema RepoStatusSchema: "Repo Status Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/repo_status.schema.json"
+            output schema RepoStatusSchema: "Repo Status Schema"
+                field summary: "Summary"
+                    type: string
+
+                example:
+                    summary: 7
 
             output shape RepoStatusJson: "Repo Status JSON"
                 kind: JsonObject
                 schema: RepoStatusSchema
-                example_file: "examples/repo_status.example.json"
 
             output RepoStatusFinalResponse: "Repo Status Final Response"
                 target: TurnResponse
@@ -271,37 +619,59 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: RepoStatusFinalResponse
             """,
             agent_name="RepoStatusAgent",
-            extra_files={
-                "schemas/repo_status.schema.json": "{not json",
-                "examples/repo_status.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "summary": "Branch is clean and checks passed.",
-                      "status": "ok",
-                      "next_step": null
-                    }
-                    """
-                ),
-            },
         )
 
         self.assertEqual(error.code, "E216")
-        self.assertIn("valid JSON object", str(error))
-        self.assertIn("schemas/repo_status.schema.json", str(error))
+        self.assertIn("does not match the lowered schema", str(error))
 
-    def test_json_final_output_requires_readable_example_file(self) -> None:
-        # The example block is part of the user-visible final contract, so a
-        # declared example file must fail loud instead of disappearing.
-        error = self._compile_error(
+    def test_json_final_output_keeps_legacy_inline_enum_form_compatible(self) -> None:
+        agent = self._compile_agent(
             """
-            json schema RepoStatusSchema: "Repo Status Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/repo_status.schema.json"
+            output schema LegacyStatusSchema: "Legacy Status Schema"
+                field status: "Status"
+                    type: string
+                    enum:
+                        ok
+                        blocked
+
+            output shape LegacyStatusJson: "Legacy Status JSON"
+                kind: JsonObject
+                schema: LegacyStatusSchema
+
+            output LegacyStatusFinalResponse: "Legacy Status Final Response"
+                target: TurnResponse
+                shape: LegacyStatusJson
+                requirement: Required
+
+            agent LegacyStatusAgent:
+                role: "Report status in the legacy enum form."
+                outputs: "Outputs"
+                    LegacyStatusFinalResponse
+                final_output: LegacyStatusFinalResponse
+            """,
+            agent_name="LegacyStatusAgent",
+        )
+
+        self.assertIsNotNone(agent.final_output)
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+        self.assertEqual(
+            agent.final_output.lowered_schema["properties"]["status"]["enum"],
+            ["ok", "blocked"],
+        )
+
+    def test_json_final_output_allows_missing_schema_owned_example(self) -> None:
+        # Structured final-output contracts may omit `example:`. The rendered
+        # contract should still expose the payload shape and skip the example
+        # block instead of failing at compile time.
+        agent = self._compile_agent(
+            """
+            output schema RepoStatusSchema: "Repo Status Schema"
+                field summary: "Summary"
+                    type: string
 
             output shape RepoStatusJson: "Repo Status JSON"
                 kind: JsonObject
                 schema: RepoStatusSchema
-                example_file: "examples/missing_repo_status.example.json"
 
             output RepoStatusFinalResponse: "Repo Status Final Response"
                 target: TurnResponse
@@ -317,26 +687,17 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: RepoStatusFinalResponse
             """,
             agent_name="RepoStatusAgent",
-            extra_files={
-                "schemas/repo_status.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "properties": {
-                        "summary": {
-                          "type": "string",
-                          "description": "Short natural-language status."
-                        }
-                      }
-                    }
-                    """
-                ),
-            },
         )
 
-        self.assertEqual(error.code, "E215")
-        self.assertIn("missing or unreadable", str(error))
-        self.assertIn("examples/missing_repo_status.example.json", str(error))
+        self.assertIsNotNone(agent.final_output)
+        self.assertEqual(agent.final_output.format_mode, "json_object")
+        self.assertIsNotNone(agent.final_output.lowered_schema)
+
+        rendered = render_markdown(agent)
+        # Missing sample data must not erase the user-visible payload contract.
+        self.assertIn("#### Payload Fields", rendered)
+        self.assertNotIn("#### Example", rendered)
+        self.assertNotIn("```json", rendered)
 
     def test_final_output_is_omitted_from_outputs_when_side_artifacts_remain(self) -> None:
         agent = self._compile_agent(
@@ -565,14 +926,30 @@ class FinalOutputTests(unittest.TestCase):
     def test_review_driven_final_output_renders_schema_backed_json_contract(self) -> None:
         agent = self._compile_agent(
             """
-            json schema AcceptanceReviewSchema: "Acceptance Review Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/acceptance_review.schema.json"
+            output schema AcceptanceReviewSchema: "Acceptance Review Schema"
+                field verdict: "Verdict"
+                    type: enum
+                    values:
+                        accepted
+                        changes_requested
+                    note: "Review verdict."
+
+                field reviewed_artifact: "Reviewed Artifact"
+                    type: string
+                    note: "Reviewed artifact name."
+
+                field next_owner: "Next Owner"
+                    type: string
+                    note: "Next owner after review."
+
+                example:
+                    verdict: "accepted"
+                    reviewed_artifact: "Draft Plan"
+                    next_owner: "ReviewLead"
 
             output shape AcceptanceReviewJson: "Acceptance Review JSON"
                 kind: JsonObject
                 schema: AcceptanceReviewSchema
-                example_file: "examples/acceptance_review.example.json"
 
             input DraftPlan: "Draft Plan"
                 source: File
@@ -667,40 +1044,6 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: AcceptanceReviewResponse
             """,
             agent_name="AcceptanceReviewAgent",
-            extra_files={
-                "schemas/acceptance_review.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "verdict": {
-                          "type": "string",
-                          "enum": ["accepted", "changes_requested"],
-                          "description": "Review verdict."
-                        },
-                        "reviewed_artifact": {
-                          "type": "string",
-                          "description": "Reviewed artifact name."
-                        },
-                        "next_owner": {
-                          "type": "string",
-                          "description": "Next owner after review."
-                        }
-                      }
-                    }
-                    """
-                ),
-                "examples/acceptance_review.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "verdict": "accepted",
-                      "reviewed_artifact": "Draft Plan",
-                      "next_owner": "ReviewLead"
-                    }
-                    """
-                ),
-            },
         )
 
         rendered = render_markdown(agent)
@@ -709,7 +1052,7 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Acceptance Review Schema |", rendered)
         self.assertIn("#### Payload Fields", rendered)
-        self.assertIn("| `verdict` | string | Review verdict. |", rendered)
+        self.assertIn("| `verdict` | string | Yes | No | Review verdict. |", rendered)
         self.assertIn("#### Trust Surface", rendered)
         self.assertIn("- Current Artifact", rendered)
         self.assertIn("#### Failure Detail", rendered)
@@ -970,14 +1313,30 @@ class FinalOutputTests(unittest.TestCase):
         # just because the bound field lives on the review comment output.
         agent = self._compile_agent(
             """
-            json schema AcceptanceControlSchema: "Acceptance Control Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/acceptance_control.schema.json"
+            output schema AcceptanceControlSchema: "Acceptance Control Schema"
+                field route: "Route"
+                    type: enum
+                    values:
+                        follow_up
+                        revise
+                    note: "Control route for the next owner."
+
+                field current_artifact: "Current Artifact"
+                    type: string
+                    note: "Current artifact after review."
+
+                field next_owner: "Next Owner"
+                    type: string
+                    note: "Next owner after review."
+
+                example:
+                    route: "follow_up"
+                    current_artifact: "Draft Plan"
+                    next_owner: "ReviewLead"
 
             output shape AcceptanceControlJson: "Acceptance Control JSON"
                 kind: JsonObject
                 schema: AcceptanceControlSchema
-                example_file: "examples/acceptance_control.example.json"
 
                 field_notes: "Field Notes"
                     "Keep `current_artifact` aligned with {{fields.current_artifact}}."
@@ -1091,40 +1450,6 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: AcceptanceControlFinalResponse
             """,
             agent_name="AcceptanceReviewAgent",
-            extra_files={
-                "schemas/acceptance_control.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "route": {
-                          "type": "string",
-                          "enum": ["follow_up", "revise"],
-                          "description": "Control route for the next owner."
-                        },
-                        "current_artifact": {
-                          "type": "string",
-                          "description": "Current artifact after review."
-                        },
-                        "next_owner": {
-                          "type": "string",
-                          "description": "Next owner after review."
-                        }
-                      }
-                    }
-                    """
-                ),
-                "examples/acceptance_control.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "route": "follow_up",
-                      "current_artifact": "Draft Plan",
-                      "next_owner": "ReviewLead"
-                    }
-                    """
-                ),
-            },
         )
 
         rendered = render_markdown(agent)
@@ -1148,14 +1473,30 @@ class FinalOutputTests(unittest.TestCase):
     def test_review_driven_split_json_final_output_can_render_route_semantics(self) -> None:
         agent = self._compile_agent(
             """
-            json schema AcceptanceControlSchema: "Acceptance Control Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/acceptance_control.schema.json"
+            output schema AcceptanceControlSchema: "Acceptance Control Schema"
+                field route: "Route"
+                    type: enum
+                    values:
+                        follow_up
+                        revise
+                    note: "Control route for the next owner."
+
+                field current_artifact: "Current Artifact"
+                    type: string
+                    note: "Current artifact after review."
+
+                field next_owner: "Next Owner"
+                    type: string
+                    note: "Next owner after review."
+
+                example:
+                    route: "follow_up"
+                    current_artifact: "Draft Plan"
+                    next_owner: "ReviewLead"
 
             output shape AcceptanceControlJson: "Acceptance Control JSON"
                 kind: JsonObject
                 schema: AcceptanceControlSchema
-                example_file: "examples/acceptance_control.example.json"
 
             input DraftPlan: "Draft Plan"
                 source: File
@@ -1265,40 +1606,6 @@ class FinalOutputTests(unittest.TestCase):
                 final_output: AcceptanceControlFinalResponse
             """,
             agent_name="AcceptanceReviewAgent",
-            extra_files={
-                "schemas/acceptance_control.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "route": {
-                          "type": "string",
-                          "enum": ["follow_up", "revise"],
-                          "description": "Control route for the next owner."
-                        },
-                        "current_artifact": {
-                          "type": "string",
-                          "description": "Current artifact after review."
-                        },
-                        "next_owner": {
-                          "type": "string",
-                          "description": "Next owner after review."
-                        }
-                      }
-                    }
-                    """
-                ),
-                "examples/acceptance_control.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "route": "follow_up",
-                      "current_artifact": "Draft Plan",
-                      "next_owner": "ReviewLead"
-                    }
-                    """
-                ),
-            },
         )
 
         rendered = render_markdown(agent)
@@ -1453,6 +1760,32 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("final_output", str(error))
         self.assertIn("schema declaration", str(error))
 
+    def test_final_output_missing_local_shape_ref_fails_loud(self) -> None:
+        error = self._compile_error(
+            """
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: MissingShape
+                requirement: Required
+
+            agent HelloAgent:
+                role: "Answer plainly and end the turn."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="HelloAgent",
+        )
+
+        self.assertEqual(error.code, "E276")
+        self.assertIn("Missing local declaration reference", str(error))
+        self.assertIn(
+            "Output shape declaration `MissingShape` does not exist in the current module.",
+            str(error),
+        )
+
     def test_final_output_must_be_emitted_by_outputs_contract(self) -> None:
         error = self._compile_error(
             """
@@ -1521,19 +1854,27 @@ class FinalOutputTests(unittest.TestCase):
         )
 
         self.assertEqual(error.code, "E213")
-        self.assertIn("another target", str(error))
+        self.assertIn("not one `TurnResponse` assistant message", str(error))
 
     def test_handoff_routing_final_output_can_bind_route_fields(self) -> None:
         agent = self._compile_agent(
             """
-            json schema TurnResultSchema: "Turn Result Schema"
-                profile: OpenAIStructuredOutput
-                file: "schemas/turn_result.schema.json"
+            output schema TurnResultSchema: "Turn Result Schema"
+                field next_owner: "Next Owner"
+                    type: string
+                    note: "The routed next owner key."
+
+                field summary: "Summary"
+                    type: string
+                    note: "Short closeout summary."
+
+                example:
+                    next_owner: "ReviewLead"
+                    summary: "Hand off to ReviewLead."
 
             output shape TurnResultJson: "Turn Result JSON"
                 kind: JsonObject
                 schema: TurnResultSchema
-                example_file: "examples/turn_result.example.json"
 
             agent ReviewLead:
                 role: "Own routed follow-up."
@@ -1568,34 +1909,6 @@ class FinalOutputTests(unittest.TestCase):
                         route "Hand off to ReviewLead." -> ReviewLead
             """,
             agent_name="HandoffFinalOutputDemo",
-            extra_files={
-                "schemas/turn_result.schema.json": textwrap.dedent(
-                    """\
-                    {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "properties": {
-                        "next_owner": {
-                          "type": "string",
-                          "description": "The routed next owner key."
-                        },
-                        "summary": {
-                          "type": "string",
-                          "description": "Short closeout summary."
-                        }
-                      }
-                    }
-                    """
-                ),
-                "examples/turn_result.example.json": textwrap.dedent(
-                    """\
-                    {
-                      "next_owner": "ReviewLead",
-                      "summary": "Hand off to ReviewLead."
-                    }
-                    """
-                ),
-            },
         )
 
         self.assertIsNotNone(agent.final_output)

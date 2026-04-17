@@ -9,9 +9,30 @@ workflow ReviewFlow[shared.workflow.BaseFlow]: "Workflow"
 #         ^ entity.name.type.doctrine
 #                    ^ entity.other.inherited-class.doctrine
 
+route_only RouteRepair: "Route Repair"
+# <--------- keyword.declaration.doctrine
+#           ^ entity.name.type.doctrine
+
+grounding ClaimGrounding: "Claim Grounding"
+# <-------- keyword.declaration.doctrine
+#          ^ entity.name.type.doctrine
+
 decision StrategyChoice: "Strategy Choice"
 # <------- keyword.declaration.doctrine
 #         ^ entity.name.type.doctrine
+
+review_family SharedDraftReviewFamily[shared.review.BaseReview]: "Review Family"
+# <----------- keyword.declaration.doctrine
+#             ^ entity.name.type.doctrine
+#                                     ^ entity.other.inherited-class.doctrine
+
+render_profile CompactComment:
+# <------------ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
+
+table ReleaseGates: "Release Gates"
+# <--- keyword.declaration.doctrine
+#     ^ entity.name.type.doctrine
 
 skills SharedSkills[shared.skills.BaseSkills]: "Skills"
 # <----- keyword.declaration.doctrine
@@ -28,10 +49,10 @@ output target TrackerComment: "Tracker Comment"
 #       ^ keyword.declaration.doctrine
 #              ^ entity.name.type.doctrine
 
-json schema LessonManifestSchema: "Lesson Manifest Schema"
-# <--- keyword.declaration.doctrine
-#     ^ keyword.declaration.doctrine
-#            ^ entity.name.type.doctrine
+output schema LessonManifestSchema: "Lesson Manifest Schema"
+# <----- keyword.declaration.doctrine
+#       ^ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
 
 abstract agent BaseRole:
 # <------ keyword.declaration.doctrine

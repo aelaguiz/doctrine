@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
+from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     CompileError,
@@ -48,6 +49,8 @@ class ValidateReviewSemanticsMixin:
         self,
         ref: model.AddressableRef,
     ) -> tuple[str, ...] | None:
+        if ref.self_rooted or ref.root is None:
+            return None
         parts = (*ref.root.module_parts, ref.root.declaration_name, *ref.path)
         if len(parts) < 2 or parts[0] not in {"contract", "fields"}:
             return None
@@ -94,6 +97,7 @@ class ValidateReviewSemanticsMixin:
         subject_keys: set[tuple[tuple[str, ...], str]],
     ) -> dict[tuple[tuple[str, ...], str, str], tuple[tuple[str, ...], str]]:
         mapping: dict[tuple[tuple[str, ...], str, str], tuple[tuple[str, ...], str]] = {}
+        seen_entries: dict[tuple[tuple[str, ...], str, str], model.ReviewSubjectMapEntry] = {}
         for entry in subject_map.entries:
             entry_identity = self._resolve_enum_member_identity(
                 model.ExprRef(
@@ -102,14 +106,38 @@ class ValidateReviewSemanticsMixin:
                 unit=unit,
             )
             if entry_identity is None:
-                raise CompileError(
-                    "Review subject_map entry must resolve to an enum member in "
-                    f"{owner_label}: {_dotted_ref_name(entry.enum_member_ref)}"
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        "Review subject_map entry must resolve to an enum member in "
+                        f"{owner_label}: {_dotted_ref_name(entry.enum_member_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=entry.source_span or subject_map.source_span,
                 )
-            if entry_identity in mapping:
-                raise CompileError(
-                    f"Duplicate review subject_map entry in {owner_label}: "
-                    f"{_dotted_ref_name(entry.enum_member_ref)}"
+            first_entry = seen_entries.get(entry_identity)
+            if first_entry is not None:
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        f"Duplicate review subject_map entry in {owner_label}: "
+                        f"{_dotted_ref_name(entry.enum_member_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=entry.source_span or subject_map.source_span,
+                    related=(
+                        ()
+                        if first_entry.source_span is None
+                        else (
+                            review_related_site(
+                                label="first `subject_map` entry",
+                                unit=unit,
+                                source_span=first_entry.source_span,
+                            ),
+                        )
+                    ),
                 )
 
             subject_unit, subject_decl = self._resolve_review_subjects(
@@ -119,11 +147,18 @@ class ValidateReviewSemanticsMixin:
             )[0]
             subject_key = (subject_unit.module_parts, subject_decl.name)
             if subject_key not in subject_keys:
-                raise CompileError(
-                    "Review subject_map target must be one of the declared review subjects in "
-                    f"{owner_label}: {_dotted_ref_name(entry.artifact_ref)}"
+                raise review_compile_error(
+                    code="E470",
+                    summary="Invalid review declaration shape",
+                    detail=(
+                        "Review subject_map target must be one of the declared review "
+                        f"subjects in {owner_label}: {_dotted_ref_name(entry.artifact_ref)}"
+                    ),
+                    unit=unit,
+                    source_span=entry.source_span or subject_map.source_span,
                 )
             mapping[entry_identity] = subject_key
+            seen_entries[entry_identity] = entry
 
         return mapping
 
@@ -131,32 +166,86 @@ class ValidateReviewSemanticsMixin:
         self,
         workflow_body: ResolvedWorkflowBody,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[ReviewContractGate, ...]:
         if workflow_body.law is not None:
-            raise CompileError(f"Review contract may not define workflow law in {owner_label}")
+            raise review_compile_error(
+                code="E477",
+                summary="Invalid review contract target",
+                detail=f"Review contract uses unsupported workflow features in {owner_label}.",
+                unit=unit,
+                source_span=workflow_body.law.source_span,
+            )
 
         gates: list[ReviewContractGate] = []
-        seen: set[str] = set()
+        seen: dict[str, ReviewContractGate] = {}
         for item in workflow_body.items:
             if isinstance(item, ResolvedWorkflowSkillsItem):
-                raise CompileError(f"Review contract may not define skills in {owner_label}")
+                raise review_compile_error(
+                    code="E477",
+                    summary="Invalid review contract target",
+                    detail=f"Review contract uses unsupported workflow features in {owner_label}.",
+                    unit=unit,
+                    source_span=item.source_span,
+                )
             if isinstance(item, ResolvedSectionItem):
-                if item.key in seen:
-                    raise CompileError(f"Duplicate review contract gate in {owner_label}: {item.key}")
-                seen.add(item.key)
-                gates.append(ReviewContractGate(key=item.key, title=item.title))
+                first_gate = seen.get(item.key)
+                if first_gate is not None:
+                    raise review_compile_error(
+                        code="E477",
+                        summary="Invalid review contract target",
+                        detail=f"Duplicate review contract gate in {owner_label}: {item.key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            ()
+                            if first_gate.unit is None or first_gate.source_span is None
+                            else (
+                                review_related_site(
+                                    label=f"first `{item.key}` gate",
+                                    unit=first_gate.unit,
+                                    source_span=first_gate.source_span,
+                                ),
+                            )
+                        ),
+                    )
+                gate = ReviewContractGate(
+                    key=item.key,
+                    title=item.title,
+                    unit=unit,
+                    source_span=item.source_span,
+                )
+                seen[item.key] = gate
+                gates.append(gate)
                 continue
             nested = self._collect_review_contract_gates(
                 self._resolve_workflow_decl(item.workflow_decl, unit=item.target_unit),
+                unit=item.target_unit,
                 owner_label=owner_label,
             )
             for gate in nested:
-                if gate.key in seen:
-                    raise CompileError(
-                        f"Duplicate review contract gate in {owner_label}: {gate.key}"
+                first_gate = seen.get(gate.key)
+                if first_gate is not None:
+                    raise review_compile_error(
+                        code="E477",
+                        summary="Invalid review contract target",
+                        detail=f"Duplicate review contract gate in {owner_label}: {gate.key}",
+                        unit=gate.unit or unit,
+                        source_span=gate.source_span,
+                        related=(
+                            ()
+                            if first_gate.unit is None or first_gate.source_span is None
+                            else (
+                                review_related_site(
+                                    label=f"first `{gate.key}` gate",
+                                    unit=first_gate.unit,
+                                    source_span=first_gate.source_span,
+                                ),
+                            )
+                        ),
                     )
-                seen.add(gate.key)
+                seen[gate.key] = gate
                 gates.append(gate)
         return tuple(gates)
 
@@ -164,17 +253,41 @@ class ValidateReviewSemanticsMixin:
         self,
         schema_body: ResolvedSchemaBody,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[ReviewContractGate, ...]:
         gates: list[ReviewContractGate] = []
-        seen: set[str] = set()
+        seen: dict[str, model.SchemaGate] = {}
         for item in schema_body.gates:
-            if item.key in seen:
-                raise CompileError(
-                    f"Duplicate review contract gate in {owner_label}: {item.key}"
+            first_gate = seen.get(item.key)
+            if first_gate is not None:
+                raise review_compile_error(
+                    code="E477",
+                    summary="Invalid review contract target",
+                    detail=f"Duplicate review contract gate in {owner_label}: {item.key}",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        ()
+                        if first_gate.source_span is None
+                        else (
+                            review_related_site(
+                                label=f"first `{item.key}` gate",
+                                unit=unit,
+                                source_span=first_gate.source_span,
+                            ),
+                        )
+                    ),
                 )
-            seen.add(item.key)
-            gates.append(ReviewContractGate(key=item.key, title=item.title))
+            seen[item.key] = item
+            gates.append(
+                ReviewContractGate(
+                    key=item.key,
+                    title=item.title,
+                    unit=unit,
+                    source_span=item.source_span,
+                )
+            )
         return tuple(gates)
 
     def _review_output_path_is_live(

@@ -44,25 +44,11 @@ Use the current draft spec as the reviewed artifact.
 - Shape: Comment
 - Requirement: Required
 
-#### Verdict
-
-Say whether the review accepted the draft or asked for changes.
-
-#### Reviewed Artifact
-
-Name the reviewed artifact this review judged.
-
-#### Analysis Performed
-
-Sum up the review work that led to the verdict.
-
-#### Output Contents That Matter
-
-Summarize the parts of the draft the next owner must read first.
-
-#### Next Owner
-
-Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
+- Verdict: Say whether the review accepted the draft or asked for changes.
+- Reviewed Artifact: Name the reviewed artifact this review judged.
+- Analysis Performed: Sum up the review work that led to the verdict.
+- Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
+- Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 #### Failure Detail
 
@@ -72,6 +58,4 @@ Show this only when verdict is changes requested.
 
 Name the failing review gates in authored order.
 
-#### Standalone Read
-
-This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.
+- Standalone Read: This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.

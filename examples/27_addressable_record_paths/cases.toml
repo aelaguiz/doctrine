@@ -27,23 +27,35 @@ expected_lines = [
   "",
   "#### Concepts Terms Skill",
   "",
-  "##### Purpose",
+  "**Purpose**",
   "",
   "Use Concept Ladder Table before you finalize the document.",
   "",
-  "- Canonical Table: Concept Ladder Table",
-  "- Canonical Path: `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`",
+  "**Canonical Table**",
+  "",
+  "Concept Ladder Table",
+  "",
+  "**Canonical Path**",
+  "",
+  "`section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`",
   "",
   "## Outputs",
   "",
   "### Section Concepts Terms File",
   "",
-  "- Target: File",
-  "- Path: `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `section_root/_authoring/SECTION_CONCEPTS_AND_TERMS.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "#### Must Include",
+  "",
+  "| Field | What to write |",
+  "| --- | --- |",
+  "| **Analysis** | See the detail below. |",
+  "| **Concept IDs** | Keep ids stable when the section already has accepted concepts. |",
   "",
   "##### Analysis",
   "",
@@ -52,10 +64,6 @@ expected_lines = [
   "####### Concept Ladder Table",
   "",
   "Map what earlier sections already taught and what the learner should learn next.",
-  "",
-  "##### Concept IDs",
-  "",
-  "Keep ids stable when the section already has accepted concepts.",
 ]
 
 [[cases]]
@@ -66,10 +74,7 @@ prompt = "prompts/INVALID_UNKNOWN_RECORD_PATH.prompt"
 agent = "InvalidUnknownRecordPathDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on workflow strings",
-  "SectionConceptsTermsFileOutput:must_include.analysis.tables.missing_table",
-]
+location_path = "prompts/INVALID_UNKNOWN_RECORD_PATH.prompt"
 
 [[cases]]
 name = "deep record path cannot walk past a scalar leaf"
@@ -79,7 +84,4 @@ prompt = "prompts/INVALID_NON_ADDRESSABLE_RECORD_PATH.prompt"
 agent = "InvalidNonAddressableRecordPathDemo"
 exception_type = "CompileError"
 error_code = "E274"
-message_contains = [
-  "Addressable path must stay addressable on workflow strings",
-  "SectionConceptsTermsFileOutput:target.path.file_name",
-]
+location_path = "prompts/INVALID_NON_ADDRESSABLE_RECORD_PATH.prompt"

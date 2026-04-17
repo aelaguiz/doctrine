@@ -1,0 +1,10 @@
+output HandoffOutput: "Handoff Output"
+    target: TurnResponse
+    shape: Comment
+
+    must_include: "Must Include"
+        what_changed: "What Changed"
+            "Say what changed."
+
+        use_now: "Use Now"
+            "Give the pickup summary."

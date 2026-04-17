@@ -52,29 +52,12 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the draft or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Summarize the parts of the draft the next owner must read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Name the artifact that remains current after this review outcome.",
+  "- Verdict: Say whether the review accepted the draft or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Summarize the parts of the draft the next owner must read first.",
+  "- Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.",
+  "- Current Artifact: Name the artifact that remains current after this review outcome.",
   "",
   "#### Failure Detail",
   "",
@@ -86,13 +69,10 @@ expected_lines = [
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, what is still current, who owns next, and which parts of the draft matter now.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, what is still current, who owns next, and which parts of the draft matter now.",
 ]
-
 [[cases]]
 name = "review currentness requires a declared output carrier"
 status = "active"
@@ -100,11 +80,8 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_CURRENT_ARTIFACT_BAD_CARRIER.prompt"
 agent = "InvalidCurrentArtifactBadCarrierDemo"
 exception_type = "CompileError"
-error_code = "E487"
-message_contains = [
-  "MissingReviewComment.current_artifact",
-  "concrete-turn output",
-]
+error_code = "E299"
+location_line = 71
 
 [[cases]]
 name = "review currentness carriers must be trusted explicitly"
@@ -114,10 +91,7 @@ prompt = "prompts/INVALID_CARRIER_NOT_IN_TRUST_SURFACE.prompt"
 agent = "InvalidCarrierNotInTrustSurfaceDemo"
 exception_type = "CompileError"
 error_code = "E488"
-message_contains = [
-  "trust_surface",
-  "current_artifact",
-]
+location_line = 68
 
 [[cases]]
 name = "review currentness carrier fields must disappear on current-none branches"
@@ -127,9 +101,9 @@ prompt = "prompts/INVALID_CURRENT_NONE_REQUIRES_GUARDED_CARRIER.prompt"
 agent = "InvalidCurrentNoneRequiresGuardedCarrierDemo"
 exception_type = "CompileError"
 error_code = "E497"
-message_contains = [
-  "current none",
-  "CurrentTruthReviewComment.current_artifact",
+location_line = 85
+related = [
+    { label = "carrier field", line = 49 },
 ]
 
 [[cases]]
@@ -140,10 +114,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_OUTSIDE_SUBJECT.prompt"
 agent = "InvalidCurrentArtifactOutsideSubjectDemo"
 exception_type = "CompileError"
 error_code = "E469"
-message_contains = [
-  "Review current artifact must stay rooted in a review subject or emitted output",
-  "OtherSpec",
-]
+location_line = 79
 
 [[cases]]
 name = "review currentness can switch inline on blocked rejects"
@@ -211,31 +182,12 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the draft or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged. When review blocks before content review starts, name the producer handoff instead of pretending the draft stayed current.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Summarize the parts of the draft or producer handoff the next owner must read first.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Show this only when present(current_artifact).",
-  "",
-  "Name the artifact that remains current after this review outcome.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when review blocks or rejects the draft.",
+  "- Verdict: Say whether the review accepted the draft or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged. When review blocks before content review starts, name the producer handoff instead of pretending the draft stayed current.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Summarize the parts of the draft or producer handoff the next owner must read first.",
+  "- Current Artifact: Show this only when present(current_artifact). Name the artifact that remains current after this review outcome.",
+  "- Next Owner: Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when review blocks or rejects the draft.",
   "",
   "#### Failure Detail",
   "",
@@ -255,7 +207,5 @@ expected_lines = [
   "",
   "- Current Artifact when present(current_artifact)",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know if review stopped before content review began, what is still current, who owns next, and which parts of the draft or producer handoff still matter.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know if review stopped before content review began, what is still current, who owns next, and which parts of the draft or producer handoff still matter.",
 ]

@@ -1,0 +1,378 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DoctrineAgentLinterReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "run_mode",
+    "fail_threshold",
+    "strict_mode_blocked",
+    "summary",
+    "next_actions",
+    "counts",
+    "targets",
+    "packet_gaps",
+    "findings"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "error"
+      ]
+    },
+    "run_mode": {
+      "type": "string",
+      "enum": [
+        "single-target",
+        "batch"
+      ]
+    },
+    "fail_threshold": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "strict_mode_blocked": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "properties": {
+        "high": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medium": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "low": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "packet_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "reason",
+          "effect"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "title",
+          "severity",
+          "confidence",
+          "run_mode",
+          "scope",
+          "affected_targets",
+          "principle_rule",
+          "summary",
+          "evidence",
+          "related_evidence",
+          "why_it_matters",
+          "recommended_fix",
+          "fix_steps",
+          "suggested_rewrite",
+          "shared_owner_suggestion",
+          "good_example",
+          "bad_example"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "AL100",
+              "AL110",
+              "AL120",
+              "AL130",
+              "AL200",
+              "AL210",
+              "AL220",
+              "AL230",
+              "AL240",
+              "AL300",
+              "AL310",
+              "AL320",
+              "AL400",
+              "AL410",
+              "AL420",
+              "AL430",
+              "AL500",
+              "AL510",
+              "AL520",
+              "AL530",
+              "AL540",
+              "AL550",
+              "AL600",
+              "AL610",
+              "AL700",
+              "AL710",
+              "AL720",
+              "AL730",
+              "AL800",
+              "AL810",
+              "AL820",
+              "AL900",
+              "AL910",
+              "AL920"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "run_mode": {
+            "type": "string",
+            "enum": [
+              "single-target",
+              "batch"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "single-target",
+              "single-target-with-imports",
+              "cross-target",
+              "cross-surface"
+            ]
+          },
+          "affected_targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "principle_rule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "target_name",
+                "source_kind",
+                "source_ref",
+                "text"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "target_name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_kind": {
+                  "type": "string",
+                  "enum": [
+                    "authored_source",
+                    "emitted_markdown",
+                    "imported_skill",
+                    "imported_module",
+                    "declared_constraint",
+                    "duplicate_hint"
+                  ]
+                },
+                "source_ref": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "minItems": 1
+          },
+          "related_evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "target_name",
+                "source_kind",
+                "source_ref",
+                "text"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "target_name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_kind": {
+                  "type": "string",
+                  "enum": [
+                    "authored_source",
+                    "emitted_markdown",
+                    "imported_skill",
+                    "imported_module",
+                    "declared_constraint",
+                    "duplicate_hint"
+                  ]
+                },
+                "source_ref": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "why_it_matters": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recommended_fix": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fix_steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "suggested_rewrite": {
+            "type": "string"
+          },
+          "shared_owner_suggestion": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "name",
+                  "rationale"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "skill",
+                      "module",
+                      "contract",
+                      "other"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "good_example": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bad_example": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

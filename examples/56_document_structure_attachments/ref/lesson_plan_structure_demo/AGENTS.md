@@ -28,18 +28,14 @@ List the lesson steps in order.
 
 ### Next Lesson Plan
 
-- Target: File
-- Path: `lesson_root/NEXT_LESSON_PLAN.md`
-- Shape: Markdown Document
-- Requirement: Required
-- Structure: Lesson Plan
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `lesson_root/NEXT_LESSON_PLAN.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
+| Structure | Lesson Plan |
 
-#### Structure: Lesson Plan
-
-##### Overview
-
-Start with the plan overview.
-
-##### Sequence
-
-List the lesson steps in order.
+Required Structure:
+- Overview: Start with the plan overview.
+- Sequence: List the lesson steps in order.

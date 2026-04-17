@@ -1,0 +1,51 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "RepoStatusAgent",
+    "slug": "repo_status_agent",
+    "entrypoint": "examples/79_final_output_output_schema/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": false,
+    "behavior": "never",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": []
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "RepoStatusFinalResponse",
+    "declaration_name": "RepoStatusFinalResponse",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/repo_status_final_response.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "RepoStatusFinalResponse",
+        "declaration_name": "RepoStatusFinalResponse",
+        "title": "Repo Status Final Response",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "RepoStatusJson",
+          "title": "Repo Status JSON"
+        },
+        "schema": {
+          "name": "RepoStatusSchema",
+          "title": "Repo Status Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
+  }
+}

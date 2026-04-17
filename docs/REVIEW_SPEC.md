@@ -7,6 +7,8 @@ conventions.
 
 For the language overview, use [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md).
 For the numbered proof ladder, use [../examples/README.md](../examples/README.md).
+If you first need to decide whether the turn should be a `review` at all, use
+[AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md).
 
 ## Mental Model
 
@@ -23,7 +25,10 @@ This is the same split workflow law uses for producer turns:
 
 - semantic truth stays compiler-owned
 - emitted contracts stay on declared outputs
-- there is no review-only packet, route payload, or shadow trust channel
+- there is no review-only route packet or shadow trust channel
+- when `emit_docs` writes `final_output.contract.json`, the shared top-level
+  `route` block carries the resolved route target for review and non-review
+  turns alike
 
 ## Surface Overview
 
@@ -118,12 +123,12 @@ review DraftReview: "Draft Review"
     comment_output: DraftReviewComment
 
     fields:
-        verdict: verdict
-        reviewed_artifact: reviewed_artifact
+        verdict
+        reviewed_artifact
         analysis: analysis_performed
         readback: output_contents_that_matter
         failing_gates: failure_detail.failing_gates
-        next_owner: next_owner
+        next_owner
 ```
 
 ## Review Families And Case Selection
@@ -192,6 +197,12 @@ These bindings are relative to `comment_output`.
 
 Important rule:
 
+- a bare semantic name like `verdict` is shorthand for the identity bind
+  `verdict: verdict`
+- use the bare form only when the output field key matches the review semantic
+  name
+- keep `semantic: path` for non-identity binds like
+  `analysis: analysis_performed`
 - `fields:` does not alias currentness. Review currentness still uses the
   direct carrier form `current artifact ... via output_root.field`.
 
@@ -226,6 +237,9 @@ Important rules:
   do not share the same routed owner
 - split review `final_output:` contracts may consume the same `route.*` truth
   without replacing `comment_output` as the durable review carrier
+- the emitted `final_output.contract.json` file uses the same top-level
+  `route` block for review carrier finals and split finals. It also keeps the
+  existing `review` block for review-specific control metadata.
 
 ## Pre-Outcome Review Logic
 
@@ -326,7 +340,8 @@ Important rules:
 - every terminal review branch must resolve exactly one currentness result
 - a terminal review branch may route or stop without a route
 - when some review outcomes route and others do not, the companion contract
-  reports that route behavior per normalized outcome
+  reports normalized review outcome behavior and the top-level `route` block
+  marks the whole final response as `conditional`
 - blocked outcomes may use `current none`, including guarded
   `current none when present(blocked_gate)` splits
 - carried fields remain on emitted output fields, not on routes
@@ -392,14 +407,17 @@ That split final output may also bind a review-semantic subset:
 final_output:
     output: AcceptanceControlFinalResponse
     review_fields:
-        verdict: verdict
+        verdict
         current_artifact: current_artifact
-        next_owner: next_owner
+        next_owner
         blocked_gate: blocked_gate
 ```
 
 The compiler emits whether that split final response is `control_ready`.
 Authors do not declare that mode by hand.
+The same companion contract also emits the top-level `route` block. Use that
+block for runtime routing. Use the `review` block for carrier fields,
+`review_fields`, and `control_ready`.
 Imported reusable review comments keep that same behavior: the bound output
 field still lives on the imported `comment_output`, while bare owner refs that
 are missing from the imported module may still bind the concrete review's

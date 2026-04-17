@@ -15,6 +15,7 @@ from lark.exceptions import (
 from doctrine._diagnostics.contracts import (
     DiagnosticExcerptLine,
     DiagnosticLocation,
+    DiagnosticRelatedLocation,
     DiagnosticTraceFrame,
     DoctrineDiagnostic,
     TransformParseFailure,
@@ -26,10 +27,7 @@ from doctrine._diagnostics.formatting import (
     _format_location,
     _json_safe_value,
 )
-from doctrine._diagnostics.message_builders import (
-    _compile_diagnostic_from_message,
-    _emit_diagnostic_from_message,
-)
+from doctrine._diagnostics.message_builders import _emit_diagnostic_from_message
 from doctrine._diagnostics.parse_errors import (
     _classify_unexpected_token,
     _extract_toml_decode_position,
@@ -52,10 +50,6 @@ def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -
     if diagnostic.location is not None:
         lines.extend(["", "Location:", f"- {_format_location(diagnostic.location)}"])
 
-    if diagnostic.detail:
-        lines.extend(["", "Detail:"])
-        lines.extend(_format_block(diagnostic.detail))
-
     if diagnostic.excerpt:
         lines.extend(["", "Source:"])
         lines.extend(
@@ -65,6 +59,28 @@ def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -
                 caret_column=diagnostic.caret_column,
             )
         )
+
+    if diagnostic.related:
+        lines.extend(["", "Related:"])
+        for related in diagnostic.related:
+            location_text = "<unknown>"
+            if related.location is not None:
+                location_text = _format_location(related.location)
+            lines.append(f"- {related.label}: {location_text}")
+            if related.excerpt:
+                lines.extend(
+                    _format_excerpt(
+                        related.excerpt,
+                        highlight_line=(
+                            related.location.line if related.location is not None else None
+                        ),
+                        caret_column=related.caret_column,
+                    )
+                )
+
+    if diagnostic.detail:
+        lines.extend(["", "Detail:"])
+        lines.extend(_format_block(diagnostic.detail))
 
     if diagnostic.trace:
         lines.extend(["", "Trace:"])
@@ -124,6 +140,7 @@ class DoctrineError(RuntimeError):
         location: DiagnosticLocation | None = None,
         excerpt: tuple[DiagnosticExcerptLine, ...] = (),
         caret_column: int | None = None,
+        related: tuple[DiagnosticRelatedLocation, ...] = (),
         hints: tuple[str, ...] = (),
         trace: tuple[DiagnosticTraceFrame, ...] = (),
         cause: str | None = None,
@@ -137,6 +154,7 @@ class DoctrineError(RuntimeError):
                 location=location,
                 excerpt=excerpt,
                 caret_column=caret_column,
+                related=related,
                 hints=hints,
                 trace=trace,
                 cause=cause,
@@ -163,11 +181,53 @@ class DoctrineError(RuntimeError):
         line: int | None = None,
         column: int | None = None,
     ) -> DoctrineError:
-        if self.diagnostic.location is not None:
+        current_location = self.diagnostic.location
+        resolved_path = (
+            current_location.path
+            if current_location is not None and current_location.path is not None
+            else path
+        )
+        resolved_line = line if line is not None else (
+            current_location.line if current_location is not None else None
+        )
+        resolved_column = column if column is not None else (
+            current_location.column if current_location is not None else None
+        )
+        if (
+            current_location is not None
+            and current_location.path == resolved_path
+            and current_location.line == resolved_line
+            and current_location.column == resolved_column
+            and self.diagnostic.excerpt
+        ):
             return self
+        excerpt = self.diagnostic.excerpt
+        caret_column = self.diagnostic.caret_column
+        if (
+            not excerpt
+            and resolved_path is not None
+            and resolved_line is not None
+            and resolved_column is not None
+        ):
+            try:
+                source = Path(resolved_path).read_text(encoding="utf-8")
+            except OSError:
+                pass
+            else:
+                excerpt, caret_column = _build_excerpt(
+                    source,
+                    line=resolved_line,
+                    column=resolved_column,
+                )
         self.diagnostic = replace(
             self.diagnostic,
-            location=DiagnosticLocation(path=path, line=line, column=column),
+            location=DiagnosticLocation(
+                path=resolved_path,
+                line=resolved_line,
+                column=resolved_column,
+            ),
+            excerpt=excerpt,
+            caret_column=caret_column,
         )
         self.args = (format_diagnostic(self.diagnostic),)
         return self
@@ -279,9 +339,6 @@ class CompileError(DoctrineError):
     stage = "compile"
     fallback_code = "E299"
     fallback_summary = "Compile failure"
-
-    def _diagnostic_from_message(self, message: str) -> DoctrineDiagnostic:
-        return _compile_diagnostic_from_message(message)
 
 
 class EmitError(DoctrineError):

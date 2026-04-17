@@ -4,16 +4,18 @@ Carry a newly produced artifact as the current downstream truth.
 
 Keep one current artifact explicit and portable.
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 ## Outputs
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff
 
@@ -21,14 +23,10 @@ Current artifact: Section Metadata.
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact is current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.

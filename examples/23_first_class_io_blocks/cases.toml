@@ -42,10 +42,12 @@ expected_lines = [
   "",
   "#### Durable Section Truth",
   "",
-  "- Target: File",
-  "- Path: `section_root/_authoring/durable_section_truth.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `section_root/_authoring/durable_section_truth.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "### Coordination Handoff",
   "",
@@ -55,7 +57,6 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
 ]
-
 [[cases]]
 name = "wrong-kind first-class io field refs fail loud"
 status = "active"
@@ -64,7 +65,4 @@ prompt = "prompts/INVALID_WRONG_KIND_FIELD_REF.prompt"
 agent = "InvalidWrongKindFieldRef"
 exception_type = "CompileError"
 error_code = "E248"
-message_contains = [
-  "Inputs fields must resolve to inputs blocks, not outputs blocks",
-  "SharedSectionOutputs",
-]
+location_line = 26

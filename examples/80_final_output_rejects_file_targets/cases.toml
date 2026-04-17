@@ -8,8 +8,7 @@ kind = "compile_fail"
 agent = "InvalidFileFinalOutputAgent"
 exception_type = "CompileError"
 error_code = "E213"
-message_contains = [
-  "Final output must designate one TurnResponse message",
-  "ReleaseNotesFile",
-  "TurnResponse",
+location_line = 2
+related = [
+    { label = "`final_output` field", line = 14 },
 ]

@@ -13,7 +13,7 @@ expected_lines = [
   "",
   "## Rewrite-Aware Polish",
   "",
-  "Current artifact: Section Metadata.",
+  "The current artifact is Section Metadata.",
   "",
   "Accepted Peer Set is support only for comparison.",
   "",
@@ -49,10 +49,12 @@ expected_lines = [
   "",
   "### Section Metadata",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/section_metadata.json`",
-  "- Shape: Json Object",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/section_metadata.json` |",
+  "| Shape | Json Object |",
+  "| Requirement | Required |",
   "",
   "### Coordination Handoff",
   "",
@@ -60,29 +62,18 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Comparison Basis",
-  "",
-  "Name any comparison-only inputs used in this pass.",
-  "",
-  "#### Rewrite Evidence Exclusions",
-  "",
-  "Name any fields whose old values do not count as rewrite evidence.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Comparison Basis: Name any comparison-only inputs used in this pass.",
+  "- Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Comparison Basis",
+  "- `Current Artifact`",
+  "- `Comparison Basis`",
   "- Rewrite Evidence Exclusions on rewrite passes",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current, what was comparison-only, and what old wording no longer counts as rewrite evidence.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current, what was comparison-only, and what old wording no longer counts as rewrite evidence.",
 ]
-
 [[cases]]
 name = "comparison support cannot also be ignored for comparison"
 status = "active"
@@ -91,8 +82,9 @@ prompt = "prompts/INVALID_SUPPORT_ONLY_AND_IGNORE_COMPARISON_CONTRADICTION.promp
 agent = "InvalidSupportOnlyAndIgnoreComparisonContradiction"
 exception_type = "CompileError"
 error_code = "E362"
-message_contains = [
-  "Comparison-only basis contradiction",
+location_line = 45
+related = [
+    { label = "overlapping `support_only` statement", line = 42 },
 ]
 
 [[cases]]
@@ -103,6 +95,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_IGNORED_FOR_TRUTH.prompt"
 agent = "InvalidCurrentArtifactIgnoredForTruth"
 exception_type = "CompileError"
 error_code = "E361"
-message_contains = [
-  "Current artifact ignored for truth",
+location_line = 35
+related = [
+    { label = "current artifact statement", line = 32 },
 ]

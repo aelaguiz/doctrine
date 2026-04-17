@@ -1,0 +1,21 @@
+{
+  "title": "Turn Result Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "next_owner": {
+      "title": "Next Owner",
+      "description": "The routed next owner key.",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "description": "Short closeout summary.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "next_owner",
+    "summary"
+  ]
+}

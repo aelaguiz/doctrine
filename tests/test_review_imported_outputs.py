@@ -33,7 +33,7 @@ class ReviewImportedOutputsTests(unittest.TestCase):
     def test_imported_review_comment_output_can_bind_local_routed_agents(self) -> None:
         agent = self._compile_agent(
             """
-            import shared.review
+            from shared.review import DraftReviewComment as ImportedComment
 
             input DraftSpec: "Draft Spec"
                 source: File
@@ -58,26 +58,26 @@ class ReviewImportedOutputsTests(unittest.TestCase):
             review DraftReview: "Draft Review"
                 subject: DraftSpec
                 contract: DraftReviewContract
-                comment_output: shared.review.DraftReviewComment
+                comment_output: ImportedComment
 
                 fields:
-                    verdict: verdict
-                    reviewed_artifact: reviewed_artifact
+                    verdict
+                    reviewed_artifact
                     analysis: analysis_performed
                     readback: output_contents_that_matter
-                    current_artifact: current_artifact
+                    current_artifact
                     failing_gates: failure_detail.failing_gates
-                    next_owner: next_owner
+                    next_owner
 
                 contract_checks: "Contract Checks"
                     accept "The shared draft review contract passes." when contract.passes
 
                 on_accept: "If Accepted"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via ImportedComment.current_artifact
                     route "Accepted draft returns to ReviewLead." -> ReviewLead
 
                 on_reject: "If Rejected"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via ImportedComment.current_artifact
                     route "Rejected draft returns to DraftAuthor." -> DraftAuthor
 
             agent ImportedDraftReviewDemo:
@@ -86,7 +86,7 @@ class ReviewImportedOutputsTests(unittest.TestCase):
                 inputs: "Inputs"
                     DraftSpec
                 outputs: "Outputs"
-                    shared.review.DraftReviewComment
+                    ImportedComment
             """,
             agent_name="ImportedDraftReviewDemo",
             extra_files={
@@ -141,7 +141,7 @@ class ReviewImportedOutputsTests(unittest.TestCase):
         # through the imported review binding instead of crashing on module boundaries.
         agent = self._compile_agent(
             """
-            import shared.review
+            from shared.review import DraftReviewComment as ImportedComment
 
             input DraftSpec: "Draft Spec"
                 source: File
@@ -180,26 +180,26 @@ class ReviewImportedOutputsTests(unittest.TestCase):
             review DraftReview: "Draft Review"
                 subject: DraftSpec
                 contract: DraftReviewContract
-                comment_output: shared.review.DraftReviewComment
+                comment_output: ImportedComment
 
                 fields:
-                    verdict: verdict
-                    reviewed_artifact: reviewed_artifact
+                    verdict
+                    reviewed_artifact
                     analysis: analysis_performed
                     readback: output_contents_that_matter
-                    current_artifact: current_artifact
+                    current_artifact
                     failing_gates: failure_detail.failing_gates
-                    next_owner: next_owner
+                    next_owner
 
                 contract_checks: "Contract Checks"
                     accept "The shared draft review contract passes." when contract.passes
 
                 on_accept: "If Accepted"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via ImportedComment.current_artifact
                     route "Accepted draft returns to ReviewLead." -> ReviewLead
 
                 on_reject: "If Rejected"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via ImportedComment.current_artifact
                     route "Rejected draft returns to DraftAuthor." -> DraftAuthor
 
             agent ImportedDraftReviewSplitDemo:
@@ -208,7 +208,7 @@ class ReviewImportedOutputsTests(unittest.TestCase):
                 inputs: "Inputs"
                     DraftSpec
                 outputs: "Outputs"
-                    shared.review.DraftReviewComment
+                    ImportedComment
                     DraftReviewDecision
                 final_output: DraftReviewDecision
             """,

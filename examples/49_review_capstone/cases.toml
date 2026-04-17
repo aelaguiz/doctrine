@@ -31,7 +31,7 @@ expected_lines = [
   "",
   "When ReviewState.metadata_refresh_active, ignore `MetadataRecord.previous_summary` for rewrite evidence.",
   "",
-  "Preserve exact `ApprovedBoundary.exact_scope_boundary`.",
+  "Keep `ApprovedBoundary.exact_scope_boundary` unchanged.",
   "",
   "Reject: Clarity.",
   "",
@@ -135,43 +135,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the selected subject or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the exact artifact this review judged. If a handoff-first block stopped review before content review began, name the producer handoff instead.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict. Say how Reviewed Artifact met or did not meet Clarity. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Sum up the exact parts the next owner should read first. Include any preserved boundary or rewrite-only exclusions that still matter.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Show this only when present(current_artifact).",
-  "",
-  "Name the artifact that stays current after this review outcome. Leave this out for blocked handoff-first outcomes, because no later artifact became current.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use ReviewLead for blocked or unresolved review, DraftAuthor for draft work, and MetadataAuthor for metadata work.",
-  "",
-  "#### Active Mode",
-  "",
-  "Show this only when present(active_mode).",
-  "",
-  "Name the active review mode for the current artifact.",
-  "",
-  "#### Trigger Reason",
-  "",
-  "Show this only when present(trigger_reason).",
-  "",
-  "Name the trigger reason for this live mode and artifact.",
+  "- Verdict: Say whether the review accepted the selected subject or asked for changes.",
+  "- Reviewed Artifact: Name the exact artifact this review judged. If a handoff-first block stopped review before content review began, name the producer handoff instead.",
+  "- Analysis Performed: Sum up the review work that led to the verdict. Say how Reviewed Artifact met or did not meet Clarity. Note any preserved boundary, comparison-only help, and rewrite-evidence exclusions that mattered.",
+  "- Output Contents That Matter: Sum up the exact parts the next owner should read first. Include any preserved boundary or rewrite-only exclusions that still matter.",
+  "- Current Artifact: Show this only when present(current_artifact). Name the artifact that stays current after this review outcome. Leave this out for blocked handoff-first outcomes, because no later artifact became current.",
+  "- Next Owner: Name the next owner. Use ReviewLead for blocked or unresolved review, DraftAuthor for draft work, and MetadataAuthor for metadata work.",
+  "- Active Mode: Show this only when present(active_mode). Name the active review mode for the current artifact.",
+  "- Trigger Reason: Show this only when present(trigger_reason). Name the trigger reason for this live mode and artifact.",
   "",
   "#### Failure Detail",
   "",
@@ -193,11 +164,8 @@ expected_lines = [
   "- Active Mode when present(active_mode)",
   "- Trigger Reason when present(trigger_reason)",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know if review was blocked or done, what was reviewed, what is still current, which mode and trigger reason are live, who owns next, and which exact failures still matter.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know if review was blocked or done, what was reviewed, what is still current, which mode and trigger reason are live, who owns next, and which exact failures still matter.",
 ]
-
 [[cases]]
 name = "review capstone rejects mixed current-none and current-artifact branches"
 status = "active"
@@ -206,9 +174,9 @@ prompt = "prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt"
 agent = "InvalidCurrentNoneAndCurrentArtifactDemo"
 exception_type = "CompileError"
 error_code = "E486"
-message_contains = [
-  "Review outcome resolves more than one currentness result",
-  "on_reject",
+location_line = 143
+related = [
+    { label = "first currentness result", line = 142 },
 ]
 
 [[cases]]
@@ -231,10 +199,7 @@ prompt = "prompts/INVALID_GUARD_READS_OUTPUT_FIELD.prompt"
 agent = "InvalidGuardReadsOutputFieldDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard reads disallowed source",
-  "BrokenCapstoneReviewComment.next_owner",
-]
+location_line = 43
 
 [[cases]]
 name = "review capstone keeps carried active mode guarded when some outcomes omit it"
@@ -244,10 +209,7 @@ prompt = "prompts/INVALID_UNGUARDED_ACTIVE_MODE.prompt"
 agent = "InvalidUnguardedActiveModeDemo"
 exception_type = "CompileError"
 error_code = "E499"
-message_contains = [
-  "active_mode",
-  "CarryModeReviewComment.active_mode",
-]
+location_line = 90
 
 [[cases]]
 name = "review capstone keeps blocked_gate guarded when some reject branches do not block"
@@ -257,7 +219,4 @@ prompt = "prompts/INVALID_UNGUARDED_BLOCKED_GATE.prompt"
 agent = "InvalidUnguardedBlockedGateDemo"
 exception_type = "CompileError"
 error_code = "E499"
-message_contains = [
-  "blocked_gate",
-  "BlockedGateReviewComment.failure_detail.blocked_gate",
-]
+location_line = 84

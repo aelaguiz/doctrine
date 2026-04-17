@@ -26,36 +26,22 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Accept Summary",
-  "",
-  "Show this only when route.choice is Accept.",
-  "",
-  "`Accept Summary`",
-  "",
-  "Send to AcceptanceCritic. Next owner: Acceptance Critic.",
-  "",
-  "#### Change Owner",
-  "",
-  "Show this only when route.choice is Change.",
-  "",
-  "`Change Owner`",
-  "",
-  "Change Engineer",
+  "- Accept Summary: Show this only when route.choice is Accept. `Accept Summary` Send to AcceptanceCritic. Next owner: Acceptance Critic.",
+  "- Change Owner: Show this only when route.choice is Change. `Change Owner` Change Engineer",
   "",
   "## Handoff Routing",
   "",
-  "Select one route from ProofResult.route_choice.",
+  "Choose a route from ProofResult.route_choice.",
   "Use exactly one route choice:",
   "- Accept",
   "- Change",
   "",
-  "If the route choice is Accept:",
+  "When the route choice is Accept:",
   "- Send to AcceptanceCritic.",
   "",
-  "If the route choice is Change:",
+  "When the route choice is Change:",
   "- Send to ChangeEngineer.",
 ]
-
 [[cases]]
 name = "route.summary still needs one selected branch"
 status = "active"
@@ -64,10 +50,7 @@ prompt = "prompts/INVALID_UNGUARDED_ROUTE_SUMMARY.prompt"
 agent = "InvalidRouteSummaryDemo"
 exception_type = "CompileError"
 error_code = "E347"
-message_contains = [
-  "route.summary",
-  "needs one selected route branch",
-]
+location_path = "prompts/INVALID_UNGUARDED_ROUTE_SUMMARY.prompt"
 
 [[cases]]
 name = "route.choice guards need every live route branch to come from route_from"
@@ -77,6 +60,4 @@ prompt = "prompts/INVALID_MIXED_ROUTE_CHOICE_GUARD.prompt"
 agent = "InvalidMixedRouteChoiceGuardDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "route.choice",
-]
+location_line = 19

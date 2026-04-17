@@ -8,6 +8,7 @@ from doctrine._compiler.resolve.document_blocks import ResolveDocumentBlocksMixi
 from doctrine._compiler.resolve.documents import ResolveDocumentsMixin
 from doctrine._compiler.resolve.io_contracts import ResolveIoContractsMixin
 from doctrine._compiler.resolve.law_paths import ResolveLawPathsMixin
+from doctrine._compiler.resolve.output_schemas import ResolveOutputSchemasMixin
 from doctrine._compiler.resolve.outputs import ResolveOutputsMixin
 from doctrine._compiler.resolve.refs import ResolveRefsMixin
 from doctrine._compiler.resolve.reviews import ResolveReviewsMixin
@@ -22,6 +23,7 @@ class ResolveMixin(
     ResolveSchemasMixin,
     ResolveWorkflowsMixin,
     ResolveReviewsMixin,
+    ResolveOutputSchemasMixin,
     ResolveOutputsMixin,
     ResolveRefsMixin,
     ResolveRouteSemanticsMixin,

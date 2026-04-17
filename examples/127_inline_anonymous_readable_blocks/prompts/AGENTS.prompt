@@ -1,0 +1,30 @@
+# Inline anonymous readable blocks let `code:`, `markdown:`, and `html:` appear
+# without a title or a `_code · lang_` metadata line. The renderer emits just
+# the bare fence or raw text. This is the authoring surface skills use to
+# reproduce reference `.md` files byte-for-byte.
+
+document InlineBlocksDemo: "Inline Blocks Demo"
+    code:
+        language: bash
+        text: """npx skills add .
+"""
+    markdown:
+        text: """Raw passthrough line.
+Inline `backticks` survive.
+"""
+
+
+output InlineBlocksFile: "Inline Blocks File"
+    target: File
+        path: "release_root/INLINE_BLOCKS_DEMO.md"
+    shape: MarkdownDocument
+    structure: InlineBlocksDemo
+    requirement: Required
+
+
+agent InlineBlocksAgent:
+    role: "Ship {{InlineBlocksDemo:title}} with bare fences and raw markdown."
+    workflow: "Write"
+        "Keep the inline blocks bare."
+    outputs: "Outputs"
+        InlineBlocksFile

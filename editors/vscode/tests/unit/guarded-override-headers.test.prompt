@@ -1,0 +1,17 @@
+# SYNTAX TEST "source.doctrine" "guarded override headers stay first-class"
+
+output BaseReviewComment: "Base Review Comment"
+output DraftReviewComment[BaseReviewComment]: "Draft Review Comment"
+    override current_artifact: "Current Artifact" when present(current_artifact):
+#   ^^^^^^^^ keyword.control.doctrine
+#            ^^^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                            ^ punctuation.separator.key-value.doctrine
+#                              ^^^^^^^^^^^^^^^^^^ string.quoted.double.doctrine
+#                                                 ^^^^ keyword.control.doctrine
+#                                                                               ^ punctuation.separator.key-value.doctrine
+
+        "Use `home:artifacts/poem.md` when the poem draft still stands."
+#            ^ punctuation.definition.raw.inline.begin.doctrine
+#             ^^^^^ support.type.runtime-path.root.doctrine
+#                  ^^^^^^^^^^^^^^^^^ string.unquoted.inline.runtime-path.doctrine
+#                                   ^ punctuation.definition.raw.inline.end.doctrine

@@ -98,9 +98,13 @@ def emit_target_skill(
     output_root = (output_dir_override or target.output_dir).resolve()
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
     markdown_path = emitted_dir / entrypoint_output_name(target.entrypoint)
+    contract_path = emitted_dir / "SKILL.contract.json"
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
     markdown_path.write_text(render_skill_package_markdown(compiled), encoding="utf-8")
     emitted_paths: list[Path] = [markdown_path]
+    if _should_emit_skill_package_contract_json(compiled):
+        contract_path.write_text(render_skill_package_contract_json(compiled), encoding="utf-8")
+        emitted_paths.append(contract_path)
     for bundled_file in compiled.files:
         bundled_path = emitted_dir / Path(bundled_file.path)
         bundled_path.parent.mkdir(parents=True, exist_ok=True)
@@ -119,6 +123,36 @@ def render_skill_package_markdown(compiled) -> str:
     if rendered_root:
         frontmatter_lines.append(rendered_root)
     return "\n".join(frontmatter_lines).rstrip() + "\n"
+
+
+def render_skill_package_contract_json(compiled) -> str:
+    payload = {
+        "contract_version": compiled.contract.contract_version,
+        "package": {
+            "name": compiled.contract.package_name,
+            "title": compiled.contract.package_title,
+        },
+        "host_contract": {
+            slot.key: {
+                "family": slot.family,
+                "title": slot.title,
+            }
+            for slot in compiled.contract.host_contract
+        },
+        "artifacts": {
+            artifact.path: {
+                "kind": artifact.kind,
+                **({"source": artifact.source} if artifact.source is not None else {}),
+                "referenced_host_paths": list(artifact.referenced_host_paths),
+            }
+            for artifact in compiled.contract.artifacts
+        },
+    }
+    return json.dumps(payload, indent=2, sort_keys=False) + "\n"
+
+
+def _should_emit_skill_package_contract_json(compiled) -> bool:
+    return bool(compiled.contract.host_contract or compiled.contract.artifacts)
 
 
 if __name__ == "__main__":

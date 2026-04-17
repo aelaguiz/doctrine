@@ -12,15 +12,15 @@ from doctrine._model.io import (
     InputDecl,
     InputSourceDecl,
     InputsDecl,
-    JsonSchemaDecl,
     OutputDecl,
+    OutputSchemaDecl,
     OutputShapeDecl,
     OutputTargetDecl,
     OutputsDecl,
     SkillDecl,
     SkillPackageDecl,
 )
-from doctrine._model.readable import DocumentDecl
+from doctrine._model.readable import DocumentDecl, TableDecl
 from doctrine._model.review import ReviewDecl
 from doctrine._model.schema import SchemaDecl
 from doctrine._model.workflow import (
@@ -37,6 +37,7 @@ Declaration: _TypeAlias = (
     | AnalysisDecl
     | DecisionDecl
     | SchemaDecl
+    | TableDecl
     | DocumentDecl
     | WorkflowDecl
     | RouteOnlyDecl
@@ -51,7 +52,7 @@ Declaration: _TypeAlias = (
     | OutputDecl
     | OutputTargetDecl
     | OutputShapeDecl
-    | JsonSchemaDecl
+    | OutputSchemaDecl
     | SkillDecl
     | SkillPackageDecl
     | EnumDecl

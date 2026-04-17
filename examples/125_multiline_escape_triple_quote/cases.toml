@@ -1,0 +1,47 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "escaped triple quotes survive through the markdown block body"
+status = "active"
+kind = "render_contract"
+agent = "EscapeDemoAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Ship Triple Quote Escape Demo without mangled triple quotes.",
+  "",
+  "## Write",
+  "",
+  "Keep the escaped triple-quote sequence intact.",
+  "",
+  "## Outputs",
+  "",
+  "### Escape Demo File",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/ESCAPE_DEMO.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Triple Quote Escape Demo |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Triple Quote Escape Demo` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Python Snippet** | Markdown Block | See the detail below. |",
+  "",
+  "##### Python Snippet",
+  "",
+  "_Advisory · markdown_",
+  "",
+  "",
+  "Python docstring example:",
+  "",
+  "\"\"\"",
+  "Return the shipped proof link.",
+  "\"\"\"",
+]

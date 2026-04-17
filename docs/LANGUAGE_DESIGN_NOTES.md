@@ -30,14 +30,67 @@ For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 - Keep public docs and examples generic rather than importing product-specific
   jargon from other repos.
 
+## Named Table Design
+
+First-class `table` declarations follow Doctrine's normal named-type pattern.
+The declaration owns the reusable table contract. The document use site owns
+the local key and local rows. This is why the syntax is
+`table release_gates: ReleaseGates`, not a generic `ref:` field or a path to a
+table hidden inside another document. The compiler lowers named table use back
+to the ordinary document table path, so rendering and inheritance stay the
+same.
+
+## Readable Block Parity
+
+Every readable block kind has two forms. The named form takes a CNAME key and
+a heading string, like `definitions done_when: "Done When"`. The bare form
+drops both, like `definitions:`. The named form gives the block an address
+and a visible H3 heading with a `_kind · ..._` descriptor. The bare form
+renders the body straight into the surrounding section, with no heading and
+no descriptor. Authors reach for the named form when another declaration must
+point at the block, when metadata like `required`, `advisory`, or `when`
+needs to attach, or when the author wants the heading to stand out. They
+reach for the bare form when the block is just body prose inside a section.
+This parity holds for `definitions`, `callout`, `table`, `footnotes`,
+`image`, `bullets`, `sequence`, `checklist`, `code`, `markdown`, and `html`,
+so the language does not force an H3 heading on authors who just want the
+body.
+
+## String Literals
+
+Single-line strings use `"..."` with standard Python escapes (`\"`, `\\`,
+`\n`, `\t`, `\xHH`, `\uHHHH`). Multiline prose uses `"""..."""`. The body of
+a triple-quoted string may contain up to two consecutive quotes on its own.
+To embed a literal `"""` sequence, escape the first quote as `\"""`. This
+keeps docstring-style teaching examples and prompt-within-prompt prose
+expressible without a new delimiter. All escape semantics match Python so
+authors can reuse what they already know.
+
+## Output Inheritance Design
+
+`output X[Parent]` reuses the same explicit-inherit, explicit-override shape
+that `workflow`, `review`, `document`, and IO blocks already use. A child
+names every parent entry it keeps with `inherit`, and every change it makes
+with `override`. This keeps output composition loud at authoring time and
+avoids implicit merge rules. Route fields, attachments, readable blocks, and
+trust surfaces all take part in the same composition.
+
+## Skill Package Host Binding Design
+
+`host_contract:` lets a `skill package` declare the typed slots it needs
+from its host. `bind:` in the calling agent fills those slots once. Emitted
+documents and bundled agents inside the package read their host facts
+through `host:` refs. The design keeps package bodies reusable and keeps the
+typed link explicit, instead of repeating host IO prose across every inline
+skill bridge. `SKILL.contract.json` makes the same link machine-readable for
+harnesses that load the package.
+
 ## Shipped Boundaries
 
-Doctrine's current shipped surface runs through the numbered corpus up to
-`examples/106_review_split_final_output_json_schema_partial`.
-
-Use [../examples/README.md](../examples/README.md) for the full proof ladder.
-This section keeps the boundary broad so the design notes do not stale again
-every time the corpus grows.
+Doctrine's current shipped surface is proven across the numbered corpus listed
+in [../examples/README.md](../examples/README.md).
+Keep the exact example boundary there so these design notes stay durable as
+the corpus grows.
 
 That shipped surface includes:
 
@@ -47,11 +100,13 @@ That shipped surface includes:
 - readable refs, addressable paths, and interpolation
 - workflow law, `handoff_routing`, `route_only`, and `grounding`
 - first-class `review`, `review_family`, and review-driven `final_output`
+- structured `final_output:` contracts through `output schema`, plus generated
+  schema artifacts for `JsonObject` final answers
 - concrete-turn bindings and bound roots for law and review carriers
 - `analysis`, `decision`, owner-aware `schema:` / `structure:`, readable
-  `document` blocks, first-class schema artifacts/groups, multiline code
-  blocks, schema-backed review contracts, and shared route semantics such as
-  `route_from`
+  `document` blocks, first-class named `table` declarations, first-class
+  schema artifacts/groups, multiline code blocks, schema-backed review
+  contracts, and shared route semantics such as `route_from`
 - title-bearing concrete-agent heads plus enum-member key/title/wire identity
   projections
 - authored `render_profile`, compact `properties`, explicit readable guard
@@ -69,6 +124,10 @@ The language intentionally does not ship:
 - implicit merge by omission for inherited structure
 - a second capability surface parallel to `skill`
 - arbitrary free-prose parsing as semantics
+- a generic readable-block `ref:` system
+- a second harness plane parallel to the host runtime
+- vibe-based or LLM-judged lint in the compiler — see
+  [WARNINGS.md](WARNINGS.md) for the scoped first-class warning plan
 
 When a new feature earns its place, the expected path is:
 

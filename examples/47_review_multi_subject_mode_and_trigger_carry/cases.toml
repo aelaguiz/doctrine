@@ -85,41 +85,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the selected subject or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Sum up the parts of the selected subject the next owner should read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use RevisionOwner in both review modes. The next owner stays the same even when the live mode and current artifact change.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Name the artifact that is current in the selected review mode.",
-  "",
-  "#### Active Mode",
-  "",
-  "Show this only when present(active_mode).",
-  "",
-  "Name the active review mode for the current artifact.",
-  "",
-  "#### Trigger Reason",
-  "",
-  "Show this only when present(trigger_reason).",
-  "",
-  "Name the trigger reason for the live artifact and mode.",
+  "- Verdict: Say whether the review accepted the selected subject or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Sum up the parts of the selected subject the next owner should read first.",
+  "- Next Owner: Name the next owner. Use RevisionOwner in both review modes. The next owner stays the same even when the live mode and current artifact change.",
+  "- Current Artifact: Name the artifact that is current in the selected review mode.",
+  "- Active Mode: Show this only when present(active_mode). Name the active review mode for the current artifact.",
+  "- Trigger Reason: Show this only when present(trigger_reason). Name the trigger reason for the live artifact and mode.",
   "",
   "#### Failure Detail",
   "",
@@ -131,15 +104,12 @@ expected_lines = [
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "- Active Mode when present(active_mode)",
   "- Trigger Reason when present(trigger_reason)",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current, which active mode chose it, what trigger reason applies, and who owns next.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current, which active mode chose it, what trigger reason applies, and who owns next.",
 ]
-
 [[cases]]
 name = "multi-subject review can reject on exact contract gates without losing carried state"
 status = "active"
@@ -229,41 +199,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the selected subject or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Sum up the parts of the selected subject the next owner should read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use RevisionOwner in both review modes.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Name the artifact that is current in the selected review mode.",
-  "",
-  "#### Active Mode",
-  "",
-  "Show this only when present(active_mode).",
-  "",
-  "Name the active review mode for the current artifact.",
-  "",
-  "#### Trigger Reason",
-  "",
-  "Show this only when present(trigger_reason).",
-  "",
-  "Name the trigger reason for the live artifact and mode.",
+  "- Verdict: Say whether the review accepted the selected subject or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Sum up the parts of the selected subject the next owner should read first.",
+  "- Next Owner: Name the next owner. Use RevisionOwner in both review modes.",
+  "- Current Artifact: Name the artifact that is current in the selected review mode.",
+  "- Active Mode: Show this only when present(active_mode). Name the active review mode for the current artifact.",
+  "- Trigger Reason: Show this only when present(trigger_reason). Name the trigger reason for the live artifact and mode.",
   "",
   "#### Failure Detail",
   "",
@@ -275,15 +218,12 @@ expected_lines = [
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "- Active Mode when present(active_mode)",
   "- Trigger Reason when present(trigger_reason)",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current, which active mode chose it, what trigger reason applies, who owns next, and which exact shared-contract gate failed.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current, which active mode chose it, what trigger reason applies, who owns next, and which exact shared-contract gate failed.",
 ]
-
 [[cases]]
 name = "multi-subject review requires disambiguation proof"
 status = "active"
@@ -292,10 +232,7 @@ prompt = "prompts/INVALID_SUBJECT_SET_WITHOUT_DISAMBIGUATION.prompt"
 agent = "InvalidSubjectSetWithoutDisambiguationDemo"
 exception_type = "CompileError"
 error_code = "E489"
-message_contains = [
-  "Review subject set requires disambiguation",
-  "on_accept",
-]
+location_line = 84
 
 [[cases]]
 name = "carried active mode requires a bound review field"
@@ -305,10 +242,7 @@ prompt = "prompts/INVALID_MISSING_ACTIVE_MODE_BINDING.prompt"
 agent = "InvalidMissingActiveModeBindingDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review fields are incomplete",
-  "active_mode",
-]
+location_line = 95
 
 [[cases]]
 name = "carried trigger reason requires a bound review field"
@@ -318,10 +252,7 @@ prompt = "prompts/INVALID_MISSING_TRIGGER_REASON_BINDING.prompt"
 agent = "InvalidMissingTriggerReasonBindingDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review fields are incomplete",
-  "trigger_reason",
-]
+location_line = 95
 
 [[cases]]
 name = "review subject_map entries must stay unique"
@@ -331,9 +262,9 @@ prompt = "prompts/INVALID_DUPLICATE_SUBJECT_MAP_ENTRY.prompt"
 agent = "MultiSubjectReviewDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Duplicate review subject_map entry",
-  "ReviewMode.draft_rewrite",
+location_line = 93
+related = [
+    { label = "first `subject_map` entry", line = 92 },
 ]
 
 [[cases]]
@@ -344,7 +275,4 @@ prompt = "prompts/INVALID_SUBJECT_MAP_TARGET_OUTSIDE_SUBJECT_SET.prompt"
 agent = "MultiSubjectReviewDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Review subject_map target must be one of the declared review subjects",
-  "ReviewFacts",
-]
+location_line = 94

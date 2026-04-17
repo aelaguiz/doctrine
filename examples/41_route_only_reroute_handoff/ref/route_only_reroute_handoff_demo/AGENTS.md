@@ -4,9 +4,9 @@ Keep explicit route-only reroutes aligned with the emitted handoff comment.
 
 Stop and reroute when the specialist output is missing and the next owner is still unclear.
 
-This pass runs only when current specialist output is missing and next owner is unknown.
+Use this pass only when current specialist output is missing and next owner is unknown.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: No specialist artifact is current for this turn.
 
@@ -30,18 +30,7 @@ Use the host route facts. They say whether the current specialist output is miss
 - Shape: Comment
 - Requirement: Required
 
-#### Current Route
-
-Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.
-
-#### Next Owner
-
-Say plainly that RoutingOwner now owns the rerouted turn.
-
-#### Next Step
-
-Name the next reroute follow-up step from the route facts.
-
-#### Standalone Read
-
-This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.
+- Current Route: Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.
+- Next Owner: Say plainly that RoutingOwner now owns the rerouted turn.
+- Next Step: Name the next reroute follow-up step from the route facts.
+- Standalone Read: This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.

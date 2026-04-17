@@ -4,28 +4,24 @@ Keep narrow ownership and preserved truth coherent through named bindings.
 
 Keep narrow ownership and preserved upstream truth attached to named bindings.
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
-Own only {`section_metadata.name`, `section_metadata.description`}.
+Only edit `section_metadata.name` and `section_metadata.description`.
 
-Preserve exact `section_metadata.*` except `section_metadata.name`, `section_metadata.description`.
+Keep `section_metadata.*` unchanged except `section_metadata.name` and `section_metadata.description`.
 
 Preserve structure `approved_boundary`.
 
 ## Inputs
 
-### Section Metadata Binding
-
-#### Section Metadata
+### Section Metadata
 
 - Source: File
 - Path: `unit_root/_authoring/section_metadata.json`
 - Shape: Json Object
 - Requirement: Required
 
-### Approved Boundary Binding
-
-#### Approved Boundary
+### Approved Boundary
 
 - Source: Prompt
 - Shape: Json Object
@@ -33,22 +29,16 @@ Preserve structure `approved_boundary`.
 
 ## Outputs
 
-### Coordination Handoff Binding
-
-#### Coordination Handoff
+### Coordination Handoff
 
 - Target: Turn Response
 - Shape: Comment
 - Requirement: Required
 
-##### Current Artifact
+- Current Artifact: Name the one artifact that is current now.
 
-Name the one artifact that is current now.
+#### Trust Surface
 
-##### Trust Surface
+- `Current Artifact`
 
-- Current Artifact
-
-##### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact is current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.

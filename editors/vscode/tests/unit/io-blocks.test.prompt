@@ -9,10 +9,31 @@ outputs SharedOutputs: "Your Outputs"
 # <----- keyword.declaration.doctrine
 #       ^ entity.name.type.doctrine
 
-    coordination_handoff: "Coordination Handoff Binding"
+skill LedgerNoteDelivery: "ledger-note-delivery"
+# <---- keyword.declaration.doctrine
+#      ^ entity.name.type.doctrine
+
+output target LedgerNoteAppend: "Ledger Note Append"
+# <----- keyword.declaration.doctrine
+#       ^ keyword.declaration.doctrine
+#              ^ entity.name.type.doctrine
+
+    delivery_skill: LedgerNoteDelivery
+#   ^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+#                   ^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    coordination_handoff: CoordinationHandoff
 #   ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
-        CoordinationHandoff
-#       ^^^^^^^^^^^^^^^^^^^ support.type.reference.doctrine
+#                       ^ punctuation.separator.key-value.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
+
+    reusable_title: self:coordination_handoff.title
+#   ^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                 ^ punctuation.separator.key-value.doctrine
+#                   ^^^^ entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+#                       ^ punctuation.separator.interpolation.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ variable.other.member.doctrine
 
 agent Reviewer:
     inputs: SharedInputs
@@ -41,6 +62,40 @@ agent Reviewer:
 #                           ^ punctuation.separator.key-value.doctrine
 #                             ^^^^^^^^^^^^^^^^ entity.name.type.reference.key-value.doctrine
 
+output schema WriterDecisionSchema: "Writer Decision Schema"
+# <---- keyword.declaration.doctrine
+#      ^^^^^^ keyword.declaration.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^ entity.name.type.doctrine
+
+    route field next_route: "Next Route"
+#   ^^^^^ keyword.other.field.doctrine
+#         ^^^^^ keyword.other.field.doctrine
+#               ^^^^^^^^^^ entity.name.section.doctrine
+#                         ^ punctuation.separator.key-value.doctrine
+#                           ^^^^^^^^^^^^ string.quoted.double.doctrine
+
+        seek_muse: "Send to Muse." -> Muse
+#       ^^^^^^^^^ entity.name.section.doctrine
+#                ^ punctuation.separator.key-value.doctrine
+#                  ^^^^^^^^^^^^^^^ string.quoted.double.doctrine
+#                                      ^^^^ entity.name.type.reference.key-value.doctrine
+
+    override route field next_route: "Next Route"
+#   ^^^^^^^^ keyword.control.doctrine
+#            ^^^^^ keyword.other.field.doctrine
+#                  ^^^^^ keyword.other.field.doctrine
+#                        ^^^^^^^^^^ entity.name.section.doctrine
+#                                  ^ punctuation.separator.key-value.doctrine
+#                                    ^^^^^^^^^^^^ string.quoted.double.doctrine
+
+agent Writer:
+    final_output:
+        output: CoordinationHandoff
+        route: next_route
+#       ^^^^^ keyword.other.field.doctrine
+#            ^ punctuation.separator.key-value.doctrine
+#              ^^^^^^^^^^ variable.other.member.doctrine
+
     outputs[SharedOutputs]: "Your Outputs"
 #   ^^^^^^^ keyword.other.field.doctrine
 #          ^ punctuation.section.inheritance.begin.doctrine
@@ -48,10 +103,14 @@ agent Reviewer:
 #                        ^ punctuation.section.inheritance.end.doctrine
 #                         ^ punctuation.separator.key-value.doctrine
 
-        inherit durable_section_truth
-#       ^^^^^^^ keyword.control.doctrine
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
+        override coordination_handoff: ReviewComment
+#       ^^^^^^^^ keyword.control.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^ entity.name.section.doctrine
+#                                    ^ punctuation.separator.key-value.doctrine
+#                                      ^^^^^^^^^^^^^ entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
 
-        inherit scoped_catalog_truth
+        inherit {durable_section_truth, scoped_catalog_truth}
 #       ^^^^^^^ keyword.control.doctrine
-#               ^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
+#               ^ punctuation.section.inheritance.begin.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ entity.name.section.reference.doctrine
+#                                                           ^ punctuation.section.inheritance.end.doctrine

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT, _SCHEMA_FAMILY_TITLES
 from doctrine._compiler.naming import _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
@@ -17,6 +18,72 @@ from doctrine._compiler.support_files import _dotted_decl_name
 
 class ResolveLawPathsMixin:
     """Enum, match, and law-path resolution helpers for ResolveMixin."""
+
+    def _law_path_wrong_kind_diagnostic(
+        self,
+        *,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+        owner_label: str,
+        statement_label: str,
+        allowed_text: str,
+        dotted_path: str,
+    ) -> CompileError:
+        if statement_label == "current artifact":
+            return compile_error(
+                code="E335",
+                summary="Current artifact target has wrong kind",
+                detail=(
+                    f"Current-artifact target `{dotted_path}` must resolve to a declared or "
+                    f"bound concrete-turn input or output in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label == "own only":
+            return compile_error(
+                code="E352",
+                summary="Owned scope target is unknown",
+                detail=(
+                    f"Owned scope target `{dotted_path}` must resolve to a declared or bound "
+                    f"concrete-turn input or output or a declared schema family in "
+                    f"{owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label.startswith("preserve "):
+            return compile_error(
+                code="E355",
+                summary="Preserve target is unknown",
+                detail=(
+                    f"`{statement_label}` target `{dotted_path}` must resolve to a "
+                    f"{allowed_text} in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        if statement_label == "invalidate":
+            return compile_error(
+                code="E373",
+                summary="Invalidation target is unknown",
+                detail=(
+                    f"Invalidation target `{dotted_path}` must resolve to a declared or bound "
+                    f"concrete-turn input, output, or schema group in {owner_label}."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=source_span,
+            )
+        return compile_error(
+            code="E299",
+            summary="Compile failure",
+            detail=(
+                f"{statement_label} target must resolve to a {allowed_text} in "
+                f"{owner_label}: {dotted_path}"
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+        )
 
     def _resolve_constant_enum_member(
         self,
@@ -157,95 +224,98 @@ class ResolveLawPathsMixin:
                 declaration_name=path.parts[split_index - 1],
             )
             try:
-                lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+                lookup_targets = self._decl_lookup_targets(ref, unit=unit)
             except CompileError:
                 continue
             remainder = path.parts[split_index:]
-            if "input" in allowed_kinds:
-                input_decl = lookup_unit.inputs_by_name.get(ref.declaration_name)
-                if input_decl is not None:
-                    matches.append(
-                        ResolvedLawPath(
-                            unit=lookup_unit,
-                            decl=input_decl,
-                            remainder=remainder,
-                            wildcard=path.wildcard,
-                        )
-                    )
-            if "output" in allowed_kinds:
-                output_decl = lookup_unit.outputs_by_name.get(ref.declaration_name)
-                if output_decl is not None:
-                    matches.append(
-                        ResolvedLawPath(
-                            unit=lookup_unit,
-                            decl=output_decl,
-                            remainder=remainder,
-                            wildcard=path.wildcard,
-                        )
-                    )
-            if "enum" in allowed_kinds:
-                enum_decl = lookup_unit.enums_by_name.get(ref.declaration_name)
-                if enum_decl is not None:
-                    matches.append(
-                        ResolvedLawPath(
-                            unit=lookup_unit,
-                            decl=enum_decl,
-                            remainder=remainder,
-                            wildcard=path.wildcard,
-                        )
-                    )
-            if "grounding" in allowed_kinds:
-                grounding_decl = lookup_unit.groundings_by_name.get(ref.declaration_name)
-                if grounding_decl is not None:
-                    matches.append(
-                        ResolvedLawPath(
-                            unit=lookup_unit,
-                            decl=grounding_decl,
-                            remainder=remainder,
-                            wildcard=path.wildcard,
-                        )
-                    )
-            if "schema_family" in allowed_kinds:
-                schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
-                if schema_decl is not None and remainder:
-                    resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
-                    family_items_by_key = {
-                        "sections": resolved_schema.sections,
-                        "gates": resolved_schema.gates,
-                        "artifacts": resolved_schema.artifacts,
-                        "groups": resolved_schema.groups,
-                    }
-                    family_items = family_items_by_key.get(remainder[0])
-                    if family_items is not None:
+            for lookup_target in lookup_targets:
+                lookup_unit = lookup_target.unit
+                target_name = lookup_target.declaration_name
+                if "input" in allowed_kinds:
+                    input_decl = lookup_unit.inputs_by_name.get(target_name)
+                    if input_decl is not None:
                         matches.append(
                             ResolvedLawPath(
                                 unit=lookup_unit,
-                                decl=SchemaFamilyTarget(
-                                    family_key=remainder[0],
-                                    title=_SCHEMA_FAMILY_TITLES[remainder[0]],
-                                    items=family_items,
-                                ),
-                                remainder=remainder[1:],
+                                decl=input_decl,
+                                remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
-            if "schema_group" in allowed_kinds:
-                schema_decl = lookup_unit.schemas_by_name.get(ref.declaration_name)
-                if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
-                    resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
-                    group = next(
-                        (item for item in resolved_schema.groups if item.key == remainder[1]),
-                        None,
-                    )
-                    if group is not None:
+                if "output" in allowed_kinds:
+                    output_decl = self._resolve_local_output_decl(target_name, unit=lookup_unit)
+                    if output_decl is not None:
                         matches.append(
                             ResolvedLawPath(
                                 unit=lookup_unit,
-                                decl=group,
-                                remainder=remainder[2:],
+                                decl=output_decl,
+                                remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
+                if "enum" in allowed_kinds:
+                    enum_decl = lookup_unit.enums_by_name.get(target_name)
+                    if enum_decl is not None:
+                        matches.append(
+                            ResolvedLawPath(
+                                unit=lookup_unit,
+                                decl=enum_decl,
+                                remainder=remainder,
+                                wildcard=path.wildcard,
+                            )
+                        )
+                if "grounding" in allowed_kinds:
+                    grounding_decl = lookup_unit.groundings_by_name.get(target_name)
+                    if grounding_decl is not None:
+                        matches.append(
+                            ResolvedLawPath(
+                                unit=lookup_unit,
+                                decl=grounding_decl,
+                                remainder=remainder,
+                                wildcard=path.wildcard,
+                            )
+                        )
+                if "schema_family" in allowed_kinds:
+                    schema_decl = lookup_unit.schemas_by_name.get(target_name)
+                    if schema_decl is not None and remainder:
+                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                        family_items_by_key = {
+                            "sections": resolved_schema.sections,
+                            "gates": resolved_schema.gates,
+                            "artifacts": resolved_schema.artifacts,
+                            "groups": resolved_schema.groups,
+                        }
+                        family_items = family_items_by_key.get(remainder[0])
+                        if family_items is not None:
+                            matches.append(
+                                ResolvedLawPath(
+                                    unit=lookup_unit,
+                                    decl=SchemaFamilyTarget(
+                                        family_key=remainder[0],
+                                        title=_SCHEMA_FAMILY_TITLES[remainder[0]],
+                                        items=family_items,
+                                    ),
+                                    remainder=remainder[1:],
+                                    wildcard=path.wildcard,
+                                )
+                            )
+                if "schema_group" in allowed_kinds:
+                    schema_decl = lookup_unit.schemas_by_name.get(target_name)
+                    if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
+                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                        group = next(
+                            (item for item in resolved_schema.groups if item.key == remainder[1]),
+                            None,
+                        )
+                        if group is not None:
+                            matches.append(
+                                ResolvedLawPath(
+                                    unit=lookup_unit,
+                                    decl=group,
+                                    remainder=remainder[2:],
+                                    wildcard=path.wildcard,
+                                )
+                            )
 
         unique_matches: list[ResolvedLawPath] = []
         seen: set[tuple[tuple[str, ...], str, tuple[str, ...], str]] = set()
@@ -263,18 +333,28 @@ class ResolveLawPathsMixin:
                 _dotted_decl_name(match.unit.module_parts, self._law_path_decl_identity(match.decl))
                 for match in unique_matches
             )
-            raise CompileError(
-                f"Ambiguous {statement_label} path in {owner_label}: "
-                f"{'.'.join(path.parts)} matches {choices}"
+            raise compile_error(
+                code="E299",
+                summary="Ambiguous law path",
+                detail=(
+                    f"Ambiguous {statement_label} path in {owner_label}: "
+                    f"{'.'.join(path.parts)} matches {choices}"
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=path.source_span,
             )
 
         allowed_text = self._law_path_allowed_text(
             allowed_kinds,
             agent_contract=agent_contract,
         )
-        raise CompileError(
-            f"{statement_label} target must resolve to a {allowed_text} in {owner_label}: "
-            f"{'.'.join(path.parts)}"
+        raise self._law_path_wrong_kind_diagnostic(
+            unit=unit,
+            source_span=path.source_span,
+            owner_label=owner_label,
+            statement_label=statement_label,
+            allowed_text=allowed_text,
+            dotted_path=".".join(path.parts),
         )
 
     def _resolve_bound_law_matches(

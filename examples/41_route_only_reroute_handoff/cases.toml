@@ -15,9 +15,9 @@ expected_lines = [
   "",
   "Stop and reroute when the specialist output is missing and the next owner is still unclear.",
   "",
-  "This pass runs only when current specialist output is missing and next owner is unknown.",
+  "Use this pass only when current specialist output is missing and next owner is unknown.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: No specialist artifact is current for this turn.",
   "",
@@ -41,23 +41,11 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Route",
-  "",
-  "Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.",
-  "",
-  "#### Next Owner",
-  "",
-  "Say plainly that RoutingOwner now owns the rerouted turn.",
-  "",
-  "#### Next Step",
-  "",
-  "Name the next reroute follow-up step from the route facts.",
-  "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.",
+  "- Current Route: Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.",
+  "- Next Owner: Say plainly that RoutingOwner now owns the rerouted turn.",
+  "- Next Step: Name the next reroute follow-up step from the route facts.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.",
 ]
-
 [[cases]]
 name = "routed next_owner fields must structurally bind the explicit reroute target"
 status = "active"
@@ -66,8 +54,7 @@ prompt = "prompts/INVALID_NEXT_OWNER_OMITS_ROUTE_TARGET.prompt"
 agent = "InvalidRouteOnlyRerouteHandoffDemo"
 exception_type = "CompileError"
 error_code = "E339"
-message_contains = [
-  "next_owner field must interpolate routed target",
-  "RerouteHandoffComment.next_owner",
-  "RoutingOwner",
+location_line = 19
+related = [
+    { label = "routed branch", line = 42 },
 ]

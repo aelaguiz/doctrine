@@ -1,0 +1,63 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "HandoffFinalOutputDemo",
+    "slug": "handoff_final_output_demo",
+    "entrypoint": "examples/91_handoff_routing_route_output_binding/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "branches": [
+      {
+        "target": {
+          "key": "ReviewLead",
+          "module_parts": [],
+          "name": "ReviewLead",
+          "title": "Review Lead"
+        },
+        "label": "Hand off to ReviewLead.",
+        "summary": "Hand off to ReviewLead. Next owner: Review Lead.",
+        "choice_members": []
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "HandoffRouteFinalResponse",
+    "declaration_name": "HandoffRouteFinalResponse",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/handoff_route_final_response.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "HandoffRouteFinalResponse",
+        "declaration_name": "HandoffRouteFinalResponse",
+        "title": "Handoff Route Final Response",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "TurnResultJson",
+          "title": "Turn Result JSON"
+        },
+        "schema": {
+          "name": "TurnResultSchema",
+          "title": "Turn Result Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
+  }
+}

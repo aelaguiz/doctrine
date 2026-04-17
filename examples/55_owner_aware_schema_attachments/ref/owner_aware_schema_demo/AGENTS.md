@@ -1,4 +1,4 @@
-Check Delivery JSON Schema before you publish Delivery Plan.
+Check Delivery Output Schema before you publish Delivery Plan.
 
 ## Publish
 
@@ -8,11 +8,13 @@ Produce the file with the reusable inventory schema attached.
 
 ### Delivery Plan
 
-- Target: File
-- Path: `unit_root/DELIVERY_PLAN.md`
-- Shape: Markdown Document
-- Requirement: Required
-- Schema: Delivery Inventory
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/DELIVERY_PLAN.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
+| Schema | Delivery Inventory |
 
 #### Required Sections
 

@@ -31,8 +31,16 @@ jobs:
       - name: Set up Python toolchain
         uses: ./.github/actions/setup-python-uv
 
+      - name: Set up Node toolchain
+        uses: ./.github/actions/setup-node-npm
+        with:
+          cache-dependency-path: package-lock.json
+
       - name: Sync Python dependencies
         run: uv sync
+
+      - name: Install flow renderer dependency
+        run: npm ci
 
       - name: Run unit tests
         run: make tests
@@ -104,8 +112,16 @@ jobs:
       - name: Set up Python toolchain
         uses: ./.github/actions/setup-python-uv
 
+      - name: Set up Node toolchain
+        uses: ./.github/actions/setup-node-npm
+        with:
+          cache-dependency-path: package-lock.json
+
       - name: Sync Python dependencies
         run: uv sync
+
+      - name: Install flow renderer dependency
+        run: npm ci
 
       - name: Smoke test built package artifacts
         run: make verify-package

@@ -24,13 +24,12 @@ expected_lines = [
   "",
   "Route through compiler-owned handoff routing.",
   "",
-  "This pass runs only when true.",
+  "Use this pass only when true.",
   "",
   "Stop: Hand off or finish the turn.",
   "",
   "Hand off to ReviewLead.",
 ]
-
 [[cases]]
 name = "handoff_routing may feed guarded route semantics into maybe-routed outputs"
 status = "active"
@@ -58,41 +57,21 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Kind",
-  "",
-  "Show this only when a routed owner exists.",
-  "",
-  "`handoff`",
-  "",
-  "#### Next Owner",
-  "",
-  "Show this only when a routed owner exists.",
-  "",
-  "ReviewLead",
-  "",
-  "#### Kind",
-  "",
-  "Show this only when not (a routed owner exists).",
-  "",
-  "`done`",
-  "",
-  "#### Summary",
-  "",
-  "Show this only when not (a routed owner exists).",
-  "",
-  "`Write one short closeout summary.`",
+  "- Kind: Show this only when a routed owner exists. `handoff`",
+  "- Next Owner: Show this only when a routed owner exists. ReviewLead",
+  "- Kind: Show this only when not (a routed owner exists). `done`",
+  "- Summary: Show this only when not (a routed owner exists). `Write one short closeout summary.`",
   "",
   "## Handoff Routing",
   "",
   "Route only when the host route facts require it.",
   "",
-  "This pass runs only when true.",
+  "Use this pass only when true.",
   "",
   "Stop: Hand off or finish the turn.",
   "",
   "When RouteFacts.should_route, hand off to ReviewLead.",
 ]
-
 [[cases]]
 name = "handoff_routing may feed shared route semantics into final_output"
 status = "active"
@@ -116,16 +95,15 @@ expected_lines = [
   "| Shape | Turn Result JSON |",
   "| Schema | Turn Result Schema |",
   "| Profile | OpenAIStructuredOutput |",
-  "| Schema file | `schemas/turn_result.schema.json` |",
-  "| Example file | `examples/turn_result.example.json` |",
+  "| Generated Schema | `schemas/handoff_route_final_response.schema.json` |",
   "| Requirement | Required |",
   "",
   "#### Payload Fields",
   "",
-  "| Field | Type | Meaning |",
-  "| --- | --- | --- |",
-  "| `next_owner` | string | The routed next owner key. |",
-  "| `summary` | string | Short closeout summary. |",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `next_owner` | string | Yes | No | The routed next owner key. |",
+  "| `summary` | string | Yes | No | Short closeout summary. |",
   "",
   "#### Example",
   "",
@@ -136,6 +114,7 @@ expected_lines = [
   "}",
   "```",
   "",
+  "- Kind: Json Object",
   "- Next Owner: ReviewLead",
   "",
   "#### Route Summary",
@@ -150,13 +129,12 @@ expected_lines = [
   "",
   "Route through compiler-owned handoff routing.",
   "",
-  "This pass runs only when true.",
+  "Use this pass only when true.",
   "",
   "Stop: Hand off or finish the turn.",
   "",
   "Hand off to ReviewLead.",
 ]
-
 [[cases]]
 name = "prose-only handoff_routing does not make route guards live"
 status = "active"
@@ -165,10 +143,13 @@ prompt = "prompts/INVALID_PROSE_ONLY_ROUTE_READ.prompt"
 agent = "ProseOnlyHandoffDemo"
 exception_type = "CompileError"
 error_code = "E338"
-message_contains = [
-  "Output guard in output HandoffRouteBindingComment.next_owner reads disallowed source",
-  "route.exists",
-]
+location_line = 12
+
+[[cases]]
+name = "handoff_routing final_output builds emitted route contract metadata"
+status = "active"
+kind = "build_contract"
+build_target = "example_91_handoff_routing_route_output_binding"
 
 [[cases]]
 name = "handoff_routing conflicts with another live route-bearing surface"
@@ -178,7 +159,7 @@ prompt = "prompts/INVALID_CONFLICTING_ROUTE_SURFACES.prompt"
 agent = "ConflictingRouteSurfaceDemo"
 exception_type = "CompileError"
 error_code = "E343"
-message_contains = [
-  "more than one live route-bearing control surface",
-  "workflow, handoff_routing",
+location_line = 31
+related = [
+    { label = "live `workflow` route-bearing surface", line = 27 },
 ]

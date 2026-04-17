@@ -1,0 +1,31 @@
+import shared.delivery
+
+
+document LedgerNoteDocument: "Ledger Note"
+    section summary: "Summary"
+        "Say what changed."
+
+    table changes: "Changes"
+        columns:
+            item: "Item"
+                "Name the item."
+
+            change: "Change"
+                "Say what changed."
+
+
+output LedgerNote: "Ledger Note"
+    target: shared.delivery.LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    structure: LedgerNoteDocument
+    requirement: Advisory
+
+    standalone_read: "Standalone Read"
+        "This note should stand on its own."
+
+
+agent LedgerWriter:
+    role: "Write a ledger note."
+    outputs: "Outputs"
+        LedgerNote

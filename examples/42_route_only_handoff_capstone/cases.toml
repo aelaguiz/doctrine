@@ -15,9 +15,9 @@ expected_lines = [
   "",
   "Handle turns that can only stop, reroute, or keep ownership explicit.",
   "",
-  "This pass runs only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.",
+  "Use this pass only when route facts live job is routing, process repair, or owner repair and current specialist output is missing.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: No specialist artifact is current for this turn.",
   "",
@@ -37,23 +37,19 @@ expected_lines = [
   "",
   "### Routing Handoff Comment",
   "",
-  "- Target: Turn Response",
-  "- Shape: Comment",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | Turn Response |",
+  "| Shape | Comment |",
+  "| Requirement | Required |",
   "",
   "#### Must Include",
   "",
-  "##### Current Route",
-  "",
-  "Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair.",
-  "",
-  "##### Next Owner",
-  "",
-  "Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that RoutingOwner keeps the issue.",
-  "",
-  "##### Next Step",
-  "",
-  "Say the next concrete step now.",
+  "| Field | What to write |",
+  "| --- | --- |",
+  "| **Current Route** | Say the route-only state now in force, including whether the turn is routing, process repair, or owner repair. |",
+  "| **Next Owner** | Name the next owner when ownership changes. If ownership stays local, say so. If no clear next owner is known yet, say that RoutingOwner keeps the issue. |",
+  "| **Next Step** | Say the next concrete step now. |",
   "",
   "#### Rewrite Mode",
   "",
@@ -81,7 +77,6 @@ expected_lines = [
   "",
   "This comment should stand on its own. The next owner should know that no specialist artifact is current, which route-only state is active, who owns next, and what step comes next.",
 ]
-
 [[cases]]
 name = "standalone_read cannot interpolate guarded route-only detail"
 status = "active"
@@ -90,8 +85,4 @@ prompt = "prompts/INVALID_STANDALONE_READ_REFERENCES_GUARDED_DETAIL.prompt"
 agent = "InvalidRouteOnlyTurnsDemo"
 exception_type = "CompileError"
 error_code = "E340"
-message_contains = [
-  "standalone_read cannot interpolate guarded output detail",
-  "RouteOnlyHandoffOutput.standalone_read",
-  "RouteOnlyHandoffOutput:rewrite_mode.title",
-]
+location_line = 39

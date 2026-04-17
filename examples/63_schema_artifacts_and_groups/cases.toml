@@ -19,11 +19,13 @@ expected_lines = [
   "",
   "### Build Plan",
   "",
-  "- Target: File",
-  "- Path: `unit_root/BUILD_PLAN.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
-  "- Schema: Build Surface Schema",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/BUILD_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Schema | Build Surface Schema |",
   "",
   "#### Required Sections",
   "",
@@ -57,8 +59,6 @@ expected_lines = [
   "",
   "### Artifact Inventory",
   "",
-  "_unordered list_",
-  "",
   "- Outline File",
   "- Review Comment",
   "- Manifest File",
@@ -79,10 +79,7 @@ prompt = "prompts/INVALID_SCHEMA_ARTIFACT_REF_NOT_ROOT.prompt"
 agent = "BrokenArtifactSchemaDemo"
 exception_type = "CompileError"
 error_code = "E303"
-message_contains = [
-  "Schema artifact refs must resolve to input or output declarations",
-  "BrokenArtifactSchema",
-]
+location_line = 4
 
 [[cases]]
 name = "schema groups reject unknown local artifact keys"
@@ -92,10 +89,7 @@ prompt = "prompts/INVALID_SCHEMA_GROUP_UNKNOWN_MEMBER.prompt"
 agent = "UnknownGroupMemberDemo"
 exception_type = "CompileError"
 error_code = "E303"
-message_contains = [
-  "Unknown schema group member",
-  "downstream_rebuild.missing_file",
-]
+location_line = 14
 
 [[cases]]
 name = "schema groups may not be empty"
@@ -105,10 +99,7 @@ prompt = "prompts/INVALID_SCHEMA_GROUP_EMPTY.prompt"
 agent = "EmptyGroupDemo"
 exception_type = "CompileError"
 error_code = "E303"
-message_contains = [
-  "Schema groups may not be empty",
-  "downstream_rebuild",
-]
+location_line = 14
 
 [[cases]]
 name = "output-attached schemas must still export a section"
@@ -118,7 +109,7 @@ prompt = "prompts/INVALID_OUTPUT_SCHEMA_WITHOUT_SECTIONS.prompt"
 agent = "ArtifactOnlySchemaDemo"
 exception_type = "CompileError"
 error_code = "E302"
-message_contains = [
-  "Output-attached schema must export at least one section",
-  "BuildPlan",
+location_line = 14
+related = [
+    { label = "attached schema `ArtifactOnlySchema`", line = 8 },
 ]

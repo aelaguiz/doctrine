@@ -92,11 +92,8 @@ prompt = "invalid_root_config/prompts/AGENTS.prompt"
 agent = "InvalidRootConfig"
 exception_type = "CompileError"
 error_code = "E285"
-message_contains = [
-  "Invalid compile config",
-  "Configured additional prompts root",
-  "not_prompts",
-]
+location_path = "invalid_root_config/pyproject.toml"
+location_line = 2
 
 [[cases]]
 name = "duplicate dotted modules across configured roots fail loud"
@@ -106,9 +103,4 @@ prompt = "invalid_ambiguous/prompts/AGENTS.prompt"
 agent = "AmbiguousSharedImport"
 exception_type = "CompileError"
 error_code = "E287"
-message_contains = [
-  "Ambiguous import module",
-  "library.workflows.common_turn",
-  "shared_one/prompts",
-  "shared_two/prompts",
-]
+location_line = 1

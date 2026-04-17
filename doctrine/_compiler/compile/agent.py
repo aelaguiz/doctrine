@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from doctrine import model
 from concurrent.futures import ThreadPoolExecutor
 
-from doctrine._compiler.naming import _agent_typed_field_key, _authored_slot_allows_law
+from doctrine import model
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
+from doctrine._compiler.naming import (
+    _agent_typed_field_key,
+    _authored_slot_allows_law,
+    _humanize_key,
+)
 from doctrine._compiler.resolved_types import (
+    ActiveSkillBindAgentContext,
     AgentContract,
     AgentFieldCompileSpec,
     CompileError,
@@ -12,12 +18,22 @@ from doctrine._compiler.resolved_types import (
     CompiledBodyItem,
     CompiledField,
     CompiledFinalOutputSpec,
+    CompiledIoContractSpec,
+    CompiledPreviousTurnInputSpec,
+    CompiledPreviousTurnOutputBindingSpec,
+    CompiledPreviousTurnOutputSpec,
+    CompiledRouteBranchSpec,
+    CompiledRouteChoiceMemberSpec,
+    CompiledRouteContractSpec,
+    CompiledRouteSelectorSpec,
+    CompiledRouteTargetSpec,
     CompiledSection,
     IndexedUnit,
     OutputDeclKey,
     ResolvedAbstractAgentSlot,
     ResolvedAgentSlot,
     ResolvedIoBody,
+    ResolvedPreviousTurnInputSpec,
     ResolvedSkillEntry,
     ResolvedSkillsBody,
     ResolvedSkillsSection,
@@ -32,142 +48,525 @@ class CompileAgentMixin:
     """Agent compile helpers for CompilationContext."""
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
-        self._enforce_legacy_role_workflow_order(agent)
+        self._enforce_legacy_role_workflow_order(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
-        unresolved_abstract_slots = [
-            slot.key
-            for slot in resolved_slot_states
-            if isinstance(slot, ResolvedAbstractAgentSlot)
-        ]
-        if unresolved_abstract_slots:
-            missing = ", ".join(unresolved_abstract_slots)
-            raise CompileError(
-                f"E209 Concrete agent is missing abstract authored slots in agent {agent.name}: {missing}"
+        agent_key = (unit.module_parts, agent.name)
+        previous_turn_input_specs = tuple(
+            spec
+            for spec in (
+                self._resolve_previous_turn_input_spec(
+                    input_decl,
+                    unit=input_unit,
+                    agent_key=agent_key,
+                )
+                for (_input_key, (input_unit, input_decl)) in sorted(agent_contract.inputs.items())
             )
-        resolved_slots = {
-            slot.key: slot.body
-            for slot in resolved_slot_states
-            if isinstance(slot, ResolvedAgentSlot)
+            if spec is not None
+        )
+        self._active_agent_key = agent_key
+        self._active_previous_turn_input_specs = {
+            spec.input_key: spec for spec in previous_turn_input_specs
         }
-        has_workflow_slot = "workflow" in resolved_slots
-        review_fields = [
-            field for field in agent.fields if isinstance(field, model.ReviewField)
-        ]
-        final_output_fields = [
-            field for field in agent.fields if isinstance(field, model.FinalOutputField)
-        ]
-        final_output_field = final_output_fields[0] if final_output_fields else None
-        if has_workflow_slot and review_fields:
-            raise CompileError(
-                f"Concrete agent may not define both `workflow` and `review`: {agent.name}"
-            )
-        self._validate_agent_slot_laws(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        _ = self._route_semantic_context_for_agent(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
-        route_output_contexts = self._route_output_contexts_for_agent(
-            agent,
-            unit=unit,
-            resolved_slots=resolved_slots,
-            agent_contract=agent_contract,
-        )
-        primary_review_output_context = self._primary_review_output_context(
-            review_output_contexts
-        )
-        review_contract = self._compile_agent_review_contract(
-            agent=agent,
-            unit=unit,
-            agent_contract=agent_contract,
-            final_output_field=final_output_field,
-        )
-        field_specs: list[AgentFieldCompileSpec] = []
-        seen_role = False
-        seen_typed_fields: set[str] = set()
-
-        for field in agent.fields:
-            if isinstance(field, model.RoleScalar):
-                if seen_role:
-                    raise CompileError(f"Duplicate role field in agent {agent.name}")
-                seen_role = True
-                field_specs.append(AgentFieldCompileSpec(field=field))
-                continue
-
-            if isinstance(field, model.RoleBlock):
-                if seen_role:
-                    raise CompileError(f"Duplicate role field in agent {agent.name}")
-                seen_role = True
-                field_specs.append(AgentFieldCompileSpec(field=field))
-                continue
-
-            if isinstance(
-                field,
+        prior_skill_bind_context = self._active_skill_bind_agent_context
+        try:
+            unresolved_abstract_slots = [
+                slot.key
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedAbstractAgentSlot)
+            ]
+            if unresolved_abstract_slots:
+                missing_slot = next(
+                    (
+                        field
+                        for field in agent.fields
+                        if isinstance(field, model.AuthoredSlotAbstract)
+                        and field.key in unresolved_abstract_slots
+                    ),
+                    None,
+                )
+                raise compile_error(
+                    code="E209",
+                    summary="Concrete agent is missing abstract authored slots",
+                    detail=(
+                        f"Concrete agent `{agent.name}` must define abstract authored slots: "
+                        f"{', '.join(f'`{slot}`' for slot in unresolved_abstract_slots)}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=None if missing_slot is None else missing_slot.source_span,
+                    hints=("Define each missing slot directly with `slot_key: ...`.",),
+                )
+            resolved_slots = {
+                slot.key: slot.body
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedAgentSlot)
+            }
+            has_workflow_slot = "workflow" in resolved_slots
+            workflow_field = next(
                 (
-                    model.AuthoredSlotField,
-                    model.AuthoredSlotAbstract,
-                    model.AuthoredSlotInherit,
-                    model.AuthoredSlotOverride,
-                ),
-            ):
-                slot_body = resolved_slots.get(field.key)
-                if slot_body is None:
-                    raise CompileError(
-                        f"Internal compiler error: missing resolved authored slot in agent {agent.name}: {field.key}"
+                    field
+                    for field in agent.fields
+                    if isinstance(
+                        field,
+                        (
+                            model.AuthoredSlotField,
+                            model.AuthoredSlotAbstract,
+                            model.AuthoredSlotInherit,
+                            model.AuthoredSlotOverride,
+                        ),
                     )
-                field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
-                continue
+                    and field.key == "workflow"
+                ),
+                None,
+            )
+            review_fields = [
+                field for field in agent.fields if isinstance(field, model.ReviewField)
+            ]
+            final_output_fields = [
+                field for field in agent.fields if isinstance(field, model.FinalOutputField)
+            ]
+            final_output_field = final_output_fields[0] if final_output_fields else None
+            analysis_field = next(
+                (field for field in agent.fields if isinstance(field, model.AnalysisField)),
+                None,
+            )
+            self._active_skill_bind_agent_context = ActiveSkillBindAgentContext(
+                agent=agent,
+                unit=unit,
+                agent_contract=agent_contract,
+                analysis_field=analysis_field,
+                final_output_field=final_output_field,
+            )
+            if has_workflow_slot and review_fields:
+                raise compile_error(
+                    code="E480",
+                    summary="Concrete agent defines both workflow and review",
+                    detail=(
+                        f"Concrete agent `{agent.name}` may not define both "
+                        "`workflow:` and `review:`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=review_fields[0].source_span,
+                    related=(
+                        related_prompt_site(
+                            label="`workflow` field",
+                            path=unit.prompt_file.source_path,
+                            source_span=(
+                                None if workflow_field is None else workflow_field.source_span
+                            ),
+                        ),
+                    ),
+                )
+            self._validate_agent_slot_laws(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            _ = self._route_semantic_context_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            review_output_contexts = self._review_output_contexts_for_agent(agent, unit=unit)
+            route_output_contexts = self._route_output_contexts_for_agent(
+                agent,
+                unit=unit,
+                resolved_slots=resolved_slots,
+                agent_contract=agent_contract,
+            )
+            primary_review_output_context = self._primary_review_output_context(
+                review_output_contexts
+            )
+            review_contract = self._compile_agent_review_contract(
+                agent=agent,
+                unit=unit,
+                agent_contract=agent_contract,
+                final_output_field=final_output_field,
+            )
+            field_specs: list[AgentFieldCompileSpec] = []
+            seen_role = False
+            first_role_field: model.RoleScalar | model.RoleBlock | None = None
+            seen_typed_fields: dict[str, model.Field] = {}
 
-            field_key = _agent_typed_field_key(field)
-            if field_key in seen_typed_fields:
-                raise CompileError(f"Duplicate typed field in agent {agent.name}: {field_key}")
-            seen_typed_fields.add(field_key)
-            field_specs.append(AgentFieldCompileSpec(field=field))
+            for field in agent.fields:
+                if isinstance(field, model.RoleScalar):
+                    if seen_role:
+                        raise compile_error(
+                            code="E203",
+                            summary="Duplicate role field",
+                            detail=f"Agent `{agent.name}` defines `role` more than once.",
+                            path=unit.prompt_file.source_path,
+                            source_span=field.source_span,
+                            related=(
+                                related_prompt_site(
+                                    label="first `role` field",
+                                    path=unit.prompt_file.source_path,
+                                    source_span=None if first_role_field is None else first_role_field.source_span,
+                                ),
+                            ),
+                            hints=("Keep exactly one `role:` field per concrete agent.",),
+                        )
+                    seen_role = True
+                    first_role_field = field
+                    field_specs.append(AgentFieldCompileSpec(field=field))
+                    continue
 
-        if not seen_role:
-            raise CompileError(f"Concrete agent is missing role field: {agent.name}")
+                if isinstance(field, model.RoleBlock):
+                    if seen_role:
+                        raise compile_error(
+                            code="E203",
+                            summary="Duplicate role field",
+                            detail=f"Agent `{agent.name}` defines `role` more than once.",
+                            path=unit.prompt_file.source_path,
+                            source_span=field.source_span,
+                            related=(
+                                related_prompt_site(
+                                    label="first `role` field",
+                                    path=unit.prompt_file.source_path,
+                                    source_span=None if first_role_field is None else first_role_field.source_span,
+                                ),
+                            ),
+                            hints=("Keep exactly one `role:` field per concrete agent.",),
+                        )
+                    seen_role = True
+                    first_role_field = field
+                    field_specs.append(AgentFieldCompileSpec(field=field))
+                    continue
 
-        final_output = (
-            self._compile_final_output_spec(
+                if isinstance(
+                    field,
+                    (
+                        model.AuthoredSlotField,
+                        model.AuthoredSlotAbstract,
+                        model.AuthoredSlotInherit,
+                        model.AuthoredSlotOverride,
+                    ),
+                ):
+                    slot_body = resolved_slots.get(field.key)
+                    if slot_body is None:
+                        raise compile_error(
+                            code="E901",
+                            summary="Internal compiler error",
+                            detail=(
+                                "Internal compiler error: missing resolved authored slot in "
+                                f"agent {agent.name}: {field.key}"
+                            ),
+                            path=unit.prompt_file.source_path,
+                            source_span=getattr(field, "source_span", None),
+                        )
+                    field_specs.append(AgentFieldCompileSpec(field=field, slot_body=slot_body))
+                    continue
+
+                field_key = _agent_typed_field_key(field)
+                first_typed_field = seen_typed_fields.get(field_key)
+                if first_typed_field is not None:
+                    raise compile_error(
+                        code="E204",
+                        summary="Duplicate typed field",
+                        detail=(
+                            f"Agent `{agent.name}` defines typed field `{field_key}` more than once."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=getattr(field, "source_span", None),
+                        related=(
+                            related_prompt_site(
+                                label=f"first `{field_key}` field",
+                                path=unit.prompt_file.source_path,
+                                source_span=getattr(first_typed_field, "source_span", None),
+                            ),
+                        ),
+                        hints=(f"Keep exactly one `{field_key}:` field on the agent.",),
+                    )
+                seen_typed_fields[field_key] = field
+                field_specs.append(AgentFieldCompileSpec(field=field))
+
+            if not seen_role:
+                raise compile_error(
+                    code="E205",
+                    summary="Concrete agent is missing role field",
+                    detail=f"Concrete agent `{agent.name}` is missing its required `role` field.",
+                    path=unit.prompt_file.source_path,
+                    source_span=agent.source_span,
+                    hints=("Add a `role:` field before the rest of the authored workflow surface.",),
+                )
+
+            final_output = (
+                self._compile_final_output_spec(
+                    agent_name=agent.name,
+                    field=final_output_field,
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    review_output_contexts=review_output_contexts,
+                    route_output_contexts=route_output_contexts,
+                    review_contract=review_contract,
+                    fallback_review_semantics=(
+                        primary_review_output_context[1]
+                        if primary_review_output_context is not None
+                        else None
+                    ),
+                )
+                if final_output_field is not None
+                else None
+            )
+            compiled_fields = self._compile_agent_fields(
+                field_specs,
                 agent_name=agent.name,
-                field=final_output_field,
                 unit=unit,
                 agent_contract=agent_contract,
                 review_output_contexts=review_output_contexts,
                 route_output_contexts=route_output_contexts,
+                final_output=final_output,
+            )
+            route_contract = self._compile_final_response_route_contract(
+                final_output=final_output,
                 review_contract=review_contract,
-                fallback_review_semantics=(
-                    primary_review_output_context[1]
-                    if primary_review_output_context is not None
-                    else None
+                route_output_contexts=route_output_contexts,
+            )
+            io_contract = self._compile_agent_io_contract(
+                agent_contract=agent_contract,
+                previous_turn_inputs=previous_turn_input_specs,
+                final_output=final_output,
+            )
+            return CompiledAgent(
+                name=agent.name,
+                fields=compiled_fields,
+                final_output=final_output,
+                review=review_contract,
+                route=route_contract,
+                io=io_contract,
+            )
+        finally:
+            self._active_skill_bind_agent_context = prior_skill_bind_context
+            self._active_agent_key = None
+            self._active_previous_turn_input_specs = {}
+
+    def _compile_agent_io_contract(
+        self,
+        *,
+        agent_contract: AgentContract,
+        previous_turn_inputs: tuple[ResolvedPreviousTurnInputSpec, ...],
+        final_output: CompiledFinalOutputSpec | None,
+    ) -> CompiledIoContractSpec:
+        final_output_key = None if final_output is None else final_output.output_key
+        outputs = tuple(
+            self._compile_previous_turn_output_spec(
+                output_key=output_key,
+                output_unit=output_unit,
+                output_decl=output_decl,
+                final_output_key=final_output_key,
+            )
+            for output_key, (output_unit, output_decl) in sorted(agent_contract.outputs.items())
+        )
+        output_bindings = tuple(
+            CompiledPreviousTurnOutputBindingSpec(
+                binding_path=binding_path,
+                output_key=(binding.artifact.unit.module_parts, binding.artifact.decl.name),
+            )
+            for binding_path, binding in sorted(agent_contract.output_bindings_by_path.items())
+            if isinstance(binding.artifact.decl, model.OutputDecl)
+        )
+        return CompiledIoContractSpec(
+            previous_turn_inputs=tuple(
+                CompiledPreviousTurnInputSpec(
+                    input_key=spec.input_key,
+                    input_name=spec.input_decl.name,
+                    input_title=spec.input_decl.title,
+                    requirement=spec.requirement,
+                    selector_kind=spec.selector_kind,
+                    selector_text=spec.selector_text,
+                    output_key=spec.output_key,
+                    output_name=spec.output_decl.name,
+                    output_title=spec.output_decl.title,
+                    derived_contract_mode=spec.derived_contract_mode,
+                    target_key=spec.target_key,
+                    target_title=spec.target_title,
+                    target_config=spec.target_config,
+                    shape_name=spec.shape_name,
+                    shape_title=spec.shape_title,
+                    schema_name=spec.schema_name,
+                    schema_title=spec.schema_title,
+                    schema_profile=spec.schema_profile,
+                    lowered_schema=spec.lowered_schema,
+                    binding_path=spec.binding_path,
+                )
+                for spec in previous_turn_inputs
+            ),
+            outputs=outputs,
+            output_bindings=output_bindings,
+        )
+
+    def _compile_previous_turn_output_spec(
+        self,
+        *,
+        output_key: OutputDeclKey,
+        output_unit: IndexedUnit,
+        output_decl: model.OutputDecl,
+        final_output_key: OutputDeclKey | None,
+    ) -> CompiledPreviousTurnOutputSpec:
+        scalar_items, section_items, _extras = self._split_record_items(
+            output_decl.items,
+            scalar_keys={"target", "shape", "requirement"},
+            section_keys={"files"},
+            owner_label=f"output {output_decl.name}",
+        )
+        files_section = section_items.get("files")
+        if files_section is not None:
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key,
+                output_name=output_decl.name,
+                output_title=output_decl.title,
+                target_key="FileSet",
+                target_title="File Set",
+            )
+        target_item = scalar_items.get("target")
+        shape_item = scalar_items.get("shape")
+        if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key,
+                output_name=output_decl.name,
+                output_title=output_decl.title,
+                target_key="Unsupported",
+                target_title="Unsupported",
+            )
+        (
+            target_key,
+            target_title,
+            target_config,
+            shape_name,
+            shape_title,
+            schema_name,
+            schema_title,
+            schema_profile,
+            _lowered_schema,
+            derived_contract_mode,
+        ) = self._resolve_previous_turn_output_contract(output_decl, unit=output_unit)
+        readback_mode = "unsupported"
+        requires_final_output = False
+        if self._is_builtin_turn_response_target_ref(target_item.value):
+            requires_final_output = True
+            if final_output_key == output_key:
+                readback_mode = derived_contract_mode
+        elif not target_item.value.module_parts and target_item.value.declaration_name == "File":
+            readback_mode = derived_contract_mode
+        return CompiledPreviousTurnOutputSpec(
+            output_key=output_key,
+            output_name=output_decl.name,
+            output_title=output_decl.title,
+            target_key=target_key,
+            target_title=target_title,
+            target_config=target_config,
+            shape_name=shape_name,
+            shape_title=shape_title,
+            derived_contract_mode=derived_contract_mode,
+            readback_mode=readback_mode,
+            requires_final_output=requires_final_output,
+            schema_name=schema_name,
+            schema_title=schema_title,
+            schema_profile=schema_profile,
+        )
+
+    def _compile_final_response_route_contract(
+        self,
+        *,
+        final_output: CompiledFinalOutputSpec | None,
+        review_contract,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+    ) -> CompiledRouteContractSpec | None:
+        contract_output_key = self._final_response_contract_output_key(
+            final_output=final_output,
+            review_contract=review_contract,
+        )
+        if contract_output_key is None:
+            return None
+
+        route_semantics = self._route_output_context_for_key(
+            route_output_contexts,
+            contract_output_key,
+        )
+        if route_semantics is None:
+            return self._empty_final_response_route_contract()
+
+        branches = tuple(
+            CompiledRouteBranchSpec(
+                target=CompiledRouteTargetSpec(
+                    key=_dotted_decl_name(
+                        branch.target_module_parts,
+                        branch.target_name,
+                    ),
+                    module_parts=branch.target_module_parts,
+                    name=branch.target_name,
+                    title=self._route_semantic_branch_title(branch),
+                ),
+                label=branch.label,
+                summary=self._route_semantic_branch_summary(branch),
+                review_verdict=branch.review_verdict,
+                choice_members=tuple(
+                    CompiledRouteChoiceMemberSpec(
+                        member_key=member.member_key,
+                        member_title=member.member_title,
+                        member_wire=member.member_wire,
+                        enum_module_parts=member.enum_module_parts,
+                        enum_name=member.enum_name,
+                    )
+                    for member in branch.choice_members
                 ),
             )
-            if final_output_field is not None
-            else None
+            for branch in route_semantics.branches
         )
-        compiled_fields = self._compile_agent_fields(
-            field_specs,
-            agent_name=agent.name,
-            unit=unit,
-            agent_contract=agent_contract,
-            review_output_contexts=review_output_contexts,
-            route_output_contexts=route_output_contexts,
-            final_output=final_output,
+        return CompiledRouteContractSpec(
+            exists=True,
+            behavior=self._route_contract_behavior(route_semantics),
+            has_unrouted_branch=route_semantics.has_unrouted_branch,
+            unrouted_review_verdicts=tuple(sorted(route_semantics.unrouted_review_verdicts)),
+            branches=branches,
+            selector=(
+                None
+                if route_semantics.selector is None
+                else CompiledRouteSelectorSpec(
+                    surface=route_semantics.selector.surface,
+                    field_path=route_semantics.selector.field_path,
+                    null_behavior=route_semantics.selector.null_behavior,
+                )
+            ),
         )
-        return CompiledAgent(
-            name=agent.name,
-            fields=compiled_fields,
-            final_output=final_output,
-            review=review_contract,
+
+    def _final_response_contract_output_key(
+        self,
+        *,
+        final_output: CompiledFinalOutputSpec | None,
+        review_contract,
+    ) -> OutputDeclKey | None:
+        if final_output is not None:
+            return final_output.output_key
+        if review_contract is None:
+            return None
+        # Review carrier and split final responses share the same top-level
+        # route contract so harnesses do not need a review-only routing bridge.
+        if review_contract.final_response.mode == "split":
+            return review_contract.final_response.output_key
+        return review_contract.comment_output.output_key
+
+    def _empty_final_response_route_contract(self) -> CompiledRouteContractSpec:
+        return CompiledRouteContractSpec(
+            exists=False,
+            behavior="never",
+            has_unrouted_branch=False,
+            unrouted_review_verdicts=(),
+            branches=(),
+            selector=None,
         )
+
+    def _route_contract_behavior(
+        self,
+        route_semantics: RouteSemanticContext,
+    ) -> str:
+        if not route_semantics.branches:
+            return "never"
+        if route_semantics.has_unrouted_branch and not route_semantics.route_required:
+            return "conditional"
+        return "always"
 
     def _compile_agent_fields(
         self,
@@ -206,6 +605,10 @@ class CompileAgentMixin:
                     review_output_contexts=review_output_contexts,
                     route_output_contexts=route_output_contexts,
                     final_output=final_output,
+                    previous_turn_contexts=self._previous_turn_contexts,
+                    active_agent_key=self._active_agent_key,
+                    active_skill_bind_agent_context=self._active_skill_bind_agent_context,
+                    active_previous_turn_input_specs=self._active_previous_turn_input_specs,
                 )
                 for spec in specs
             ]
@@ -262,8 +665,15 @@ class CompileAgentMixin:
             ),
         ):
             if spec.slot_body is None:
-                raise CompileError(
-                    f"Internal compiler error: missing resolved authored slot in agent {agent_name}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        "Internal compiler error: missing resolved authored slot in "
+                        f"agent {agent_name}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(field, "source_span", None),
                 )
             if field.key == "workflow":
                 return self._compile_resolved_workflow(
@@ -282,10 +692,27 @@ class CompileAgentMixin:
                     slot_key=field.key,
                 )
             if spec.slot_body.law is not None and not _authored_slot_allows_law(field.key):
-                raise CompileError(
-                    f"law may appear only on workflow or handoff_routing in agent {agent_name}: {field.key}"
+                raise compile_error(
+                    code="E345",
+                    summary="Law is not allowed on this authored slot",
+                    detail=(
+                        f"`law:` is not allowed on authored slot `{field.key}` in "
+                        f"agent {agent_name}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(field, "source_span", None),
+                    hints=(
+                        "Attach `law:` only to `workflow:` or `handoff_routing:`.",
+                        "Keep other authored slots as readable instruction surfaces.",
+                    ),
                 )
-            return self._compile_resolved_workflow(spec.slot_body, slot_key=field.key)
+            return self._compile_resolved_workflow(
+                spec.slot_body,
+                unit=unit,
+                agent_contract=agent_contract,
+                owner_label=f"agent {agent_name} slot {field.key}",
+                slot_key=field.key,
+            )
 
         if isinstance(field, model.InputsField):
             return self._compile_inputs_field(
@@ -315,9 +742,16 @@ class CompileAgentMixin:
         if isinstance(field, model.ReviewField):
             review_unit, review_decl = self._resolve_review_ref(field.value, unit=unit)
             if review_decl.abstract:
-                raise CompileError(
-                    "Concrete agents may not attach abstract reviews directly: "
-                    f"{_dotted_decl_name(review_unit.module_parts, review_decl.name)}"
+                raise compile_error(
+                    code="E494",
+                    summary="Concrete agent may not attach abstract review directly",
+                    detail=(
+                        "Concrete agent may not attach abstract review "
+                        f"`{_dotted_decl_name(review_unit.module_parts, review_decl.name)}` "
+                        "directly."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             return self._compile_review_decl(
                 review_decl,
@@ -327,13 +761,27 @@ class CompileAgentMixin:
             )
         if isinstance(field, model.FinalOutputField):
             if final_output is None or final_output.section is None:
-                raise CompileError(
-                    f"Internal compiler error: missing compiled final_output in agent {agent_name}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        "Internal compiler error: missing compiled final_output in "
+                        f"agent {agent_name}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             return final_output.section
 
-        raise CompileError(
-            f"Unsupported agent field in {agent_name}: {type(field).__name__}"
+        raise compile_error(
+            code="E208",
+            summary="Unsupported agent field",
+            detail=(
+                f"Agent `{agent_name}` uses unsupported field type "
+                f"`{type(field).__name__}`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=getattr(field, "source_span", None),
         )
 
     def _compile_inputs_field(
@@ -397,8 +845,15 @@ class CompileAgentMixin:
 
         if isinstance(field.value, tuple):
             if field.title is None:
-                raise CompileError(
-                    f"Internal compiler error: {field_kind} field is missing title in {owner_label}"
+                raise compile_error(
+                    code="E901",
+                    summary="Internal compiler error",
+                    detail=(
+                        f"Internal compiler error: {field_kind} field is missing title "
+                        f"in {owner_label}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
                 )
             compiled_section = CompiledSection(
                 title=field.title,
@@ -429,9 +884,15 @@ class CompileAgentMixin:
                 return None
             return self._compile_resolved_io_body(resolved)
 
-        raise CompileError(
-            f"Internal compiler error: unsupported {field_kind} field value in {owner_label}: "
-            f"{type(field.value).__name__}"
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                f"Internal compiler error: unsupported {field_kind} field value in "
+                f"{owner_label}: {type(field.value).__name__}"
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=field.source_span,
         )
 
     def _compile_resolved_io_body(self, io_body: ResolvedIoBody) -> CompiledSection:
@@ -535,8 +996,22 @@ class CompileAgentMixin:
             owner_label=f"skill {skill_decl.name}",
         )
         purpose_item = scalar_items.get("purpose")
-        if purpose_item is None or not isinstance(purpose_item.value, str):
-            raise CompileError(f"Skill is missing string purpose: {skill_decl.name}")
+        if purpose_item is None:
+            raise compile_error(
+                code="E220",
+                summary="Skill is missing string purpose",
+                detail=f"Skill `{skill_decl.name}` is missing a string `purpose` field.",
+                path=target_unit.prompt_file.source_path,
+                source_span=skill_decl.source_span,
+            )
+        if not isinstance(purpose_item.value, str):
+            raise compile_error(
+                code="E220",
+                summary="Skill is missing string purpose",
+                detail=f"Skill `{skill_decl.name}` is missing a string `purpose` field.",
+                path=target_unit.prompt_file.source_path,
+                source_span=purpose_item.source_span or skill_decl.source_span,
+            )
 
         metadata_scalars, _metadata_sections, metadata_extras = self._split_record_items(
             entry.items,
@@ -545,14 +1020,6 @@ class CompileAgentMixin:
         )
 
         body: list[CompiledBodyItem] = []
-        purpose_body: list[CompiledBodyItem] = [
-            self._interpolate_authored_prose_string(
-                purpose_item.value,
-                unit=target_unit,
-                owner_label=f"skill {skill_decl.name}",
-                surface_label="skill purpose",
-            )
-        ]
         requirement = metadata_scalars.get("requirement")
         if (
             requirement is not None
@@ -564,17 +1031,25 @@ class CompileAgentMixin:
             )
             == "Required"
         ):
-            purpose_body.extend(
-                [
-                    "",
-                    "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
-                ]
+            body.append("_Required skill_")
+        body.append(
+            CompiledSection(
+                title="Purpose",
+                body=(
+                    self._interpolate_authored_prose_string(
+                        purpose_item.value,
+                        unit=target_unit,
+                        owner_label=f"skill {skill_decl.name}",
+                        surface_label="skill purpose",
+                    ),
+                ),
+                semantic_target="skill.field",
             )
-        body.append(CompiledSection(title="Purpose", body=tuple(purpose_body)))
+        )
 
         for extra in extras:
             body.extend(
-                self._compile_record_item(
+                self._compile_skill_field_item(
                     extra,
                     unit=target_unit,
                     owner_label=f"skill {skill_decl.name}",
@@ -585,8 +1060,12 @@ class CompileAgentMixin:
         reason = metadata_scalars.get("reason")
         if reason is not None:
             if not isinstance(reason.value, str):
-                raise CompileError(
-                    f"Skill reference reason must be a string in {skill_decl.name}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Skill reference reason must be a string in {skill_decl.name}",
+                    path=entry.metadata_unit.prompt_file.source_path,
+                    source_span=reason.source_span,
                 )
             body.append(
                 CompiledSection(
@@ -599,12 +1078,13 @@ class CompileAgentMixin:
                             surface_label="skill reason",
                         ),
                     ),
+                    semantic_target="skill.field",
                 )
             )
 
         for extra in metadata_extras:
             body.extend(
-                self._compile_record_item(
+                self._compile_skill_field_item(
                     extra,
                     unit=entry.metadata_unit,
                     owner_label=f"skill reference {skill_decl.name}",
@@ -613,3 +1093,57 @@ class CompileAgentMixin:
             )
 
         return CompiledSection(title=skill_decl.title, body=tuple(body))
+
+    def _compile_skill_field_item(
+        self,
+        item: model.AnyRecordItem,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        surface_label: str,
+    ) -> tuple[CompiledBodyItem, ...]:
+        if isinstance(item, model.RecordSection):
+            return (
+                CompiledSection(
+                    title=item.title,
+                    body=self._compile_record_support_items(
+                        item.items,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label=surface_label,
+                    ),
+                    semantic_target="skill.field",
+                ),
+            )
+
+        if isinstance(item, model.RecordScalar):
+            value = self._format_scalar_value(
+                item.value,
+                unit=unit,
+                owner_label=f"{owner_label}.{item.key}",
+                surface_label=surface_label,
+            )
+            body: list[CompiledBodyItem] = [value]
+            if item.body is not None:
+                body.extend(
+                    self._compile_record_support_items(
+                        item.body,
+                        unit=unit,
+                        owner_label=f"{owner_label}.{item.key}",
+                        surface_label=surface_label,
+                    )
+                )
+            return (
+                CompiledSection(
+                    title=_humanize_key(item.key),
+                    body=tuple(body),
+                    semantic_target="skill.field",
+                ),
+            )
+
+        return self._compile_record_item(
+            item,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label=surface_label,
+        )

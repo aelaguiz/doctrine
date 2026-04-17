@@ -10,11 +10,14 @@ from doctrine._parser.parts import (
     RenderProfilePart,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _item_line_column,
     _meta_line_column,
     _positioned_body_prose,
     _positioned_decision_item,
     _positioned_render_profile,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -22,16 +25,16 @@ from doctrine.diagnostics import TransformParseFailure
 class AnalysisDecisionTransformerMixin:
     """Shared analysis and decision lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def analysis_field(self, ref):
-        return model.AnalysisField(value=ref)
+    @v_args(meta=True, inline=True)
+    def analysis_field(self, meta, ref):
+        return _with_source_span(model.AnalysisField(value=ref), meta)
 
-    @v_args(inline=True)
-    def decision_field(self, ref):
-        return model.DecisionField(value=ref)
+    @v_args(meta=True, inline=True)
+    def decision_field(self, meta, ref):
+        return _with_source_span(model.DecisionField(value=ref), meta)
 
-    @v_args(inline=True)
-    def analysis_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def analysis_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         analysis_body = title_or_body
@@ -39,27 +42,33 @@ class AnalysisDecisionTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             analysis_body = body
-        return model.AnalysisDecl(
-            name=name,
-            body=model.AnalysisBody(
-                title=title,
-                preamble=analysis_body.preamble,
-                items=analysis_body.items,
+        return _with_source_span(
+            model.AnalysisDecl(
+                name=name,
+                body=model.AnalysisBody(
+                    title=title,
+                    preamble=analysis_body.preamble,
+                    items=analysis_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=analysis_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=analysis_body.render_profile_ref,
+            meta,
         )
 
-    @v_args(inline=True)
-    def decision_decl(self, name, title, decision_body):
-        return model.DecisionDecl(
-            name=name,
-            body=model.DecisionBody(
-                title=title,
-                preamble=decision_body.preamble,
-                items=decision_body.items,
+    @v_args(meta=True, inline=True)
+    def decision_decl(self, meta, name, title, decision_body):
+        return _with_source_span(
+            model.DecisionDecl(
+                name=name,
+                body=model.DecisionBody(
+                    title=title,
+                    preamble=decision_body.preamble,
+                    items=decision_body.items,
+                ),
+                render_profile_ref=decision_body.render_profile_ref,
             ),
-            render_profile_ref=decision_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -78,6 +87,7 @@ class AnalysisDecisionTransformerMixin:
         preamble: list[model.ProseLine] = []
         analysis_items: list[model.AnalysisItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
@@ -113,58 +123,74 @@ class AnalysisDecisionTransformerMixin:
     def analysis_section_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def analysis_section(self, key, title, items):
-        return model.AnalysisSection(key=key, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def analysis_section(self, meta, key, title, items):
+        return _with_source_span(
+            model.AnalysisSection(key=key, title=title, items=tuple(items)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def analysis_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def analysis_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def analysis_override_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def analysis_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def analysis_override_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.AnalysisOverrideSection(
-            key=key,
-            title=title,
-            items=tuple(section_items),
+        return _with_source_span(
+            model.AnalysisOverrideSection(
+                key=key,
+                title=title,
+                items=tuple(section_items),
+            ),
+            meta,
         )
 
     @v_args(inline=True)
     def analysis_section_item(self, value):
         return value
 
-    @v_args(inline=True)
-    def prove_stmt(self, target_title, basis):
-        return model.ProveStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def prove_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.ProveStmt(target_title=target_title, basis=basis), meta)
 
-    @v_args(inline=True)
-    def derive_stmt(self, target_title, basis):
-        return model.DeriveStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def derive_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.DeriveStmt(target_title=target_title, basis=basis), meta)
 
-    @v_args(inline=True)
-    def classify_stmt(self, target_title, enum_ref):
-        return model.ClassifyStmt(target_title=target_title, enum_ref=enum_ref)
+    @v_args(meta=True, inline=True)
+    def classify_stmt(self, meta, target_title, enum_ref):
+        return _with_source_span(
+            model.ClassifyStmt(target_title=target_title, enum_ref=enum_ref),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def compare_stmt(self, target_title, basis, using_expr=None):
-        return model.CompareStmt(
-            target_title=target_title,
-            basis=basis,
-            using_expr=using_expr,
+    @v_args(meta=True, inline=True)
+    def compare_stmt(self, meta, target_title, basis, using_expr=None):
+        return _with_source_span(
+            model.CompareStmt(
+                target_title=target_title,
+                basis=basis,
+                using_expr=using_expr,
+            ),
+            meta,
         )
 
     @v_args(inline=True)
     def compare_using_clause(self, using_expr):
         return using_expr
 
-    @v_args(inline=True)
-    def defend_stmt(self, target_title, basis):
-        return model.DefendStmt(target_title=target_title, basis=basis)
+    @v_args(meta=True, inline=True)
+    def defend_stmt(self, meta, target_title, basis):
+        return _with_source_span(model.DefendStmt(target_title=target_title, basis=basis), meta)
 
     @v_args(meta=True, inline=True)
     def decision_render_profile_stmt(self, meta, ref):

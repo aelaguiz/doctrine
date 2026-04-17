@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from pathlib import Path
+
 from doctrine import model
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
@@ -7,7 +10,9 @@ from doctrine._compiler.constants import (
     _READABLE_DECL_REGISTRIES,
     _REVIEW_VERDICT_TEXT,
 )
+from doctrine._compiler.indexing import ImportedSymbolBinding, index_unit, skill_package_id
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
+from doctrine._compiler.reference_diagnostics import reference_compile_error, reference_related_site
 from doctrine._compiler.resolved_types import (
     AddressableRootDecl,
     CompileError,
@@ -15,10 +20,203 @@ from doctrine._compiler.resolved_types import (
     ReadableDecl,
     ResolvedRenderProfile,
 )
+from doctrine.parser import parse_file
+
+
+@dataclass(slots=True, frozen=True)
+class _RefLookupTarget:
+    unit: IndexedUnit
+    declaration_name: str
+    imported_symbol: ImportedSymbolBinding | None = None
 
 
 class ResolveRefsMixin:
     """Ref lookup helpers for ResolveMixin."""
+
+    def _visible_skill_package_lookup_units(self, *, unit: IndexedUnit) -> tuple[IndexedUnit, ...]:
+        units: list[IndexedUnit] = []
+        seen: set[tuple[Path | None, tuple[str, ...]]] = set()
+
+        def _add(target_unit: IndexedUnit) -> None:
+            key = (target_unit.prompt_root, target_unit.module_parts)
+            if key in seen:
+                return
+            seen.add(key)
+            units.append(target_unit)
+
+        _add(unit)
+        for imported_unit in unit.visible_imported_units.values():
+            _add(imported_unit)
+        for binding in unit.imported_symbols_by_name.values():
+            _add(binding.target_unit)
+        return tuple(units)
+
+    def _scanned_skill_package_matches(
+        self,
+        package_id: str,
+    ) -> tuple[tuple[IndexedUnit, model.SkillPackageDecl], ...]:
+        cache = self.session.skill_package_scan_cache
+        if cache is None:
+            matches_by_id: dict[str, list[tuple[IndexedUnit, model.SkillPackageDecl]]] = {}
+            seen_paths: set[Path] = set()
+            for prompt_root in self.session.import_roots:
+                for prompt_path in prompt_root.rglob("SKILL.prompt"):
+                    resolved_prompt_path = prompt_path.resolve()
+                    if resolved_prompt_path in seen_paths:
+                        continue
+                    seen_paths.add(resolved_prompt_path)
+                    prompt_file = parse_file(prompt_path)
+                    package_unit = index_unit(
+                        self.session,
+                        prompt_file,
+                        prompt_root=prompt_root,
+                        module_parts=prompt_path.relative_to(prompt_root).parts[:-1],
+                        module_source_kind="runtime_package",
+                        package_root=prompt_path.parent,
+                        ancestry=(),
+                        allow_parallel_imports=True,
+                    )
+                    for declaration in package_unit.skill_packages_by_name.values():
+                        matches_by_id.setdefault(skill_package_id(declaration), []).append(
+                            (package_unit, declaration)
+                        )
+            self.session.skill_package_scan_cache = {
+                key: tuple(value) for key, value in matches_by_id.items()
+            }
+            cache = self.session.skill_package_scan_cache
+        return () if cache is None else cache.get(package_id, ())
+
+    def _resolve_skill_package_id(
+        self,
+        package_id: str,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
+    ) -> tuple[IndexedUnit, model.SkillPackageDecl]:
+        matches: list[tuple[IndexedUnit, model.SkillPackageDecl]] = []
+        for lookup_unit in self._visible_skill_package_lookup_units(unit=unit):
+            decl = lookup_unit.skill_packages_by_id.get(package_id)
+            if decl is not None:
+                matches.append((lookup_unit, decl))
+
+        if not matches:
+            matches.extend(self._scanned_skill_package_matches(package_id))
+
+        if len(matches) == 1:
+            return matches[0]
+
+        if len(matches) > 1:
+            labels = ", ".join(
+                skill_package_id(decl)
+                if lookup_unit.module_parts == ()
+                else f"{'.'.join(lookup_unit.module_parts)} ({skill_package_id(decl)})"
+                for lookup_unit, decl in matches
+            )
+            raise reference_compile_error(
+                code="E270",
+                summary="Ambiguous skill package id",
+                detail=(
+                    f"Skill package id `{package_id}` in {owner_label} is visible from more than "
+                    f"one package: {labels}"
+                ),
+                unit=unit,
+                source_span=source_span,
+                hints=("Keep visible skill package ids unique, or change the package id.",),
+            )
+
+        raise reference_compile_error(
+            code="E299",
+            summary="Compile failure",
+            detail=f"Missing skill package id in {owner_label}: {package_id}",
+            unit=unit,
+            source_span=source_span,
+            hints=("Add the missing `skill package`, or fix the `package:` id.",),
+        )
+
+    def _resolve_visible_imported_unit(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> IndexedUnit:
+        target_unit = unit.visible_imported_units.get(ref.module_parts)
+        if target_unit is None and ref.rebound_imported:
+            target_unit = unit.imported_units.get(ref.module_parts)
+        if target_unit is None:
+            raise reference_compile_error(
+                code="E280",
+                summary="Missing import module",
+                detail=f"Missing import module: {'.'.join(ref.module_parts)}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        return target_unit
+
+    def _decl_lookup_targets(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[_RefLookupTarget, ...]:
+        if ref.module_parts:
+            if ref.module_parts == unit.module_parts:
+                return (_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name),)
+            return (
+                _RefLookupTarget(
+                    unit=self._resolve_visible_imported_unit(ref, unit=unit),
+                    declaration_name=ref.declaration_name,
+                ),
+            )
+
+        targets = [_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name)]
+        imported_symbol = unit.imported_symbols_by_name.get(ref.declaration_name)
+        if imported_symbol is None:
+            return tuple(targets)
+
+        imported_target = _RefLookupTarget(
+            unit=imported_symbol.target_unit,
+            declaration_name=imported_symbol.target_name,
+            imported_symbol=imported_symbol,
+        )
+        local_target = targets[0]
+        if (
+            imported_target.unit.prompt_root != local_target.unit.prompt_root
+            or imported_target.unit.module_parts != local_target.unit.module_parts
+            or imported_target.declaration_name != local_target.declaration_name
+        ):
+            targets.append(imported_target)
+        return tuple(targets)
+
+    def _raise_imported_symbol_ambiguity(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        binding: ImportedSymbolBinding,
+        detail: str,
+        local_decl: object | None = None,
+        local_label: str = "local declaration",
+    ) -> None:
+        related = [reference_related_site(label="import line", unit=unit, source_span=binding.import_decl.source_span)]
+        if local_decl is not None:
+            related.insert(
+                0,
+                reference_related_site(
+                    label=local_label,
+                    unit=unit,
+                    source_span=getattr(local_decl, "source_span", None),
+                ),
+            )
+        raise reference_compile_error(
+            code="E308",
+            summary="Ambiguous imported symbol ownership",
+            detail=detail,
+            unit=unit,
+            source_span=ref.source_span,
+            related=tuple(related),
+            hints=(
+                "Rename the imported symbol with `as`, or rename the local declaration.",
+                "Use a module alias when you want the imported owner to stay explicit.",
+            ),
+        )
 
     def _resolve_workflow_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -105,6 +303,81 @@ class ResolveRefsMixin:
             unit=unit,
             registry_name="documents_by_name",
             missing_label="document declaration",
+        )
+
+    def _resolve_table_ref(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> tuple[IndexedUnit, model.TableDecl]:
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matching_targets: list[tuple[_RefLookupTarget, model.TableDecl]] = []
+        for lookup_target in lookup_targets:
+            decl = lookup_target.unit.tables_by_name.get(lookup_target.declaration_name)
+            if decl is not None:
+                matching_targets.append((lookup_target, decl))
+        if len(matching_targets) == 1:
+            lookup_target, decl = matching_targets[0]
+            return lookup_target.unit, decl
+        if len(matching_targets) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in matching_targets
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in matching_targets
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Named table ref `{ref.declaration_name}` matches both a local table "
+                        "and an imported symbol."
+                    ),
+                    local_decl=local_decl,
+                    local_label="local table",
+                )
+
+        dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
+        for lookup_target in lookup_targets:
+            actual_kind = self._named_non_output_decl_kind(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if actual_kind is not None:
+                raise reference_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Named table use expects a table declaration, "
+                        f"but `{dotted_name}` is a {actual_kind}."
+                    ),
+                    unit=unit,
+                    source_span=ref.source_span,
+                )
+        if ref.module_parts:
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported table declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        raise reference_compile_error(
+            code="E276",
+            summary="Missing local declaration reference",
+            detail=f"Missing local table declaration: {ref.declaration_name}",
+            unit=unit,
+            source_span=ref.source_span,
         )
 
     def _resolve_enum_ref(
@@ -242,6 +515,51 @@ class ResolveRefsMixin:
             resolve_parent_ref=self._resolve_outputs_block_ref,
         )
 
+    def _resolve_parent_output_decl(
+        self,
+        output_decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_decl.name,
+            child_label="output",
+            parent_ref=output_decl.parent_ref,
+            registry_name="outputs_by_name",
+            resolve_parent_ref=self._resolve_output_decl,
+        )
+
+    def _resolve_parent_output_shape_decl(
+        self,
+        output_shape_decl: model.OutputShapeDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputShapeDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_shape_decl.name,
+            child_label="output shape",
+            parent_ref=output_shape_decl.parent_ref,
+            registry_name="output_shapes_by_name",
+            resolve_parent_ref=self._resolve_output_shape_decl,
+        )
+
+    def _resolve_parent_output_schema_decl(
+        self,
+        output_schema_decl: model.OutputSchemaDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputSchemaDecl]:
+        return self._resolve_parent_decl(
+            unit=unit,
+            child_name=output_schema_decl.name,
+            child_label="output schema",
+            parent_ref=output_schema_decl.parent_ref,
+            registry_name="output_schemas_by_name",
+            resolve_parent_ref=self._resolve_output_schema_decl,
+        )
+
     def _resolve_input_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> tuple[IndexedUnit, model.InputDecl]:
@@ -292,14 +610,14 @@ class ResolveRefsMixin:
             missing_label="output shape declaration",
         )
 
-    def _resolve_json_schema_ref(
+    def _resolve_output_schema_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
-    ) -> tuple[IndexedUnit, model.JsonSchemaDecl]:
+    ) -> tuple[IndexedUnit, model.OutputSchemaDecl]:
         return self._resolve_decl_ref(
             ref,
             unit=unit,
-            registry_name="json_schemas_by_name",
-            missing_label="json schema declaration",
+            registry_name="output_schemas_by_name",
+            missing_label="output schema declaration",
         )
 
     def _resolve_skill_decl(
@@ -348,18 +666,29 @@ class ResolveRefsMixin:
         resolve_parent_ref,
     ):
         if parent_ref is None:
-            raise CompileError(
-                f"Internal compiler error: {child_label} has no parent ref: {child_name}"
+            raise reference_compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=f"Internal compiler error: {child_label} has no parent ref: {child_name}",
+                unit=unit,
+                source_span=None,
+                hints=("This is a compiler bug, not a prompt authoring error.",),
             )
-        if not parent_ref.module_parts:
-            registry = getattr(unit, registry_name)
-            parent_decl = registry.get(parent_ref.declaration_name)
-            if parent_decl is None:
-                raise CompileError(
-                    f"Missing parent {child_label} for {child_name}: {parent_ref.declaration_name}"
-                )
-            return unit, parent_decl
-        return resolve_parent_ref(parent_ref, unit=unit)
+        try:
+            return resolve_parent_ref(parent_ref, unit=unit)
+        except CompileError as error:
+            if parent_ref.module_parts or error.diagnostic.code not in {"E276", "E299"}:
+                raise
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Missing parent {child_label} for {child_name}: "
+                    f"{parent_ref.declaration_name}"
+                ),
+                unit=unit,
+                source_span=parent_ref.source_span,
+            ) from error
 
     def _resolve_decl_ref(
         self,
@@ -369,31 +698,83 @@ class ResolveRefsMixin:
         registry_name: str,
         missing_label: str,
     ):
-        if not ref.module_parts:
-            registry = getattr(unit, registry_name)
-            decl = registry.get(ref.declaration_name)
-            if decl is None:
-                raise CompileError(f"Missing local {missing_label}: {ref.declaration_name}")
-            return unit, decl
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matches: list[tuple[_RefLookupTarget, object]] = []
+        for lookup_target in lookup_targets:
+            registry = getattr(lookup_target.unit, registry_name)
+            decl = registry.get(lookup_target.declaration_name)
+            if decl is not None:
+                matches.append((lookup_target, decl))
+        if len(matches) == 1:
+            lookup_target, decl = matches[0]
+            return lookup_target.unit, decl
+        if len(matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Reference `{ref.declaration_name}` is visible both as a local "
+                        f"{missing_label} and as an imported symbol."
+                    ),
+                    local_decl=local_decl,
+                )
 
-        if ref.module_parts == unit.module_parts:
-            registry = getattr(unit, registry_name)
-            decl = registry.get(ref.declaration_name)
-            if decl is None:
-                dotted_name = _dotted_ref_name(ref)
-                raise CompileError(f"Missing imported declaration: {dotted_name}")
-            return unit, decl
-
-        target_unit = unit.imported_units.get(ref.module_parts)
-        if target_unit is None:
-            raise CompileError(f"Missing import module: {'.'.join(ref.module_parts)}")
-
-        registry = getattr(target_unit, registry_name)
-        decl = registry.get(ref.declaration_name)
-        if decl is None:
+        if ref.module_parts:
             dotted_name = _dotted_ref_name(ref)
-            raise CompileError(f"Missing imported declaration: {dotted_name}")
-        return target_unit, decl
+            raise reference_compile_error(
+                code="E281",
+                summary="Missing imported declaration",
+                detail=f"Missing imported declaration: {dotted_name}",
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        raise self._missing_local_decl_error(
+            ref,
+            unit=unit,
+            missing_label=missing_label,
+        )
+
+    def _missing_local_decl_error(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        missing_label: str,
+    ) -> CompileError:
+        code = "E299"
+        summary = "Compile failure"
+        if missing_label in {
+            "analysis declaration",
+            "output shape declaration",
+            "table declaration",
+        }:
+            code = "E276"
+            summary = "Missing local declaration reference"
+        return reference_compile_error(
+            code=code,
+            summary=summary,
+            detail=f"Missing local {missing_label}: {ref.declaration_name}",
+            unit=unit,
+            source_span=ref.source_span,
+        )
 
     def _expr_ref_matches_review_verdict(self, ref: model.ExprRef) -> bool:
         return (
@@ -403,14 +784,19 @@ class ResolveRefsMixin:
         )
 
     def _display_ref(self, ref: model.NameRef, *, unit: IndexedUnit) -> str:
+        matches: list[tuple[str, ReadableDecl]] = []
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            for lookup_target in self._decl_lookup_targets(ref, unit=unit):
+                matches.extend(
+                    self._find_readable_decl_matches(
+                        lookup_target.declaration_name,
+                        unit=lookup_target.unit,
+                    )
+                )
         except CompileError:
-            lookup_unit = None
-        if lookup_unit is not None:
-            matches = self._find_readable_decl_matches(ref.declaration_name, unit=lookup_unit)
-            if len(matches) == 1:
-                return self._display_readable_decl(matches[0][1])
+            matches = []
+        if len(matches) == 1:
+            return self._display_readable_decl(matches[0][1])
         if ref.module_parts:
             return ".".join((*ref.module_parts, ref.declaration_name))
         return _humanize_key(ref.declaration_name)
@@ -422,10 +808,16 @@ class ResolveRefsMixin:
         unit: IndexedUnit,
     ) -> model.EnumDecl | None:
         try:
-            lookup_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            lookup_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="enums_by_name",
+                missing_label="enum declaration",
+            )
         except CompileError:
             return None
-        return lookup_unit.enums_by_name.get(ref.declaration_name)
+        _ = lookup_unit
+        return decl
 
     def _find_readable_decl_matches(
         self,
@@ -435,7 +827,12 @@ class ResolveRefsMixin:
     ) -> tuple[tuple[str, ReadableDecl], ...]:
         matches: list[tuple[str, ReadableDecl]] = []
         for label, registry_name in _READABLE_DECL_REGISTRIES:
-            decl = getattr(unit, registry_name).get(declaration_name)
+            if registry_name == "outputs_by_name":
+                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            elif registry_name == "output_shapes_by_name":
+                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
+            else:
+                decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)
@@ -448,7 +845,12 @@ class ResolveRefsMixin:
     ) -> tuple[tuple[str, AddressableRootDecl], ...]:
         matches: list[tuple[str, AddressableRootDecl]] = []
         for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
-            decl = getattr(unit, registry_name).get(declaration_name)
+            if registry_name == "outputs_by_name":
+                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+            elif registry_name == "output_shapes_by_name":
+                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
+            else:
+                decl = getattr(unit, registry_name).get(declaration_name)
             if decl is not None:
                 matches.append((label, decl))
         return tuple(matches)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_INPUT_SOURCES,
@@ -28,9 +29,9 @@ from doctrine._compiler.naming import (
     _lowercase_initial,
     _name_ref_from_dotted_name,
 )
+from doctrine._compiler.workflow_diagnostics import workflow_compile_error
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     ConfigSpec,
     FlowAgentKey,
     FlowAgentNode,
@@ -47,24 +48,59 @@ from doctrine._compiler.resolved_types import (
     ResolvedSchemaGroup,
     ResolvedSectionBodyItem,
     ResolvedSectionItem,
+    ResolvedOutputTargetSpec,
     ResolvedWorkflowBody,
     ResolvedWorkflowSkillsItem,
+    ResolvedUseItem,
 )
 from doctrine._compiler.support_files import _default_worker_count, _dotted_decl_name
+
+
+def _source_span(value: object | None) -> model.SourceSpan | None:
+    return getattr(value, "source_span", None)
 
 
 class FlowMixin:
     """Flow extraction helper owner for CompilationContext."""
 
     def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
+        return self.extract_target_flow_graph_from_units(
+            tuple((self.root_unit, agent_name) for agent_name in agent_names)
+        )
+
+    def extract_target_flow_graph_from_units(
+        self,
+        agent_roots: tuple[tuple[IndexedUnit, str], ...],
+    ) -> FlowGraph:
         root_agents: list[tuple[IndexedUnit, model.Agent]] = []
-        for agent_name in agent_names:
-            agent = self.root_unit.agents_by_name.get(agent_name)
+        for unit, agent_name in agent_roots:
+            agent = unit.agents_by_name.get(agent_name)
             if agent is None:
-                raise CompileError(f"Missing target agent: {agent_name}")
+                module_label = (
+                    "the root prompt file"
+                    if not unit.module_parts
+                    else f"prompt module `{'.'.join(unit.module_parts)}`"
+                )
+                raise compile_error(
+                    code="E201",
+                    summary="Missing target agent",
+                    detail=(
+                        f"Target agent `{agent_name}` does not exist in {module_label}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                )
             if agent.abstract:
-                raise CompileError(f"Abstract agent does not render: {agent_name}")
-            root_agents.append((self.root_unit, agent))
+                raise compile_error(
+                    code="E202",
+                    summary="Abstract agent does not render",
+                    detail=(
+                        f"Agent `{agent_name}` is marked abstract and cannot render "
+                        "output directly."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    hints=("Render a concrete child agent instead.",),
+                )
+            root_agents.append((unit, agent))
 
         agent_nodes: dict[FlowAgentKey, FlowAgentNode] = {}
         input_nodes: dict[FlowArtifactKey, FlowInputNode] = {}
@@ -115,6 +151,7 @@ class FlowMixin:
                     field.value,
                     unit=unit,
                     owner_label=f"agent {agent.name} final_output",
+                    source_span=field.source_span,
                 )
                 final_output_key = (
                     final_output_unit.module_parts,
@@ -132,6 +169,20 @@ class FlowMixin:
                 unit=unit,
                 resolved_slots=resolved_slots,
                 agent_contract=agent_contract,
+            )
+            self._collect_flow_from_review_route_context(
+                agent_unit=unit,
+                agent=agent,
+                agent_contract=agent_contract,
+                agent_nodes=agent_nodes,
+                edges=edges,
+            )
+            self._collect_flow_from_final_output_route_contexts(
+                agent_unit=unit,
+                agent=agent,
+                route_output_contexts=route_output_contexts,
+                agent_nodes=agent_nodes,
+                edges=edges,
             )
             for input_key, (input_unit, input_decl) in sorted(agent_contract.inputs.items()):
                 self._flow_upsert_input_node(input_nodes, input_decl, unit=input_unit)
@@ -295,6 +346,19 @@ class FlowMixin:
                 continue
             if isinstance(item, ResolvedWorkflowSkillsItem):
                 continue
+            if isinstance(item, model.ReadableBlock):
+                continue
+            if not isinstance(item, ResolvedUseItem):
+                raise workflow_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Flow extraction found an unsupported workflow item in "
+                        f"{owner_label}: {type(item).__name__}"
+                    ),
+                    unit=workflow_unit,
+                    source_span=_source_span(item),
+                )
 
             workflow_key = (item.target_unit.module_parts, item.workflow_decl.name)
             if workflow_key in workflow_stack:
@@ -302,7 +366,13 @@ class FlowMixin:
                     ".".join(parts + (name,)) or name
                     for parts, name in [*workflow_stack, workflow_key]
                 )
-                raise CompileError(f"Cyclic workflow composition: {cycle}")
+                raise workflow_compile_error(
+                    code="E283",
+                    summary="Cyclic workflow composition",
+                    detail=f"Workflow composition cycle: {cycle}.",
+                    unit=item.target_unit,
+                    source_span=item.workflow_decl.source_span,
+                )
 
             self._collect_flow_from_workflow_body(
                 self._resolve_workflow_decl(item.workflow_decl, unit=item.target_unit),
@@ -329,10 +399,25 @@ class FlowMixin:
             return
 
         if not _authored_slot_allows_law(slot_key):
-            raise CompileError(
-                f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
+            raise workflow_compile_error(
+                code="E345",
+                summary="Law is not allowed on this authored slot",
+                detail=(
+                    f"`law:` is not allowed on authored slot `{slot_key}` in "
+                    f"{owner_label}."
+                ),
+                unit=workflow_unit,
+                source_span=workflow_body.law.source_span,
+                hints=(
+                    "Attach `law:` only to `workflow:` or `handoff_routing:`.",
+                    "Keep other authored slots as readable instruction surfaces.",
+                ),
             )
-        flat_items = self._flatten_law_items(workflow_body.law, owner_label=owner_label)
+        flat_items = self._flatten_law_items(
+            workflow_body.law,
+            owner_label=owner_label,
+            unit=workflow_unit,
+        )
         if slot_key == "handoff_routing":
             self._validate_handoff_routing_law(
                 flat_items,
@@ -369,9 +454,15 @@ class FlowMixin:
                     allowed_kinds=("input", "output"),
                 )
                 if target.remainder or target.wildcard:
-                    raise CompileError(
-                        "current artifact must stay rooted at one input or output artifact in "
-                        f"{owner_label}: {'.'.join(current.target.parts)}"
+                    raise workflow_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "current artifact must stay rooted at one input or output "
+                            f"artifact in {owner_label}: {'.'.join(current.target.parts)}"
+                        ),
+                        unit=workflow_unit,
+                        source_span=current.source_span,
                     )
                 carrier = self._validate_carrier_path(
                     current.carrier,
@@ -407,9 +498,16 @@ class FlowMixin:
                     allowed_kinds=("input", "output", "schema_group"),
                 )
                 if target.remainder or target.wildcard:
-                    raise CompileError(
-                        f"invalidate must name one full input or output artifact or schema group in {owner_label}: "
-                        f"{'.'.join(invalidate.target.parts)}"
+                    raise workflow_compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "invalidate must name one full input or output artifact or "
+                            f"schema group in {owner_label}: "
+                            f"{'.'.join(invalidate.target.parts)}"
+                        ),
+                        unit=workflow_unit,
+                        source_span=invalidate.source_span or invalidate.target.source_span,
                     )
                 carrier = self._validate_carrier_path(
                     invalidate.carrier,
@@ -492,6 +590,149 @@ class FlowMixin:
                         output_key,
                     ),
                 )
+
+    def _collect_flow_from_final_output_route_contexts(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        for _output_key, route_context in sorted(route_output_contexts, key=lambda item: item[0]):
+            selector = route_context.selector
+            if selector is None or selector.surface != "final_output":
+                continue
+            self._collect_flow_from_authored_route_context(
+                agent_unit=agent_unit,
+                agent=agent,
+                route_context=route_context,
+                owner_label=f"agent {agent.name} final_output.route",
+                agent_nodes=agent_nodes,
+                edges=edges,
+            )
+
+    def _collect_flow_from_review_route_context(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        agent_contract: AgentContract,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        review_field = next(
+            (field for field in agent.fields if isinstance(field, model.ReviewField)),
+            None,
+        )
+        if review_field is None:
+            return
+
+        review_unit, review_decl = self._resolve_review_ref(review_field.value, unit=agent_unit)
+        self._ensure_concrete_review_decl(
+            review_decl,
+            unit=review_unit,
+            owner_unit=agent_unit,
+            attached_review_span=review_field.source_span,
+        )
+        route_context = self._route_semantic_context_from_review_decl(
+            review_decl,
+            unit=review_unit,
+            agent_contract=agent_contract,
+            owner_label=f"agent {agent.name} review",
+        )
+        if route_context is None:
+            return
+
+        self._collect_flow_from_authored_route_context(
+            agent_unit=agent_unit,
+            agent=agent,
+            route_context=route_context,
+            owner_label=f"agent {agent.name} review",
+            agent_nodes=agent_nodes,
+            edges=edges,
+        )
+
+    def _collect_flow_from_authored_route_context(
+        self,
+        *,
+        agent_unit: IndexedUnit,
+        agent: model.Agent,
+        route_context: RouteSemanticContext,
+        owner_label: str,
+        agent_nodes: dict[FlowAgentKey, FlowAgentNode],
+        edges: dict[
+            tuple[
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+                tuple[str, ...],
+                str,
+                str,
+            ],
+            FlowEdge,
+        ],
+    ) -> None:
+        agent_key = (agent_unit.module_parts, agent.name)
+        for branch in route_context.branches:
+            target_unit = (
+                self._load_module(branch.target_module_parts)
+                if branch.target_module_parts
+                else self.root_unit
+            )
+            target_agent = target_unit.agents_by_name.get(branch.target_name)
+            if target_agent is None:
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"{owner_label} points at a missing target agent in "
+                        f"agent `{agent.name}`: "
+                        f"{_dotted_decl_name(branch.target_module_parts, branch.target_name)}"
+                    ),
+                    path=agent_unit.prompt_file.source_path,
+                )
+            self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
+            self._flow_add_edge(
+                edges,
+                FlowEdge(
+                    kind="authored_route",
+                    source_kind="agent",
+                    source_module_parts=agent_key[0],
+                    source_name=agent_key[1],
+                    target_kind="agent",
+                    target_module_parts=target_unit.module_parts,
+                    target_name=target_agent.name,
+                    label=branch.label,
+                ),
+            )
 
     def _collect_flow_from_section_items(
         self,
@@ -665,24 +906,84 @@ class FlowMixin:
         source_item = scalar_items.get("source")
         shape_item = scalar_items.get("shape")
         requirement_item = scalar_items.get("requirement")
-        if source_item is None or not isinstance(source_item.value, model.NameRef):
-            raise CompileError(f"Input source must stay typed: {decl.name}")
-        if shape_item is None or requirement_item is None:
-            raise CompileError(f"Input is missing required fields: {decl.name}")
+        if source_item is None:
+            raise compile_error(
+                code="E221",
+                summary="Input is missing typed source",
+                detail=f"Input `{decl.name}` is missing a typed `source` field.",
+                path=unit.prompt_file.source_path,
+                source_span=decl.source_span,
+            )
+        if not isinstance(source_item.value, model.NameRef):
+            raise compile_error(
+                code="E275",
+                summary="Input source must stay typed",
+                detail=f"Input `{decl.name}` must keep a typed `source`.",
+                path=unit.prompt_file.source_path,
+                source_span=source_item.source_span or decl.source_span,
+            )
+        if requirement_item is None:
+            raise compile_error(
+                code="E223",
+                summary="Input is missing requirement",
+                detail=f"Input `{decl.name}` is missing a `requirement` field.",
+                path=unit.prompt_file.source_path,
+                source_span=decl.source_span,
+            )
 
         source_spec = self._resolve_input_source_spec(source_item.value, unit=unit)
-        config_lines, _config_values = self._flow_config_summary(
-            source_item.body or (),
-            spec=source_spec,
+        if shape_item is None and self._is_rally_previous_turn_input_source_ref(
+            source_item.value,
             unit=unit,
-            owner_label=f"input {decl.name} source",
-        )
-        shape_title = self._display_symbol_value(
-            shape_item.value,
-            unit=unit,
-            owner_label=f"input {decl.name}",
-            surface_label="input fields",
-        )
+        ):
+            config_lines: tuple[str, ...]
+            output_item = next(
+                (
+                    item
+                    for item in (source_item.body or ())
+                    if isinstance(item, model.RecordScalar) and item.key == "output"
+                ),
+                None,
+            )
+            if output_item is None:
+                config_lines = ("Previous Output: Exact previous final output",)
+            else:
+                selector_text = (
+                    _display_addressable_ref(output_item.value)
+                    if isinstance(output_item.value, model.AddressableRef)
+                    else self._display_symbol_value(
+                        output_item.value,
+                        unit=unit,
+                        owner_label=f"input {decl.name} source.output",
+                        surface_label="input source fields",
+                    )
+                )
+                config_lines = (
+                    "Previous Output: " + selector_text,
+                )
+            shape_title = "Derived Previous Output"
+        else:
+            if shape_item is None:
+                raise compile_error(
+                    code="E222",
+                    summary="Input is missing shape",
+                    detail=f"Input `{decl.name}` is missing a `shape` field.",
+                    path=unit.prompt_file.source_path,
+                    source_span=decl.source_span,
+                )
+            config_lines, _config_values = self._flow_config_summary(
+                source_item.body or (),
+                spec=source_spec,
+                unit=unit,
+                owner_label=f"input {decl.name} source",
+                owner_source_span=source_item.source_span or decl.source_span,
+            )
+            shape_title = self._display_symbol_value(
+                shape_item.value,
+                unit=unit,
+                owner_label=f"input {decl.name}",
+                surface_label="input fields",
+            )
         requirement_title = self._display_symbol_value(
             requirement_item.value,
             unit=unit,
@@ -731,10 +1032,42 @@ class FlowMixin:
                 )
             )
         else:
-            if target_item is None or not isinstance(target_item.value, model.NameRef):
-                raise CompileError(f"Output target must stay typed: {decl.name}")
+            if target_item is None:
+                raise compile_error(
+                    code="E224",
+                    summary="Output declaration is incomplete",
+                    detail=(
+                        f"Output `{decl.name}` must define either `files` or both "
+                        "`target` and `shape`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=decl.source_span,
+                    hints=(
+                        "Add `files:` for a file set, or add both `target:` and `shape:`.",
+                    ),
+                )
+            if not isinstance(target_item.value, model.NameRef):
+                raise compile_error(
+                    code="E275",
+                    summary="Output target must stay typed",
+                    detail=f"Output `{decl.name}` must keep a typed `target`.",
+                    path=unit.prompt_file.source_path,
+                    source_span=target_item.source_span or decl.source_span,
+                )
             if shape_item is None:
-                raise CompileError(f"Output must define a shape: {decl.name}")
+                raise compile_error(
+                    code="E224",
+                    summary="Output declaration is incomplete",
+                    detail=(
+                        f"Output `{decl.name}` must define either `files` or both "
+                        "`target` and `shape`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=target_item.source_span or decl.source_span,
+                    hints=(
+                        "Add `files:` for a file set, or add both `target:` and `shape:`.",
+                    ),
+                )
             target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
             target_title = target_spec.title
             config_lines, config_values = self._flow_config_summary(
@@ -742,6 +1075,7 @@ class FlowMixin:
                 spec=target_spec,
                 unit=unit,
                 owner_label=f"output {decl.name} target",
+                owner_source_span=target_item.source_span or decl.source_span,
             )
             primary_path = config_values.get("path")
             lines.extend(
@@ -786,8 +1120,12 @@ class FlowMixin:
         lines: list[str] = ["Target: Files"]
         for item in section.items:
             if not isinstance(item, model.RecordSection):
-                raise CompileError(
-                    f"`files` entries must be titled sections in output {output_name}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"`files` entries must be titled sections in output {output_name}",
+                    path=unit.prompt_file.source_path,
+                    source_span=_source_span(item) or section.source_span,
                 )
             scalar_items, _section_items, _extras = self._split_record_items(
                 item.items,
@@ -797,12 +1135,23 @@ class FlowMixin:
             path_item = scalar_items.get("path")
             shape_item = scalar_items.get("shape")
             if path_item is None or not isinstance(path_item.value, str):
-                raise CompileError(
-                    f"Output file entry is missing string path in {output_name}: {item.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        f"Output file entry is missing string path in {output_name}: "
+                        f"{item.key}"
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=_source_span(path_item) or item.source_span,
                 )
             if shape_item is None:
-                raise CompileError(
-                    f"Output file entry is missing shape in {output_name}: {item.key}"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Output file entry is missing shape in {output_name}: {item.key}",
+                    path=unit.prompt_file.source_path,
+                    source_span=item.source_span,
                 )
             lines.append(f"{item.title}: {path_item.value}")
             lines.append(
@@ -814,7 +1163,7 @@ class FlowMixin:
         self,
         config_items: tuple[model.RecordItem, ...],
         *,
-        spec: ConfigSpec,
+        spec: ConfigSpec | ResolvedOutputTargetSpec,
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[str, ...]:
@@ -830,23 +1179,57 @@ class FlowMixin:
         self,
         config_items: tuple[model.RecordItem, ...],
         *,
-        spec: ConfigSpec,
+        spec: ConfigSpec | ResolvedOutputTargetSpec,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None = None,
     ) -> tuple[tuple[str, ...], dict[str, str]]:
         lines: list[str] = []
         values: dict[str, str] = {}
-        seen_keys: set[str] = set()
+        seen_keys: dict[str, model.RecordScalar] = {}
         allowed_keys = {**spec.required_keys, **spec.optional_keys}
 
         for item in config_items:
             if not isinstance(item, model.RecordScalar) or item.body is not None:
-                raise CompileError(f"Config entries must be scalar key/value lines in {owner_label}")
-            if item.key in seen_keys:
-                raise CompileError(f"Duplicate config key in {owner_label}: {item.key}")
-            seen_keys.add(item.key)
+                raise compile_error(
+                    code="E230",
+                    summary="Config entries must be scalar key/value lines",
+                    detail=(
+                        f"Config entries must be scalar key/value lines in "
+                        f"`{owner_label}`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=_source_span(item) or owner_source_span,
+                )
+            first_item = seen_keys.get(item.key)
+            if first_item is not None:
+                raise compile_error(
+                    code="E231",
+                    summary="Duplicate config key",
+                    detail=(
+                        f"Config owner `{owner_label}` repeats key `{item.key}`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=item.source_span or owner_source_span,
+                    related=(
+                        related_prompt_site(
+                            label=f"first `{item.key}` config entry",
+                            path=unit.prompt_file.source_path,
+                            source_span=first_item.source_span,
+                        ),
+                    ),
+                )
+            seen_keys[item.key] = item
             if item.key not in allowed_keys:
-                raise CompileError(f"Unknown config key in {owner_label}: {item.key}")
+                raise compile_error(
+                    code="E232",
+                    summary="Unknown config key",
+                    detail=(
+                        f"Config owner `{owner_label}` uses unknown key `{item.key}`."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=item.source_span or owner_source_span,
+                )
             rendered = self._display_scalar_value(
                 item.value,
                 unit=unit,
@@ -861,7 +1244,15 @@ class FlowMixin:
         missing_required = [key for key in spec.required_keys if key not in seen_keys]
         if missing_required:
             missing = ", ".join(missing_required)
-            raise CompileError(f"Missing required config key in {owner_label}: {missing}")
+            raise compile_error(
+                code="E233",
+                summary="Missing required config key",
+                detail=(
+                    f"Config owner `{owner_label}` is missing required key `{missing}`."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=owner_source_span,
+            )
 
         return tuple(lines), values
 

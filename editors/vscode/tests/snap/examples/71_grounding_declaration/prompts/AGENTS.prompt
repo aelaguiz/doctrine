@@ -1,0 +1,61 @@
+# This example introduces dedicated `grounding`. The declaration owns explicit
+# protocol shape and policy, while output and routing stay on ordinary surfaces.
+
+input RepoFacts: "Repo Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+    "Use the host facts that ground the current wording claim."
+
+
+output CoordinationHandoff: "Coordination Handoff"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the one artifact that is current now."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "A downstream owner can read this output alone and know what remains current."
+
+
+agent ReviewLead:
+    role: "Own review when grounded wording still needs follow-up."
+    workflow: "Review"
+        "Review the grounded wording before it ships."
+
+
+grounding ClaimGrounding: "Claim Grounding"
+    source: RepoFacts
+    target: wording_claim
+    policy:
+        start_from accepted_claim unless stale_claim
+        forbid unchecked_claim
+        allow cited_fact
+        if needs_review -> route ReviewLead
+
+
+workflow PreserveGroundingMapping: "Preserve Grounding Mapping"
+    law:
+        current artifact RepoFacts via CoordinationHandoff.current_artifact
+        preserve mapping ClaimGrounding
+
+
+agent ClaimGroundingDemo:
+    role: "Keep grounding policy explicit and route review when the wording still needs follow-up."
+    workflow: ClaimGrounding
+    inputs: "Inputs"
+        RepoFacts
+
+
+agent ClaimGroundingMappingDemo:
+    role: "Keep the grounding source-to-target map stable during a narrow wording pass."
+    workflow: PreserveGroundingMapping
+    inputs: "Inputs"
+        RepoFacts
+    outputs: "Outputs"
+        CoordinationHandoff

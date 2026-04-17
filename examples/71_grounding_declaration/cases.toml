@@ -29,7 +29,6 @@ expected_lines = [
   "",
   "Use the host facts that ground the current wording claim.",
 ]
-
 [[cases]]
 name = "grounding rejects abstract route targets"
 status = "active"
@@ -38,10 +37,7 @@ prompt = "prompts/INVALID_ABSTRACT_GROUNDING_ROUTE.prompt"
 agent = "InvalidGroundingRouteDemo"
 exception_type = "CompileError"
 error_code = "E282"
-message_contains = [
-  "Route target must be a concrete agent",
-  "ReviewLead",
-]
+location_line = 20
 
 [[cases]]
 name = "preserve mapping can keep grounding source-to-target maps stable"
@@ -54,7 +50,7 @@ expected_lines = [
   "",
   "## Preserve Grounding Mapping",
   "",
-  "Current artifact: Repo Facts.",
+  "The current artifact is Repo Facts.",
   "",
   "Preserve mapping `ClaimGrounding`.",
   "",
@@ -76,15 +72,11 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "A downstream owner can read this output alone and know what remains current.",
+  "- Standalone Read: A downstream owner can read this output alone and know what remains current.",
 ]

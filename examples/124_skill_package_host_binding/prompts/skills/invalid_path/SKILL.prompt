@@ -1,0 +1,6 @@
+skill package InvalidPathSkillPackage: "Invalid Path Skill"
+    metadata:
+        name: "invalid-host-path-skill"
+    host_contract:
+        document section_map: "Section Map"
+    "Read {{host:section_map.missing_child}}."

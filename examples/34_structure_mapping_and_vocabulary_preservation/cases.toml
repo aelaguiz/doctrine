@@ -13,7 +13,7 @@ expected_lines = [
   "",
   "## Preserve Structure",
   "",
-  "Current artifact: Approved Structure.",
+  "The current artifact is Approved Structure.",
   "",
   "Preserve structure `ApprovedStructure`.",
   "",
@@ -34,19 +34,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact remains current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
-
 [[cases]]
 name = "preserve mapping can keep source-to-target assignments stable"
 status = "active"
@@ -59,7 +54,7 @@ expected_lines = [
   "",
   "## Preserve Mapping",
   "",
-  "Current artifact: Slot Mapping.",
+  "The current artifact is Slot Mapping.",
   "",
   "Preserve mapping `SlotMapping`.",
   "",
@@ -80,19 +75,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact remains current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
-
 [[cases]]
 name = "preserve vocabulary can keep closed term sets stable"
 status = "active"
@@ -105,7 +95,7 @@ expected_lines = [
   "",
   "## Preserve Vocabulary",
   "",
-  "Current artifact: Review Template.",
+  "The current artifact is Review Template.",
   "",
   "Preserve vocabulary `CriticVerdict`.",
   "",
@@ -126,19 +116,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact remains current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
-
 [[cases]]
 name = "preserve mapping can keep schema-family gate maps stable"
 status = "active"
@@ -150,7 +135,7 @@ expected_lines = [
   "",
   "## Preserve Schema Family Mapping",
   "",
-  "Current artifact: Slot Mapping.",
+  "The current artifact is Slot Mapping.",
   "",
   "Preserve mapping `ReviewInventory.gates`.",
   "",
@@ -171,19 +156,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact remains current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.",
 ]
-
 [[cases]]
 name = "preserve vocabulary can keep document-section labels stable"
 status = "active"
@@ -195,7 +175,7 @@ expected_lines = [
   "",
   "## Preserve Document Vocabulary",
   "",
-  "Current artifact: Review Plan.",
+  "The current artifact is Review Plan.",
   "",
   "Preserve vocabulary {`ReviewPlan.scope`, `ReviewPlan.acceptance`}.",
   "",
@@ -207,41 +187,28 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact remains current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.",
   "",
   "### Review Plan",
   "",
-  "- Target: File",
-  "- Path: `unit_root/REVIEW_PLAN.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
-  "- Structure: Review Plan Document",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/REVIEW_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Review Plan Document |",
   "",
-  "#### Structure: Review Plan Document",
-  "",
-  "##### Scope",
-  "",
-  "_Required \u00b7 section_",
-  "",
-  "State the review scope.",
-  "",
-  "##### Acceptance",
-  "",
-  "_Required \u00b7 section_",
-  "",
-  "State what acceptance looks like.",
+  "Required Structure:",
+  "- Scope: State the review scope.",
+  "- Acceptance: State what acceptance looks like.",
 ]
-
 [[cases]]
 name = "structure preservation targets must be addressable"
 status = "active"
@@ -250,10 +217,7 @@ prompt = "prompts/INVALID_UNKNOWN_STRUCTURE_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownStructurePreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingStructure",
-]
+location_line = 35
 
 [[cases]]
 name = "mapping preservation targets must be addressable"
@@ -263,10 +227,7 @@ prompt = "prompts/INVALID_UNKNOWN_MAPPING_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownMappingPreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingMapping",
-]
+location_line = 35
 
 [[cases]]
 name = "vocabulary preservation targets must stay known"
@@ -276,7 +237,4 @@ prompt = "prompts/INVALID_UNKNOWN_VOCABULARY_PRESERVE_TARGET.prompt"
 agent = "InvalidUnknownVocabularyPreserveTarget"
 exception_type = "CompileError"
 error_code = "E355"
-message_contains = [
-  "Preserve target is unknown",
-  "MissingVerdictEnum",
-]
+location_line = 35

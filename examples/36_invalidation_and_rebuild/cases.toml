@@ -13,9 +13,9 @@ expected_lines = [
   "",
   "## Structure Change",
   "",
-  "This pass runs only when structure changed.",
+  "Use this pass only when structure changed.",
   "",
-  "Current artifact: Section Metadata.",
+  "The current artifact is Section Metadata.",
   "",
   "Section Review is no longer current.",
   "",
@@ -37,10 +37,12 @@ expected_lines = [
   "",
   "### Section Metadata",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/section_metadata.json`",
-  "- Shape: Json Object",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/section_metadata.json` |",
+  "| Shape | Json Object |",
+  "| Requirement | Required |",
   "",
   "### Invalidation Handoff",
   "",
@@ -48,24 +50,16 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Invalidations",
-  "",
-  "Name any artifacts that are no longer current.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Invalidations: Name any artifacts that are no longer current.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Invalidations",
+  "- `Current Artifact`",
+  "- `Invalidations`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current now and what is no longer current.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current now and what is no longer current.",
 ]
-
 [[cases]]
 name = "downstream review stays blocked after invalidation"
 status = "active"
@@ -78,9 +72,9 @@ expected_lines = [
   "",
   "## Blocked Section Review",
   "",
-  "This pass runs only when section review invalidated.",
+  "Use this pass only when section review invalidated.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: Section Review is invalidated until rebuild work completes.",
   "",
@@ -104,19 +98,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Invalidations",
-  "",
-  "Name any artifacts that are still no longer current.",
+  "- Invalidations: Name any artifacts that are still no longer current.",
   "",
   "#### Trust Surface",
   "",
-  "- Invalidations",
+  "- `Invalidations`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is no longer current.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is no longer current.",
 ]
-
 [[cases]]
 name = "rebuild can reissue currentness after invalidation"
 status = "active"
@@ -129,9 +118,9 @@ expected_lines = [
   "",
   "## Rebuild Section Review",
   "",
-  "This pass runs only when rebuild requested.",
+  "Use this pass only when rebuild requested.",
   "",
-  "Current artifact: Section Review.",
+  "The current artifact is Section Review.",
   "",
   "## Inputs",
   "",
@@ -147,10 +136,12 @@ expected_lines = [
   "",
   "### Section Review",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/SECTION_REVIEW.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/SECTION_REVIEW.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "### Rebuild Handoff",
   "",
@@ -158,19 +149,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current now.",
 ]
-
 [[cases]]
 name = "invalidation and rebuild build-contract proof stays checked in"
 status = "active"
@@ -196,10 +182,7 @@ prompt = "prompts/INVALID_INVALIDATION_FIELD_NOT_IN_TRUST_SURFACE.prompt"
 agent = "InvalidInvalidationFieldNotInTrustSurface"
 exception_type = "CompileError"
 error_code = "E372"
-message_contains = [
-  "Invalidation carrier field missing from trust surface",
-  "invalidations",
-]
+location_line = 39
 
 [[cases]]
 name = "the current artifact cannot be invalidated in the same active branch"
@@ -209,6 +192,7 @@ prompt = "prompts/INVALID_CURRENT_ARTIFACT_AND_INVALIDATION_SAME_TARGET.prompt"
 agent = "InvalidCurrentArtifactAndInvalidationSameTarget"
 exception_type = "CompileError"
 error_code = "E371"
-message_contains = [
-  "Current artifact invalidated in same branch",
+location_line = 40
+related = [
+    { label = "current artifact statement", line = 37 },
 ]

@@ -88,24 +88,20 @@ expected_lines = [
   "",
   "### Project Lead Update",
   "",
-  "- Target: Tracker Comment",
-  "- Issue: `CURRENT_ISSUE`",
-  "- Shape: Owner Update Comment",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | Tracker Comment |",
+  "| Issue | `CURRENT_ISSUE` |",
+  "| Shape | Owner Update Comment |",
+  "| Requirement | Required |",
   "",
   "#### Must Include",
   "",
-  "##### What Changed",
-  "",
-  "Say what changed on this routing or publish turn.",
-  "",
-  "##### Current Source Of Truth",
-  "",
-  "Name the current source of truth for the next owner.",
-  "",
-  "##### Next Owner",
-  "",
-  "Name the honest next owner.",
+  "| Field | What to write |",
+  "| --- | --- |",
+  "| **What Changed** | Say what changed on this routing or publish turn. |",
+  "| **Current Source Of Truth** | Name the current source of truth for the next owner. |",
+  "| **Next Owner** | Name the honest next owner. |",
   "",
   "## Routing",
   "",
@@ -129,11 +125,11 @@ expected_lines = [
   "",
   "#### release-followthrough",
   "",
-  "##### Purpose",
+  "**Purpose**",
   "",
   "Handle PR follow-up, QR updates, publish proof, and same-issue closeout.",
   "",
-  "##### Use When",
+  "**Use When**",
   "",
   "Use this when publish or follow-up is the live job.",
   "",
@@ -170,9 +166,9 @@ prompt = "prompts/INVALID_DUPLICATE_ROLE_FIELD.prompt"
 agent = "InvalidDuplicateRoleField"
 exception_type = "CompileError"
 error_code = "E203"
-message_contains = [
-  "Duplicate role field",
-  "InvalidDuplicateRoleField",
+location_line = 3
+related = [
+    { label = "first `role` field", line = 2 },
 ]
 
 [[cases]]
@@ -183,7 +179,7 @@ prompt = "prompts/INVALID_DUPLICATE_TYPED_FIELD.prompt"
 agent = "InvalidDuplicateTypedField"
 exception_type = "CompileError"
 error_code = "E204"
-message_contains = [
-  "Duplicate typed field",
-  "inputs",
+location_line = 13
+related = [
+    { label = "first `inputs` field", line = 10 },
 ]

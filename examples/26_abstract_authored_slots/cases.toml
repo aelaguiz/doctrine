@@ -58,11 +58,7 @@ prompt = "prompts/INVALID_MISSING_ABSTRACT_SLOT.prompt"
 agent = "InvalidConcreteMissingWorkflowCore"
 exception_type = "CompileError"
 error_code = "E209"
-message_contains = [
-  "Concrete agent is missing abstract authored slots",
-  "must define abstract authored slots",
-  "`workflow_core`",
-]
+location_path = "prompts/INVALID_MISSING_ABSTRACT_SLOT.prompt"
 
 [[cases]]
 name = "concrete child missing multiple abstract authored slots groups them in one E209"
@@ -72,12 +68,7 @@ prompt = "prompts/INVALID_MISSING_MULTIPLE_ABSTRACT_SLOTS.prompt"
 agent = "InvalidConcreteMissingMultiple"
 exception_type = "CompileError"
 error_code = "E209"
-message_contains = [
-  "Concrete agent is missing abstract authored slots",
-  "must define abstract authored slots",
-  "`workflow_core`",
-  "`routing`",
-]
+location_path = "prompts/INVALID_MISSING_MULTIPLE_ABSTRACT_SLOTS.prompt"
 
 [[cases]]
 name = "override does not satisfy an abstract authored slot requirement"
@@ -87,9 +78,7 @@ prompt = "prompts/INVALID_OVERRIDE_ABSTRACT_SLOT.prompt"
 agent = "InvalidOverrideAbstractWorkflowCore"
 exception_type = "CompileError"
 error_code = "E210"
-message_contains = [
-  "Abstract authored slot must be defined directly",
-  "cannot satisfy abstract authored slot",
-  "`workflow_core`",
-  "Define the slot directly with `slot_key: ...`.",
+location_line = 12
+related = [
+    { label = "abstract `workflow_core` slot", line = 6 },
 ]

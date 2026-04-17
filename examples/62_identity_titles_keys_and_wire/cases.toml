@@ -30,10 +30,7 @@ prompt = "prompts/INVALID_AGENT_WIRE_PROJECTION.prompt"
 agent = "InvalidAgentWireProjectionDemo"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path",
-  "ProjectLead:wire",
-]
+location_path = "prompts/INVALID_AGENT_WIRE_PROJECTION.prompt"
 
 [[cases]]
 name = "duplicate enum wire values fail loud"
@@ -43,8 +40,7 @@ prompt = "prompts/INVALID_DUPLICATE_ENUM_WIRE.prompt"
 agent = "InvalidDuplicateEnumWireDemo"
 exception_type = "CompileError"
 error_code = "E294"
-message_contains = [
-  "Duplicate enum member wire",
-  "enum NextOwner",
-  "same-owner",
+location_line = 5
+related = [
+    { label = "first member", line = 2 },
 ]

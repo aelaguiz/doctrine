@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     ContractArtifact,
@@ -22,6 +25,9 @@ from doctrine._compiler.support_files import _dotted_decl_name
 
 class ResolveIoContractsMixin:
     """Contract and first-class IO resolution helpers for ResolveMixin."""
+
+    def _authored_source_span(self, value: object | None) -> model.SourceSpan | None:
+        return getattr(value, "source_span", None)
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
         inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]] = {}
@@ -70,27 +76,60 @@ class ResolveIoContractsMixin:
         field_kind: str,
         owner_label: str,
     ) -> ContractArtifact:
+        dotted_name = _dotted_ref_name(item.ref)
         if item.body is not None:
-            raise CompileError(
-                f"Declaration refs cannot define inline bodies in {owner_label}: "
-                f"{_dotted_ref_name(item.ref)}"
+            raise authored_compile_error(
+                code="E301",
+                summary="Invalid IO bucket item",
+                detail=(
+                    f"Declaration refs cannot define inline bodies in {owner_label}: "
+                    f"{dotted_name}"
+                ),
+                unit=unit,
+                source_span=item.source_span,
+                hints=(
+                    "Keep declaration refs bare inside inputs and outputs buckets.",
+                    "Use a titled group when you need nested prose around multiple declarations.",
+                ),
             )
         if field_kind == "inputs":
             if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
-                raise CompileError(
-                    "Inputs refs must resolve to input declarations, not output declarations: "
-                    f"{_dotted_ref_name(item.ref)}"
+                raise authored_compile_error(
+                    code="E301",
+                    summary="Invalid IO bucket item",
+                    detail=(
+                        "Inputs refs must resolve to input declarations, not output declarations: "
+                        f"{dotted_name}"
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
                 )
             target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
-            return ContractArtifact(kind="input", unit=target_unit, decl=decl)
+            return ContractArtifact(
+                kind="input",
+                unit=target_unit,
+                decl=decl,
+                source_span=item.source_span,
+            )
 
         if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="inputs_by_name"):
-            raise CompileError(
-                "Outputs refs must resolve to output declarations, not input declarations: "
-                f"{_dotted_ref_name(item.ref)}"
+            raise authored_compile_error(
+                code="E301",
+                summary="Invalid IO bucket item",
+                detail=(
+                    "Outputs refs must resolve to output declarations, not input declarations: "
+                    f"{dotted_name}"
+                ),
+                unit=unit,
+                source_span=item.source_span,
             )
         target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
-        return ContractArtifact(kind="output", unit=target_unit, decl=decl)
+        return ContractArtifact(
+            kind="output",
+            unit=target_unit,
+            decl=decl,
+            source_span=item.source_span,
+        )
 
     def _resolve_contract_bucket_items(
         self,
@@ -108,6 +147,7 @@ class ResolveIoContractsMixin:
         artifacts: list[ContractArtifact] = []
         bindings: list[ContractBinding] = []
         direct_artifacts: list[ContractArtifact] = []
+        direct_sections: list[tuple[int, CompiledSection]] = []
         has_keyed_children = False
 
         for item in items:
@@ -153,18 +193,37 @@ class ResolveIoContractsMixin:
                 if resolved_ref is None:
                     continue
                 compiled_section, artifact = resolved_ref
+                body_index = len(body)
                 body.append(compiled_section)
                 artifacts.append(artifact)
                 direct_artifacts.append(artifact)
+                direct_sections.append((body_index, compiled_section))
                 continue
 
             if isinstance(item, model.RecordScalar):
-                raise CompileError(
-                    f"Scalar keyed items are not allowed in {owner_label}: {item.key}"
+                raise authored_compile_error(
+                    code="E301",
+                    summary="Invalid IO bucket item",
+                    detail=(
+                        f"IO bucket `{owner_label}` cannot contain scalar keyed item "
+                        f"`{item.key}`."
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
+                    hints=(
+                        "Keep inputs and outputs buckets limited to declaration refs or titled groups.",
+                    ),
                 )
 
-            raise CompileError(
-                f"Unsupported {field_kind} bucket item in {owner_label}: {type(item).__name__}"
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"Unsupported {field_kind} bucket item in {owner_label}: "
+                    f"{type(item).__name__}"
+                ),
+                unit=unit,
+                source_span=self._authored_source_span(item),
             )
 
         return ResolvedContractBucket(
@@ -172,6 +231,7 @@ class ResolveIoContractsMixin:
             artifacts=tuple(artifacts),
             bindings=tuple(bindings),
             direct_artifacts=tuple(direct_artifacts),
+            direct_sections=tuple(direct_sections),
             has_keyed_children=has_keyed_children,
         )
 
@@ -186,28 +246,56 @@ class ResolveIoContractsMixin:
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[CompiledSection, ContractArtifact] | None:
+        dotted_name = _dotted_ref_name(item.ref)
         if item.body is not None:
-            raise CompileError(
-                f"Declaration refs cannot define inline bodies in {owner_label}: "
-                f"{_dotted_ref_name(item.ref)}"
+            raise authored_compile_error(
+                code="E301",
+                summary="Invalid IO bucket item",
+                detail=(
+                    f"Declaration refs cannot define inline bodies in {owner_label}: "
+                    f"{dotted_name}"
+                ),
+                unit=unit,
+                source_span=item.source_span,
+                hints=(
+                    "Keep declaration refs bare inside inputs and outputs buckets.",
+                    "Use a titled group when you need nested prose around multiple declarations.",
+                ),
             )
 
         if field_kind == "inputs":
             if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
-                raise CompileError(
-                    "Inputs refs must resolve to input declarations, not output declarations: "
-                    f"{_dotted_ref_name(item.ref)}"
+                raise authored_compile_error(
+                    code="E301",
+                    summary="Invalid IO bucket item",
+                    detail=(
+                        "Inputs refs must resolve to input declarations, not output declarations: "
+                        f"{dotted_name}"
+                    ),
+                    unit=unit,
+                    source_span=item.source_span,
                 )
             target_unit, decl = self._resolve_input_decl(item.ref, unit=unit)
             return (
                 self._compile_input_decl(decl, unit=target_unit),
-                ContractArtifact(kind="input", unit=target_unit, decl=decl),
+                ContractArtifact(
+                    kind="input",
+                    unit=target_unit,
+                    decl=decl,
+                    source_span=item.source_span,
+                ),
             )
 
         if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="inputs_by_name"):
-            raise CompileError(
-                "Outputs refs must resolve to output declarations, not input declarations: "
-                f"{_dotted_ref_name(item.ref)}"
+            raise authored_compile_error(
+                code="E301",
+                summary="Invalid IO bucket item",
+                detail=(
+                    "Outputs refs must resolve to output declarations, not input declarations: "
+                    f"{dotted_name}"
+                ),
+                unit=unit,
+                source_span=item.source_span,
             )
         target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
         output_key = (target_unit.module_parts, decl.name)
@@ -230,7 +318,12 @@ class ResolveIoContractsMixin:
                 review_semantics=review_semantics,
                 route_semantics=route_semantics,
             ),
-            ContractArtifact(kind="output", unit=target_unit, decl=decl),
+            ContractArtifact(
+                kind="output",
+                unit=target_unit,
+                decl=decl,
+                source_span=item.source_span,
+            ),
         )
 
     def _resolve_inputs_decl(
@@ -246,7 +339,13 @@ class ResolveIoContractsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._inputs_resolution_stack, inputs_key]
             )
-            raise CompileError(f"Cyclic inputs inheritance: {cycle}")
+            raise authored_compile_error(
+                code="E244",
+                summary="Cyclic IO block inheritance",
+                detail=f"Inputs inheritance cycle: {cycle}.",
+                unit=unit,
+                source_span=inputs_decl.source_span,
+            )
 
         self._inputs_resolution_stack.append(inputs_key)
         try:
@@ -262,14 +361,17 @@ class ResolveIoContractsMixin:
                     f"inputs {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_io_body(
-                inputs_decl.body,
-                unit=unit,
-                field_kind="inputs",
-                owner_label=_dotted_decl_name(unit.module_parts, inputs_decl.name),
-                parent_io=parent_io,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(inputs_decl.name)
+            ):
+                resolved = self._resolve_io_body(
+                    inputs_decl.body,
+                    unit=unit,
+                    field_kind="inputs",
+                    owner_label=_dotted_decl_name(unit.module_parts, inputs_decl.name),
+                    parent_io=parent_io,
+                    parent_label=parent_label,
+                )
             self._resolved_inputs_cache[inputs_key] = resolved
             return resolved
         finally:
@@ -287,7 +389,7 @@ class ResolveIoContractsMixin:
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> tuple[ResolvedIoItem, ...]:
         resolved_items: list[ResolvedIoItem] = []
-        seen_keys: set[str] = set()
+        seen_items: dict[str, model.IoSection | model.InheritItem | model.OverrideIoSection] = {}
 
         for item in io_items:
             if isinstance(item, model.RecordRef):
@@ -305,11 +407,27 @@ class ResolveIoContractsMixin:
                 continue
 
             key = item.key
-            if key in seen_keys:
-                raise CompileError(f"Duplicate {field_kind} item key in {owner_label}: {key}")
-            seen_keys.add(key)
+            first_item = seen_items.get(key)
+            if first_item is not None:
+                raise authored_compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=f"Duplicate {field_kind} item key in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=self._authored_source_span(item),
+                    related=(
+                        authored_related_site(
+                            label=f"first `{key}` entry",
+                            unit=unit,
+                            source_span=self._authored_source_span(first_item),
+                        ),
+                    )
+                    if self._authored_source_span(first_item) is not None
+                    else (),
+                )
+            seen_items[key] = item
 
-            if isinstance(item, model.RecordSection):
+            if isinstance(item, model.IoSection):
                 resolved_item = self._resolve_io_section_item(
                     item,
                     unit=unit,
@@ -324,8 +442,15 @@ class ResolveIoContractsMixin:
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
-            raise CompileError(
-                f"{item_label} requires an inherited {field_kind} block in {owner_label}: {key}"
+            raise authored_compile_error(
+                code="E246",
+                summary="IO block patch requires an inherited IO block",
+                detail=(
+                    f"`{item_label}` for key `{key}` requires an inherited "
+                    f"{field_kind} block in `{owner_label}`."
+                ),
+                unit=unit,
+                source_span=self._authored_source_span(item),
             )
 
         return tuple(resolved_items)

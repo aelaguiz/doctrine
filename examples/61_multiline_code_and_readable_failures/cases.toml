@@ -18,10 +18,12 @@ expected_lines = [
   "",
   "### Manifest Guide",
   "",
-  "- Target: File",
-  "- Path: `release_root/MANIFEST_GUIDE.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/MANIFEST_GUIDE.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "#### Example Manifest",
   "",
@@ -44,10 +46,7 @@ prompt = "prompts/INVALID_CALLOUT_UNKNOWN_KIND.prompt"
 agent = "InvalidCalloutKindDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Unknown callout kind",
-  "urgent",
-]
+location_line = 7
 
 [[cases]]
 name = "code block text must use multiline string form"
@@ -57,10 +56,7 @@ prompt = "prompts/INVALID_CODE_BLOCK_WITHOUT_MULTILINE_STRING.prompt"
 agent = "InvalidCodeBlockDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Code block text must use a multiline string",
-  "output BrokenGuide",
-]
+location_line = 8
 
 [[cases]]
 name = "document block keys must stay unique"
@@ -70,9 +66,9 @@ prompt = "prompts/INVALID_DOCUMENT_DUPLICATE_BLOCK_KEY.prompt"
 agent = "InvalidDuplicateDocumentKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
-message_contains = [
-  "Duplicate document block key",
-  "summary",
+location_line = 5
+related = [
+    { label = "first `summary` document block", line = 2 },
 ]
 
 [[cases]]
@@ -83,10 +79,7 @@ prompt = "prompts/INVALID_READABLE_GUARD_SOURCE.prompt"
 agent = "InvalidReadableGuardDemo"
 exception_type = "CompileError"
 error_code = "E296"
-message_contains = [
-  "Readable guard reads disallowed source",
-  "BrokenComment.summary_present",
-]
+location_line = 6
 
 [[cases]]
 name = "tables must declare at least one column"
@@ -96,7 +89,4 @@ prompt = "prompts/INVALID_TABLE_WITHOUT_COLUMNS.prompt"
 agent = "InvalidTableWithoutColumnsDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Readable table must declare at least one column",
-  "BrokenGuide.release_gates",
-]
+location_line = 2

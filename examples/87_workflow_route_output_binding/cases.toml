@@ -15,9 +15,9 @@ expected_lines = [
   "",
   "Always route the turn through compiler-owned workflow-law routing.",
   "",
-  "This pass runs only when true.",
+  "Use this pass only when true.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: Reply and stop.",
   "",
@@ -33,11 +33,13 @@ expected_lines = [
   "",
   "- Next Owner: Review Lead",
   "- Next Owner Key: ReviewLead",
-  "",
-  "#### Route Summary",
-  "",
-  "Hand off to ReviewLead. Next owner: Review Lead.",
+  "- Route Summary: Hand off to ReviewLead. Next owner: Review Lead.",
 ]
+[[cases]]
+name = "workflow-owned final output builds emitted route contract metadata"
+status = "active"
+kind = "build_contract"
+build_target = "example_87_workflow_route_output_binding"
 
 [[cases]]
 name = "unguarded route reads fail loudly when workflow law may stay unrouted"
@@ -47,11 +49,7 @@ prompt = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
 agent = "InvalidWorkflowRouteBindingDemo"
 exception_type = "CompileError"
 error_code = "E299"
-message_contains = [
-  "route semantics are not live on every branch",
-  "MaybeRoutedComment.next_owner",
-  "guard the read with `route.exists`",
-]
+location_path = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
 
 [[cases]]
 name = "guarded scalar route reads can bind next_owner on maybe-routed workflows"
@@ -66,9 +64,9 @@ expected_lines = [
   "",
   "Route only when host route facts require it.",
   "",
-  "This pass runs only when true.",
+  "Use this pass only when true.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: Reply and stop.",
   "",
@@ -92,9 +90,5 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Next Owner",
-  "",
-  "Show this only when a routed owner exists.",
-  "",
-  "Review Lead",
+  "- Next Owner: Show this only when a routed owner exists. Review Lead",
 ]

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.readable_diagnostics import (
+    invalid_readable_block_error,
+    readable_source_span,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledBodyItem,
@@ -36,6 +41,22 @@ from doctrine._compiler.resolved_types import (
 
 class CompileReadablesMixin:
     """Readable declaration compile helpers for CompilationContext."""
+
+    def _internal_readable_compile_error(
+        self,
+        *,
+        detail: str,
+        unit: IndexedUnit,
+        source_span: model.SourceSpan | None,
+    ) -> CompileError:
+        return compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=detail,
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+            hints=("This is a compiler bug, not a prompt authoring error.",),
+        )
 
     def _compile_analysis_decl(
         self,
@@ -104,8 +125,13 @@ class CompileReadablesMixin:
                     f"Defend {item.target_title} using {self._render_analysis_basis(item.basis, unit=unit)}."
                 )
                 continue
-            raise CompileError(
-                f"Internal compiler error: unsupported analysis item {type(item).__name__}"
+            raise self._internal_readable_compile_error(
+                detail=(
+                    "Internal compiler error: unsupported analysis item "
+                    f"{type(item).__name__}"
+                ),
+                unit=unit,
+                source_span=readable_source_span(item),
             )
         return tuple(body)
 
@@ -143,8 +169,13 @@ class CompileReadablesMixin:
                 )
                 body.append(f"Rank by {dimensions}.")
                 continue
-            raise CompileError(
-                f"Internal compiler error: unsupported decision item {type(item).__name__}"
+            raise self._internal_readable_compile_error(
+                detail=(
+                    "Internal compiler error: unsupported decision item "
+                    f"{type(item).__name__}"
+                ),
+                unit=unit,
+                source_span=readable_source_span(item),
             )
         render_profile = (
             self._resolve_render_profile_ref(decl.render_profile_ref, unit=unit)
@@ -242,6 +273,28 @@ class CompileReadablesMixin:
             render_profile=resolved.render_profile or ResolvedRenderProfile(name="ContractMarkdown"),
         )
 
+    def _compile_table_decl(
+        self,
+        decl: model.TableDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> CompiledSection:
+        return CompiledSection(
+            title=decl.title,
+            body=(
+                CompiledTableBlock(
+                    title=f"{decl.title} Contract",
+                    table=self._compile_resolved_readable_table_payload(
+                        self._resolve_table_decl_data(decl, unit=unit),
+                        unit=unit,
+                        owner_label=f"table declaration `{decl.name}`",
+                        source_span=decl.source_span,
+                    ),
+                ),
+            ),
+            render_profile=ResolvedRenderProfile(name="ContractMarkdown"),
+        )
+
     def _compile_document_body(
         self,
         document_body: ResolvedDocumentBody,
@@ -262,13 +315,21 @@ class CompileReadablesMixin:
         unit: IndexedUnit,
     ) -> CompiledReadableBlock:
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
-        title = None if block.kind == "properties" and block.anonymous else (
-            block.title or _humanize_key(block.key)
-        )
+        if block.anonymous:
+            title = None
+        elif block.kind in {"sequence", "bullets", "checklist"}:
+            title = block.title
+        else:
+            title = block.title or _humanize_key(block.key)
         if block.kind == "section":
             return CompiledSection(
                 title=title or _humanize_key(block.key),
-                body=self._compile_document_section_payload(block.payload, unit=unit),
+                body=self._compile_document_section_payload(
+                    block.payload,
+                    unit=unit,
+                    owner_label=f"document block `{block.key}`",
+                    source_span=block.source_span,
+                ),
                 requirement=block.requirement,
                 when_text=when_text,
                 emit_metadata=block.requirement is not None or block.when_expr is not None,
@@ -281,15 +342,26 @@ class CompileReadablesMixin:
                 "checklist": CompiledChecklistBlock,
             }[block.kind]
             return compiled_cls(
-                title=title or _humanize_key(block.key),
-                items=self._compile_readable_list_payload(block.payload),
+                title=title,
+                items=self._compile_readable_list_payload(
+                    block.payload,
+                    unit=unit,
+                    owner_label=f"document block `{block.key}`",
+                    source_span=block.source_span,
+                ),
                 requirement=block.requirement,
                 when_text=when_text,
                 item_schema=block.item_schema,
                 semantic_target=_semantic_render_target_for_block(block.kind, block.key),
+                anonymous=block.anonymous,
             )
         if block.kind == "properties":
-            payload = self._compile_readable_properties_payload(block.payload)
+            payload = self._compile_readable_properties_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledPropertiesBlock(
                 title=title,
                 entries=payload.entries,
@@ -299,78 +371,134 @@ class CompileReadablesMixin:
             )
         if block.kind == "definitions":
             return CompiledDefinitionsBlock(
-                title=title or _humanize_key(block.key),
-                items=self._compile_readable_definitions_payload(block.payload),
+                title=title,
+                items=self._compile_readable_definitions_payload(
+                    block.payload,
+                    unit=unit,
+                    owner_label=f"document block `{block.key}`",
+                    source_span=block.source_span,
+                ),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "table":
             return CompiledTableBlock(
-                title=title or _humanize_key(block.key),
-                table=self._compile_resolved_readable_table_payload(block.payload, unit=unit),
+                title=title,
+                table=self._compile_resolved_readable_table_payload(
+                    block.payload,
+                    unit=unit,
+                    owner_label=f"document block `{block.key}`",
+                    source_span=block.source_span,
+                ),
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "guard":
             if when_text is None:
-                raise CompileError("Readable guard shells must define a guard expression.")
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable guard shell `{block.key}` must define a guard expression."
+                    ),
+                    unit=unit,
+                    source_span=block.source_span,
+                    hints=("Add a `when ...` guard expression to the guard block.",),
+                )
             return CompiledGuardBlock(
                 title=title or _humanize_key(block.key),
-                body=self._compile_document_section_payload(block.payload, unit=unit),
+                body=self._compile_document_section_payload(
+                    block.payload,
+                    unit=unit,
+                    owner_label=f"document block `{block.key}`",
+                    source_span=block.source_span,
+                ),
                 when_text=when_text,
             )
         if block.kind == "callout":
-            payload = self._compile_readable_callout_payload(block.payload)
+            payload = self._compile_readable_callout_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledCalloutBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 body=payload.body,
                 kind=payload.kind,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "code":
-            payload = self._compile_readable_code_payload(block.payload)
+            payload = self._compile_readable_code_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledCodeBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 text=payload.text,
                 language=payload.language,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind in {"markdown", "html"}:
-            payload = self._compile_readable_raw_text_payload(block.payload)
+            payload = self._compile_readable_raw_text_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledRawTextBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 text=payload.text,
                 kind=block.kind,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "footnotes":
-            payload = self._compile_readable_footnotes_payload(block.payload)
+            payload = self._compile_readable_footnotes_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledFootnotesBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 entries=payload.entries,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "image":
-            payload = self._compile_readable_image_payload(block.payload)
+            payload = self._compile_readable_image_payload(
+                block.payload,
+                unit=unit,
+                owner_label=f"document block `{block.key}`",
+                source_span=block.source_span,
+            )
             return CompiledImageBlock(
-                title=title or _humanize_key(block.key),
+                title=title,
                 src=payload.src,
                 alt=payload.alt,
                 caption=payload.caption,
                 requirement=block.requirement,
                 when_text=when_text,
+                anonymous=block.anonymous,
             )
         if block.kind == "rule":
             return CompiledRuleBlock(
                 requirement=block.requirement,
                 when_text=when_text,
             )
-        raise CompileError(
-            f"Internal compiler error: unsupported document block kind {block.kind}"
+        raise self._internal_readable_compile_error(
+            detail=f"Internal compiler error: unsupported document block kind {block.kind}",
+            unit=unit,
+            source_span=block.source_span,
         )
 
     def _compile_document_section_payload(
@@ -378,59 +506,124 @@ class CompileReadablesMixin:
         payload: model.ReadablePayload,
         *,
         unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> tuple[CompiledBodyItem, ...]:
         if not isinstance(payload, tuple):
-            raise CompileError("Document section payload must stay block-like.")
+            raise invalid_readable_block_error(
+                detail=f"Document section payload must stay block-like in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         body: list[CompiledBodyItem] = []
         for item in payload:
             if isinstance(item, (str, model.EmphasizedLine)):
                 body.append(item)
                 continue
+            if not isinstance(item, model.ReadableBlock):
+                raise invalid_readable_block_error(
+                    detail=f"Document section payload contains an invalid item in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item) or source_span,
+                )
             body.append(self._compile_document_block(item, unit=unit))
         return tuple(body)
 
     def _compile_readable_list_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> tuple[model.ProseLine, ...]:
         if not isinstance(payload, tuple):
-            raise CompileError("Readable list payload must stay list-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable list payload must stay list-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         items: list[model.ProseLine] = []
         for item in payload:
             if not isinstance(item, model.ReadableListItem):
-                raise CompileError("Readable list payload contains an invalid item.")
+                raise invalid_readable_block_error(
+                    detail=f"Readable list payload contains an invalid item in {owner_label}.",
+                    unit=unit,
+                    source_span=readable_source_span(item) or source_span,
+                )
             items.append(item.text)
         return tuple(items)
 
     def _compile_readable_definitions_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> tuple[model.ReadableDefinitionItem, ...]:
         if not isinstance(payload, tuple):
-            raise CompileError("Readable definitions payload must stay definition-shaped.")
+            raise invalid_readable_block_error(
+                detail=(
+                    f"Readable definitions payload must stay definition-shaped in {owner_label}."
+                ),
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         items: list[model.ReadableDefinitionItem] = []
         for item in payload:
             if not isinstance(item, model.ReadableDefinitionItem):
-                raise CompileError("Readable definitions payload contains an invalid item.")
+                raise invalid_readable_block_error(
+                    detail=(
+                        f"Readable definitions payload contains an invalid item in "
+                        f"{owner_label}."
+                    ),
+                    unit=unit,
+                    source_span=readable_source_span(item) or source_span,
+                )
             items.append(item)
         return tuple(items)
 
     def _compile_readable_properties_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadablePropertiesData:
         if not isinstance(payload, model.ReadablePropertiesData):
-            raise CompileError("Readable properties payload must stay properties-shaped.")
+            raise invalid_readable_block_error(
+                detail=(
+                    f"Readable properties payload must stay properties-shaped in "
+                    f"{owner_label}."
+                ),
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         return payload
 
     def _compile_readable_table_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableTableData:
         if not isinstance(payload, model.ReadableTableData):
-            raise CompileError("Readable table payload must stay table-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable table payload must stay table-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         if not payload.columns:
-            raise CompileError("Readable table must declare at least one column.")
+            raise invalid_readable_block_error(
+                detail="Readable table must declare at least one column.",
+                unit=unit,
+                source_span=payload.source_span or source_span,
+                hints=("Declare at least one table column before rows or notes.",),
+            )
         return payload
 
     def _compile_resolved_readable_table_payload(
@@ -438,8 +631,15 @@ class CompileReadablesMixin:
         payload: model.ReadablePayload,
         *,
         unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> CompiledTableData:
-        table = self._compile_readable_table_payload(payload)
+        table = self._compile_readable_table_payload(
+            payload,
+            unit=unit,
+            owner_label=owner_label,
+            source_span=source_span,
+        )
         compiled_rows: list[CompiledTableRow] = []
         for row in table.rows:
             compiled_cells: list[CompiledTableCell] = []
@@ -448,7 +648,12 @@ class CompileReadablesMixin:
                     compiled_cells.append(
                         CompiledTableCell(
                             key=cell.key,
-                            body=self._compile_document_section_payload(cell.body, unit=unit),
+                            body=self._compile_document_section_payload(
+                                cell.body,
+                                unit=unit,
+                                owner_label=f"{owner_label}.{row.key}.{cell.key}",
+                                source_span=cell.source_span or row.source_span,
+                            ),
                         )
                     )
                     continue
@@ -468,41 +673,86 @@ class CompileReadablesMixin:
     def _compile_readable_callout_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableCalloutData:
         if not isinstance(payload, model.ReadableCalloutData):
-            raise CompileError("Readable callout payload must stay callout-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable callout payload must stay callout-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         return payload
 
     def _compile_readable_code_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableCodeData:
         if not isinstance(payload, model.ReadableCodeData):
-            raise CompileError("Readable code payload must stay code-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable code payload must stay code-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         return payload
 
     def _compile_readable_raw_text_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableRawTextData:
         if not isinstance(payload, model.ReadableRawTextData):
-            raise CompileError("Readable raw text payload must stay text-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable raw text payload must stay text-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         if "\n" not in payload.text:
-            raise CompileError("Raw text readable blocks must use a multiline string.")
+            raise invalid_readable_block_error(
+                detail="Raw text readable blocks must use a multiline string.",
+                unit=unit,
+                source_span=payload.source_span or source_span,
+                hints=("Use a multiline string for raw markdown or html readable blocks.",),
+            )
         return payload
 
     def _compile_readable_footnotes_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableFootnotesData:
         if not isinstance(payload, model.ReadableFootnotesData):
-            raise CompileError("Readable footnotes payload must stay footnotes-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable footnotes payload must stay footnotes-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         return payload
 
     def _compile_readable_image_payload(
         self,
         payload: model.ReadablePayload,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span: model.SourceSpan | None,
     ) -> model.ReadableImageData:
         if not isinstance(payload, model.ReadableImageData):
-            raise CompileError("Readable image payload must stay image-shaped.")
+            raise invalid_readable_block_error(
+                detail=f"Readable image payload must stay image-shaped in {owner_label}.",
+                unit=unit,
+                source_span=readable_source_span(payload) or source_span,
+            )
         return payload

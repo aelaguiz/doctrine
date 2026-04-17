@@ -1,0 +1,28 @@
+# This example shows `final_output:` on an inherited output.
+
+output BaseReply: "Base Reply"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+
+    standalone_read: "Standalone Read"
+        "The user should understand what changed and what happens next."
+
+
+output FinalReply[BaseReply]: "Final Reply"
+    inherit target
+    inherit shape
+    inherit requirement
+    inherit standalone_read
+
+    format_notes: "Expected Structure"
+        "Lead with the shipped outcome."
+
+
+agent FinalOutputInheritanceDemo:
+    role: "End the turn with an inherited final output."
+    workflow: "Reply"
+        "Reply and stop."
+    outputs: "Outputs"
+        FinalReply
+    final_output: FinalReply

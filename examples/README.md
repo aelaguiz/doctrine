@@ -14,8 +14,8 @@ Each numbered example may contain:
   Doctrine language version
 - `ref/`: checked-in expected render or error output
 - `build_ref/`: checked-in emitted tree output when the emit pipeline matters,
-  including compiled Markdown trees, `SKILL.md` package trees, companion
-  `.contract.json` files, and target-scoped `.flow.{d2,svg}` artifacts.
+  including compiled Markdown trees, emitted structured-output schema files,
+  `SKILL.md` package trees, and target-scoped `.flow.{d2,svg}` artifacts.
   `build_ref/` is verifier-owned proof, not a compiler or authoring
   convention.
 
@@ -28,6 +28,22 @@ Each numbered example may contain:
   language version.
 - If docs and examples disagree, trust `doctrine/` and the manifest-backed
   cases.
+- Checked-in `ref/AGENTS.md` files now render simple `TurnResponse` ordinary
+  outputs as short bullet contracts when they only need `Target`, `Shape`,
+  and `Requirement`. Richer ordinary outputs still use `Contract | Value`
+  tables. `files:` outputs add an `Artifacts` table.
+- `parse_fail` cases still prove stable codes plus `message_contains`
+  snippets.
+- `compile_fail` cases now prove stable codes plus exact diagnostic sites.
+  Use `location_line` for same-prompt failures, add `location_path` when the
+  truthful file is outside the default prompt or when the failure is
+  file-scoped, and add `related = [{ ... }]` when the diagnostic guarantees
+  labeled related sites.
+- Relative `location_path` and `related.path` values resolve against the
+  example directory first, then the repo root.
+- When an output `structure:` only needs titled section summaries, the output
+  now uses a compact `Required Structure:` list instead of a larger `Artifact
+  Structure` section.
 - Keep new examples narrow. One new idea per example is the design rule.
 - Package examples `95` through `103` use `SKILL.prompt` and teach the
   source-root bundle model. They do not make `build_ref/` part of the public
@@ -70,25 +86,43 @@ Some call out landmark examples inside those ranges.
 - `75`: repo-level compile config plus cross-root standard-library imports
   proven across multiple entrypoints and fail-loud ambiguity/config cases
 - `76` through `86`: optional `final_output:` designation, dedicated
-  final-answer rendering, schema-backed JSON final answers, fail-loud
+  final-answer rendering, `output schema` JSON final answers, fail-loud
   invalid-target / wrong-kind cases, and review-driven final answers that may
   either reuse `comment_output` or split the review comment from a separate
   control-only final output, plus imported reusable review comment outputs
   that still bind local routed owners
-- `87` through `94`: shared output-facing route semantics for ordinary
-  workflow-law outputs, review comments, dedicated `route_only`,
-  `handoff_routing` law, split review `final_output:` contracts, first-class
-  `route_from`, output-selected handoff routing, and `route.choice` guard
-  narrowing
+- `87` through `94`: shared output-facing route semantics and emitted
+  route-contract proof for ordinary workflow-law outputs, review comments,
+  dedicated `route_only`, `handoff_routing` law, split review `final_output:`
+  contracts, first-class `route_from`, output-selected handoff routing, and
+  `route.choice` guard narrowing
 - `95` through `106`: first-class skill-package authoring with `SKILL.prompt`,
   source-root bundle copy-through, runtime and plugin metadata roots, bundled
   agent companions, larger compendium trees, exact path and case
   preservation, binary assets, and review-native final-response metadata for
   carrier, split control-ready, and split partial review finals
+- `107` through `121`: direct `output[...]` declaration inheritance, inherited
+  output attachments, imported reusable handoff outputs, inherited
+  `final_output:`, inherited shared `route.*` readback, fail-loud output
+  inheritance errors, titled or titleless readable lists, workflow-root
+  readable blocks, directory-backed runtime package emit, first-class named
+  table declarations, omitted IO wrapper titles, delivery-skill targets, and
+  route-only final-output contract metadata, plus first-class routed final
+  outputs with required and nullable route fields
+- `117`: omitted first-class IO wrapper titles lower one direct declaration
+  and fail loud on ambiguous shapes
+- `118`: output targets may bind a delivery skill
+- `119`: a `route_only` final response emits route metadata in
+  `final_output.contract.json`
+- `120`: a structured final output may own routed handoff truth with one
+  `route field` plus `final_output.route:`
+- `121`: a nullable `route field` may mean "no handoff on this turn"
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
 reference, use [../docs/REVIEW_SPEC.md](../docs/REVIEW_SPEC.md).
+For the task-first guide to choosing the right Doctrine surface, use
+[../docs/AUTHORING_PATTERNS.md](../docs/AUTHORING_PATTERNS.md).
 For the shipped skill-package authoring guide, use
 [../docs/SKILL_PACKAGE_AUTHORING.md](../docs/SKILL_PACKAGE_AUTHORING.md).
 For versioning and breaking-change guidance, use
@@ -177,21 +211,21 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `76_final_output_prose_basic` | Smallest prose `final_output:` designation with a dedicated final-answer render. |
 | `77_final_output_optional_passthrough` | Omitting `final_output:` preserves ordinary output rendering. |
 | `78_final_output_and_side_artifacts` | Final assistant messages stay separate from ordinary emitted artifacts. |
-| `79_final_output_json_schema` | Schema-backed JSON `final_output:` with payload preview and example shape. |
+| `79_final_output_output_schema` | `output schema` JSON `final_output:` with payload preview and optional rendered example. |
 | `80_final_output_rejects_file_targets` | `final_output:` rejects file-backed outputs. |
 | `81_final_output_rejects_non_output_refs` | `final_output:` rejects refs that are not `output` declarations. |
 | `82_review_final_output_prose_basic` | Review-driven prose `final_output:` may reuse `comment_output` as the dedicated final answer. |
-| `83_review_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
+| `83_review_final_output_output_schema` | Review-driven `output schema` JSON `final_output:` may reuse `comment_output` and keep review semantics on the same output boundary. |
 | `84_review_split_final_output_prose` | Review-driven prose `final_output:` may split from `comment_output` while the separate final message still inherits review semantics. |
-| `85_review_split_final_output_json_schema` | Review-driven schema-backed JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
+| `85_review_split_final_output_output_schema` | Review-driven `output schema` JSON `final_output:` may split from `comment_output` and end with a control-only final JSON result. |
 | `86_imported_review_comment_local_routes` | Imported reusable `comment_output` declarations may still structurally bind local routed owners on the concrete review. |
-| `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and unguarded reads fail loudly when some branches do not route. |
+| `87_workflow_route_output_binding` | Ordinary workflow-law outputs may read shared compiler-owned `route.*` semantics, and emitted finals expose the route block in `final_output.contract.json`. |
 | `88_review_route_semantics_shared_binding` | Review comments may combine review semantics and shared `route.*` semantics on the same emitted output. |
 | `89_route_only_shared_route_semantics` | Dedicated `route_only` lowers onto the same shared `route.*` output surface. |
 | `90_split_handoff_and_final_output_shared_route_semantics` | A durable review comment and a separate JSON `final_output:` may consume the same shared `route.*` truth without merging into one output. |
-| `91_handoff_routing_route_output_binding` | `handoff_routing` may feed the same shared `route.*` semantics into ordinary outputs and `final_output:` when its `law:` block resolves the route. |
+| `91_handoff_routing_route_output_binding` | `handoff_routing` may feed the same shared `route.*` semantics into ordinary outputs and emitted `final_output.contract.json` route metadata. |
 | `92_route_from_basic` | Workflow law may pick one routed owner from a typed selector with first-class `route_from`. |
-| `93_handoff_routing_route_from_final_output` | `handoff_routing` may bind `final_output:` route owner truth from an emitted output with `route_from`. |
+| `93_handoff_routing_route_from_final_output` | `handoff_routing` may bind `final_output:` route owner truth from an emitted output with `route_from`, including emitted choice-member metadata. |
 | `94_route_choice_guard_narrowing` | `route.choice` guards may narrow branch-specific route detail, while unguarded `route.summary` still fails loud. |
 | `95_skill_package_minimal` | Smallest `SKILL.prompt` and top-level `skill package` surface. |
 | `96_skill_package_references` | Ordinary bundled reference documents copied through from the package source root. |
@@ -202,9 +236,30 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `101_skill_package_compendium` | Larger source-root compendium and reference tree preservation. |
 | `102_skill_package_path_case_preservation` | Exact path and case preservation plus negative collision proof. |
 | `103_skill_package_binary_assets` | Bundled binary assets preserved byte for byte. |
-| `104_review_final_output_json_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and still report blocked review with no route. |
-| `105_review_split_final_output_json_schema_control_ready` | Split review JSON final responses may bind review semantics and become control-ready. |
-| `106_review_split_final_output_json_schema_partial` | Split review JSON final responses may bind only a partial review subset, and invalid `review_fields` placement still fails loud. |
+| `104_review_final_output_output_schema_blocked_control_ready` | Same-output review JSON final responses may stay on the carrier and emit both review-control metadata and conditional route metadata. |
+| `105_review_split_final_output_output_schema_control_ready` | Split review JSON final responses may bind review semantics, become control-ready, and emit the shared route contract. |
+| `106_review_split_final_output_output_schema_partial` | Split review JSON final responses may bind only a partial review subset, emit conditional route metadata, and still fail loud on invalid `review_fields` placement. |
+| `107_output_inheritance_basic` | Smallest direct `output[...]` inheritance proof with one inherited section and one local extension. |
+| `108_output_inheritance_attachments` | Inherited outputs may keep top-level attachments such as `render_profile:`, `trust_surface`, and `standalone_read`, and override them explicitly. |
+| `109_imported_review_handoff_output_inheritance` | Imported reusable handoff outputs may be inherited and extended locally before they are bound through an `outputs` block. |
+| `110_final_output_inherited_output` | `final_output:` may point at an inherited `TurnResponse` output and still render as the dedicated final answer. |
+| `111_inherited_output_route_semantics` | Inherited outputs may keep shared `route.*` semantics after the compiler resolves the parent output. |
+| `112_output_inheritance_fail_loud` | Output inheritance fails loud on missing inherited keys, patch-without-parent, unkeyed parents, and wrong-kind overrides. |
+| `113_titleless_readable_lists` | Titled and titleless readable lists render cleanly, and detailed list blocks drop helper kind metadata lines. |
+| `114_workflow_root_readable_blocks` | Workflow roots may own readable blocks directly without wrapping them in a local section first. |
+| `115_runtime_agent_packages` | Thin build handles may emit imported runtime packages with package-root `AGENTS.md`, optional sibling `SOUL.md`, and bundled peer files. |
+| `116_first_class_named_tables` | Top-level `table` declarations may be reused by local document table keys without changing rendered Markdown. |
+| `117_io_omitted_wrapper_titles` | Omitted first-class IO wrapper titles lower one direct declaration and fail loud on ambiguous shapes. |
+| `118_output_target_delivery_skill_binding` | Imported output targets may bind a delivery skill and render one clean `Delivered Via` contract row. |
+| `119_route_only_final_output_contract` | A dedicated `route_only` final response emits canonical route metadata in `final_output.contract.json`. |
+| `120_route_field_final_output_contract` | A structured final output may own routed handoff truth with one `route field` plus `final_output.route:`. |
+| `121_nullable_route_field_final_output_contract` | A nullable `route field` may mean "no handoff on this turn" while emitted route metadata stays canonical. |
+| `122_skill_package_emit_documents` | `skill package emit:` compiles many prompt-authored `document` declarations into separate bundled `.md` files. |
+| `123_skill_package_emit_documents_mixed_bundle` | `skill package emit:` may live beside bundled agent markdown, runtime metadata, and raw helper files in one package tree. |
+| `124_skill_package_host_binding` | Skill packages may declare a typed host contract, the calling agent binds it once, and emitted documents and bundled agents read host facts through `host:` refs. |
+| `125_multiline_escape_triple_quote` | Triple-quoted literals may embed a literal `"""` sequence by escaping the first quote as `\"""`. |
+| `126_hyphenated_code_language` | Code block `language:` values accept hyphens so informal fences like `prompt-fragment` survive through the renderer. |
+| `127_inline_anonymous_readable_blocks` | Anonymous inline `code:`, `markdown:`, and `html:` blocks render bare inside document sections without requiring an authored key. |
 
 ## Useful Commands
 
@@ -225,14 +280,25 @@ Emit configured example trees:
 ```bash
 uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_docs --target example_14_handoff_truth
+uv run --locked python -m doctrine.emit_docs --target example_115_runtime_agent_packages
 uv run --locked python -m doctrine.emit_skill --target example_95_skill_package_minimal
 uv run --locked python -m doctrine.emit_skill --target example_100_skill_package_bundled_agents
+uv run --locked python -m doctrine.emit_skill --target example_122_skill_package_emit_documents
+uv run --locked python -m doctrine.emit_skill --target example_123_skill_package_emit_documents_mixed_bundle
+uv run --locked python -m doctrine.emit_skill --target example_124_skill_package_host_binding
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```
 
 Example `73_flow_visualizer_showcase` is the canonical checked-in flow
-example. Its `build_ref/` tree includes compiled Markdown, companion contract
-JSON, and `AGENTS.flow.{d2,svg}` proof artifacts.
+example. Its `build_ref/` tree includes compiled Markdown and
+`AGENTS.flow.{d2,svg}` proof artifacts.
 Examples `95` through `103` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.
+Example `124_skill_package_host_binding` is the focused host-binding proof for
+`package:`, `host_contract:`, `bind:`, `host:`, and `SKILL.contract.json`.
+Example `115_runtime_agent_packages` is the canonical checked-in runtime-package
+build proof. Its `build_ref/` tree shows the thin build-handle pattern, one
+package-root `AGENTS.md`, one optional sibling `SOUL.md`, and bundled peer
+files.

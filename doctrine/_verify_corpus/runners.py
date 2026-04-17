@@ -25,6 +25,7 @@ from doctrine._verify_corpus.diff import (
 )
 from doctrine._verify_corpus.manifest import (
     CaseSpec,
+    ExpectedDiagnosticSite,
     ManifestError,
     REPO_ROOT,
     _display_path,
@@ -320,16 +321,14 @@ def _run_build_contract(
     with tempfile.TemporaryDirectory() as temp_dir:
         actual_root = Path(temp_dir)
         try:
-            if target.entrypoint.name == "SKILL.prompt":
-                emit_target_skill_fn(target, output_dir_override=actual_root)
-            else:
-                emit_target_fn(target, output_dir_override=actual_root)
-            if target.entrypoint.name != "SKILL.prompt" and _build_ref_has_flow_artifacts(expected_root):
-                emit_target_flow_fn(
-                    target,
-                    output_dir_override=actual_root,
-                    include_svg=_build_ref_has_svg_artifacts(expected_root),
-                )
+            _emit_build_contract_target(
+                target,
+                expected_root=expected_root,
+                actual_root=actual_root,
+                emit_target_fn=emit_target_fn,
+                emit_target_flow_fn=emit_target_flow_fn,
+                emit_target_skill_fn=emit_target_skill_fn,
+            )
         except DoctrineError as exc:
             raise VerificationError(str(exc)) from exc
 
@@ -344,6 +343,30 @@ def _run_build_contract(
         result="PASS",
         detail="build matched checked-in tree",
     )
+
+
+def _emit_build_contract_target(
+    target,
+    *,
+    expected_root: Path,
+    actual_root: Path,
+    emit_target_fn,
+    emit_target_flow_fn,
+    emit_target_skill_fn,
+) -> None:
+    if target.entrypoint.name == "SKILL.prompt":
+        emit_target_skill_fn(target, output_dir_override=actual_root)
+        return
+
+    # Runtime build-contract proof always rides the canonical emit_docs +
+    # emit_flow path, including imported runtime-package trees.
+    emit_target_fn(target, output_dir_override=actual_root)
+    if _build_ref_has_flow_artifacts(expected_root):
+        emit_target_flow_fn(
+            target,
+            output_dir_override=actual_root,
+            include_svg=_build_ref_has_svg_artifacts(expected_root),
+        )
 
 
 def _run_compile_fail(
@@ -403,10 +426,80 @@ def _assert_expected_exception(case: CaseSpec, exc: Exception) -> None:
             f"Expected error code {case.error_code}, got {actual_code}: {exc}"
         )
 
+    if case.kind == "compile_fail":
+        _assert_expected_compile_diagnostic(case, exc)
+        return
+
     message = str(exc)
     missing = [snippet for snippet in case.message_contains if snippet not in message]
     if missing:
         joined = ", ".join(repr(snippet) for snippet in missing)
         raise VerificationError(
             f"{case.exception_type} did not include required excerpt(s): {joined}"
+        )
+
+
+def _assert_expected_compile_diagnostic(case: CaseSpec, exc: Exception) -> None:
+    if not isinstance(exc, DoctrineError):
+        raise VerificationError(
+            "compile_fail cases can only assert diagnostic sites on DoctrineError failures."
+        )
+    _assert_expected_site(
+        "location",
+        case.expected_location,
+        actual=getattr(exc, "location", None),
+        default_path=case.prompt_path,
+    )
+    if not case.expected_related:
+        return
+    actual_related = exc.diagnostic.related
+    if len(actual_related) != len(case.expected_related):
+        raise VerificationError(
+            "Expected "
+            f"{len(case.expected_related)} related site(s), got {len(actual_related)}: {exc}"
+        )
+    for index, (expected, actual) in enumerate(
+        zip(case.expected_related, actual_related), start=1
+    ):
+        if expected.label is not None and actual.label != expected.label:
+            raise VerificationError(
+                f"related[{index}] expected label {expected.label!r}, got {actual.label!r}: {exc}"
+            )
+        _assert_expected_site(
+            f"related[{index}]",
+            expected,
+            actual=actual.location,
+            default_path=case.prompt_path,
+        )
+
+
+def _assert_expected_site(
+    label: str,
+    expected: ExpectedDiagnosticSite | None,
+    *,
+    actual,
+    default_path: Path,
+) -> None:
+    if expected is None:
+        return
+    if actual is None:
+        raise VerificationError(f"Expected {label}, but the diagnostic had no {label}.")
+    expected_path = expected.path or default_path
+    actual_path = getattr(actual, "path", None)
+    if actual_path != expected_path:
+        raise VerificationError(
+            f"{label} expected path {_display_path(expected_path)}, "
+            f"got {_display_path(actual_path) if actual_path is not None else '<none>'}."
+        )
+    actual_line = getattr(actual, "line", None)
+    if actual_line != expected.line:
+        raise VerificationError(
+            f"{label} expected line {expected.line!r}, got {actual_line!r}."
+        )
+    if expected.column is None:
+        return
+    actual_column = getattr(actual, "column", None)
+    if actual_column != expected.column:
+        raise VerificationError(
+            f"{label} expected column {expected.column!r}, got {actual_column!r}."
         )

@@ -18,13 +18,25 @@ expected_lines = [
   "",
   "### Release Appendix File",
   "",
-  "- Target: File",
-  "- Path: `release_root/APPENDIX.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
-  "- Structure: Release Appendix",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/APPENDIX.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Release Appendix |",
   "",
-  "#### Structure: Release Appendix",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Release Appendix` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Appendix Markdown** | Markdown Block | See the detail below. |",
+  "| **Inline HTML** | HTML Block | See the detail below. |",
+  "| **References** | Footnotes | See the detail below. |",
+  "| **Evidence** | Image | See the detail below. |",
+  "| **Follow-Up Matrix** | Table | Use the columns `Summary` and `Details`. |",
   "",
   "##### Appendix Markdown",
   "",
@@ -57,7 +69,7 @@ expected_lines = [
   "",
   "Current release checklist snapshot.",
   "",
-  "##### Follow-Up Matrix",
+  "##### Follow-Up Matrix Contract",
   "",
   "_Required \u00b7 table_",
   "",
@@ -88,10 +100,7 @@ prompt = "prompts/INVALID_MARKDOWN_INLINE_TEXT.prompt"
 agent = "InvalidMarkdownInlineTextDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Raw markdown blocks must use a multiline string",
-  "ReleaseAppendix.appendix_markdown",
-]
+location_line = 3
 
 [[cases]]
 name = "inline table cells reject multiline text"
@@ -101,7 +110,4 @@ prompt = "prompts/INVALID_TABLE_INLINE_MULTILINE_CELL.prompt"
 agent = "InvalidTableInlineMultilineCellDemo"
 exception_type = "CompileError"
 error_code = "E297"
-message_contains = [
-  "Readable table inline cells must stay single-line",
-  "nested tables require structured cell bodies",
-]
+location_line = 9

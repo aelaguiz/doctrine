@@ -1,5 +1,5 @@
-># This example sketches one output primitive with reusable supporting
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># This example shows the shipped output contract surface with reusable supporting
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># declarations:
 #^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># - `output` is the produced-contract primitive
@@ -8,14 +8,18 @@
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># - `output shape` is the structural form
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
-># - `json schema` is the strict machine-readable structure when needed
-#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># - `output schema` is the strict machine-readable structure when needed
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >#
 #^ source.doctrine comment.line.number-sign.doctrine
 ># Simple outputs can stay small.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># Richer outputs can add more contract detail directly on `output`.
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># `output structure:` is now a typed document attachment, so free-form output
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># formatting guidance uses a different prose key in this example.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># Paths like `section_root/...` and `lesson_root/...` stay plain path strings
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 ># in this example. The model assumes the surrounding turn guidance explains how
@@ -25,29 +29,86 @@
 ># declarations here.
 #^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
 >
->json schema LessonManifestSchema: "Lesson Manifest Schema"
-#^^^^ source.doctrine keyword.declaration.doctrine
-#    ^ source.doctrine
-#     ^^^^^^ source.doctrine keyword.declaration.doctrine
-#           ^ source.doctrine
-#            ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
-#                                ^ source.doctrine punctuation.separator.key-value.doctrine
-#                                 ^ source.doctrine
-#                                  ^ source.doctrine punctuation.definition.string.begin.doctrine
-#                                   ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
-#                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
->    profile: OpenAIStructuredOutput
+>output schema LessonManifestSchema: "Lesson Manifest Schema"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    field title: "Title"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^ source.doctrine string.quoted.double.doctrine
+#                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        required
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    field steps: "Steps"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^ source.doctrine string.quoted.double.doctrine
+#                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: array
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        items: string
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        required
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    example:
 #^^^^ source.doctrine
 #    ^^^^^^^ source.doctrine entity.name.section.doctrine
 #           ^ source.doctrine punctuation.separator.key-value.doctrine
-#            ^ source.doctrine
-#             ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->    file: "schemas/lesson_manifest.schema.json"
-#^^^^ source.doctrine
-#    ^^^^ source.doctrine entity.name.section.doctrine
-#        ^ source.doctrine punctuation.separator.key-value.doctrine
-#         ^ source.doctrine
-#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        title: "Intro To Pot Odds"
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        steps:
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine entity.name.section.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+>            - "intro"
+#^^^^^^^^^^^^^^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^ source.doctrine string.quoted.double.doctrine
+#                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>            - "quiz"
+#^^^^^^^^^^^^^^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^ source.doctrine string.quoted.double.doctrine
+#                   ^ source.doctrine punctuation.definition.string.end.doctrine
+>            - "review"
+#^^^^^^^^^^^^^^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                     ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >output shape IssueSummaryText: "Issue Summary Text"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
@@ -111,12 +172,6 @@
 #          ^ source.doctrine punctuation.separator.key-value.doctrine
 #           ^ source.doctrine
 #            ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->    example_file: "examples/lesson_manifest.example.json"
-#^^^^ source.doctrine
-#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
-#                ^ source.doctrine punctuation.separator.key-value.doctrine
-#                 ^ source.doctrine
-#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >
 >    explanation: "Field Notes"
 #^^^^ source.doctrine
@@ -228,12 +283,12 @@
 #         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 #                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
 >
->    structure: "Expected Structure"
+>    format_notes: "Expected Structure"
 #^^^^ source.doctrine
-#    ^^^^^^^^^ source.doctrine entity.name.section.doctrine
-#             ^ source.doctrine punctuation.separator.key-value.doctrine
-#              ^ source.doctrine
-#               ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
 >        "State the issue in one or two sentences."
 #^^^^^^^^ source.doctrine
 #        ^ source.doctrine punctuation.definition.string.begin.doctrine
@@ -537,11 +592,11 @@
 #                   ^ source.doctrine punctuation.separator.key-value.doctrine
 #                    ^ source.doctrine
 #                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
->        "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
+>        "lesson_manifest.json and MANIFEST_VALIDATION.md should stand on their own and say what was built and what was checked."
 #^^^^^^^^ source.doctrine
 #        ^ source.doctrine punctuation.definition.string.begin.doctrine
-#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
-#                                                                                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
 >
 >    notes: "Notes"
 #^^^^ source.doctrine

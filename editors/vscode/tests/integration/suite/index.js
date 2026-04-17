@@ -12,7 +12,11 @@ async function run() {
   await testImportLinks();
   await testSkillPackageImportLinks();
   await testCrossRootImportLinks();
+  await testEditableSiblingProviderRootLinks();
+  await testGuardedOverrideDefinitionProvider();
   await testDefinitionProvider();
+  await testLateCorpusParityDefinitionProvider();
+  await testOutputInheritanceDefinitionProvider();
   await testCrossRootDefinitionProvider();
   await testAddressableDefinitionProvider();
   await testWorkflowLawDefinitionProvider();
@@ -36,21 +40,24 @@ async function testImportLinks() {
 
   assert.ok(Array.isArray(links), "Document link provider should return an array.");
 
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "from simple.greeting import Greeting as GreetingStep",
     "simple.greeting",
     "examples/03_imports/prompts/simple/greeting.prompt",
   );
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "from chains.relative.entry import RelativeChain as RelativeChainStep",
     "chains.relative.entry",
     "examples/03_imports/prompts/chains/relative/entry.prompt",
   );
-  assertLinkTarget(
+  assertLinkTargetOnLine(
     links,
     document,
+    "import chains.deep.levels.one.two.entry as deep_chain",
     "chains.deep.levels.one.two.entry",
     "examples/03_imports/prompts/chains/deep/levels/one/two/entry.prompt",
   );
@@ -60,8 +67,27 @@ async function testImportLinks() {
     expectedRelativeTargetPath:
       "examples/03_imports/prompts/chains/relative/entry.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
-    sourceLineFragment: "import chains.relative.entry",
+    sourceLineFragment:
+      "from chains.relative.entry import RelativeChain as RelativeChainStep",
     sourceText: "chains.relative.entry",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow Greeting: "Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/greeting.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "from simple.greeting import Greeting as GreetingStep",
+    sourceText: "Greeting",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow Greeting: "Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/greeting.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "from simple.greeting import Greeting as GreetingStep",
+    sourceText: "GreetingStep",
   });
 }
 
@@ -93,12 +119,30 @@ async function testSkillPackageImportLinks() {
 
 async function testDefinitionProvider() {
   await assertDefinitionTarget({
-    declarationSnippet: "workflow RelativeChain",
+    declarationSnippet: 'workflow Greeting: "Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/greeting.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "use greeting: GreetingStep",
+    sourceText: "GreetingStep",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow PoliteGreeting: "Polite Greeting"',
+    expectedRelativeTargetPath:
+      "examples/03_imports/prompts/simple/nested/polite.prompt",
+    relativePath: "examples/03_imports/prompts/AGENTS.prompt",
+    sourceLineFragment: "use polite_greeting: polite.PoliteGreeting",
+    sourceText: "polite.PoliteGreeting",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'workflow RelativeChain: "Relative Chain"',
     expectedRelativeTargetPath:
       "examples/03_imports/prompts/chains/relative/entry.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
-    sourceLineFragment: "use relative_chain: chains.relative.entry.RelativeChain",
-    sourceText: "chains.relative.entry.RelativeChain",
+    sourceLineFragment: "use relative_chain: RelativeChainStep",
+    sourceText: "RelativeChainStep",
   });
 
   await assertDefinitionTarget({
@@ -153,6 +197,232 @@ async function testDefinitionProvider() {
     relativePath: "examples/76_final_output_prose_basic/prompts/AGENTS.prompt",
     sourceLineFragment: "final_output: FinalReply",
     sourceText: "FinalReply",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output shape BaseRepoStatusJson: "Base Repo Status JSON"',
+    expectedRelativeTargetPath:
+      "examples/79_final_output_output_schema/prompts/AGENTS.prompt",
+    relativePath: "examples/79_final_output_output_schema/prompts/AGENTS.prompt",
+    sourceLineFragment: 'output shape RepoStatusJson[BaseRepoStatusJson]: "Repo Status JSON"',
+    sourceText: "BaseRepoStatusJson",
+  });
+}
+
+async function testLateCorpusParityDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: 'review_family SharedDraftReviewFamily: "Shared Draft Review"',
+    expectedRelativeTargetPath:
+      "examples/68_review_family_shared_scaffold/prompts/AGENTS.prompt",
+    relativePath: "examples/68_review_family_shared_scaffold/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'review SharedDraftReview[SharedDraftReviewFamily]: "Shared Draft Review"',
+    sourceText: "SharedDraftReviewFamily",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'review_family SelectedReviewFamily: "Selected Review"',
+    expectedRelativeTargetPath:
+      "examples/69_case_selected_review_family/prompts/AGENTS.prompt",
+    relativePath: "examples/69_case_selected_review_family/prompts/AGENTS.prompt",
+    sourceLineFragment: "review: SelectedReviewFamily",
+    sourceText: "SelectedReviewFamily",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'route_only RouteRepair: "Route Repair"',
+    expectedRelativeTargetPath:
+      "examples/70_route_only_declaration/prompts/AGENTS.prompt",
+    relativePath: "examples/70_route_only_declaration/prompts/AGENTS.prompt",
+    sourceLineFragment: "workflow: RouteRepair",
+    sourceText: "RouteRepair",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'grounding ClaimGrounding: "Claim Grounding"',
+    expectedRelativeTargetPath:
+      "examples/71_grounding_declaration/prompts/AGENTS.prompt",
+    relativePath: "examples/71_grounding_declaration/prompts/AGENTS.prompt",
+    sourceLineFragment: "workflow: ClaimGrounding",
+    sourceText: "ClaimGrounding",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'table ReleaseGates: "Release Gates"',
+    expectedRelativeTargetPath:
+      "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    relativePath: "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    sourceLineFragment: "table release_gates: ReleaseGates required",
+    sourceText: "ReleaseGates",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'table release_gates: ReleaseGates required',
+    expectedRelativeTargetPath:
+      "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    relativePath: "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'role: "Keep {{ReleaseGates:columns.evidence.title}} and {{ReleaseGuide:release_gates.rows.package_smoke}} aligned in {{ReleaseGuide:title}}."',
+    sourceText: "release_gates",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'evidence: "Evidence"',
+    expectedRelativeTargetPath:
+      "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    relativePath: "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'role: "Keep {{ReleaseGates:columns.evidence.title}} and {{ReleaseGuide:release_gates.rows.package_smoke}} aligned in {{ReleaseGuide:title}}."',
+    sourceText: "evidence",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "package_smoke:",
+    expectedRelativeTargetPath:
+      "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    relativePath: "examples/116_first_class_named_tables/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'role: "Keep {{ReleaseGates:columns.evidence.title}} and {{ReleaseGuide:release_gates.rows.package_smoke}} aligned in {{ReleaseGuide:title}}."',
+    sourceText: "package_smoke",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'skill LedgerNoteDelivery: "ledger-note-delivery"',
+    expectedRelativeTargetPath:
+      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery.prompt",
+    relativePath:
+      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery.prompt",
+    sourceLineFragment: "delivery_skill: LedgerNoteDelivery",
+    sourceText: "LedgerNoteDelivery",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output RouteOnlyFinalReply: "Route Only Final Reply"',
+    expectedRelativeTargetPath:
+      "examples/119_route_only_final_output_contract/prompts/AGENTS.prompt",
+    relativePath: "examples/119_route_only_final_output_contract/prompts/AGENTS.prompt",
+    sourceLineFragment: "final_output: RouteOnlyFinalReply",
+    sourceText: "RouteOnlyFinalReply",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output WriterDecision: "Writer Decision"',
+    expectedRelativeTargetPath:
+      "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt",
+    sourceLineFragment: "output: WriterDecision",
+    sourceText: "WriterDecision",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'route field next_route: "Next Route"',
+    expectedRelativeTargetPath:
+      "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt",
+    sourceLineFragment: "route: next_route",
+    sourceText: "next_route",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output WriterTurnResult: "Writer Turn Result"',
+    expectedRelativeTargetPath:
+      "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt",
+    sourceLineFragment: "output: WriterTurnResult",
+    sourceText: "WriterTurnResult",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'route field next_route: "Next Route"',
+    expectedRelativeTargetPath:
+      "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt",
+    sourceLineFragment: "route: next_route",
+    sourceText: "next_route",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output AcceptanceReviewResponse: "Acceptance Review Response"',
+    expectedRelativeTargetPath:
+      "examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt",
+    sourceLineFragment: "final_output: AcceptanceReviewResponse",
+    sourceText: "AcceptanceReviewResponse",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "render_profile: CompactComment",
+    expectedRelativeTargetPath:
+      "examples/108_output_inheritance_attachments/prompts/AGENTS.prompt",
+    relativePath: "examples/108_output_inheritance_attachments/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "inherit {target, shape, render_profile, requirement, current_artifact}",
+    sourceText: "render_profile",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output FinalReply[BaseReply]: "Final Reply"',
+    expectedRelativeTargetPath:
+      "examples/110_final_output_inherited_output/prompts/AGENTS.prompt",
+    relativePath: "examples/110_final_output_inherited_output/prompts/AGENTS.prompt",
+    sourceLineFragment: "final_output: FinalReply",
+    sourceText: "FinalReply",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "next_owner: route.next_owner",
+    expectedRelativeTargetPath:
+      "examples/111_inherited_output_route_semantics/prompts/AGENTS.prompt",
+    relativePath:
+      "examples/111_inherited_output_route_semantics/prompts/AGENTS.prompt",
+    sourceLineFragment: "inherit next_owner",
+    sourceText: "next_owner",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'output BaseHandoff: "Base Handoff"',
+    expectedRelativeTargetPath:
+      "examples/112_output_inheritance_fail_loud/prompts/AGENTS.prompt",
+    relativePath: "examples/112_output_inheritance_fail_loud/prompts/AGENTS.prompt",
+    sourceLineFragment: 'output LessonsLeadOutput[BaseHandoff]: "Lessons Lead Output"',
+    sourceText: "BaseHandoff",
+  });
+}
+
+async function testOutputInheritanceDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: 'output HandoffOutput: "Handoff Output"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: 'output ChildOutput[shared.review.HandoffOutput]: "Child Output"',
+    sourceText: "shared.review.HandoffOutput",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'what_changed: "What Changed"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: "inherit what_changed",
+    sourceText: "what_changed",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'use_now: "Use Now"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/shared/review.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/output_inheritance/prompts/AGENTS.prompt",
+    sourceLineFragment: 'override use_now: "Use Now"',
+    sourceText: "use_now",
   });
 }
 
@@ -210,6 +480,64 @@ async function testCrossRootImportLinks() {
     ambiguousDocument,
     "library.workflows.common_turn",
   );
+}
+
+async function testEditableSiblingProviderRootLinks() {
+  const document = await openPrompt(
+    "editors/vscode/tests/integration/fixtures/provider_root_host/prompts/AGENTS.prompt",
+  );
+  const links = await vscode.commands.executeCommand(
+    "_executeLinkProvider",
+    document.uri,
+    100,
+  );
+
+  assert.ok(
+    Array.isArray(links),
+    "Editable sibling provider-root links should return an array.",
+  );
+
+  assertLinkTargetOnLine(
+    links,
+    document,
+    "import rally.base_agent",
+    "rally.base_agent",
+    "editors/vscode/tests/integration/fixtures/provider_root_dep/stdlib/rally/prompts/rally/base_agent.prompt",
+  );
+
+  await assertDefinitionTarget({
+    declarationSnippet: "abstract agent RallyManagedBaseAgent:",
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/provider_root_dep/stdlib/rally/prompts/rally/base_agent.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/provider_root_host/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      "abstract agent DemoRole[rally.base_agent.RallyManagedBaseAgent]:",
+    sourceText: "rally.base_agent.RallyManagedBaseAgent",
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: 'inputs RallyManagedInputs: "Rally Managed Inputs"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/provider_root_dep/stdlib/rally/prompts/rally/base_agent.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/provider_root_host/prompts/AGENTS.prompt",
+    sourceLineFragment: 'inputs DemoInputs[rally.base_agent.RallyManagedInputs]: "Inputs"',
+    sourceText: "rally.base_agent.RallyManagedInputs",
+  });
+}
+
+async function testGuardedOverrideDefinitionProvider() {
+  await assertDefinitionTarget({
+    declarationSnippet: 'current_artifact: "Current Artifact"',
+    expectedRelativeTargetPath:
+      "editors/vscode/tests/integration/fixtures/guarded_override/prompts/AGENTS.prompt",
+    relativePath:
+      "editors/vscode/tests/integration/fixtures/guarded_override/prompts/AGENTS.prompt",
+    sourceLineFragment:
+      'override current_artifact: "Current Artifact" when present(current_artifact):',
+    sourceText: "current_artifact",
+  });
 }
 
 async function testCrossRootDefinitionProvider() {
@@ -376,8 +704,8 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
-    sourceText: "SharedSkills",
+      '"Keep {{self:can_run.grounding}} available before you act."',
+    sourceText: "self",
   });
 
   await assertDefinitionTarget({
@@ -387,7 +715,7 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+      '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "can_run",
   });
 
@@ -398,7 +726,7 @@ async function testAddressableDefinitionProvider() {
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     sourceLineFragment:
-      '"Keep {{SharedSkills:can_run.grounding}} available before you act."',
+      '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "grounding",
   });
 
@@ -408,7 +736,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.title",
+    sourceLineFragment: "self:shared.title",
     sourceText: "title",
   });
 
@@ -418,7 +746,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.title",
+    sourceLineFragment: "self:skills.title",
     sourceText: "title",
   });
 
@@ -428,8 +756,8 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
-    sourceText: "WorkflowRoot",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
+    sourceText: "self",
   });
 
   await assertDefinitionTarget({
@@ -438,7 +766,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "shared",
   });
 
@@ -448,7 +776,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "gates",
   });
 
@@ -458,7 +786,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "build",
   });
 
@@ -468,7 +796,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:shared.gates.build.check_build_honesty",
+    sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "check_build_honesty",
   });
 
@@ -478,7 +806,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "skills",
   });
 
@@ -488,7 +816,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "can_run",
   });
 
@@ -498,7 +826,7 @@ async function testAddressableDefinitionProvider() {
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
     relativePath:
       "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
-    sourceLineFragment: "WorkflowRoot:skills.can_run.grounding",
+    sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "grounding",
   });
 }
@@ -913,7 +1241,7 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: "json schema LessonManifestSchema",
+    declarationSnippet: "output schema LessonManifestSchema",
     expectedRelativeTargetPath: "examples/09_outputs/prompts/AGENTS.prompt",
     relativePath: "examples/09_outputs/prompts/AGENTS.prompt",
     sourceLineFragment: "schema: LessonManifestSchema",
@@ -939,12 +1267,12 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: "json schema DeliveryJsonSchema",
+    declarationSnippet: "output schema DeliveryOutputSchema",
     expectedRelativeTargetPath:
       "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
     relativePath: "examples/55_owner_aware_schema_attachments/prompts/AGENTS.prompt",
-    sourceLineFragment: "schema: DeliveryJsonSchema",
-    sourceText: "DeliveryJsonSchema",
+    sourceLineFragment: "schema: DeliveryOutputSchema",
+    sourceText: "DeliveryOutputSchema",
   });
 
   await assertDefinitionTarget({
@@ -1007,9 +1335,8 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
-    sourceLineFragment: "ScopedCatalogTruth",
+    sourceLineFragment: "scoped_catalog_truth: ScopedCatalogTruth",
     sourceText: "ScopedCatalogTruth",
-    occurrence: 1,
   });
 
   await assertDefinitionTarget({
@@ -1017,9 +1344,17 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
-    sourceLineFragment: "CoordinationHandoff",
+    sourceLineFragment: "coordination_handoff: CoordinationHandoff",
     sourceText: "CoordinationHandoff",
-    occurrence: 1,
+  });
+
+  await assertDefinitionTarget({
+    declarationSnippet: "input LessonsIssueLedger",
+    expectedRelativeTargetPath:
+      "examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt",
+    relativePath: "examples/117_io_omitted_wrapper_titles/prompts/AGENTS.prompt",
+    sourceLineFragment: "issue_ledger: LessonsIssueLedger",
+    sourceText: "LessonsIssueLedger",
   });
 
   await assertDefinitionTarget({
@@ -1085,7 +1420,7 @@ async function testFullClickableSurface() {
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: 'coordination_handoff: "Coordination Handoff"',
+    declarationSnippet: "coordination_handoff: CoordinationHandoff",
     expectedRelativeTargetPath:
       "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
     relativePath: "examples/24_io_block_inheritance/prompts/AGENTS.prompt",
@@ -1112,6 +1447,30 @@ async function openPrompt(relativePath) {
 
 function assertLinkTarget(links, document, linkText, expectedRelativeTargetPath) {
   const position = positionForText(document, linkText);
+  const link = links.find((candidate) => rangeContains(candidate.range, position));
+  assert.ok(link, `Expected a link for ${linkText}.`);
+
+  const linkTarget = link.url || link.target;
+  const linkTargetPath =
+    typeof linkTarget === "string"
+      ? vscode.Uri.parse(linkTarget).fsPath
+      : linkTarget.fsPath;
+
+  assert.equal(
+    linkTargetPath,
+    path.join(REPO_ROOT, expectedRelativeTargetPath),
+    `Expected ${linkText} to resolve to ${expectedRelativeTargetPath}.`,
+  );
+}
+
+function assertLinkTargetOnLine(
+  links,
+  document,
+  lineFragment,
+  linkText,
+  expectedRelativeTargetPath,
+) {
+  const position = positionForLineText(document, lineFragment, linkText);
   const link = links.find((candidate) => rangeContains(candidate.range, position));
   assert.ok(link, `Expected a link for ${linkText}.`);
 

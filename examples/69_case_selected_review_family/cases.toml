@@ -96,29 +96,12 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the selected subject or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Sum up the parts of the selected subject the next owner should read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use RevisionOwner in both selected review modes.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Name the artifact that is current in the selected review mode.",
+  "- Verdict: Say whether the review accepted the selected subject or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Sum up the parts of the selected subject the next owner should read first.",
+  "- Next Owner: Name the next owner. Use RevisionOwner in both selected review modes.",
+  "- Current Artifact: Name the artifact that is current in the selected review mode.",
   "",
   "#### Failure Detail",
   "",
@@ -130,13 +113,10 @@ expected_lines = [
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current now, and who owns next.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current now, and who owns next.",
 ]
-
 [[cases]]
 name = "case-selected review_family rejects overlapping cases"
 status = "active"
@@ -145,10 +125,9 @@ prompt = "prompts/INVALID_OVERLAPPING_CASES.prompt"
 agent = "InvalidCaseOverlapDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Review cases overlap",
-  "draft_path",
-  "duplicate_draft_path",
+location_line = 96
+related = [
+    { label = "first case for `draft-rewrite`", line = 83 },
 ]
 
 [[cases]]
@@ -247,29 +226,12 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the selected subject or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Sum up the parts of the selected subject the next owner should read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use RevisionOwner in both selected review modes.",
-  "",
-  "#### Current Artifact",
-  "",
-  "Name the artifact that is current in the selected review mode.",
+  "- Verdict: Say whether the review accepted the selected subject or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Sum up the parts of the selected subject the next owner should read first.",
+  "- Next Owner: Name the next owner. Use RevisionOwner in both selected review modes.",
+  "- Current Artifact: Name the artifact that is current in the selected review mode.",
   "",
   "#### Failure Detail",
   "",
@@ -281,13 +243,10 @@ expected_lines = [
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current now, and who owns next.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know which subject was reviewed, which artifact is current now, and who owns next.",
 ]
-
 [[cases]]
 name = "case-selected review_family rejects non-total cases"
 status = "active"
@@ -296,6 +255,4 @@ prompt = "prompts/INVALID_NON_TOTAL_CASES.prompt"
 agent = "InvalidCaseNonTotalDemo"
 exception_type = "CompileError"
 error_code = "E470"
-message_contains = [
-  "Review cases must be exhaustive",
-]
+location_line = 70

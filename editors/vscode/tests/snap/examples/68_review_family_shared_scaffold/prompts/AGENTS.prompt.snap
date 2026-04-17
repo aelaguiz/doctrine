@@ -1,0 +1,461 @@
+># This example introduces `review_family` as a dedicated reusable review
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># scaffold. The child review still owns subject, contract, and outcomes, and it
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+># must account for inherited shared review entries explicitly.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine comment.line.number-sign.doctrine
+>
+>input DraftSpec: "Draft Spec"
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    source: File
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        path: "unit_root/DRAFT_SPEC.md"
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    shape: MarkdownDocument
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    "Use the current draft spec as the reviewed artifact."
+#^^^^ source.doctrine
+#    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>workflow SharedDraftReviewContract: "Shared Draft Review Contract"
+#^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#        ^ source.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    completeness: "Completeness"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Confirm the draft covers the required sections."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent ReviewLead:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Own accepted draft follow-up."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Follow Up"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Take the accepted draft to the next planning step."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent DraftAuthor:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Repair rejected draft defects."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Revise"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Revise the same draft when review requests changes."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>output SharedReviewFamilyComment: "Shared Review Family Comment"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                 ^ source.doctrine
+#                                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: Comment
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    verdict: "Verdict"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Say whether the review accepted the draft or asked for changes."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    reviewed_artifact: "Reviewed Artifact"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Name the reviewed artifact this review judged."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    analysis_performed: "Analysis Performed"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                      ^ source.doctrine punctuation.separator.key-value.doctrine
+#                       ^ source.doctrine
+#                        ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Sum up the review work that led to the verdict."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    output_contents_that_matter: "Output Contents That Matter"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Summarize the parts of the draft the next owner must read first."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    next_owner: "Next Owner"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Name the next owner. Use {{ReviewLead}} when the draft is accepted and {{DraftAuthor}} when it is rejected."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                  ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                    ^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                              ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#                                                                                  ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                                                                                             ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                                                                                               ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                    ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                    ^ source.doctrine
+#                                     ^^^^ source.doctrine keyword.control.doctrine
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                                                    ^ source.doctrine punctuation.separator.key-value.doctrine
+>        failing_gates: "Failing Gates"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>            "Name the failing review gates in authored order."
+#^^^^^^^^^^^^ source.doctrine
+#            ^ source.doctrine punctuation.definition.string.begin.doctrine
+#             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                                                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>review_family SharedDraftReviewFamily: "Shared Draft Review"
+#^^^^^^^^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                      ^ source.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                        ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    comment_output: SharedReviewFamilyComment
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    fields:
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+>        verdict: verdict
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>        reviewed_artifact: reviewed_artifact
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                         ^ source.doctrine punctuation.separator.key-value.doctrine
+#                          ^ source.doctrine
+#                           ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>        analysis: analysis_performed
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>        readback: output_contents_that_matter
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>        failing_gates: failure_detail.failing_gates
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>        next_owner: next_owner
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                   ^ source.doctrine
+#                    ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine variable.other.member.doctrine support.type.reference.doctrine
+>
+>    handoff_first:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+>        reject "Producer handoff is incomplete." when DraftSpec.handoff_incomplete
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.control.doctrine
+#              ^ source.doctrine
+#               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                               ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                ^ source.doctrine
+#                                                 ^^^^ source.doctrine keyword.control.doctrine
+#                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+>
+>
+>review SharedDraftReview[SharedDraftReviewFamily]: "Shared Draft Review"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                        ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                         ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                  ^ source.doctrine
+#                                                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                    ^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    subject: DraftSpec
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    contract: SharedDraftReviewContract
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    inherit fields
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>    inherit handoff_first
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>
+>    contract_checks: "Contract Checks"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        accept "The shared draft review contract passes." when contract.passes
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.control.doctrine
+#              ^ source.doctrine
+#               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                         ^ source.doctrine
+#                                                          ^^^^ source.doctrine keyword.control.doctrine
+#                                                              ^ source.doctrine
+#                                                               ^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                                                                       ^ source.doctrine punctuation.separator.interpolation.doctrine
+#                                                                        ^^^^^^ source.doctrine variable.other.member.doctrine
+>
+>    on_accept:
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current none
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine keyword.control.doctrine
+>        route "Accepted draft goes to ReviewLead." -> ReviewLead
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.control.doctrine
+#             ^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                  ^ source.doctrine
+#                                                   ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                     ^ source.doctrine
+#                                                      ^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    on_reject:
+#^^^^ source.doctrine
+#    ^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+>        current none
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine keyword.control.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine keyword.control.doctrine
+>        route "Rejected draft goes to DraftAuthor." -> DraftAuthor
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.control.doctrine
+#             ^ source.doctrine
+#              ^ source.doctrine punctuation.definition.string.begin.doctrine
+#               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+#                                                   ^ source.doctrine
+#                                                    ^^ source.doctrine keyword.operator.route.doctrine keyword.operator.doctrine punctuation.separator.route.doctrine
+#                                                      ^ source.doctrine
+#                                                       ^^^^^^^^^^^ source.doctrine entity.name.type.reference.route-target.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>agent SharedReviewFamilyDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                            ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Keep reusable review scaffolds explicit and accounted for."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                     ^ source.doctrine punctuation.definition.string.end.doctrine
+>    review: SharedDraftReview
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    inputs: "Inputs"
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine keyword.other.field.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        DraftSpec
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        SharedReviewFamilyComment
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

@@ -4,21 +4,21 @@ Keep narrow ownership explicit and preserve every unowned field.
 
 Keep narrow ownership explicit and preserve every unowned field.
 
-Use exactly one mode:
+Choose one mode for this turn:
 - name-only
 - summary-refresh
 
-If the mode is name-only:
-- Current artifact: Section Metadata.
-- Own only `SectionMetadata.name`.
-- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`.
-- Preserve decisions `ApprovedPlan`.
+When the mode is name-only:
+- The current artifact is Section Metadata.
+- Only edit `SectionMetadata.name`.
+- Keep `SectionMetadata.*` unchanged except `SectionMetadata.name`.
+- Keep decisions from `ApprovedPlan`.
 
-If the mode is summary-refresh:
-- Current artifact: Section Metadata.
-- Own only {`SectionMetadata.name`, `SectionMetadata.description`}.
-- Preserve exact `SectionMetadata.*` except `SectionMetadata.name`, `SectionMetadata.description`.
-- Preserve decisions `ApprovedStructure`.
+When the mode is summary-refresh:
+- The current artifact is Section Metadata.
+- Only edit `SectionMetadata.name` and `SectionMetadata.description`.
+- Keep `SectionMetadata.*` unchanged except `SectionMetadata.name` and `SectionMetadata.description`.
+- Keep decisions from `ApprovedStructure`.
 - Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.
 
 ## Inputs
@@ -49,10 +49,12 @@ Use the host-provided handoff facts that say which metadata edit mode is active.
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff
 
@@ -60,14 +62,10 @@ Use the host-provided handoff facts that say which metadata edit mode is active.
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact is current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.

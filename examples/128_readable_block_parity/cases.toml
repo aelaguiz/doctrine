@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "every readable block kind has a bare form that renders without an H3 heading"
+status = "active"
+kind = "render_contract"
+agent = "ReadableBlockParityDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Render every readable block kind in its bare form.",
+  "",
+  "## Bare Readable Blocks",
+  "",
+  "- **Short Form** — One line about the short form.",
+  "",
+  "> **NOTE**",
+  "> This callout has no trailing title.",
+  "",
+  "| Column | Meaning |",
+  "| --- | --- |",
+  "| A | first |",
+  "| B | second |",
+  "",
+  "[^cite]: Referenced in the citation.",
+  "",
+  "![Flow diagram](./diagram.png)",
+  "",
+  "- First bare bullet.",
+  "- Second bare bullet.",
+  "",
+  "1. Step one.",
+  "2. Step two.",
+  "",
+  "- [ ] Check one.",
+  "- [ ] Check two.",
+  "",
+  "```bash",
+  "echo hi",
+  "```",
+  "",
+  "Raw markdown line.",
+  "Inline `backticks` survive.",
+]

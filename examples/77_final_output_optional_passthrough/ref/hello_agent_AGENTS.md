@@ -12,11 +12,5 @@ Reply and stop.
 - Shape: Comment Text
 - Requirement: Required
 
-#### Expected Structure
-
-Lead with the shipped outcome.
-Keep the answer concise unless the user asked for depth.
-
-#### Standalone Read
-
-The user should understand what changed and what happens next.
+- Expected Structure: Lead with the shipped outcome. Keep the answer concise unless the user asked for depth.
+- Standalone Read: The user should understand what changed and what happens next.

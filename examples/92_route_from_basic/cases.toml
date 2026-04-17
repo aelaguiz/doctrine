@@ -14,19 +14,19 @@ expected_lines = [
   "",
   "Pick the next owner from typed route facts.",
   "",
-  "No artifact is current for this turn.",
+  "No artifact is current for this pass.",
   "",
   "Stop: Hand off or finish the turn.",
   "",
-  "Select one route from RouteFacts.route_choice.",
+  "Choose a route from RouteFacts.route_choice.",
   "Use exactly one route choice:",
   "- Accept",
   "- Change",
   "",
-  "If the route choice is Accept:",
+  "When the route choice is Accept:",
   "- Send to AcceptanceCritic.",
   "",
-  "If the route choice is Change:",
+  "When the route choice is Change:",
   "- Send to ChangeEngineer.",
   "",
   "## Inputs",
@@ -49,7 +49,6 @@ expected_lines = [
   "",
   "- Next Owner: the selected route's next owner key",
 ]
-
 [[cases]]
 name = "route_from selector must stay on declared input or output surfaces"
 status = "active"
@@ -58,10 +57,7 @@ prompt = "prompts/INVALID_SELECTOR_LOCAL_MODE.prompt"
 agent = "InvalidRouteFromSelectorDemo"
 exception_type = "CompileError"
 error_code = "E346"
-message_contains = [
-  "route_from selector",
-  "pass_mode",
-]
+location_line = 24
 
 [[cases]]
 name = "route_from selector must stay direct and not use computed expressions"
@@ -71,10 +67,7 @@ prompt = "prompts/INVALID_SELECTOR_COMPUTED_EXPR.prompt"
 agent = "InvalidComputedRouteFromDemo"
 exception_type = "CompileError"
 error_code = "E346"
-message_contains = [
-  "route_from selector",
-  "RouteFacts.route_choice == Accept",
-]
+location_line = 26
 
 [[cases]]
 name = "route_from must reject duplicate route choices"
@@ -84,7 +77,7 @@ prompt = "prompts/INVALID_DUPLICATE_ROUTE_MEMBER.prompt"
 agent = "InvalidDuplicateRouteFromDemo"
 exception_type = "CompileError"
 error_code = "E348"
-message_contains = [
-  "Duplicate route_from arm",
-  "Accept",
+location_line = 33
+related = [
+    { label = "first `Accept` arm", line = 31 },
 ]

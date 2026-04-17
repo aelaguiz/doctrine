@@ -15,7 +15,7 @@ expected_lines = [
   "",
   "Keep one current artifact explicit and portable.",
   "",
-  "Current artifact: Approved Plan.",
+  "The current artifact is Approved Plan.",
   "",
   "## Inputs",
   "",
@@ -34,19 +34,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact is current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.",
 ]
-
 [[cases]]
 name = "current truth can be carried from a newly produced artifact"
 status = "active"
@@ -61,16 +56,18 @@ expected_lines = [
   "",
   "Keep one current artifact explicit and portable.",
   "",
-  "Current artifact: Section Metadata.",
+  "The current artifact is Section Metadata.",
   "",
   "## Outputs",
   "",
   "### Section Metadata",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/section_metadata.json`",
-  "- Shape: Json Object",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/section_metadata.json` |",
+  "| Shape | Json Object |",
+  "| Requirement | Required |",
   "",
   "### Coordination Handoff",
   "",
@@ -78,19 +75,14 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
+  "- `Current Artifact`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact is current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.",
 ]
-
 [[cases]]
 name = "current artifact bindings require via carriers"
 status = "active"
@@ -109,11 +101,8 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_VIA_UNKNOWN_OUTPUT_FIELD.prompt"
 agent = "InvalidViaUnknownOutputField"
 exception_type = "CompileError"
-error_code = "E337"
-message_contains = [
-  "Unknown current carrier field",
-  "CoordinationHandoff.current_artifact",
-]
+error_code = "E299"
+location_line = 32
 
 [[cases]]
 name = "carrier fields must be listed in the trust surface"
@@ -123,10 +112,7 @@ prompt = "prompts/INVALID_VIA_FIELD_NOT_IN_TRUST_SURFACE.prompt"
 agent = "InvalidViaFieldNotInTrustSurface"
 exception_type = "CompileError"
 error_code = "E336"
-message_contains = [
-  "Current carrier field missing from trust surface",
-  "current_artifact",
-]
+location_line = 36
 
 [[cases]]
 name = "workflows that carry current truth must emit the carrier output"
@@ -136,10 +122,7 @@ prompt = "prompts/INVALID_CARRIER_OUTPUT_NOT_EMITTED.prompt"
 agent = "InvalidCarrierOutputNotEmitted"
 exception_type = "CompileError"
 error_code = "E333"
-message_contains = [
-  "Current carrier output not emitted",
-  "CoordinationHandoff",
-]
+location_line = 41
 
 [[cases]]
 name = "current output artifacts must be emitted by the concrete turn"
@@ -149,10 +132,7 @@ prompt = "prompts/INVALID_CURRENT_OUTPUT_NOT_EMITTED.prompt"
 agent = "InvalidCurrentOutputNotEmitted"
 exception_type = "CompileError"
 error_code = "E334"
-message_contains = [
-  "Current output not emitted",
-  "SectionMetadata",
-]
+location_line = 33
 
 [[cases]]
 name = "current artifact targets must stay rooted in declared inputs or outputs"
@@ -162,7 +142,4 @@ prompt = "prompts/INVALID_CURRENT_TARGET_WRONG_KIND.prompt"
 agent = "InvalidCurrentTargetWrongKind"
 exception_type = "CompileError"
 error_code = "E335"
-message_contains = [
-  "Current artifact target has wrong kind",
-  "input or output",
-]
+location_line = 31

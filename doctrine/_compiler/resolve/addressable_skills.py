@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.resolved_types import (
-    CompileError,
     IndexedUnit,
     ResolvedSkillEntry,
     ResolvedSkillsBody,
@@ -32,11 +31,18 @@ class ResolveAddressableSkillsMixin:
                     skills_key,
                 ]
             )
-            raise CompileError(f"Cyclic skills inheritance: {cycle}")
+            raise self._skills_compile_error(
+                code="E250",
+                summary="Cyclic skills inheritance",
+                detail=f"Cyclic skills inheritance: {cycle}",
+                unit=unit,
+                source_span=skills_decl.source_span,
+            )
 
         self._skills_addressable_resolution_stack.append(skills_key)
         try:
             parent_skills: ResolvedSkillsBody | None = None
+            parent_unit: IndexedUnit | None = None
             parent_label: str | None = None
             if skills_decl.parent_ref is not None:
                 parent_unit, parent_decl = self._resolve_parent_skills_decl(
@@ -51,13 +57,18 @@ class ResolveAddressableSkillsMixin:
                     f"skills {_dotted_decl_name(parent_unit.module_parts, parent_decl.name)}"
                 )
 
-            resolved = self._resolve_skills_addressable_body(
-                skills_decl.body,
-                unit=unit,
-                owner_label=_dotted_decl_name(unit.module_parts, skills_decl.name),
-                parent_skills=parent_skills,
-                parent_label=parent_label,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(skills_decl.name)
+            ):
+                resolved = self._resolve_skills_addressable_body(
+                    skills_decl.body,
+                    unit=unit,
+                    owner_label=_dotted_decl_name(unit.module_parts, skills_decl.name),
+                    owner_source_span=skills_decl.source_span,
+                    parent_skills=parent_skills,
+                    parent_unit=parent_unit,
+                    parent_label=parent_label,
+                )
             self._addressable_skills_cache[skills_key] = resolved
             return resolved
         finally:
@@ -69,7 +80,9 @@ class ResolveAddressableSkillsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None = None,
         parent_skills: ResolvedSkillsBody | None = None,
+        parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedSkillsBody:
         if parent_skills is None:
@@ -85,14 +98,25 @@ class ResolveAddressableSkillsMixin:
 
         parent_items_by_key = {item.key: item for item in parent_skills.items}
         resolved_items: list[ResolvedSkillsItem] = []
-        emitted_keys: set[str] = set()
+        emitted_keys: dict[str, model.SkillsItem] = {}
         accounted_keys: set[str] = set()
 
         for item in skills_body.items:
             key = item.key
             if key in emitted_keys:
-                raise CompileError(f"Duplicate skills item key in {owner_label}: {key}")
-            emitted_keys.add(key)
+                raise self._skills_compile_error(
+                    detail=f"Duplicate skills item key in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        self._skills_related_site(
+                            label=f"first `{key}` skills entry",
+                            unit=unit,
+                            source_span=emitted_keys[key].source_span,
+                        ),
+                    ),
+                )
+            emitted_keys[key] = item
 
             if isinstance(item, model.SkillsSection):
                 resolved_items.append(
@@ -103,6 +127,7 @@ class ResolveAddressableSkillsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -114,23 +139,38 @@ class ResolveAddressableSkillsMixin:
             parent_item = parent_items_by_key.get(key)
             if isinstance(item, model.InheritItem):
                 if parent_item is None:
-                    raise CompileError(
-                        f"Cannot inherit undefined skills entry in {parent_label}: {key}"
+                    raise self._skills_compile_error(
+                        detail=f"Cannot inherit undefined skills entry in {parent_label}: {key}",
+                        unit=unit,
+                        source_span=item.source_span,
                     )
                 accounted_keys.add(key)
                 resolved_items.append(parent_item)
                 continue
 
             if parent_item is None:
-                raise CompileError(
-                    f"E001 Cannot override undefined skills entry in {parent_label}: {key}"
+                raise self._skills_compile_error(
+                    code="E001",
+                    summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined skills entry in {parent_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span,
                 )
 
             accounted_keys.add(key)
             if isinstance(item, model.OverrideSkillsSection):
                 if not isinstance(parent_item, ResolvedSkillsSection):
-                    raise CompileError(
-                        f"Override kind mismatch for skills entry in {owner_label}: {key}"
+                    raise self._skills_compile_error(
+                        detail=f"Override kind mismatch for skills entry in {owner_label}: {key}",
+                        unit=unit,
+                        source_span=item.source_span,
+                        related=(
+                            self._skills_related_site(
+                                label=f"inherited `{key}` entry",
+                                unit=parent_unit or unit,
+                                source_span=parent_item.source_span,
+                            ),
+                        ),
                     )
                 resolved_items.append(
                     ResolvedSkillsSection(
@@ -140,13 +180,23 @@ class ResolveAddressableSkillsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
 
             if not isinstance(parent_item, ResolvedSkillEntry):
-                raise CompileError(
-                    f"Override kind mismatch for skills entry in {owner_label}: {key}"
+                raise self._skills_compile_error(
+                    detail=f"Override kind mismatch for skills entry in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        self._skills_related_site(
+                            label=f"inherited `{key}` entry",
+                            unit=parent_unit or unit,
+                            source_span=parent_item.source_span,
+                        ),
+                    ),
                 )
             resolved_items.append(self._resolve_skill_entry(item, unit=unit))
 
@@ -157,8 +207,17 @@ class ResolveAddressableSkillsMixin:
         ]
         if missing_keys:
             missing = ", ".join(missing_keys)
-            raise CompileError(
-                f"E003 Missing inherited skills entry in {owner_label}: {missing}"
+            raise self._skills_compile_error(
+                code="E003",
+                summary="Missing inherited entry",
+                detail=f"Missing inherited skills entry in {owner_label}: {missing}",
+                unit=unit,
+                source_span=owner_source_span,
+                related=self._missing_skills_related_sites(
+                    parent_unit=parent_unit,
+                    parent_skills=parent_skills,
+                    missing_keys=tuple(missing_keys),
+                ),
             )
 
         return ResolvedSkillsBody(
@@ -175,13 +234,24 @@ class ResolveAddressableSkillsMixin:
         owner_label: str,
     ) -> tuple[ResolvedSkillsItem, ...]:
         resolved_items: list[ResolvedSkillsItem] = []
-        seen_keys: set[str] = set()
+        seen_keys: dict[str, model.SkillsItem] = {}
 
         for item in skills_items:
             key = item.key
             if key in seen_keys:
-                raise CompileError(f"Duplicate skills item key in {owner_label}: {key}")
-            seen_keys.add(key)
+                raise self._skills_compile_error(
+                    detail=f"Duplicate skills item key in {owner_label}: {key}",
+                    unit=unit,
+                    source_span=item.source_span,
+                    related=(
+                        self._skills_related_site(
+                            label=f"first `{key}` skills entry",
+                            unit=unit,
+                            source_span=seen_keys[key].source_span,
+                        ),
+                    ),
+                )
+            seen_keys[key] = item
 
             if isinstance(item, model.SkillsSection):
                 resolved_items.append(
@@ -192,6 +262,7 @@ class ResolveAddressableSkillsMixin:
                             item.items,
                             unit=unit,
                         ),
+                        source_span=item.source_span,
                     )
                 )
                 continue
@@ -201,8 +272,10 @@ class ResolveAddressableSkillsMixin:
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
-            raise CompileError(
-                f"{item_label} requires an inherited skills block in {owner_label}: {key}"
+            raise self._skills_compile_error(
+                detail=f"{item_label} requires an inherited skills block in {owner_label}: {key}",
+                unit=unit,
+                source_span=item.source_span,
             )
 
         return tuple(resolved_items)

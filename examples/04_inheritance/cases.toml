@@ -61,10 +61,7 @@ kind = "compile_fail"
 agent = "ImportedBaseGreeter"
 exception_type = "CompileError"
 error_code = "E202"
-message_contains = [
-  "Abstract agent does not render",
-  "ImportedBaseGreeter",
-]
+location_path = "prompts/AGENTS.prompt"
 
 [[cases]]
 name = "imported workflow inheritance works through a named workflow parent"

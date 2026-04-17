@@ -1,0 +1,41 @@
+# This example shows inherited outputs reading shared `route.*` semantics.
+
+agent ReviewLead:
+    role: "Own routed follow-up."
+    workflow: "Follow Up"
+        "Take the routed follow-up."
+
+
+output BaseRoutedReply: "Base Routed Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    next_owner: route.next_owner
+
+
+output RoutedReply[BaseRoutedReply]: "Routed Reply"
+    inherit target
+    inherit shape
+    inherit requirement
+    inherit next_owner
+
+    route_summary: "Route Summary"
+        "{{route.summary}}"
+
+
+workflow RoutedWorkflow: "Routed Workflow"
+    "Always route the turn."
+
+    law:
+        active when true
+        current none
+        stop "Reply and stop."
+        route "Hand off to ReviewLead." -> ReviewLead
+
+
+agent InheritedRouteOutputDemo:
+    role: "Keep shared route readback on an inherited output."
+    workflow: RoutedWorkflow
+    outputs: "Outputs"
+        RoutedReply

@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "hyphenated code block language survives through the renderer"
+status = "active"
+kind = "render_contract"
+agent = "HyphenatedCodeDemoAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Ship Hyphenated Code Demo so the fence language keeps its hyphen.",
+  "",
+  "## Write",
+  "",
+  "Keep the `prompt-fragment` fence intact through emit.",
+  "",
+  "## Outputs",
+  "",
+  "### Hyphenated Code Demo File",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `release_root/HYPHENATED_CODE_DEMO.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Hyphenated Code Demo |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Hyphenated Code Demo` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Sample** | Code Block | See the detail below. |",
+  "",
+  "##### Sample",
+  "",
+  "_code · prompt-fragment_",
+  "",
+  "```prompt-fragment",
+  "",
+  "agent HelloWriter:",
+  "    role: \"Write one short greeting.\"",
+  "```",
+]

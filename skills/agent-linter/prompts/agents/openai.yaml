@@ -1,0 +1,11 @@
+interface:
+  display_name: "Doctrine Agent Linter"
+  short_description: "Audit Doctrine prompts, skills, flows, and repo agent surfaces"
+  default_prompt: "Use $agent-linter to audit Doctrine agent authoring, explain the highest-value problems clearly, and suggest the fastest fixes."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - exec_command

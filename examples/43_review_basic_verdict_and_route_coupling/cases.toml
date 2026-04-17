@@ -55,25 +55,11 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the draft or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact this review judged.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Sum up the review work that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Summarize the parts of the draft the next owner must read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.",
+  "- Verdict: Say whether the review accepted the draft or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Summarize the parts of the draft the next owner must read first.",
+  "- Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.",
   "",
   "#### Failure Detail",
   "",
@@ -83,11 +69,8 @@ expected_lines = [
   "",
   "Name the failing review gates in authored order.",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know what was reviewed, what verdict landed, who owns next, and which parts of the draft matter now.",
 ]
-
 [[cases]]
 name = "review requires the fields binding surface"
 status = "active"
@@ -96,10 +79,7 @@ prompt = "prompts/INVALID_MISSING_FIELDS.prompt"
 agent = "InvalidMissingFieldsDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "Review",
-  "fields",
-]
+location_line = 35
 
 [[cases]]
 name = "review requires on_accept"
@@ -109,10 +89,7 @@ prompt = "prompts/INVALID_MISSING_ON_ACCEPT.prompt"
 agent = "InvalidMissingOnAcceptDemo"
 exception_type = "CompileError"
 error_code = "E483"
-message_contains = [
-  "missing",
-  "on_accept",
-]
+location_line = 47
 
 [[cases]]
 name = "review requires on_reject"
@@ -122,10 +99,7 @@ prompt = "prompts/INVALID_MISSING_ON_REJECT.prompt"
 agent = "InvalidMissingOnRejectDemo"
 exception_type = "CompileError"
 error_code = "E483"
-message_contains = [
-  "missing",
-  "on_reject",
-]
+location_line = 47
 
 [[cases]]
 name = "review rejects pre-outcome checks inside on_accept"

@@ -8,9 +8,13 @@ from doctrine._parser.parts import (
     WorkflowBodyParts,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _item_line_column,
     _positioned_body_prose,
     _positioned_workflow_law,
+    _source_span_from_meta,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -18,30 +22,40 @@ from doctrine.diagnostics import TransformParseFailure
 class WorkflowTransformerMixin:
     """Shared workflow and workflow-law lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def agent_slot_field(self, key, value, body=None):
-        return model.AuthoredSlotField(key=key, value=self._workflow_slot_value(value, body))
+    @v_args(meta=True, inline=True)
+    def agent_slot_field(self, meta, key, value, body=None):
+        return _with_source_span(
+            model.AuthoredSlotField(key=key, value=self._workflow_slot_value(value, body)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def agent_slot_abstract(self, key):
-        return model.AuthoredSlotAbstract(key=key)
+    @v_args(meta=True, inline=True)
+    def agent_slot_abstract(self, meta, key):
+        return _with_source_span(model.AuthoredSlotAbstract(key=key), meta)
 
-    @v_args(inline=True)
-    def agent_slot_inherit(self, key):
-        return model.AuthoredSlotInherit(key=key)
+    @v_args(meta=True, inline=True)
+    def agent_slot_inherit(self, meta, key):
+        return _with_source_span(model.AuthoredSlotInherit(key=key), meta)
 
-    @v_args(inline=True)
-    def agent_slot_override(self, key, value, body=None):
-        return model.AuthoredSlotOverride(
-            key=key,
-            value=self._workflow_slot_value(value, body),
+    @v_args(meta=True, inline=True)
+    def agent_slot_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.AuthoredSlotInherit)
+
+    @v_args(meta=True, inline=True)
+    def agent_slot_override(self, meta, key, value, body=None):
+        return _with_source_span(
+            model.AuthoredSlotOverride(
+                key=key,
+                value=self._workflow_slot_value(value, body),
+            ),
+            meta,
         )
 
     def slot_body(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def workflow_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def workflow_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         workflow_body = title_or_body
@@ -49,15 +63,18 @@ class WorkflowTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             workflow_body = body
-        return model.WorkflowDecl(
-            name=name,
-            body=model.WorkflowBody(
-                title=title,
-                preamble=workflow_body.preamble,
-                items=workflow_body.items,
-                law=workflow_body.law,
+        return _with_source_span(
+            model.WorkflowDecl(
+                name=name,
+                body=model.WorkflowBody(
+                    title=title,
+                    preamble=workflow_body.preamble,
+                    items=workflow_body.items,
+                    law=workflow_body.law,
+                ),
+                parent_ref=parent_ref,
             ),
-            parent_ref=parent_ref,
+            meta,
         )
 
     def workflow_preamble(self, items):
@@ -78,6 +95,7 @@ class WorkflowTransformerMixin:
         preamble: list[model.ProseLine] = []
         workflow_items: list[model.WorkflowItem] = []
         law: model.LawBody | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             law_body = item.body if isinstance(item, WorkflowLawPart) else item if isinstance(item, model.LawBody) else None
             if law_body is not None:
@@ -115,134 +133,194 @@ class WorkflowTransformerMixin:
     def workflow_section_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def workflow_section_ref_item(self, ref):
+    @v_args(meta=True, inline=True)
+    def workflow_section_ref_item(self, meta, ref):
         if isinstance(ref, model.NameRef):
-            ref = model.AddressableRef(root=ref)
-        return model.SectionBodyRef(ref=ref)
+            ref = model.AddressableRef(root=ref, source_span=_source_span_from_meta(meta))
+        return _with_source_span(model.SectionBodyRef(ref=ref), meta)
 
-    @v_args(inline=True)
-    def local_section(self, key, title, items):
-        return model.LocalSection(key=key, title=title, items=tuple(items))
+    @v_args(meta=True, inline=True)
+    def local_section(self, meta, key, title, items):
+        return _with_source_span(
+            model.LocalSection(key=key, title=title, items=tuple(items)),
+            meta,
+        )
 
     @v_args(inline=True)
     def workflow_readable_block(self, value):
         return value
 
     @v_args(inline=True)
-    def workflow_section_block(self, key, title, *parts):
+    def workflow_root_readable_block(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def workflow_section_block(self, meta, key, title, *parts):
         requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def workflow_use(self, key, target):
-        return model.WorkflowUse(key=key, target=target)
+    @v_args(meta=True, inline=True)
+    def workflow_use(self, meta, key, target):
+        return _with_source_span(model.WorkflowUse(key=key, target=target), meta)
 
-    @v_args(inline=True)
-    def workflow_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def workflow_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def workflow_skills_inline(self, title, body):
-        return model.WorkflowSkillsItem(
-            key="skills",
-            value=self._skills_value(title, body),
+    @v_args(meta=True, inline=True)
+    def workflow_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def workflow_skills_inline(self, meta, title, body):
+        return _with_source_span(
+            model.WorkflowSkillsItem(
+                key="skills",
+                value=self._skills_value(title, body),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def workflow_skills_ref(self, ref):
-        return model.WorkflowSkillsItem(
-            key="skills",
-            value=self._skills_value(ref, None),
+    @v_args(meta=True, inline=True)
+    def workflow_skills_ref(self, meta, ref):
+        return _with_source_span(
+            model.WorkflowSkillsItem(
+                key="skills",
+                value=self._skills_value(ref, None),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def workflow_override_skills_inline(self, title, body):
-        return model.OverrideWorkflowSkillsItem(
-            key="skills",
-            value=self._skills_value(title, body),
+    @v_args(meta=True, inline=True)
+    def workflow_override_skills_inline(self, meta, title, body):
+        return _with_source_span(
+            model.OverrideWorkflowSkillsItem(
+                key="skills",
+                value=self._skills_value(title, body),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def workflow_override_skills_ref(self, ref):
-        return model.OverrideWorkflowSkillsItem(
-            key="skills",
-            value=self._skills_value(ref, None),
+    @v_args(meta=True, inline=True)
+    def workflow_override_skills_ref(self, meta, ref):
+        return _with_source_span(
+            model.OverrideWorkflowSkillsItem(
+                key="skills",
+                value=self._skills_value(ref, None),
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def workflow_override_section(self, key, title_or_items, items=None):
+    @v_args(meta=True, inline=True)
+    def workflow_override_section(self, meta, key, title_or_items, items=None):
         title: str | None = None
         section_items = title_or_items
         if items is not None:
             title = title_or_items
             section_items = items
-        return model.OverrideSection(key=key, title=title, items=tuple(section_items))
+        return _with_source_span(
+            model.OverrideSection(key=key, title=title, items=tuple(section_items)),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def workflow_override_use(self, key, target):
-        return model.OverrideUse(key=key, target=target)
+    @v_args(meta=True, inline=True)
+    def workflow_override_use(self, meta, key, target):
+        return _with_source_span(model.OverrideUse(key=key, target=target), meta)
 
     @v_args(meta=True, inline=True)
     def law_block(self, meta, body):
         return _positioned_workflow_law(meta, body)
 
-    def law_body(self, items):
-        return model.LawBody(items=tuple(items))
+    @v_args(meta=True)
+    def law_body(self, meta, items):
+        return _with_source_span(model.LawBody(items=_flatten_grouped_items(items)), meta)
 
-    def law_section(self, items):
-        return model.LawSection(key=items[0], items=tuple(items[1:]))
+    @v_args(meta=True)
+    def law_section(self, meta, items):
+        return _with_source_span(
+            model.LawSection(key=items[0], items=tuple(items[1:])),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def law_inherit(self, key):
-        return model.LawInherit(key=key)
+    @v_args(meta=True, inline=True)
+    def law_inherit(self, meta, key):
+        return _with_source_span(model.LawInherit(key=key), meta)
 
-    def law_override_section(self, items):
-        return model.LawOverrideSection(key=items[0], items=tuple(items[1:]))
+    @v_args(meta=True, inline=True)
+    def law_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.LawInherit)
 
-    @v_args(inline=True)
-    def active_when_stmt(self, expr):
-        return model.ActiveWhenStmt(expr=expr)
+    @v_args(meta=True)
+    def law_override_section(self, meta, items):
+        return _with_source_span(
+            model.LawOverrideSection(key=items[0], items=tuple(items[1:])),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def mode_stmt(self, name, expr, enum_ref):
-        return model.ModeStmt(name=name, expr=expr, enum_ref=enum_ref)
+    @v_args(meta=True, inline=True)
+    def active_when_stmt(self, meta, expr):
+        return _with_source_span(model.ActiveWhenStmt(expr=expr), meta)
 
-    @v_args(inline=True)
-    def must_stmt(self, expr):
-        return model.MustStmt(expr=expr)
+    @v_args(meta=True, inline=True)
+    def mode_stmt(self, meta, name, expr, enum_ref):
+        return _with_source_span(
+            model.ModeStmt(name=name, expr=expr, enum_ref=enum_ref),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def current_artifact_stmt(self, target, carrier):
-        return model.CurrentArtifactStmt(target=target, carrier=carrier)
+    @v_args(meta=True, inline=True)
+    def must_stmt(self, meta, expr):
+        return _with_source_span(model.MustStmt(expr=expr), meta)
 
-    def current_none_stmt(self, _items):
-        return model.CurrentNoneStmt()
+    @v_args(meta=True, inline=True)
+    def current_artifact_stmt(self, meta, target, carrier):
+        return _with_source_span(
+            model.CurrentArtifactStmt(target=target, carrier=carrier),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def own_only_stmt(self, target, when_expr=None):
-        return model.OwnOnlyStmt(target=target, when_expr=when_expr)
+    @v_args(meta=True)
+    def current_none_stmt(self, meta, _items):
+        return _with_source_span(model.CurrentNoneStmt(), meta)
 
-    def preserve_stmt(self, items):
+    @v_args(meta=True, inline=True)
+    def own_only_stmt(self, meta, target, when_expr=None):
+        return _with_source_span(
+            model.OwnOnlyStmt(target=target, when_expr=when_expr),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def preserve_stmt(self, meta, items):
         kind = items[0]
         target = items[1]
         when_expr: model.Expr | None = items[2] if len(items) > 2 else None
-        return model.PreserveStmt(kind=kind, target=target, when_expr=when_expr)
+        return _with_source_span(
+            model.PreserveStmt(kind=kind, target=target, when_expr=when_expr),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def support_only_stmt(self, target, when_expr=None):
-        return model.SupportOnlyStmt(target=target, when_expr=when_expr)
+    @v_args(meta=True, inline=True)
+    def support_only_stmt(self, meta, target, when_expr=None):
+        return _with_source_span(
+            model.SupportOnlyStmt(target=target, when_expr=when_expr),
+            meta,
+        )
 
-    def ignore_stmt(self, items):
+    @v_args(meta=True)
+    def ignore_stmt(self, meta, items):
         target = items[0]
         bases: tuple[str, ...] = ()
         when_expr: model.Expr | None = None
@@ -251,52 +329,79 @@ class WorkflowTransformerMixin:
                 bases = extra
             else:
                 when_expr = extra
-        return model.IgnoreStmt(target=target, bases=bases, when_expr=when_expr)
+        return _with_source_span(
+            model.IgnoreStmt(target=target, bases=bases, when_expr=when_expr),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def invalidate_stmt(self, target, carrier, when_expr=None):
-        return model.InvalidateStmt(target=target, carrier=carrier, when_expr=when_expr)
+    @v_args(meta=True, inline=True)
+    def invalidate_stmt(self, meta, target, carrier, when_expr=None):
+        return _with_source_span(
+            model.InvalidateStmt(target=target, carrier=carrier, when_expr=when_expr),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def forbid_stmt(self, target, when_expr=None):
-        return model.ForbidStmt(target=target, when_expr=when_expr)
+    @v_args(meta=True, inline=True)
+    def forbid_stmt(self, meta, target, when_expr=None):
+        return _with_source_span(
+            model.ForbidStmt(target=target, when_expr=when_expr),
+            meta,
+        )
 
-    def when_stmt(self, items):
-        return model.WhenStmt(expr=items[0], items=tuple(items[1:]))
+    @v_args(meta=True)
+    def when_stmt(self, meta, items):
+        return _with_source_span(
+            model.WhenStmt(expr=items[0], items=tuple(items[1:])),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def match_stmt(self, expr, *cases):
-        return model.MatchStmt(expr=expr, cases=tuple(cases))
+    @v_args(meta=True, inline=True)
+    def match_stmt(self, meta, expr, *cases):
+        return _with_source_span(model.MatchStmt(expr=expr, cases=tuple(cases)), meta)
 
-    def match_case(self, items):
+    @v_args(meta=True)
+    def match_case(self, meta, items):
         head = items[0]
         if head == "__ELSE__":
             head = None
-        return model.MatchArm(head=head, items=tuple(items[1:]))
+        return _with_source_span(
+            model.MatchArm(head=head, items=tuple(items[1:])),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def route_from_stmt(self, expr, enum_ref, *cases):
-        return model.RouteFromStmt(expr=expr, enum_ref=enum_ref, cases=tuple(cases))
+    @v_args(meta=True, inline=True)
+    def route_from_stmt(self, meta, expr, enum_ref, *cases):
+        return _with_source_span(
+            model.RouteFromStmt(expr=expr, enum_ref=enum_ref, cases=tuple(cases)),
+            meta,
+        )
 
-    def route_from_case(self, items):
+    @v_args(meta=True)
+    def route_from_case(self, meta, items):
         head = items[0]
         if head == "__ELSE__":
             head = None
-        return model.RouteFromArm(head=head, route=items[1])
+        return _with_source_span(model.RouteFromArm(head=head, route=items[1]), meta)
 
     def else_match_head(self, _items):
         return "__ELSE__"
 
-    @v_args(inline=True)
-    def stop_stmt(self, message=None, when_expr=None):
+    @v_args(meta=True, inline=True)
+    def stop_stmt(self, meta, message=None, when_expr=None):
         if message is not None and not isinstance(message, str):
             when_expr = message
             message = None
-        return model.StopStmt(message=message, when_expr=when_expr)
+        return _with_source_span(
+            model.StopStmt(message=message, when_expr=when_expr),
+            meta,
+        )
 
-    @v_args(inline=True)
-    def law_route_stmt(self, label, target, when_expr=None):
-        return model.LawRouteStmt(label=label, target=target, when_expr=when_expr)
+    @v_args(meta=True, inline=True)
+    def law_route_stmt(self, meta, label, target, when_expr=None):
+        return _with_source_span(
+            model.LawRouteStmt(label=label, target=target, when_expr=when_expr),
+            meta,
+        )
 
     def preserve_exact(self, _items):
         return "exact"
@@ -329,7 +434,8 @@ class WorkflowTransformerMixin:
     def law_when_clause(self, expr):
         return expr
 
-    def path_set_expr(self, items):
+    @v_args(meta=True)
+    def path_set_expr(self, meta, items):
         paths: list[model.LawPath] = []
         except_paths: list[model.LawPath] = []
         if items:
@@ -343,17 +449,24 @@ class WorkflowTransformerMixin:
                     except_paths.extend(extra)
                 else:
                     except_paths.append(extra)
-        return model.LawPathSet(paths=tuple(paths), except_paths=tuple(except_paths))
+        return _with_source_span(
+            model.LawPathSet(paths=tuple(paths), except_paths=tuple(except_paths)),
+            meta,
+        )
 
     def path_set_base(self, items):
         if len(items) == 1 and isinstance(items[0], model.LawPath):
             return items[0]
         return tuple(items)
 
-    def law_path(self, items):
+    @v_args(meta=True)
+    def law_path(self, meta, items):
         parts = list(items[0])
         wildcard = len(items) > 1
-        return model.LawPath(parts=tuple(parts), wildcard=wildcard)
+        return _with_source_span(
+            model.LawPath(parts=tuple(parts), wildcard=wildcard),
+            meta,
+        )
 
     def law_path_wildcard(self, _items):
         return "*"

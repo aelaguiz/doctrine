@@ -1,0 +1,250 @@
+>output schema WriterDecisionSchema: "Writer Decision Schema"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    route field next_route: "Next Route"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.other.field.doctrine
+#         ^ source.doctrine
+#          ^^^^^ source.doctrine keyword.other.field.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                          ^ source.doctrine punctuation.separator.key-value.doctrine
+#                           ^ source.doctrine
+#                            ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        seek_muse: "Send to Muse for fresh inspiration." -> Muse
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                        ^ source.doctrine
+#                                                         ^^ source.doctrine keyword.control.doctrine
+#                                                           ^ source.doctrine
+#                                                            ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        ready_for_critic: "Send to PoemCritic for judgment." -> PoemCritic
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                        ^ source.doctrine punctuation.separator.key-value.doctrine
+#                         ^ source.doctrine
+#                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine
+#                                                             ^^ source.doctrine keyword.control.doctrine
+#                                                               ^ source.doctrine
+#                                                                ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Pick the one next owner for this turn."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    field summary: "Summary"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^^^ source.doctrine
+#                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                    ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Say what changed in this pass."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output shape WriterDecisionJson: "Writer Decision JSON"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^ source.doctrine keyword.declaration.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.end.doctrine
+>    kind: JsonObject
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine entity.name.section.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    schema: WriterDecisionSchema
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output WriterDecision: "Writer Decision"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+#                      ^ source.doctrine
+#                       ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                        ^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: WriterDecisionJson
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    muse_route: "Muse Route" when route.choice == WriterDecisionSchema.next_route.seek_muse:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                            ^ source.doctrine
+#                             ^^^^ source.doctrine keyword.control.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                                                           ^ source.doctrine punctuation.separator.key-value.doctrine
+>        "{{route.summary}}"
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>    critic_route: "Critic Route" when route.choice == WriterDecisionSchema.next_route.ready_for_critic:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                ^ source.doctrine
+#                                 ^^^^ source.doctrine keyword.control.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine
+#                                                                                                      ^ source.doctrine punctuation.separator.key-value.doctrine
+>        "{{route.summary}}"
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.begin.doctrine
+#           ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine support.type.reference.doctrine
+#                        ^^ source.doctrine string.quoted.double.doctrine punctuation.definition.interpolation.end.doctrine
+#                          ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent Muse:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^ source.doctrine entity.name.type.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Give the writer fresh inspiration."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Muse"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Offer one fresh image or angle."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                        ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent PoemCritic:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Judge whether the draft is ready."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Critic"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Judge the current draft."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent WriterRouteFieldFinalOutputDemo:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                     ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Choose the next owner from the final output itself."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        WriterDecision
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    final_output:
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+>        output: WriterDecision
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine keyword.other.field.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        route: next_route
+#^^^^^^^^ source.doctrine
+#        ^^^^^ source.doctrine keyword.other.field.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^^^^^^^^^^ source.doctrine variable.other.member.doctrine
+>

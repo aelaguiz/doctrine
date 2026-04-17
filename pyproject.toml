@@ -11,6 +11,7 @@ license = "MIT"
 requires-python = ">=3.14"
 dependencies = [
     "interegular>=0.3,<1",
+    "jsonschema>=4.25,<5",
     "lark>=1.2,<2",
 ]
 
@@ -57,14 +58,29 @@ entrypoint = "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
 output_dir = "examples/73_flow_visualizer_showcase/build"
 
 [[tool.doctrine.emit.targets]]
-name = "example_79_final_output_json_schema"
-entrypoint = "examples/79_final_output_json_schema/prompts/AGENTS.prompt"
-output_dir = "examples/79_final_output_json_schema/build"
+name = "example_79_final_output_output_schema"
+entrypoint = "examples/79_final_output_output_schema/prompts/AGENTS.prompt"
+output_dir = "examples/79_final_output_output_schema/build"
 
 [[tool.doctrine.emit.targets]]
 name = "example_84_review_split_final_output_prose"
 entrypoint = "examples/84_review_split_final_output_prose/prompts/AGENTS.prompt"
 output_dir = "examples/84_review_split_final_output_prose/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_87_workflow_route_output_binding"
+entrypoint = "examples/87_workflow_route_output_binding/prompts/AGENTS.prompt"
+output_dir = "examples/87_workflow_route_output_binding/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_91_handoff_routing_route_output_binding"
+entrypoint = "examples/91_handoff_routing_route_output_binding/prompts/AGENTS.prompt"
+output_dir = "examples/91_handoff_routing_route_output_binding/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_93_handoff_routing_route_from_final_output"
+entrypoint = "examples/93_handoff_routing_route_from_final_output/prompts/AGENTS.prompt"
+output_dir = "examples/93_handoff_routing_route_from_final_output/build"
 
 [[tool.doctrine.emit.targets]]
 name = "example_95_skill_package_minimal"
@@ -110,3 +126,73 @@ output_dir = "examples/102_skill_package_path_case_preservation/build"
 name = "example_103_skill_package_binary_assets"
 entrypoint = "examples/103_skill_package_binary_assets/prompts/SKILL.prompt"
 output_dir = "examples/103_skill_package_binary_assets/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_agent_linter_skill"
+entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
+output_dir = "skills/agent-linter/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_agent_linter_public_skill"
+entrypoint = "skills/agent-linter/prompts/SKILL.prompt"
+output_dir = "skills/.curated/agent-linter"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_learn_skill"
+entrypoint = "skills/doctrine-learn/prompts/SKILL.prompt"
+output_dir = "skills/doctrine-learn/build"
+
+[[tool.doctrine.emit.targets]]
+name = "doctrine_learn_public_skill"
+entrypoint = "skills/doctrine-learn/prompts/SKILL.prompt"
+output_dir = "skills/.curated/doctrine-learn"
+
+[[tool.doctrine.emit.targets]]
+name = "example_104_review_final_output_output_schema_blocked_control_ready"
+entrypoint = "examples/104_review_final_output_output_schema_blocked_control_ready/prompts/AGENTS.prompt"
+output_dir = "examples/104_review_final_output_output_schema_blocked_control_ready/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_105_review_split_final_output_output_schema_control_ready"
+entrypoint = "examples/105_review_split_final_output_output_schema_control_ready/prompts/AGENTS.prompt"
+output_dir = "examples/105_review_split_final_output_output_schema_control_ready/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_106_review_split_final_output_output_schema_partial"
+entrypoint = "examples/106_review_split_final_output_output_schema_partial/prompts/AGENTS.prompt"
+output_dir = "examples/106_review_split_final_output_output_schema_partial/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_115_runtime_agent_packages"
+entrypoint = "examples/115_runtime_agent_packages/prompts/AGENTS.prompt"
+output_dir = "examples/115_runtime_agent_packages/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_119_route_only_final_output_contract"
+entrypoint = "examples/119_route_only_final_output_contract/prompts/AGENTS.prompt"
+output_dir = "examples/119_route_only_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_120_route_field_final_output_contract"
+entrypoint = "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt"
+output_dir = "examples/120_route_field_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_121_nullable_route_field_final_output_contract"
+entrypoint = "examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt"
+output_dir = "examples/121_nullable_route_field_final_output_contract/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_122_skill_package_emit_documents"
+entrypoint = "examples/122_skill_package_emit_documents/prompts/SKILL.prompt"
+output_dir = "examples/122_skill_package_emit_documents/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_123_skill_package_emit_documents_mixed_bundle"
+entrypoint = "examples/123_skill_package_emit_documents_mixed_bundle/prompts/SKILL.prompt"
+output_dir = "examples/123_skill_package_emit_documents_mixed_bundle/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_124_skill_package_host_binding"
+entrypoint = "examples/124_skill_package_host_binding/prompts/skills/host_bound/SKILL.prompt"
+output_dir = "examples/124_skill_package_host_binding/build"

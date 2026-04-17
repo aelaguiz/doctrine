@@ -1,0 +1,311 @@
+>output schema BaseRepoStatusSchema: "Base Repo Status Schema"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                                  ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                   ^ source.doctrine
+#                                    ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                     ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>    field summary: "Summary"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^^^ source.doctrine
+#                   ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                    ^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        required
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Short natural-language status."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    field status: "Status"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^^ source.doctrine
+#                  ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                   ^^^^^^ source.doctrine string.quoted.double.doctrine
+#                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        enum:
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+>            ok
+#^^^^^^^^^^^^ source.doctrine
+#            ^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>            action_required
+#^^^^^^^^^^^^ source.doctrine
+#            ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        required
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Current repo outcome."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    example:
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+>        summary: "Branch is clean and checks passed."
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        status: "ok"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
+>output schema RepoStatusSchema[BaseRepoStatusSchema]: "Repo Status Schema"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^ source.doctrine keyword.declaration.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                               ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                                   ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                                    ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                     ^ source.doctrine
+#                                                      ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                       ^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    inherit summary
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>    inherit status
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>
+>    field next_step: "Next Step"
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine keyword.control.doctrine
+#         ^^^^^^^^^^^^ source.doctrine
+#                     ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                      ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                               ^ source.doctrine punctuation.definition.string.end.doctrine
+>        type: string
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        optional
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>        note: "Null only when no follow-up is needed."
+#^^^^^^^^ source.doctrine
+#        ^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>    override example:
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^ source.doctrine entity.name.section.doctrine
+#                    ^ source.doctrine punctuation.separator.key-value.doctrine
+>        summary: "Branch is clean and checks passed."
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        status: "ok"
+#^^^^^^^^ source.doctrine
+#        ^^^^^^ source.doctrine entity.name.section.doctrine
+#              ^ source.doctrine punctuation.separator.key-value.doctrine
+#               ^ source.doctrine
+#                ^^^^ source.doctrine string.quoted.double.doctrine
+>        next_step: null
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                 ^ source.doctrine punctuation.separator.key-value.doctrine
+#                  ^ source.doctrine
+#                   ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output shape BaseRepoStatusJson: "Base Repo Status JSON"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^ source.doctrine keyword.declaration.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                ^ source.doctrine
+#                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                  ^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>    kind: JsonObject
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine entity.name.section.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    schema: BaseRepoStatusSchema
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>
+>output shape RepoStatusJson[BaseRepoStatusJson]: "Repo Status JSON"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^ source.doctrine keyword.declaration.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                           ^ source.doctrine punctuation.section.inheritance.begin.doctrine
+#                            ^^^^^^^^^^^^^^^^^^ source.doctrine entity.other.inherited-class.doctrine
+#                                              ^ source.doctrine punctuation.section.inheritance.end.doctrine
+#                                               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                                                ^ source.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                                  ^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                  ^ source.doctrine punctuation.definition.string.end.doctrine
+>    inherit kind
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.control.doctrine
+#           ^ source.doctrine
+#            ^^^^ source.doctrine entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine
+>    override schema: RepoStatusSchema
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine keyword.control.doctrine
+#            ^ source.doctrine
+#             ^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.override.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    explanation: "Field Notes"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Use the schema fields exactly once."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                            ^ source.doctrine punctuation.definition.string.end.doctrine
+>        "Keep `summary` short and user-facing."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                              ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>output RepoStatusFinalResponse: "Repo Status Final Response"
+#^^^^^^ source.doctrine keyword.declaration.doctrine
+#      ^ source.doctrine
+#       ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                              ^ source.doctrine punctuation.separator.key-value.doctrine
+#                               ^ source.doctrine
+#                                ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                           ^ source.doctrine punctuation.definition.string.end.doctrine
+>    target: TurnResponse
+#^^^^ source.doctrine
+#    ^^^^^^ source.doctrine entity.name.section.doctrine
+#          ^ source.doctrine punctuation.separator.key-value.doctrine
+#           ^ source.doctrine
+#            ^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    shape: RepoStatusJson
+#^^^^ source.doctrine
+#    ^^^^^ source.doctrine entity.name.section.doctrine
+#         ^ source.doctrine punctuation.separator.key-value.doctrine
+#          ^ source.doctrine
+#           ^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    requirement: Required
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>
+>    standalone_read: "Standalone Read"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "The final answer should stand on its own as one structured repo-status result."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                                       ^ source.doctrine punctuation.definition.string.end.doctrine
+>
+>
+>agent RepoStatusAgent:
+#^^^^^ source.doctrine keyword.declaration.doctrine
+#     ^ source.doctrine
+#      ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#                     ^ source.doctrine punctuation.separator.key-value.doctrine
+>    role: "Report repo status in structured form."
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine keyword.other.field.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^ source.doctrine punctuation.definition.string.begin.doctrine
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                 ^ source.doctrine punctuation.definition.string.end.doctrine
+>    workflow: "Summarize"
+#^^^^ source.doctrine
+#    ^^^^^^^^ source.doctrine entity.name.section.doctrine
+#            ^ source.doctrine punctuation.separator.key-value.doctrine
+#             ^ source.doctrine
+#              ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        "Summarize the repo state and end with the declared final output."
+#^^^^^^^^ source.doctrine
+#        ^ source.doctrine punctuation.definition.string.begin.doctrine
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                                                                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    outputs: "Outputs"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine keyword.other.field.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>        RepoStatusFinalResponse
+#^^^^^^^^ source.doctrine
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>    final_output: RepoStatusFinalResponse
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^ source.doctrine keyword.other.field.doctrine
+#                ^ source.doctrine punctuation.separator.key-value.doctrine
+#                 ^ source.doctrine
+#                  ^^^^^^^^^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
+>

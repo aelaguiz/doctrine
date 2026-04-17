@@ -31,3 +31,11 @@
 #                                    ^^^^ variable.other.member.doctrine
 #                                        ^^ punctuation.definition.interpolation.end.doctrine
 #                                          ^ punctuation.definition.string.end.doctrine
+
+    "Read `home:issue.md` first."
+#   ^ punctuation.definition.string.begin.doctrine
+#         ^ punctuation.definition.raw.inline.begin.doctrine
+#          ^^^^^ support.type.runtime-path.root.doctrine
+#               ^^^^^^^^ string.unquoted.inline.runtime-path.doctrine
+#                       ^ punctuation.definition.raw.inline.end.doctrine
+#                               ^ punctuation.definition.string.end.doctrine

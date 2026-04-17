@@ -39,21 +39,17 @@ expected_lines = [
   "",
   "### Next Lesson Plan",
   "",
-  "- Target: File",
-  "- Path: `lesson_root/NEXT_LESSON_PLAN.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
-  "- Structure: Lesson Plan",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `lesson_root/NEXT_LESSON_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Lesson Plan |",
   "",
-  "#### Structure: Lesson Plan",
-  "",
-  "##### Overview",
-  "",
-  "Start with the plan overview.",
-  "",
-  "##### Sequence",
-  "",
-  "List the lesson steps in order.",
+  "Required Structure:",
+  "- Overview: Start with the plan overview.",
+  "- Sequence: List the lesson steps in order.",
 ]
 
 [[cases]]
@@ -64,7 +60,4 @@ prompt = "prompts/INVALID_NON_MARKDOWN_OUTPUT_STRUCTURE.prompt"
 agent = "InvalidNonMarkdownOutputStructure"
 exception_type = "CompileError"
 error_code = "E302"
-message_contains = [
-  "Output structure requires a markdown-bearing shape",
-  "InvalidCommentOutput",
-]
+location_line = 8

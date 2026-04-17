@@ -41,6 +41,4 @@ Show this only when route facts section status is new or full rewrite.
 
 Explain why rewrite-aware handling applies on this turn.
 
-#### Standalone Read
-
-This comment should stand on its own. The next owner should know which nested conditional details might appear.
+- Standalone Read: This comment should stand on its own. The next owner should know which nested conditional details might appear.

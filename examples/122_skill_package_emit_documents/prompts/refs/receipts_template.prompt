@@ -1,0 +1,8 @@
+document ReceiptsTemplate: "Receipts Template"
+    section summary: "Summary"
+        "Show where the claim came from and what it proves."
+
+    checklist receipts: "Receipts"
+        source: "Name the source."
+        quote: "Pull the short quote or fact."
+        gap: "Say what is still unknown."

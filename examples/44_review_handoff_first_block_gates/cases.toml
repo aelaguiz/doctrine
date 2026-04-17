@@ -55,25 +55,11 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "Say whether the review accepted the handoff or asked for changes.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact. When review blocks before content review starts, name the producer handoff instead of pretending the later content review happened.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Summarize the handoff-first review analysis that led to the verdict.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "Summarize the parts of the producer handoff the next owner must read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name the next owner, including ReviewLead when the handoff is accepted and DraftAuthor when the handoff is blocked or rejected.",
+  "- Verdict: Say whether the review accepted the handoff or asked for changes.",
+  "- Reviewed Artifact: Name the reviewed artifact. When review blocks before content review starts, name the producer handoff instead of pretending the later content review happened.",
+  "- Analysis Performed: Summarize the handoff-first review analysis that led to the verdict.",
+  "- Output Contents That Matter: Summarize the parts of the producer handoff the next owner must read first.",
+  "- Next Owner: Name the next owner, including ReviewLead when the handoff is accepted and DraftAuthor when the handoff is blocked or rejected.",
   "",
   "#### Failure Detail",
   "",
@@ -89,11 +75,8 @@ expected_lines = [
   "",
   "List each failed review gate in authored order. Include the blocked gate when review stopped before content review began.",
   "",
-  "#### Standalone Read",
-  "",
-  "This comment should stand on its own. The next owner should know that handoff quality is checked first, that a blocked review still asks for changes, what artifact was reviewed, who owns next, and what repair step comes next.",
+  "- Standalone Read: This comment should stand on its own. The next owner should know that handoff quality is checked first, that a blocked review still asks for changes, what artifact was reviewed, who owns next, and what repair step comes next.",
 ]
-
 [[cases]]
 name = "block-gate reviews require a blocked_gate binding"
 status = "active"
@@ -102,10 +85,7 @@ prompt = "prompts/INVALID_MISSING_BLOCKED_GATE.prompt"
 agent = "InvalidMissingBlockedGateDemo"
 exception_type = "CompileError"
 error_code = "E473"
-message_contains = [
-  "blocked_gate",
-  "Review fields are incomplete",
-]
+location_line = 61
 
 [[cases]]
 name = "review rejects block statements inside on_reject"

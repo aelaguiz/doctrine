@@ -113,11 +113,11 @@ Stop when one honest owner, one honest next step, and the current source of trut
 
 #### release-followthrough
 
-##### Purpose
+**Purpose**
 
 Handle PR follow-up, QR updates, publish proof, and same-issue closeout.
 
-##### Use When
+**Use When**
 
 Use this when publish or follow-up is the live job.
 

@@ -8,11 +8,13 @@ Use the schema inventory to reason about downstream rebuild surfaces.
 
 ### Build Plan
 
-- Target: File
-- Path: `unit_root/BUILD_PLAN.md`
-- Shape: Markdown Document
-- Requirement: Required
-- Schema: Build Surface Schema
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/BUILD_PLAN.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
+| Schema | Build Surface Schema |
 
 #### Required Sections
 

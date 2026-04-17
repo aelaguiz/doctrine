@@ -8,8 +8,4 @@ kind = "compile_fail"
 agent = "InvalidSchemaFinalOutputAgent"
 exception_type = "CompileError"
 error_code = "E211"
-message_contains = [
-  "Final output must point at output declaration",
-  "ReleaseSchema",
-  "schema declaration",
-]
+location_line = 11

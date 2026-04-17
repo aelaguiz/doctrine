@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _authored_slot_allows_law
 from doctrine._compiler.resolved_types import (
     AgentContract,
-    CompileError,
     CompiledBodyItem,
     CompiledSection,
     IndexedUnit,
@@ -35,17 +35,26 @@ class CompileWorkflowsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._workflow_compile_stack, workflow_key]
             )
-            raise CompileError(f"Cyclic workflow composition: {cycle}")
+            raise compile_error(
+                code="E283",
+                summary="Cyclic workflow composition",
+                detail=f"Workflow composition cycle: {cycle}.",
+                path=unit.prompt_file.source_path,
+                source_span=workflow_decl.source_span,
+            )
 
         self._workflow_compile_stack.append(workflow_key)
         try:
-            return self._compile_resolved_workflow(
-                self._resolve_workflow_decl(workflow_decl, unit=unit),
-                unit=unit,
-                agent_contract=agent_contract,
-                owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
-                slot_key=slot_key,
-            )
+            with self._with_addressable_self_root(
+                self._local_addressable_self_root_ref(workflow_decl.name)
+            ):
+                return self._compile_resolved_workflow(
+                    self._resolve_workflow_decl(workflow_decl, unit=unit),
+                    unit=unit,
+                    agent_contract=agent_contract,
+                    owner_label=f"workflow {_dotted_decl_name(unit.module_parts, workflow_decl.name)}",
+                    slot_key=slot_key,
+                )
         finally:
             self._workflow_compile_stack.pop()
 
@@ -61,12 +70,26 @@ class CompileWorkflowsMixin:
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
         if workflow_body.law is not None:
             if unit is None or agent_contract is None or owner_label is None:
-                raise CompileError(
-                    "Internal compiler error: workflow law requires unit, agent contract, and owner label"
+                raise compile_error(
+                    code="E299",
+                    summary="Compile failure",
+                    detail=(
+                        "Internal compiler error: workflow law requires unit, agent "
+                        "contract, and owner label"
+                    ),
+                    path=unit.prompt_file.source_path if unit is not None else None,
+                    source_span=workflow_body.law.source_span,
                 )
             if not _authored_slot_allows_law(slot_key):
-                raise CompileError(
-                    f"law may appear only on workflow or handoff_routing in {owner_label}: {slot_key}"
+                raise compile_error(
+                    code="E345",
+                    summary="Law is not allowed on this authored slot",
+                    detail=(
+                        f"`law:` is not allowed on authored slot `{slot_key}` in "
+                        f"{owner_label}."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=workflow_body.law.source_span,
                 )
             if body and body[-1] != "":
                 body.append("")
@@ -104,6 +127,27 @@ class CompileWorkflowsMixin:
                 )
                 continue
 
+            if isinstance(item, model.ReadableBlock):
+                if unit is None or owner_label is None:
+                    raise compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "Internal compiler error: workflow readable block compilation "
+                            "requires unit and owner label"
+                        ),
+                        path=unit.prompt_file.source_path if unit is not None else None,
+                        source_span=item.source_span,
+                    )
+                body.append(
+                    self._compile_workflow_root_readable_block(
+                        item,
+                        unit=unit,
+                        owner_label=owner_label,
+                    )
+                )
+                continue
+
             if isinstance(item, ResolvedWorkflowSkillsItem):
                 body.append(self._compile_resolved_skills(item.body))
                 continue
@@ -119,6 +163,29 @@ class CompileWorkflowsMixin:
 
         return CompiledSection(title=workflow_body.title, body=tuple(body))
 
+    def _compile_workflow_root_readable_block(
+        self,
+        block: model.ReadableBlock,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ):
+        return self._compile_authored_readable_block(
+            block,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="workflow bodies",
+            section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
+                self._resolve_section_body_items(
+                    payload,
+                    unit=unit,
+                    owner_label=nested_owner_label,
+                ),
+                unit=unit,
+                owner_label=nested_owner_label,
+            ),
+        )
+
     def _compile_workflow_law(
         self,
         law_body: model.LawBody,
@@ -127,7 +194,7 @@ class CompileWorkflowsMixin:
         agent_contract: AgentContract,
         owner_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
-        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label, unit=unit)
         self._validate_workflow_law(
             flat_items,
             unit=unit,
@@ -142,13 +209,13 @@ class CompileWorkflowsMixin:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
                 rendered.append(
-                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                    f"Use this pass only when {self._render_condition_expr(item.expr, unit=unit)}."
                 )
             elif isinstance(item, model.ModeStmt):
                 mode_bindings[item.name] = item
                 fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
                 if fixed_mode is not None:
-                    rendered.append(f"Active mode: {fixed_mode}.")
+                    rendered.append(f"This pass is for `{fixed_mode}` mode.")
             elif isinstance(item, model.MatchStmt):
                 rendered.extend(
                     self._render_match_stmt(
@@ -208,7 +275,7 @@ class CompileWorkflowsMixin:
         agent_contract: AgentContract,
         owner_label: str,
     ) -> tuple[CompiledBodyItem, ...]:
-        flat_items = self._flatten_law_items(law_body, owner_label=owner_label)
+        flat_items = self._flatten_law_items(law_body, owner_label=owner_label, unit=unit)
         self._validate_handoff_routing_law(
             flat_items,
             unit=unit,
@@ -223,13 +290,13 @@ class CompileWorkflowsMixin:
             rendered: list[str] = []
             if isinstance(item, model.ActiveWhenStmt):
                 rendered.append(
-                    f"This pass runs only when {self._render_condition_expr(item.expr, unit=unit)}."
+                    f"Use this pass only when {self._render_condition_expr(item.expr, unit=unit)}."
                 )
             elif isinstance(item, model.ModeStmt):
                 mode_bindings[item.name] = item
                 fixed_mode = self._resolve_constant_enum_member(item.expr, unit=unit)
                 if fixed_mode is not None:
-                    rendered.append(f"Active mode: {fixed_mode}.")
+                    rendered.append(f"This pass is for `{fixed_mode}` mode.")
             elif isinstance(item, model.MatchStmt):
                 rendered.extend(
                     self._render_match_stmt(
@@ -311,8 +378,15 @@ class CompileWorkflowsMixin:
                 )
             elif isinstance(item, model.ReadableBlock):
                 if unit is None or owner_label is None:
-                    raise CompileError(
-                        "Internal compiler error: workflow readable block compilation requires unit and owner label"
+                    raise compile_error(
+                        code="E299",
+                        summary="Compile failure",
+                        detail=(
+                            "Internal compiler error: workflow readable block compilation "
+                            "requires unit and owner label"
+                        ),
+                        path=unit.prompt_file.source_path if unit is not None else None,
+                        source_span=item.source_span,
                     )
                 body.append(
                     self._compile_authored_readable_block(

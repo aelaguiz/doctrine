@@ -37,11 +37,7 @@ prompt = "prompts/INVALID_ABSTRACT_AGENT_MENTION.prompt"
 agent = "InvalidAbstractAgentMentionDemo"
 exception_type = "CompileError"
 error_code = "E272"
-message_contains = [
-  "Abstract agent refs are not allowed",
-  "workflow strings",
-  "shared.roles.AbstractEscalationOwner",
-]
+location_path = "prompts/INVALID_ABSTRACT_AGENT_MENTION.prompt"
 
 [[cases]]
 name = "workflow mentions are still rejected"
@@ -51,11 +47,7 @@ prompt = "prompts/INVALID_WORKFLOW_MENTION.prompt"
 agent = "InvalidWorkflowMentionDemo"
 exception_type = "CompileError"
 error_code = "E271"
-message_contains = [
-  "Workflow refs are not allowed in workflow strings",
-  "use `use` for workflow composition",
-  "SharedRead",
-]
+location_path = "prompts/INVALID_WORKFLOW_MENTION.prompt"
 
 [[cases]]
 name = "ambiguous agent mention refs fail loud"
@@ -65,9 +57,4 @@ prompt = "prompts/INVALID_AMBIGUOUS_AGENT_REF.prompt"
 agent = "InvalidAmbiguousAgentMentionDemo"
 exception_type = "CompileError"
 error_code = "E270"
-message_contains = [
-  "Ambiguous workflow section declaration ref",
-  "SharedThing",
-  "agent declaration",
-  "input declaration",
-]
+location_line = 3

@@ -1,0 +1,22 @@
+document SectionMap: "Section Map"
+    section title: "Title"
+        "Map title."
+
+output FinalResponse: "Final Response"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+skill HostBoundSkill: "Host Bound Skill"
+    purpose: "Run the host-bound package."
+    package: "host-bound-skill"
+
+agent BoundDemo:
+    role: "Use the bound package."
+    outputs: "Outputs"
+        FinalResponse
+    final_output: FinalResponse
+    skills: "Skills"
+        skill host_bound: HostBoundSkill
+            bind:
+                section_map: SectionMap

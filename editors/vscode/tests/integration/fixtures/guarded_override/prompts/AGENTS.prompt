@@ -1,0 +1,15 @@
+output BaseReviewComment: "Base Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that still stands."
+
+output DraftReviewComment[BaseReviewComment]: "Draft Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    override current_artifact: "Current Artifact" when present(current_artifact):
+        "Use `home:artifacts/poem.md` when the poem draft still stands."

@@ -13,7 +13,7 @@ expected_lines = [
   "",
   "## Base Metadata Polish",
   "",
-  "Current artifact: Section Metadata.",
+  "The current artifact is Section Metadata.",
   "",
   "Accepted Peer Set is support only for comparison.",
   "",
@@ -42,10 +42,12 @@ expected_lines = [
   "",
   "### Section Metadata",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/section_metadata.json`",
-  "- Shape: Json Object",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/section_metadata.json` |",
+  "| Shape | Json Object |",
+  "| Requirement | Required |",
   "",
   "### Base Coordination Handoff",
   "",
@@ -53,24 +55,16 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Comparison Basis",
-  "",
-  "Name any comparison-only artifacts used in this pass.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Comparison Basis: Name any comparison-only artifacts used in this pass.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Comparison Basis",
+  "- `Current Artifact`",
+  "- `Comparison Basis`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current now and what was comparison-only.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current now and what was comparison-only.",
 ]
-
 [[cases]]
 name = "child workflows can inherit and override named law subsections"
 status = "active"
@@ -87,7 +81,7 @@ expected_lines = [
   "- Stop: Preserve basis is unclear.",
   "- Route the same issue back to RoutingOwner.",
   "",
-  "Current artifact: Section Metadata.",
+  "The current artifact is Section Metadata.",
   "",
   "Accepted Peer Set is support only for comparison.",
   "",
@@ -119,10 +113,12 @@ expected_lines = [
   "",
   "### Section Metadata",
   "",
-  "- Target: File",
-  "- Path: `unit_root/_authoring/section_metadata.json`",
-  "- Shape: Json Object",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `unit_root/_authoring/section_metadata.json` |",
+  "| Shape | Json Object |",
+  "| Requirement | Required |",
   "",
   "### Rewrite-Aware Coordination Handoff",
   "",
@@ -130,34 +126,20 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Comparison Basis",
-  "",
-  "Name any comparison-only artifacts used in this pass.",
-  "",
-  "#### Rewrite Evidence Exclusions",
-  "",
-  "Name any fields whose old values do not count as rewrite evidence.",
-  "",
-  "#### Invalidations",
-  "",
-  "Name any artifacts that are no longer current.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Comparison Basis: Name any comparison-only artifacts used in this pass.",
+  "- Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.",
+  "- Invalidations: Name any artifacts that are no longer current.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Comparison Basis",
+  "- `Current Artifact`",
+  "- `Comparison Basis`",
   "- Rewrite Evidence Exclusions on rewrite passes",
   "- Invalidations when structure changed",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know what is current, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.",
+  "- Standalone Read: This output should stand on its own. The next owner should know what is current, what was comparison-only, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.",
 ]
-
 [[cases]]
 name = "inherited law blocks must account for every named parent subsection"
 status = "active"
@@ -166,9 +148,9 @@ prompt = "prompts/INVALID_MISSING_INHERITED_LAW_SECTION.prompt"
 agent = "InvalidMissingInheritedLawSection"
 exception_type = "CompileError"
 error_code = "E383"
-message_contains = [
-  "Missing inherited law subsection",
-  "currentness",
+location_line = 48
+related = [
+    { label = "inherited `currentness` subsection", line = 32 },
 ]
 
 [[cases]]
@@ -179,9 +161,9 @@ prompt = "prompts/INVALID_DUPLICATE_INHERITED_LAW_SECTION.prompt"
 agent = "InvalidDuplicateInheritedLawSection"
 exception_type = "CompileError"
 error_code = "E382"
-message_contains = [
-  "Duplicate inherited law subsection",
-  "currentness",
+location_line = 46
+related = [
+    { label = "first `currentness` subsection", line = 43 },
 ]
 
 [[cases]]
@@ -192,10 +174,7 @@ prompt = "prompts/INVALID_OVERRIDE_UNKNOWN_LAW_SECTION.prompt"
 agent = "InvalidOverrideUnknownLawSection"
 exception_type = "CompileError"
 error_code = "E384"
-message_contains = [
-  "Cannot override undefined law subsection",
-  "missing_section",
-]
+location_line = 45
 
 [[cases]]
 name = "inherited law blocks cannot mix bare statements with patch entries"
@@ -205,6 +184,4 @@ prompt = "prompts/INVALID_BARE_LAW_STATEMENT_IN_INHERITED_CHILD.prompt"
 agent = "InvalidBareLawStatementInInheritedChild"
 exception_type = "CompileError"
 error_code = "E381"
-message_contains = [
-  "Inherited law requires named sections",
-]
+location_line = 45

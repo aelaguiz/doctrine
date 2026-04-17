@@ -1,0 +1,40 @@
+# This example defines one reusable table contract and uses it by name inside a document.
+
+table ReleaseGates: "Release Gates"
+    columns:
+        gate: "Gate"
+            "What must pass before shipment."
+
+        evidence: "Evidence"
+            "What proves the gate passed."
+
+
+document ReleaseGuide: "Release Guide"
+    section summary: "Summary"
+        "Lead with the release goal and current shipment boundary."
+
+    table release_gates: ReleaseGates required
+        rows:
+            release_notes:
+                gate: "Release notes"
+                evidence: "Linked to the shipped proof."
+
+            package_smoke:
+                gate: "Package smoke"
+                evidence: "`make verify-package` passed."
+
+
+output ReleaseGuideFile: "Release Guide File"
+    target: File
+        path: "release_root/RELEASE_GUIDE.md"
+    shape: MarkdownDocument
+    structure: ReleaseGuide
+    requirement: Required
+
+
+agent NamedTableDemo:
+    role: "Keep {{ReleaseGates:columns.evidence.title}} and {{ReleaseGuide:release_gates.rows.package_smoke}} aligned in {{ReleaseGuide:title}}."
+    workflow: "Publish"
+        "Write the release guide using the named table contract."
+    outputs: "Outputs"
+        ReleaseGuideFile

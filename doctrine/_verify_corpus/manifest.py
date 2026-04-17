@@ -13,6 +13,14 @@ class ManifestError(RuntimeError):
 
 
 @dataclass(slots=True, frozen=True)
+class ExpectedDiagnosticSite:
+    path: Path | None = None
+    line: int | None = None
+    column: int | None = None
+    label: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class CaseSpec:
     manifest_path: Path
     example_dir: Path
@@ -29,6 +37,8 @@ class CaseSpec:
     exception_type: str | None = None
     error_code: str | None = None
     message_contains: tuple[str, ...] = ()
+    expected_location: ExpectedDiagnosticSite | None = None
+    expected_related: tuple[ExpectedDiagnosticSite, ...] = ()
 
 
 def _resolve_manifest_paths(manifest_args: list[str] | None) -> tuple[Path, ...]:
@@ -206,13 +216,35 @@ def _load_case(
     error_code = raw_case.get("error_code")
     if error_code is not None and not isinstance(error_code, str):
         raise ManifestError(f"cases[{case_index}].error_code must be a string when provided.")
-    message_contains = _require_string_list(
-        raw_case, "message_contains", case_index=case_index
-    )
 
     agent = raw_case.get("agent")
     if agent is not None and not isinstance(agent, str):
         raise ManifestError(f"cases[{case_index}].agent must be a string when provided.")
+
+    if kind == "parse_fail":
+        message_contains = _require_string_list(
+            raw_case, "message_contains", case_index=case_index
+        )
+        return CaseSpec(
+            manifest_path=manifest_path,
+            example_dir=example_dir,
+            name=name,
+            kind=kind,
+            prompt_path=prompt_path,
+            approx_ref_path=approx_ref_path,
+            agent=agent,
+            exception_type=exception_type,
+            error_code=error_code,
+            message_contains=message_contains,
+        )
+
+    if "message_contains" in raw_case:
+        raise ManifestError(
+            "cases["
+            f"{case_index}"
+            "].message_contains is retired for compile_fail. "
+            "Use location_line, location_path, and related instead."
+        )
 
     return CaseSpec(
         manifest_path=manifest_path,
@@ -224,7 +256,12 @@ def _load_case(
         agent=agent,
         exception_type=exception_type,
         error_code=error_code,
-        message_contains=message_contains,
+        expected_location=_load_expected_location(
+            raw_case, example_dir=example_dir, case_index=case_index
+        ),
+        expected_related=_load_expected_related(
+            raw_case, example_dir=example_dir, case_index=case_index
+        ),
     )
 
 
@@ -274,6 +311,156 @@ def _require_string_list(
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ManifestError(f"{location} must be a list of strings.")
     return tuple(value)
+
+
+def _load_expected_location(
+    raw: dict[str, Any],
+    *,
+    example_dir: Path,
+    case_index: int,
+) -> ExpectedDiagnosticSite | None:
+    has_location_field = any(
+        key in raw for key in ("location_path", "location_line", "location_column")
+    )
+    if not has_location_field:
+        return None
+    return ExpectedDiagnosticSite(
+        path=_load_expected_path(
+            raw,
+            "location_path",
+            example_dir=example_dir,
+            case_index=case_index,
+        ),
+        line=_load_expected_int(raw, "location_line", case_index=case_index),
+        column=_load_expected_int(raw, "location_column", case_index=case_index),
+    )
+
+
+def _load_expected_related(
+    raw: dict[str, Any],
+    *,
+    example_dir: Path,
+    case_index: int,
+) -> tuple[ExpectedDiagnosticSite, ...]:
+    value = raw.get("related")
+    if value is None:
+        return ()
+    location = f"cases[{case_index}].related"
+    if not isinstance(value, list):
+        raise ManifestError(f"{location} must be a list of tables.")
+    related: list[ExpectedDiagnosticSite] = []
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            raise ManifestError(f"{location}[{index}] must be a TOML table.")
+        unknown = set(item) - {"path", "line", "column", "label"}
+        if unknown:
+            keys = ", ".join(sorted(repr(key) for key in unknown))
+            raise ManifestError(f"{location}[{index}] uses unknown key(s): {keys}.")
+        related.append(
+            ExpectedDiagnosticSite(
+                path=_load_expected_path(
+                    item,
+                    "path",
+                    example_dir=example_dir,
+                    case_index=case_index,
+                    nested_label=f"related[{index}]",
+                ),
+                line=_load_expected_int(
+                    item,
+                    "line",
+                    case_index=case_index,
+                    nested_label=f"related[{index}]",
+                ),
+                column=_load_expected_int(
+                    item,
+                    "column",
+                    case_index=case_index,
+                    nested_label=f"related[{index}]",
+                ),
+                label=_load_expected_str(
+                    item,
+                    "label",
+                    case_index=case_index,
+                    nested_label=f"related[{index}]",
+                ),
+            )
+        )
+    return tuple(related)
+
+
+def _load_expected_path(
+    raw: dict[str, Any],
+    key: str,
+    *,
+    example_dir: Path,
+    case_index: int,
+    nested_label: str | None = None,
+) -> Path | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    location = _nested_location(case_index, key, nested_label=nested_label)
+    if not isinstance(value, str):
+        raise ManifestError(f"{location} must be a string when provided.")
+    return _resolve_diagnostic_path(example_dir, value, label=location)
+
+
+def _load_expected_int(
+    raw: dict[str, Any],
+    key: str,
+    *,
+    case_index: int,
+    nested_label: str | None = None,
+) -> int | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    location = _nested_location(case_index, key, nested_label=nested_label)
+    if not isinstance(value, int):
+        raise ManifestError(f"{location} must be an integer when provided.")
+    if value <= 0:
+        raise ManifestError(f"{location} must be greater than zero.")
+    return value
+
+
+def _load_expected_str(
+    raw: dict[str, Any],
+    key: str,
+    *,
+    case_index: int,
+    nested_label: str | None = None,
+) -> str | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    location = _nested_location(case_index, key, nested_label=nested_label)
+    if not isinstance(value, str):
+        raise ManifestError(f"{location} must be a string when provided.")
+    return value
+
+
+def _nested_location(
+    case_index: int,
+    key: str,
+    *,
+    nested_label: str | None = None,
+) -> str:
+    prefix = f"cases[{case_index}]"
+    if nested_label is None:
+        return f"{prefix}.{key}"
+    return f"{prefix}.{nested_label}.{key}"
+
+
+def _resolve_diagnostic_path(example_dir: Path, raw_path: str, *, label: str) -> Path:
+    candidate = Path(raw_path)
+    candidates = [candidate]
+    if not candidate.is_absolute():
+        candidates = [example_dir / candidate, REPO_ROOT / candidate]
+    for resolved_candidate in candidates:
+        resolved = resolved_candidate.resolve()
+        if resolved.is_file():
+            return resolved
+    raise ManifestError(f"{label} does not exist: {raw_path!r}.")
 
 
 def _display_path(path: Path) -> str:

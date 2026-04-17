@@ -1,0 +1,40 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "titleless readable lists render directly in parent sections and titled lists drop list-kind metadata"
+status = "active"
+kind = "render_contract"
+agent = "TitlelessReadableListsDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use titled and titleless readable lists clearly.",
+  "",
+  "## Guide",
+  "",
+  "### Read First",
+  "",
+  "1. Read `home:issue.md` first.",
+  "2. Then read this role's local rules, files, and outputs.",
+  "3. Check `rally-memory` only when past work like this could help.",
+  "",
+  "### Shared Rules",
+  "",
+  "- Use `home:issue.md` as the shared ledger for this run.",
+  "- Leave one short saved note only when later readers need it.",
+  "- Keep notes run-local. Use `rally-memory` for cross-run lessons.",
+  "",
+  "### Titled Examples",
+  "",
+  "#### Read Order",
+  "",
+  "_Advisory_",
+  "",
+  "1. Read the issue.",
+  "2. Read the repo status.",
+  "",
+  "#### Evidence",
+  "",
+  "- Read the current status.",
+  "- Read the latest validation notes.",
+]

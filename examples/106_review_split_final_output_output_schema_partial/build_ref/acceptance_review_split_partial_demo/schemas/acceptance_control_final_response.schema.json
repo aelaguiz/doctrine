@@ -1,0 +1,27 @@
+{
+  "title": "Acceptance Control Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "current_artifact": {
+      "title": "Current Artifact",
+      "description": "Current artifact after review.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "next_owner": {
+      "title": "Next Owner",
+      "description": "Next owner after review when one exists.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "current_artifact",
+    "next_owner"
+  ]
+}

@@ -3,6 +3,10 @@
 .venv/
 .codex/
 /_audit_ledger.md
+/.doc-audit-ledger.md
+.env
+.env.*
+!.env.example
 __pycache__/
 *.egg-info/
 *.swp

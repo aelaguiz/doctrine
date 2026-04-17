@@ -80,10 +80,7 @@ kind = "compile_fail"
 agent = "InvalidOverrideBriefingAgent"
 exception_type = "CompileError"
 error_code = "E001"
-message_contains = [
-  "E001",
-  "context_note",
-]
+location_line = 80
 
 [[cases]]
 name = "missing inherited entry fails with E003"
@@ -93,7 +90,4 @@ prompt = "prompts/INVALID_MISSING_INHERITED_ENTRY.prompt"
 agent = "MissingInheritedEntryBriefingAgent"
 exception_type = "CompileError"
 error_code = "E003"
-message_contains = [
-  "E003",
-  "closing",
-]
+location_line = 18

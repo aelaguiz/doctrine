@@ -1,22 +1,42 @@
 from __future__ import annotations
 
 from doctrine import model
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
+from doctrine._compiler.indexing import skill_package_id
+from doctrine._compiler.package_diagnostics import package_compile_error
+from doctrine._compiler.package_layout import (
+    PackageOutputRegistry,
+    bundle_ordinary_package_files,
+    new_package_output_registry,
+    register_package_output_path,
+)
 from doctrine._compiler.resolved_types import (
-    CompileError,
     CompiledSection,
     CompiledSkillPackage,
     CompiledSkillPackageFile,
     IndexedUnit,
-    Path,
+    SkillPackageHostCompileContext,
 )
 from doctrine.parser import parse_file
-from doctrine.renderer import render_markdown
+from doctrine.renderer import render_markdown, render_readable_block
 
 
 class CompileSkillPackageMixin:
     """Skill package compile helpers for CompilationContext."""
+
+    def _new_skill_package_host_context(
+        self,
+        *,
+        unit: IndexedUnit,
+        decl: model.SkillPackageDecl,
+    ) -> SkillPackageHostCompileContext:
+        return SkillPackageHostCompileContext(
+            package_unit=unit,
+            package_decl=decl,
+            package_id=skill_package_id(decl),
+            host_slots_by_key={slot.key: slot for slot in decl.host_contract},
+        )
 
     def _skill_package_source_root(
         self,
@@ -26,68 +46,33 @@ class CompileSkillPackageMixin:
     ) -> Path:
         source_path = unit.prompt_file.source_path
         if source_path is None:
-            raise CompileError(
-                f"Skill package {decl.name} is missing a source path; package emission requires a real `SKILL.prompt` file."
+            raise package_compile_error(
+                code="E291",
+                summary="Prompt source path is required for compilation",
+                detail=(
+                    f"Skill package `{decl.name}` is missing a source path; package "
+                    "emission requires a real `SKILL.prompt` file."
+                ),
             )
         return source_path.parent
-
-    def _validate_skill_package_bundle_path(
-        self,
-        path_text: str,
-        *,
-        owner_label: str,
-        seen_exact: set[str],
-        seen_folded: dict[str, str],
-    ) -> str:
-        if "\\" in path_text:
-            raise CompileError(
-                f"Skill package bundled paths must use `/` separators in {owner_label}: {path_text}"
-            )
-        path = PurePosixPath(path_text)
-        parts = path.parts
-        if not parts:
-            raise CompileError(f"Skill package bundled path is empty in {owner_label}")
-        if path.is_absolute():
-            raise CompileError(
-                f"Skill package bundled paths must be relative in {owner_label}: {path_text}"
-            )
-        if any(part in {"", ".", ".."} for part in parts):
-            raise CompileError(
-                f"Skill package bundled path must stay within the package root in {owner_label}: {path_text}"
-            )
-        if path.name in {"", ".", ".."}:
-            raise CompileError(
-                f"Skill package bundled path must name a file in {owner_label}: {path_text}"
-            )
-        normalized = path.as_posix()
-        if normalized in seen_exact:
-            raise CompileError(
-                f"Duplicate skill package bundled path in {owner_label}: {normalized}"
-            )
-        folded = normalized.casefold()
-        prior = seen_folded.get(folded)
-        if prior is not None:
-            raise CompileError(
-                f"Skill package bundled path case-collides in {owner_label}: {normalized} vs {prior}"
-            )
-        seen_exact.add(normalized)
-        seen_folded[folded] = normalized
-        return normalized
 
     def _compile_skill_package_bundle_files(
         self,
         decl: model.SkillPackageDecl,
         *,
         unit: IndexedUnit,
+        registry: PackageOutputRegistry,
     ) -> tuple[CompiledSkillPackageFile, ...]:
         source_root = self._skill_package_source_root(unit=unit, decl=decl)
         source_path = unit.prompt_file.source_path
         if source_path is None:
-            raise CompileError(f"Skill package {decl.name} is missing a source path.")
-
-        seen_exact: set[str] = {"SKILL.md"}
-        seen_folded: dict[str, str] = {"skill.md": "SKILL.md"}
+            raise package_compile_error(
+                code="E291",
+                summary="Prompt source path is required for compilation",
+                detail=f"Skill package `{decl.name}` is missing a source path.",
+            )
         compiled_files: list[CompiledSkillPackageFile] = []
+        ordinary_files: list[Path] = []
 
         source_files = sorted(path for path in source_root.rglob("*") if path.is_file())
         reserved_prompt_dirs = {
@@ -113,8 +98,7 @@ class CompileSkillPackageMixin:
                             bundled_path,
                             decl=decl,
                             source_root=source_root,
-                            seen_exact=seen_exact,
-                            seen_folded=seen_folded,
+                            registry=registry,
                         )
                     )
                 continue
@@ -124,26 +108,127 @@ class CompileSkillPackageMixin:
                 for reserved_dir in reserved_prompt_dirs
             ):
                 continue
+            ordinary_files.append(bundled_path)
 
-            rel_path = bundled_path.relative_to(source_root).as_posix()
-            normalized_path = self._validate_skill_package_bundle_path(
-                rel_path,
-                owner_label=f"skill package {decl.name}",
-                seen_exact=seen_exact,
-                seen_folded=seen_folded,
+        compiled_files.extend(
+            CompiledSkillPackageFile(path=file.path, content=file.content)
+            for file in bundle_ordinary_package_files(
+                source_root,
+                ordinary_files,
+                registry=registry,
             )
-            try:
-                content = bundled_path.read_bytes()
-            except OSError as exc:
-                raise CompileError(
-                    f"Could not read skill package bundled file in skill package {decl.name}: {normalized_path}"
-                ).ensure_location(path=bundled_path) from exc
-
-            compiled_files.append(
-                CompiledSkillPackageFile(path=normalized_path, content=content)
-            )
+        )
 
         return tuple(compiled_files)
+
+    def _compile_skill_package_emitted_docs(
+        self,
+        decl: model.SkillPackageDecl,
+        *,
+        unit: IndexedUnit,
+        registry: PackageOutputRegistry,
+    ) -> tuple[CompiledSkillPackageFile, ...]:
+        source_path = unit.prompt_file.source_path
+        if source_path is None:
+            raise package_compile_error(
+                code="E291",
+                summary="Prompt source path is required for compilation",
+                detail=f"Skill package `{decl.name}` is missing a source path.",
+            )
+
+        compiled_files: list[CompiledSkillPackageFile] = []
+        for entry in decl.emit_entries:
+            output_path = self._register_skill_package_emitted_doc_path(
+                entry,
+                decl=decl,
+                source_path=source_path,
+                registry=registry,
+            )
+            target_unit, document_decl = self._resolve_skill_package_emitted_document_ref(
+                entry,
+                unit=unit,
+            )
+            with self._with_skill_package_artifact_context(
+                path=output_path,
+                kind="document",
+                source=".".join((*target_unit.module_parts, document_decl.name)) or document_decl.name,
+            ):
+                compiled_document = self._compile_document_decl(document_decl, unit=target_unit)
+            compiled_files.append(
+                CompiledSkillPackageFile(
+                    path=output_path,
+                    content=self._render_skill_package_companion_markdown(compiled_document),
+                )
+            )
+        return tuple(compiled_files)
+
+    def _register_skill_package_emitted_doc_path(
+        self,
+        entry: model.SkillPackageEmitEntry,
+        *,
+        decl: model.SkillPackageDecl,
+        source_path: Path,
+        registry: PackageOutputRegistry,
+    ) -> str:
+        if not entry.path.endswith(".md"):
+            raise package_compile_error(
+                code="E304",
+                summary="Invalid skill package bundle",
+                detail=(
+                    "Skill package emitted document paths must end in `.md` "
+                    f"in skill package {decl.name}: {entry.path}"
+                ),
+                path=source_path,
+                source_span=entry.source_span,
+                hints=("Map each `emit:` entry to one package-relative Markdown file.",),
+            )
+        return register_package_output_path(
+            entry.path,
+            registry=registry,
+            source_path=source_path,
+            source_span=entry.source_span,
+        )
+
+    def _resolve_skill_package_emitted_document_ref(
+        self,
+        entry: model.SkillPackageEmitEntry,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.DocumentDecl]:
+        lookup_targets = self._decl_lookup_targets(entry.ref, unit=unit)
+        if not any(
+            lookup_target.unit.documents_by_name.get(lookup_target.declaration_name) is not None
+            for lookup_target in lookup_targets
+        ):
+            dotted_name = (
+                ".".join((*entry.ref.module_parts, entry.ref.declaration_name))
+                if entry.ref.module_parts
+                else entry.ref.declaration_name
+            )
+            for lookup_target in lookup_targets:
+                actual_kind = self._named_non_output_decl_kind(
+                    lookup_target.declaration_name,
+                    unit=lookup_target.unit,
+                )
+                if actual_kind is not None:
+                    raise package_compile_error(
+                        code="E304",
+                        summary="Invalid skill package bundle",
+                        detail=(
+                            "Skill package `emit:` entries must point at document declarations, "
+                            f"but `{dotted_name}` is a {actual_kind}."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=entry.ref.source_span,
+                    )
+        return self._resolve_document_ref(entry.ref, unit=unit)
+
+    def _render_skill_package_companion_markdown(
+        self,
+        compiled_document: CompiledSection,
+    ) -> bytes:
+        rendered = render_readable_block(compiled_document, depth=1).rstrip()
+        return (rendered + "\n").encode("utf-8")
 
     def _is_skill_package_bundled_agent_prompt(
         self,
@@ -162,8 +247,7 @@ class CompileSkillPackageMixin:
         *,
         decl: model.SkillPackageDecl,
         source_root: Path,
-        seen_exact: set[str],
-        seen_folded: dict[str, str],
+        registry: PackageOutputRegistry,
     ) -> CompiledSkillPackageFile:
         from doctrine._compiler.session import CompilationSession
 
@@ -171,6 +255,7 @@ class CompileSkillPackageMixin:
         nested_session = CompilationSession(
             prompt_file,
             project_config=self.session.project_config,
+            skill_package_host_context=self._active_skill_package_host_context(),
         )
         concrete_agents = tuple(
             agent
@@ -178,18 +263,31 @@ class CompileSkillPackageMixin:
             if not agent.abstract
         )
         if len(concrete_agents) != 1:
-            raise CompileError(
-                "Nested prompt-bearing skill package files must define exactly one concrete agent "
-                f"in skill package {decl.name}: {prompt_path.relative_to(source_root).as_posix()}"
-            ).ensure_location(path=prompt_path)
+            raise package_compile_error(
+                code="E304",
+                summary="Invalid skill package bundle",
+                detail=(
+                    "Nested prompt-bearing skill package files must define exactly one "
+                    f"concrete agent in skill package {decl.name}: "
+                    f"{prompt_path.relative_to(source_root).as_posix()}"
+                ),
+                path=prompt_path,
+                hints=(
+                    "Keep exactly one concrete agent in each bundled agent prompt.",
+                ),
+            )
 
-        output_path = self._validate_skill_package_bundle_path(
+        output_path = register_package_output_path(
             prompt_path.relative_to(source_root).with_suffix(".md").as_posix(),
-            owner_label=f"skill package {decl.name}",
-            seen_exact=seen_exact,
-            seen_folded=seen_folded,
+            registry=registry,
+            source_path=prompt_path,
         )
-        compiled_agent = nested_session.compile_agent(concrete_agents[0].name)
+        with self._with_skill_package_artifact_context(
+            path=output_path,
+            kind="agent",
+            source=prompt_path.relative_to(source_root).as_posix(),
+        ):
+            compiled_agent = nested_session.compile_agent(concrete_agents[0].name)
         return CompiledSkillPackageFile(
             path=output_path,
             content=render_markdown(compiled_agent).encode("utf-8"),
@@ -209,18 +307,44 @@ class CompileSkillPackageMixin:
         if decl.metadata.license is not None:
             frontmatter.append(("license", decl.metadata.license))
 
+        registry = new_package_output_registry(
+            owner_label=f"skill package {decl.name}",
+            compiler_owned_paths=("SKILL.md", "SKILL.contract.json"),
+            path_label_singular="Skill package bundled path",
+            path_label_plural="Skill package bundled paths",
+            read_label="skill package bundled file",
+        )
+        host_context = self._new_skill_package_host_context(unit=unit, decl=decl)
+        with self._with_skill_package_host_context(host_context):
+            with self._with_skill_package_artifact_context(
+                path="SKILL.md",
+                kind="skill_package_root",
+            ):
+                root = CompiledSection(
+                    title=decl.title,
+                    body=self._compile_record_support_items(
+                        decl.items,
+                        unit=unit,
+                        owner_label=f"skill package {decl.name}",
+                        surface_label="skill package prose",
+                    ),
+                )
+            emitted_docs = self._compile_skill_package_emitted_docs(
+                decl,
+                unit=unit,
+                registry=registry,
+            )
+            bundled_files = self._compile_skill_package_bundle_files(
+                decl,
+                unit=unit,
+                registry=registry,
+            )
+
         return CompiledSkillPackage(
             name=decl.name,
             title=decl.title,
             frontmatter=tuple(frontmatter),
-            root=CompiledSection(
-                title=decl.title,
-                body=self._compile_record_support_items(
-                    decl.items,
-                    unit=unit,
-                    owner_label=f"skill package {decl.name}",
-                    surface_label="skill package prose",
-                ),
-            ),
-            files=self._compile_skill_package_bundle_files(decl, unit=unit),
+            root=root,
+            contract=host_context.compiled_contract(),
+            files=(*emitted_docs, *bundled_files),
         )

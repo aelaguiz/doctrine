@@ -1,0 +1,42 @@
+{
+  "title": "Acceptance Control Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "title": "Verdict",
+      "description": "Review verdict.",
+      "type": "string"
+    },
+    "current_artifact": {
+      "title": "Current Artifact",
+      "description": "Current artifact after review.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "next_owner": {
+      "title": "Next Owner",
+      "description": "Next owner after review when one exists.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "blocked_gate": {
+      "title": "Blocked Gate",
+      "description": "Blocking gate when review stopped early.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "verdict",
+    "current_artifact",
+    "next_owner",
+    "blocked_gate"
+  ]
+}

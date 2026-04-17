@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 1.0
+Current Doctrine language version: 2.2
 
 ## The Version Lines
 
@@ -14,9 +14,34 @@ behavior.
 
 - Use `major.minor`.
 - Bump the major version when the language itself breaks.
+- Retiring authored language like `required` or `optional` inside
+  `output schema` is a language break even when the lowered wire shape stays
+  the same.
 - Bump the minor version when the language adds backward-compatible syntax or
   semantics.
+- A new backward-compatible language surface such as direct `output`
+  inheritance, workflow-root readable blocks, or omitted first-class IO
+  wrapper titles needs the next minor language version when it ships publicly.
+- A first-class named declaration such as reusable top-level `table`
+  declarations also needs the next minor language version when it ships
+  publicly.
+- A new typed attachment such as `delivery_skill:` on `output target` also
+  needs the next minor language version when it ships publicly.
+- A new backward-compatible import or emit language surface such as
+  directory-backed runtime package imports and emitted runtime-package trees
+  also needs the next minor language version when it ships publicly.
+- The high-value authoring wave that adds import aliases and symbol imports,
+  grouped explicit `inherit`, review-field identity shorthand, one-line
+  first-class IO wrapper refs, and `self:` path roots is one
+  backward-compatible language move. It advances the language line from
+  `2.0` to `2.1`.
+- A new backward-compatible compile or emit API such as provider-supplied
+  prompt roots needs the next minor release version when it ships publicly.
 - Leave it unchanged when a release does not change the language.
+- The package host-binding surface that adds inline skill `package:`,
+  package `host_contract:`, skill-entry `bind:`, and package-scoped `host:`
+  refs is one backward-compatible language move. It advances the language
+  line from `2.1` to `2.2`.
 
 ### Doctrine Release Version
 
@@ -35,6 +60,15 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
+- Refreshing a first-party emitted skill bundle while keeping its stable code
+  catalog, install layout, and machine-readable proof shape unchanged is still
+  a patch-level public fix.
+- Restoring a broken stable surface such as routed previous-turn emit facts is
+  still a patch fix. It is not a new additive feature when the public shape
+  stays the same.
+- The same patch rule applies when previous-turn predecessor analysis missed an
+  already-shipped route-bearing surface such as `review.on_accept` or
+  `review.on_reject`.
 - Use `CHANGELOG.md`, the latest signed annotated tag, and the matching
   GitHub release as the public release record.
 
@@ -42,10 +76,23 @@ The Doctrine release version tracks one public shipped release or prerelease.
 
 Doctrine also ships narrower version lines.
 
-- `contract_version` in emitted `.contract.json` files only versions that JSON
-  contract shape. It is not the Doctrine language version.
 - `schema_version` in `cases.toml` only versions the corpus-manifest format.
   It is not the Doctrine language version.
+- Emitted Markdown from `emit_docs` and `emit_flow` is part of the public
+  surface.
+- Emitted skill-package trees from `emit_skill` are part of the public
+  surface when Doctrine ships first-party `SKILL.prompt` bundles.
+- When present, emitted `SKILL.contract.json` files are also part of that
+  public skill-package surface.
+- Checked-in public install trees such as `skills/.curated/agent-linter/`
+  are also part of the public surface when this repo is used as an
+  `npx skills` source.
+- For structured final outputs, emitted
+  `schemas/<output-slug>.schema.json` files are also part of the public
+  surface for payload wire shape.
+- Emitted `final_output.contract.json` files are also part of the public
+  surface for final-output, review-control, route, and `io` metadata.
+- Doctrine does not ship `AGENTS.contract.json` anymore.
 - The package metadata version in `pyproject.toml` versions the published
   Python package. It is not the Doctrine language version.
 - `import_name`, `pypi_environment`, and `testpypi_environment` under
@@ -72,11 +119,62 @@ Every public release uses one release class.
   `Non-breaking`.
 - `additive`: backward-compatible public additions. Release kind:
   `Non-breaking`.
+- Adding omitted first-class IO wrapper titles that lower one direct
+  declaration while keeping the explicit long form valid is an `additive`
+  release.
+- Adding directory-backed runtime package imports, package-root `AGENTS.md`
+  or `SOUL.md` emit, bundled runtime peer files, or matching shared flow-root
+  behavior is an `additive` release when older local-root entrypoints still
+  work.
+- Adding target-owned `delivery_skill:` binding on `output target` is an
+  `additive` release when existing output targets without the binding still
+  work.
+- Adding provider-supplied prompt roots is an `additive` release when existing
+  `additional_prompt_roots`, local entrypoints, and emit target placement
+  still work.
+- Adding `skill package emit:` companion docs and package-local prompt imports
+  is an `additive` release when existing `SKILL.md`, bundled-file, and
+  bundled-agent package behavior still works.
+- Adding package host binding with inline skill `package:`, package
+  `host_contract:`, skill-entry `bind:`, package-scoped `host:` refs, and
+  conditional emitted `SKILL.contract.json` sidecars for host-bound packages is
+  an `additive` release when older inline skills and older skill packages
+  still keep working unchanged.
+- Adding `type: enum` plus `values:` for local `output schema` enums is an
+  `additive` release when legacy `type: string` plus `enum:` still works and
+  emitted schema files keep the same string-enum wire shape.
+- Adding a top-level `route` block to `final_output.contract.json` is an
+  `additive` release when existing `final_output` and `review` keys keep their
+  shape and `contract_version` stays compatible.
+- The high-value authoring wave is also `additive`. It ships `E306`,
+  `E307`, `E308`, `E309`, and `E312`. `E310` stays reserved for the deferred
+  grouped-override investigation, and `E311` stays reserved for a future
+  dedicated IO-wrapper shorthand diagnostic.
+- Adding `route field`, `final_output.route:`, and additive `route.selector`
+  metadata is an `additive` release when existing `route_from`,
+  `handoff_routing`, review, and emitted contract shapes keep working.
+- Adding an additive top-level `io` block to `final_output.contract.json` is
+  an `additive` release when existing `final_output`, `review`, and `route`
+  keys keep their shape and `contract_version` stays compatible.
 - `soft-deprecated`: behavior still works, but Doctrine now tells users what
   to move away from and how to move early. Release kind: `Non-breaking`.
 - `breaking`: any shipped public surface now needs user action. This includes
   language breaks, emitted contract breaks, manifest-schema breaks, and other
   stable public surface breaks. Release kind: `Breaking`.
+- Emitted runtime Markdown is part of that public surface. If ordinary
+  `## Outputs` changes from one layout to another, downstream snapshot,
+  parser, or scraper users may need to act even when the language version
+  stays the same.
+- First-party emitted skill-package trees are also part of that public
+  surface. If emitted `SKILL.md` content or bundled companion-file layout
+  changes in a way that affects installers or loaders, downstream users may
+  need to act.
+- The same rule applies to render-only compaction such as changing a simple
+  output contract from a table to bullets, collapsing redundant compiler-owned
+  wrapper headings, or replacing a repeated split-review semantics section
+  with one shorter note.
+- Removing emitted sidecar artifacts such as `AGENTS.contract.json` is also a
+  breaking public-surface change.
 
 Breaking releases outside the language surface may keep the Doctrine language
 version unchanged. Breaking language releases must bump the Doctrine language
@@ -109,7 +207,7 @@ one matching release section:
 Release kind: Non-breaking
 Release channel: stable
 Release version: vX.Y.Z
-Language version: unchanged (still 1.0)
+Language version: unchanged (still 2.0)
 Affected surfaces: ...
 Who must act: ...
 Who does not need to act: ...
@@ -191,9 +289,17 @@ If a public release is wrong:
 ## Breaking-Change Duties
 
 - Do not ship silent breakage.
-- If a change breaks authored `.prompt` files, emitted `.contract.json` files,
-  `cases.toml` manifests, or another stable public surface, update this file in
-  the same change.
+- If a change breaks authored `.prompt` files, emitted
+  `schemas/<output-slug>.schema.json` files, `cases.toml` manifests, or
+  another stable public surface, update this file in the same change.
+- Treat emitted runtime Markdown layout as one of those stable public
+  surfaces. For example, regrouping ordinary `## Outputs` from bullet lists
+  into contract tables is a breaking emitted-Markdown change even though the
+  input language does not change.
+- Treat emitted helper-line removal the same way. For example, removing
+  `_ordered list_` or `_unordered list_` from detailed readable list renders
+  is a breaking emitted-Markdown change even when the language change itself
+  is additive, such as making list titles optional.
 - Say who is affected.
 - Say what changed.
 - Give exact upgrade steps.
@@ -206,7 +312,6 @@ If a public release is wrong:
 ## What Not To Infer
 
 - Do not infer Doctrine language compatibility from the release version number.
-- Do not infer Doctrine language compatibility from `contract_version`.
 - Do not infer Doctrine language compatibility from `schema_version`.
 - Do not treat the package metadata version in `pyproject.toml` as the Doctrine
   language version. It only versions the published Python package.

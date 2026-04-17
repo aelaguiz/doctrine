@@ -67,6 +67,32 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Outputs may not define both `schema:` and `must_include:`.",
         )
 
+    def test_output_schema_owner_conflict_points_at_override_must_include(self) -> None:
+        source = textwrap.dedent(
+            """\
+            schema LessonInventory: "Lesson Inventory"
+                sections:
+                    summary: "Summary"
+                        "State the required summary."
+
+            output SchemaOutput: "Schema Output"
+                target: TurnResponse
+                shape: JsonObject
+                requirement: Required
+                schema: LessonInventory
+
+                override must_include: "Must Include"
+                    summary: "Summary"
+                        "Repeat the summary locally."
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/schema-owner-override-conflict.prompt",
+            anchor_line='    override must_include: "Must Include"',
+            summary_snippet="Outputs may not define both `schema:` and `must_include:`.",
+        )
+
     def test_output_schema_structure_conflict_points_at_structure(self) -> None:
         source = textwrap.dedent(
             """\
@@ -175,6 +201,25 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Document prose lines must appear before keyed document blocks.",
         )
 
+    def test_skill_package_duplicate_emit_points_at_the_second_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            skill package LayoutChecklist: "Layout Checklist"
+                emit:
+                    "references/checklist.md": ChecklistGuide
+                emit:
+                    "references/qa.md": QaGuide
+                "Keep the root file short."
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/skill-package-duplicate-emit.prompt",
+            anchor_line="    emit:",
+            summary_snippet="Skill packages may define `emit:` only once.",
+            occurrence=2,
+        )
+
     def test_io_late_prose_points_at_the_late_line(self) -> None:
         source = textwrap.dedent(
             """\
@@ -227,6 +272,132 @@ class ParseDiagnosticsTests(unittest.TestCase):
             source_path="/tmp/output-duplicate-render-profile.prompt",
             anchor_line="    render_profile: Profiles.detail",
             summary_snippet="Output declarations may define `render_profile:` only once.",
+        )
+
+    def test_grouped_inherit_duplicate_key_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            workflow ChildWorkflow[BaseWorkflow]: "Child Workflow"
+                inherit {opening, opening}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-inherit-duplicate.prompt",
+            anchor_line="    inherit {opening, opening}",
+            summary_snippet="Grouped `inherit` may list key `opening` only once.",
+            expected_code="E309",
+        )
+
+    def test_grouped_inherit_empty_group_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output ChildOutput[BaseOutput]: "Child Output"
+                inherit {}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-inherit-empty.prompt",
+            anchor_line="    inherit {}",
+            summary_snippet="Grouped `inherit` must list at least one key.",
+            expected_code="E309",
+        )
+
+    def test_grouped_schema_inherit_unknown_key_points_at_the_group_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            schema ChildSchema[BaseSchema]: "Child Schema"
+                inherit {sections, unknown}
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/grouped-schema-inherit-unknown.prompt",
+            anchor_line="    inherit {sections, unknown}",
+            summary_snippet="Grouped `inherit` uses unknown key `unknown`.",
+            expected_code="E309",
+        )
+
+    def test_final_output_duplicate_output_points_at_the_later_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    output: FinalReply
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-duplicate-output.prompt",
+            anchor_line="        output: FinalReply",
+            summary_snippet="final_output block may define `output:` only once.",
+            occurrence=2,
+            expected_column=9,
+        )
+
+    def test_final_output_duplicate_review_fields_points_at_the_later_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+                verdict: "Verdict"
+                    "Say whether the review passed."
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    output: FinalReply
+                    review_fields:
+                        verdict: verdict
+                    review_fields:
+                        verdict: verdict
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-duplicate-review-fields.prompt",
+            anchor_line="        review_fields:",
+            summary_snippet="final_output block may define `review_fields:` only once.",
+            occurrence=2,
+            expected_column=9,
+        )
+
+    def test_final_output_missing_output_points_at_the_only_body_line(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+            agent Writer:
+                role: "Write the next turn."
+                outputs: "Outputs"
+                    FinalReply
+                final_output:
+                    route: next_route
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/final-output-missing-output.prompt",
+            anchor_line="        route: next_route",
+            summary_snippet="final_output block is missing `output:`.",
+            expected_column=16,
         )
 
     def test_analysis_duplicate_render_profile_points_at_the_later_line(self) -> None:
@@ -359,6 +530,28 @@ class ParseDiagnosticsTests(unittest.TestCase):
             anchor_line="    trust_surface:",
             summary_snippet="Output declarations may define `trust_surface` only once.",
             occurrence=2,
+        )
+
+    def test_output_duplicate_trust_surface_points_at_override_trust_surface_block(self) -> None:
+        source = textwrap.dedent(
+            """\
+            output ReviewComment: "Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+                verdict: "Verdict"
+                    "Say whether the review passed."
+                trust_surface:
+                    verdict
+                override trust_surface:
+                    verdict
+            """
+        )
+        self._assert_parse_error_points_at_line(
+            source=source,
+            source_path="/tmp/output-override-trust-surface.prompt",
+            anchor_line="    override trust_surface:",
+            summary_snippet="Output declarations may define `trust_surface` only once.",
         )
 
     def test_workflow_duplicate_law_points_at_the_later_block(self) -> None:

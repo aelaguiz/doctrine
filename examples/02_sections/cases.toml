@@ -32,7 +32,7 @@ prompt = "prompts/INVALID_DUPLICATE_SECTION_KEY.prompt"
 agent = "DuplicateSectionKeysDemo"
 exception_type = "CompileError"
 error_code = "E261"
-message_contains = [
-  "Duplicate workflow item key",
-  "step_one",
+location_line = 10
+related = [
+    { label = "first `step_one` entry", line = 7 },
 ]

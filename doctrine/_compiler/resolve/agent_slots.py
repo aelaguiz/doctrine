@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import (
+    authored_compile_error,
+    authored_related_site,
+)
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
+from doctrine._compiler.reference_diagnostics import (
+    reference_compile_error,
+    reference_related_site,
+)
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -16,6 +24,75 @@ from doctrine._compiler.support_files import _dotted_decl_name
 class ResolveAgentSlotsMixin:
     """Agent-slot and authored workflow resolution helpers for ResolveMixin."""
 
+    def _authored_slot_field_by_key(
+        self,
+        fields: tuple[model.Field, ...],
+        key: str,
+    ) -> (
+        model.AuthoredSlotField
+        | model.AuthoredSlotAbstract
+        | model.AuthoredSlotInherit
+        | model.AuthoredSlotOverride
+        | None
+    ):
+        return next(
+            (
+                field
+                for field in fields
+                if isinstance(
+                    field,
+                    (
+                        model.AuthoredSlotField,
+                        model.AuthoredSlotAbstract,
+                        model.AuthoredSlotInherit,
+                        model.AuthoredSlotOverride,
+                    ),
+                )
+                and field.key == key
+            ),
+            None,
+        )
+
+    def _authored_slot_related_site(
+        self,
+        *,
+        label: str,
+        unit: IndexedUnit | None,
+        source_span: model.SourceSpan | None,
+    ):
+        if unit is None or source_span is None:
+            return ()
+        return (
+            authored_related_site(
+                label=label,
+                unit=unit,
+                source_span=source_span,
+            ),
+        )
+
+    def _missing_authored_slot_related_sites(
+        self,
+        *,
+        parent_unit: IndexedUnit | None,
+        parent_agent: model.Agent | None,
+        missing_keys: tuple[str, ...],
+    ) -> tuple:
+        if parent_unit is None or parent_agent is None:
+            return ()
+        related = []
+        for key in missing_keys:
+            parent_field = self._authored_slot_field_by_key(parent_agent.fields, key)
+            if parent_field is None or parent_field.source_span is None:
+                continue
+            related.append(
+                authored_related_site(
+                    label=f"inherited `{key}` slot",
+                    unit=parent_unit,
+                    source_span=parent_field.source_span,
+                )
+            )
+        return tuple(related)
+
     def _resolve_agent_slots(
         self, agent: model.Agent, *, unit: IndexedUnit
     ) -> tuple[ResolvedAgentSlotState, ...]:
@@ -29,11 +106,19 @@ class ResolveAgentSlotsMixin:
                 ".".join(parts + (name,)) or name
                 for parts, name in [*self._agent_slot_resolution_stack, agent_key]
             )
-            raise CompileError(f"Cyclic agent inheritance: {cycle}")
+            raise authored_compile_error(
+                code="E207",
+                summary="Cyclic agent inheritance",
+                detail=f"Cyclic agent inheritance: {cycle}",
+                unit=unit,
+                source_span=agent.source_span,
+            )
 
         self._agent_slot_resolution_stack.append(agent_key)
         try:
             parent_slots: tuple[ResolvedAgentSlotState, ...] = ()
+            parent_unit: IndexedUnit | None = None
+            parent_agent: model.Agent | None = None
             parent_label: str | None = None
             if agent.parent_ref is not None:
                 parent_unit, parent_agent = self._resolve_parent_agent_decl(agent, unit=unit)
@@ -42,17 +127,38 @@ class ResolveAgentSlotsMixin:
 
             parent_slots_by_key = {slot.key: slot for slot in parent_slots}
             resolved_slots: list[ResolvedAgentSlotState] = []
-            seen_slot_keys: set[str] = set()
+            seen_slot_fields: dict[
+                str,
+                model.AuthoredSlotField
+                | model.AuthoredSlotAbstract
+                | model.AuthoredSlotInherit
+                | model.AuthoredSlotOverride,
+            ] = {}
             accounted_parent_concrete_keys: set[str] = set()
 
             for field in agent.fields:
                 if isinstance(field, model.AuthoredSlotField):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
-                    if field.key in seen_slot_keys:
-                        raise CompileError(
-                            f"Duplicate authored slot key in agent {agent.name}: {field.key}"
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
+                    first_field = seen_slot_fields.get(field.key)
+                    if first_field is not None:
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=f"Duplicate authored slot key in agent {agent.name}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"first `{field.key}` slot",
+                                unit=unit,
+                                source_span=first_field.source_span,
+                            ),
                         )
-                    seen_slot_keys.add(field.key)
+                    seen_slot_fields[field.key] = field
 
                     parent_slot = parent_slots_by_key.get(field.key)
                     if isinstance(parent_slot, ResolvedAgentSlot):
@@ -61,7 +167,10 @@ class ResolveAgentSlotsMixin:
                                 field.value,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot workflow",
+                                owner_source_span=field.source_span,
                                 parent_workflow=parent_slot.body,
+                                parent_body=None,
+                                parent_unit=parent_unit,
                                 parent_label=f"{parent_label} slot workflow",
                             )
                             accounted_parent_concrete_keys.add(field.key)
@@ -69,8 +178,27 @@ class ResolveAgentSlotsMixin:
                                 ResolvedAgentSlot(key=field.key, body=resolved_body)
                             )
                             continue
-                        raise CompileError(
-                            f"Inherited authored slot requires `inherit {field.key}` or `override {field.key}` in agent {agent.name}"
+                        parent_field = (
+                            None
+                            if parent_agent is None
+                            else self._authored_slot_field_by_key(parent_agent.fields, field.key)
+                        )
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=(
+                                f"Inherited authored slot requires `inherit {field.key}` or "
+                                f"`override {field.key}` in agent {agent.name}"
+                            ),
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"inherited `{field.key}` slot",
+                                unit=parent_unit,
+                                source_span=(
+                                    None if parent_field is None else parent_field.source_span
+                                ),
+                            ),
                         )
                     if isinstance(parent_slot, ResolvedAbstractAgentSlot):
                         resolved_slots.append(
@@ -80,6 +208,7 @@ class ResolveAgentSlotsMixin:
                                     field.value,
                                     unit=unit,
                                     owner_label=f"agent {agent.name} slot {field.key}",
+                                    owner_source_span=field.source_span,
                                 ),
                             )
                         )
@@ -92,18 +221,34 @@ class ResolveAgentSlotsMixin:
                                 field.value,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
+                                owner_source_span=field.source_span,
                             ),
                         )
                     )
                     continue
 
                 if isinstance(field, model.AuthoredSlotAbstract):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
-                    if field.key in seen_slot_keys:
-                        raise CompileError(
-                            f"Duplicate authored slot key in agent {agent.name}: {field.key}"
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
+                    first_field = seen_slot_fields.get(field.key)
+                    if first_field is not None:
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=f"Duplicate authored slot key in agent {agent.name}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"first `{field.key}` slot",
+                                unit=unit,
+                                source_span=first_field.source_span,
+                            ),
                         )
-                    seen_slot_keys.add(field.key)
+                    seen_slot_fields[field.key] = field
                     parent_slot = parent_slots_by_key.get(field.key)
                     if isinstance(parent_slot, ResolvedAgentSlot):
                         accounted_parent_concrete_keys.add(field.key)
@@ -111,44 +256,124 @@ class ResolveAgentSlotsMixin:
                     continue
 
                 if isinstance(field, model.AuthoredSlotInherit):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
-                    if field.key in seen_slot_keys:
-                        raise CompileError(
-                            f"Duplicate authored slot key in agent {agent.name}: {field.key}"
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
+                    first_field = seen_slot_fields.get(field.key)
+                    if first_field is not None:
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=f"Duplicate authored slot key in agent {agent.name}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"first `{field.key}` slot",
+                                unit=unit,
+                                source_span=first_field.source_span,
+                            ),
                         )
-                    seen_slot_keys.add(field.key)
+                    seen_slot_fields[field.key] = field
                     parent_slot = parent_slots_by_key.get(field.key)
                     if parent_slot is None:
                         label = parent_label or f"agent {agent.name}"
-                        raise CompileError(
-                            f"Cannot inherit undefined authored slot in {label}: {field.key}"
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=f"Cannot inherit undefined authored slot in {label}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
                         )
                     if isinstance(parent_slot, ResolvedAbstractAgentSlot):
                         label = parent_label or f"agent {agent.name}"
-                        raise CompileError(
-                            f"E210 Abstract authored slot in {label} must be defined directly in agent {agent.name}: {field.key}"
+                        parent_field = (
+                            None
+                            if parent_agent is None
+                            else self._authored_slot_field_by_key(parent_agent.fields, field.key)
+                        )
+                        raise authored_compile_error(
+                            code="E210",
+                            summary="Abstract authored slot must be defined directly",
+                            detail=(
+                                f"Abstract authored slot in {label} must be defined directly "
+                                f"in agent {agent.name}: {field.key}. "
+                                f"`inherit {field.key}` cannot satisfy abstract authored slot."
+                            ),
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"abstract `{field.key}` slot",
+                                unit=parent_unit,
+                                source_span=(
+                                    None if parent_field is None else parent_field.source_span
+                                ),
+                            ),
+                            hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
                     resolved_slots.append(parent_slot)
                     continue
 
                 if isinstance(field, model.AuthoredSlotOverride):
-                    self._ensure_valid_authored_slot_key(field.key, agent.name)
-                    if field.key in seen_slot_keys:
-                        raise CompileError(
-                            f"Duplicate authored slot key in agent {agent.name}: {field.key}"
+                    self._ensure_valid_authored_slot_key(
+                        field.key,
+                        agent.name,
+                        unit=unit,
+                        source_span=field.source_span,
+                    )
+                    first_field = seen_slot_fields.get(field.key)
+                    if first_field is not None:
+                        raise authored_compile_error(
+                            code="E299",
+                            summary="Compile failure",
+                            detail=f"Duplicate authored slot key in agent {agent.name}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"first `{field.key}` slot",
+                                unit=unit,
+                                source_span=first_field.source_span,
+                            ),
                         )
-                    seen_slot_keys.add(field.key)
+                    seen_slot_fields[field.key] = field
                     parent_slot = parent_slots_by_key.get(field.key)
                     if parent_slot is None:
                         label = parent_label or f"agent {agent.name}"
-                        raise CompileError(
-                            f"E001 Cannot override undefined authored slot in {label}: {field.key}"
+                        raise authored_compile_error(
+                            code="E001",
+                            summary="Cannot override undefined inherited entry",
+                            detail=f"Cannot override undefined authored slot in {label}: {field.key}",
+                            unit=unit,
+                            source_span=field.source_span,
                         )
                     if isinstance(parent_slot, ResolvedAbstractAgentSlot):
                         label = parent_label or f"agent {agent.name}"
-                        raise CompileError(
-                            f"E210 Abstract authored slot in {label} must be defined directly in agent {agent.name}: {field.key}"
+                        parent_field = (
+                            None
+                            if parent_agent is None
+                            else self._authored_slot_field_by_key(parent_agent.fields, field.key)
+                        )
+                        raise authored_compile_error(
+                            code="E210",
+                            summary="Abstract authored slot must be defined directly",
+                            detail=(
+                                f"Abstract authored slot in {label} must be defined directly "
+                                f"in agent {agent.name}: {field.key}. "
+                                f"`override {field.key}` cannot satisfy abstract authored slot."
+                            ),
+                            unit=unit,
+                            source_span=field.source_span,
+                            related=self._authored_slot_related_site(
+                                label=f"abstract `{field.key}` slot",
+                                unit=parent_unit,
+                                source_span=(
+                                    None if parent_field is None else parent_field.source_span
+                                ),
+                            ),
+                            hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
                     resolved_slots.append(
@@ -158,6 +383,7 @@ class ResolveAgentSlotsMixin:
                                 field.value,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
+                                owner_source_span=field.source_span,
                             ),
                         )
                     )
@@ -170,14 +396,23 @@ class ResolveAgentSlotsMixin:
             ]
             if missing_parent_keys:
                 missing = ", ".join(missing_parent_keys)
-                raise CompileError(
-                    f"E003 Missing inherited authored slot in agent {agent.name}: {missing}"
+                raise authored_compile_error(
+                    code="E003",
+                    summary="Missing inherited entry",
+                    detail=f"Missing inherited authored slot in agent {agent.name}: {missing}",
+                    unit=unit,
+                    source_span=agent.source_span,
+                    related=self._missing_authored_slot_related_sites(
+                        parent_unit=parent_unit,
+                        parent_agent=parent_agent,
+                        missing_keys=tuple(missing_parent_keys),
+                    ),
                 )
 
             for parent_slot in parent_slots:
                 if (
                     isinstance(parent_slot, ResolvedAbstractAgentSlot)
-                    and parent_slot.key not in seen_slot_keys
+                    and parent_slot.key not in seen_slot_fields
                 ):
                     resolved_slots.append(parent_slot)
 
@@ -193,12 +428,14 @@ class ResolveAgentSlotsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        owner_source_span: model.SourceSpan | None,
     ) -> ResolvedWorkflowBody:
         if isinstance(value, model.WorkflowBody):
             return self._resolve_workflow_body(
                 value,
                 unit=unit,
                 owner_label=owner_label,
+                owner_source_span=owner_source_span,
             )
         try:
             target_unit, workflow_decl = self._resolve_workflow_ref(value, unit=unit)
@@ -231,28 +468,54 @@ class ResolveAgentSlotsMixin:
     ) -> ResolvedWorkflowBody:
         facts_ref = decl.body.facts_ref
         if facts_ref is None:
-            raise CompileError(f"route_only is missing facts: {decl.name}")
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_only is missing facts: {decl.name}",
+                unit=unit,
+                source_span=decl.source_span,
+            )
         self._resolve_route_only_facts_decl(
             facts_ref,
             unit=unit,
             owner_label=owner_label,
         )
         if not decl.body.current_none:
-            raise CompileError(f"route_only must declare `current none`: {decl.name}")
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_only must declare `current none`: {decl.name}",
+                unit=unit,
+                source_span=decl.source_span,
+            )
         if decl.body.handoff_output_ref is None:
-            raise CompileError(f"route_only is missing handoff_output: {decl.name}")
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_only is missing handoff_output: {decl.name}",
+                unit=unit,
+                source_span=decl.source_span,
+            )
         output_unit, output_decl = self._resolve_output_decl(
             decl.body.handoff_output_ref,
             unit=unit,
         )
         self._validate_route_only_guarded_output(
             output_decl,
+            unit=unit,
+            output_unit=output_unit,
             facts_ref=facts_ref,
             guarded=decl.body.guarded,
             owner_label=owner_label,
         )
         if not decl.body.routes:
-            raise CompileError(f"route_only must declare at least one route: {decl.name}")
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"route_only must declare at least one route: {decl.name}",
+                unit=unit,
+                source_span=decl.source_span,
+            )
 
         law_items: list[model.LawStmt] = []
         active_expr = self._combine_exprs_with_and(
@@ -300,7 +563,13 @@ class ResolveAgentSlotsMixin:
         owner_label: str,
     ) -> ResolvedWorkflowBody:
         if decl.body.target is None:
-            raise CompileError(f"grounding is missing target: {decl.name}")
+            raise authored_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=f"grounding is missing target: {decl.name}",
+                unit=unit,
+                source_span=decl.source_span,
+            )
 
         preamble: list[model.ProseLine] = []
         if decl.body.source_ref is not None:
@@ -341,16 +610,79 @@ class ResolveAgentSlotsMixin:
         unit: IndexedUnit,
         owner_label: str,
     ) -> tuple[IndexedUnit, model.InputDecl | model.OutputDecl]:
-        target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
-        input_decl = target_unit.inputs_by_name.get(ref.declaration_name)
-        output_decl = target_unit.outputs_by_name.get(ref.declaration_name)
-        if input_decl is not None and output_decl is not None:
-            raise CompileError(
-                f"Ambiguous route_only facts in {owner_label}: {_dotted_ref_name(ref)}"
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        matches: list[tuple[object, IndexedUnit, model.InputDecl | model.OutputDecl]] = []
+        for lookup_target in lookup_targets:
+            input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
+            output_decl = self._resolve_local_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
             )
-        if input_decl is None and output_decl is None:
-            raise CompileError(
-                f"route_only facts must resolve to an input or output declaration in {owner_label}: "
-                f"{_dotted_ref_name(ref)}"
+            if input_decl is not None and output_decl is not None:
+                raise reference_compile_error(
+                    code="E270",
+                    summary="Ambiguous declaration reference",
+                    detail=f"Ambiguous route_only facts in {owner_label}: {_dotted_ref_name(ref)}",
+                    unit=unit,
+                    source_span=ref.source_span,
+                    related=tuple(
+                        related
+                        for related in (
+                            reference_related_site(
+                                label="input declaration",
+                                unit=lookup_target.unit,
+                                source_span=input_decl.source_span,
+                            ),
+                            reference_related_site(
+                                label="output declaration",
+                                unit=lookup_target.unit,
+                                source_span=output_decl.source_span,
+                            ),
+                        )
+                        if related.location.line is not None
+                    ),
+                )
+            decl = input_decl if input_decl is not None else output_decl
+            if decl is not None:
+                matches.append((lookup_target, lookup_target.unit, decl))
+        if len(matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _target_unit, _decl in matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
             )
-        return target_unit, input_decl if input_decl is not None else output_decl
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, _target_unit, decl in matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"route_only facts `{ref.declaration_name}` in {owner_label} "
+                        "matches both local and imported declarations."
+                    ),
+                    local_decl=local_decl,
+                )
+        if not matches:
+            raise reference_compile_error(
+                code="E299",
+                summary="Compile failure",
+                detail=(
+                    f"route_only facts must resolve to an input or output declaration in "
+                    f"{owner_label}: {_dotted_ref_name(ref)}"
+                ),
+                unit=unit,
+                source_span=ref.source_span,
+            )
+        _lookup_target, target_unit, decl = matches[0]
+        return target_unit, decl

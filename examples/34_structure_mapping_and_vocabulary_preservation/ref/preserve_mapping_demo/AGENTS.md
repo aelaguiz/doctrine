@@ -2,7 +2,7 @@ Keep source-to-target mappings stable during a narrow update.
 
 ## Preserve Mapping
 
-Current artifact: Slot Mapping.
+The current artifact is Slot Mapping.
 
 Preserve mapping `SlotMapping`.
 
@@ -23,14 +23,10 @@ Preserve mapping `SlotMapping`.
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
+- Current Artifact: Name the one artifact that is current now.
 
 #### Trust Surface
 
-- Current Artifact
+- `Current Artifact`
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know which artifact remains current now.
+- Standalone Read: This output should stand on its own. The next owner should know which artifact remains current now.

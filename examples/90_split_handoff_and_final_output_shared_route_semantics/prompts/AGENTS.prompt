@@ -1,12 +1,28 @@
-json schema AcceptanceControlSchema: "Acceptance Control Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/acceptance_control.schema.json"
+output schema AcceptanceControlSchema: "Acceptance Control Schema"
+    field route: "Route"
+        type: enum
+        values:
+            follow_up
+            revise
+        note: "Control route for the next owner."
+
+    field current_artifact: "Current Artifact"
+        type: string
+        note: "Current artifact after review."
+
+    field next_owner: "Next Owner"
+        type: string
+        note: "Next owner after review."
+
+    example:
+        route: "follow_up"
+        current_artifact: "Draft Plan"
+        next_owner: "ReviewLead"
 
 
 output shape AcceptanceControlJson: "Acceptance Control JSON"
     kind: JsonObject
     schema: AcceptanceControlSchema
-    example_file: "examples/acceptance_control.example.json"
 
 
 input DraftPlan: "Draft Plan"
@@ -93,13 +109,13 @@ review AcceptanceReview: "Acceptance Review"
     comment_output: AcceptanceReviewComment
 
     fields:
-        verdict: verdict
-        reviewed_artifact: reviewed_artifact
+        verdict
+        reviewed_artifact
         analysis: analysis_performed
         readback: output_contents_that_matter
-        current_artifact: current_artifact
+        current_artifact
         failing_gates: failure_detail.failing_gates
-        next_owner: next_owner
+        next_owner
 
     contract_checks: "Contract Checks"
         accept "The acceptance review contract passes." when contract.passes

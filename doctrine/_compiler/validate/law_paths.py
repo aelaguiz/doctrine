@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CanonicalLawPath,
@@ -366,12 +367,22 @@ class ValidateLawPathsMixin:
         for item in items:
             if isinstance(item, model.RecordScalar) and item.key in scalar_keys:
                 if item.key in scalar_items:
-                    raise CompileError(f"Duplicate record key in {owner_label}: {item.key}")
+                    raise compile_error(
+                        code="E284",
+                        summary="Duplicate record key",
+                        detail=f"Record owner `{owner_label}` repeats key `{item.key}`.",
+                        source_span=item.source_span,
+                    )
                 scalar_items[item.key] = item
                 continue
             if isinstance(item, model.RecordSection) and item.key in section_keys:
                 if item.key in section_items:
-                    raise CompileError(f"Duplicate record key in {owner_label}: {item.key}")
+                    raise compile_error(
+                        code="E284",
+                        summary="Duplicate record key",
+                        detail=f"Record owner `{owner_label}` repeats key `{item.key}`.",
+                        source_span=item.source_span,
+                    )
                 section_items[item.key] = item
                 continue
             extras.append(item)
@@ -385,11 +396,13 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.RouteOnlyDecl] | None:
         try:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            target_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="route_onlys_by_name",
+                missing_label="route_only declaration",
+            )
         except CompileError:
-            return None
-        decl = target_unit.route_onlys_by_name.get(ref.declaration_name)
-        if decl is None:
             return None
         return target_unit, decl
 
@@ -400,11 +413,13 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.GroundingDecl] | None:
         try:
-            target_unit = self._resolve_readable_decl_lookup_unit(ref, unit=unit)
+            target_unit, decl = self._resolve_decl_ref(
+                ref,
+                unit=unit,
+                registry_name="groundings_by_name",
+                missing_label="grounding declaration",
+            )
         except CompileError:
-            return None
-        decl = target_unit.groundings_by_name.get(ref.declaration_name)
-        if decl is None:
             return None
         return target_unit, decl
 
@@ -415,13 +430,12 @@ class ValidateLawPathsMixin:
         unit: IndexedUnit,
         registry_name: str,
     ) -> bool:
-        if not ref.module_parts or ref.module_parts == unit.module_parts:
-            registry = getattr(unit, registry_name)
-            return registry.get(ref.declaration_name) is not None
-
-        target_unit = unit.imported_units.get(ref.module_parts)
-        if target_unit is None:
+        try:
+            lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        except CompileError:
             return False
-
-        registry = getattr(target_unit, registry_name)
-        return registry.get(ref.declaration_name) is not None
+        for lookup_target in lookup_targets:
+            registry = getattr(lookup_target.unit, registry_name)
+            if registry.get(lookup_target.declaration_name) is not None:
+                return True
+        return False

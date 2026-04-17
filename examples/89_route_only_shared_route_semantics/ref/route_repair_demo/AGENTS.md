@@ -4,16 +4,16 @@ Keep route-only repair explicit when no specialist artifact is current.
 
 Emit Route Repair Comment.
 
-This pass runs only when RouteFacts.live_job is route_repair and current specialist output is missing.
+Use this pass only when route facts live job is route_repair and current specialist output is missing.
 
-No artifact is current for this turn.
+No artifact is current for this pass.
 
 Stop: No specialist artifact is current for this turn.
 
-Use exactly one mode:
+Choose one mode for this turn:
 - Routing Owner
 
-If the mode is Routing Owner:
+When the mode is Routing Owner:
 - Route to Routing Owner.
 
 ## Inputs

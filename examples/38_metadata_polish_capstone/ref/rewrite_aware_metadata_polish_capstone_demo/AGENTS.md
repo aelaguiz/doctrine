@@ -2,19 +2,19 @@ Handle the last narrow wording pass after structure is already locked.
 
 ## Metadata Polish
 
-This pass runs only when metadata polish is owed now.
+Use this pass only when metadata polish is owed now.
 
-Active mode: section-summary.
+This pass is for `section-summary` mode.
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 Make sure current_handoff.preserve_basis == approved_structure.
 
-Own only {`section_metadata.name`, `section_metadata.description`}.
+Only edit `section_metadata.name` and `section_metadata.description`.
 
-Preserve exact `section_metadata.*` except `section_metadata.name`, `section_metadata.description`.
+Keep `section_metadata.*` unchanged except `section_metadata.name` and `section_metadata.description`.
 
-Preserve decisions `approved_structure`.
+Keep decisions from `approved_structure`.
 
 Do not modify {`section_metadata.taxonomy`, `section_metadata.flags`}.
 
@@ -33,9 +33,7 @@ If structure changed:
 
 ## Inputs
 
-### Current Handoff Binding
-
-#### Current Handoff
+### Current Handoff
 
 - Source: Prompt
 - Shape: Json Object
@@ -43,27 +41,21 @@ If structure changed:
 
 Use the host handoff facts. They say whether metadata polish is owed, which mode is active, which preserve basis still decides, whether peer comparison is in play, whether this pass is a rewrite, and whether structure changed.
 
-### Approved Plan Binding
-
-#### Approved Plan
+### Approved Plan
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_PLAN.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Approved Structure Binding
-
-#### Approved Structure
+### Approved Structure
 
 - Source: File
 - Path: `unit_root/_authoring/APPROVED_STRUCTURE.md`
 - Shape: Markdown Document
 - Requirement: Required
 
-### Accepted Peer Set Binding
-
-#### Accepted Peer Set
+### Accepted Peer Set
 
 - Source: File
 - Path: `catalog/accepted_peers.json`
@@ -72,14 +64,14 @@ Use the host handoff facts. They say whether metadata polish is owed, which mode
 
 ## Outputs
 
-### Section Metadata Binding
+### Section Metadata
 
-#### Section Metadata
-
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff Binding
 
@@ -89,39 +81,20 @@ Use the host handoff facts. They say whether metadata polish is owed, which mode
 - Shape: Comment
 - Requirement: Required
 
-##### Current Artifact
-
-Name the one artifact that is current now.
-
-##### Active Mode
-
-Name the one active mode for this pass.
-
-##### Preserve Basis
-
-Name the upstream declaration that still decides.
-
-##### Comparison Basis
-
-Name any comparison-only artifacts used in this pass.
-
-##### Rewrite Evidence Exclusions
-
-Name any fields whose old values do not count as rewrite evidence.
-
-##### Invalidations
-
-Name any artifacts that are no longer current.
+- Current Artifact: Name the one artifact that is current now.
+- Active Mode: Name the one active mode for this pass.
+- Preserve Basis: Name the upstream declaration that still decides.
+- Comparison Basis: Name any comparison-only artifacts used in this pass.
+- Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.
+- Invalidations: Name any artifacts that are no longer current.
 
 ##### Trust Surface
 
-- Current Artifact
-- Active Mode
-- Preserve Basis
+- `Current Artifact`
+- `Active Mode`
+- `Preserve Basis`
 - Comparison Basis when peer comparison is used
 - Rewrite Evidence Exclusions on rewrite passes
 - Invalidations when structure changed
 
-##### Standalone Read
-
-This output should stand on its own. The next owner should know what is current, which mode is active, why that preserve basis still decides, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.
+- Standalone Read: This output should stand on its own. The next owner should know what is current, which mode is active, why that preserve basis still decides, what old wording no longer counts as rewrite evidence on rewrite passes, and what stopped being current when structure changed.

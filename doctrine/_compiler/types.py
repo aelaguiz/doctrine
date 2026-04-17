@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TypeAlias
 
+import doctrine._model as model
 from doctrine._model.core import ProseLine, RenderProfileRule, RoleScalar
 from doctrine._model.readable import (
     ReadableDefinitionItem,
@@ -29,40 +29,44 @@ class CompiledSection:
 
 @dataclass(slots=True, frozen=True)
 class CompiledSequenceBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledBulletsBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledChecklistBlock:
-    title: str
+    title: str | None
     items: tuple[ProseLine, ...]
     requirement: str | None = None
     when_text: str | None = None
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledDefinitionsBlock:
-    title: str
+    title: str | None
     items: tuple[ReadableDefinitionItem, ...]
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -104,55 +108,61 @@ class CompiledTableData:
 
 @dataclass(slots=True, frozen=True)
 class CompiledTableBlock:
-    title: str
+    title: str | None
     table: CompiledTableData
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledCalloutBlock:
-    title: str
+    title: str | None
     body: tuple[ProseLine, ...]
     kind: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledCodeBlock:
-    title: str
+    title: str | None
     text: str
     language: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledRawTextBlock:
-    title: str
+    title: str | None
     text: str
     kind: str
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledFootnotesBlock:
-    title: str
+    title: str | None
     entries: tuple[ReadableFootnoteItem, ...]
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledImageBlock:
-    title: str
+    title: str | None
     src: str
     alt: str
     caption: str | None = None
     requirement: str | None = None
     when_text: str | None = None
+    anonymous: bool = False
 
 
 @dataclass(slots=True, frozen=True)
@@ -181,10 +191,8 @@ class CompiledFinalOutputSpec:
     schema_name: str | None = None
     schema_title: str | None = None
     schema_profile: str | None = None
-    schema_file: str | None = None
-    example_file: str | None = None
-    resolved_schema_file: Path | None = None
-    resolved_example_file: Path | None = None
+    generated_schema_relpath: str | None = None
+    lowered_schema: dict[str, object] | None = None
     section: CompiledSection | None = None
 
 
@@ -219,11 +227,128 @@ class CompiledReviewSpec:
 
 
 @dataclass(slots=True, frozen=True)
+class CompiledRouteTargetSpec:
+    key: str
+    module_parts: tuple[str, ...]
+    name: str
+    title: str
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteChoiceMemberSpec:
+    member_key: str
+    member_title: str
+    member_wire: str
+    enum_module_parts: tuple[str, ...] = ()
+    enum_name: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteSelectorSpec:
+    surface: str
+    field_path: tuple[str, ...] | None = None
+    null_behavior: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteBranchSpec:
+    target: CompiledRouteTargetSpec
+    label: str
+    summary: str
+    review_verdict: str | None = None
+    choice_members: tuple[CompiledRouteChoiceMemberSpec, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledRouteContractSpec:
+    exists: bool
+    behavior: str
+    has_unrouted_branch: bool
+    unrouted_review_verdicts: tuple[str, ...]
+    branches: tuple[CompiledRouteBranchSpec, ...]
+    selector: CompiledRouteSelectorSpec | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnInputSpec:
+    input_key: tuple[tuple[str, ...], str]
+    input_name: str
+    input_title: str
+    requirement: str
+    selector_kind: str
+    selector_text: str
+    output_key: "OutputDeclKey"
+    output_name: str
+    output_title: str
+    derived_contract_mode: str
+    target_key: str
+    target_title: str
+    target_config: tuple[tuple[str, str], ...] = ()
+    shape_name: str | None = None
+    shape_title: str | None = None
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+    lowered_schema: dict[str, object] | None = None
+    binding_path: tuple[str, ...] | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnOutputSpec:
+    output_key: "OutputDeclKey"
+    output_name: str
+    output_title: str
+    target_key: str
+    target_title: str
+    target_config: tuple[tuple[str, str], ...] = ()
+    shape_name: str | None = None
+    shape_title: str | None = None
+    derived_contract_mode: str | None = None
+    readback_mode: str = "unsupported"
+    requires_final_output: bool = False
+    schema_name: str | None = None
+    schema_title: str | None = None
+    schema_profile: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledPreviousTurnOutputBindingSpec:
+    binding_path: tuple[str, ...]
+    output_key: "OutputDeclKey"
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledIoContractSpec:
+    previous_turn_inputs: tuple[CompiledPreviousTurnInputSpec, ...] = ()
+    outputs: tuple[CompiledPreviousTurnOutputSpec, ...] = ()
+    output_bindings: tuple[CompiledPreviousTurnOutputBindingSpec, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
     final_output: CompiledFinalOutputSpec | None = None
     review: CompiledReviewSpec | None = None
+    route: CompiledRouteContractSpec | None = None
+    io: CompiledIoContractSpec | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledSkillPackageArtifactContract:
+    path: str
+    kind: str
+    source: str | None = None
+    referenced_host_paths: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class CompiledSkillPackageContract:
+    contract_version: int
+    package_name: str
+    package_title: str
+    host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+    artifacts: tuple[CompiledSkillPackageArtifactContract, ...] = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -232,6 +357,7 @@ class CompiledSkillPackage:
     title: str
     frontmatter: tuple[tuple[str, str], ...]
     root: CompiledSection
+    contract: CompiledSkillPackageContract
     files: tuple["CompiledSkillPackageFile", ...] = ()
 
 

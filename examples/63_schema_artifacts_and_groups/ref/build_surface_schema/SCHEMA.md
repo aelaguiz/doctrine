@@ -14,8 +14,6 @@ Confirm the evidence is cited.
 
 ### Artifact Inventory
 
-_unordered list_
-
 - Outline File
 - Review Comment
 - Manifest File

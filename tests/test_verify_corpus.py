@@ -9,11 +9,16 @@ import uuid
 from pathlib import Path
 from unittest.mock import patch
 
-from doctrine.diagnostics import DiagnosticLocation, EmitError
+from doctrine._diagnostics.contracts import DiagnosticRelatedLocation
+from doctrine.diagnostics import CompileError, DiagnosticLocation, EmitError
 from doctrine.verify_corpus import (
     CaseSpec,
+    ExpectedDiagnosticSite,
+    ManifestError,
     VerificationError,
+    _assert_expected_exception,
     _build_tree_diff,
+    _load_manifest,
     _run_build_contract,
 )
 
@@ -73,6 +78,19 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
                 REPO_ROOT / "examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt"
             ).resolve(),
             build_target="example_73_flow_visualizer_showcase",
+            approx_ref_path=None,
+        )
+
+    def _runtime_package_build_contract_case(self) -> CaseSpec:
+        return CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/115_runtime_agent_packages/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/115_runtime_agent_packages").resolve(),
+            name="runtime package build-contract proof stays checked in",
+            kind="build_contract",
+            prompt_path=(
+                REPO_ROOT / "examples/115_runtime_agent_packages/prompts/AGENTS.prompt"
+            ).resolve(),
+            build_target="example_115_runtime_agent_packages",
             approx_ref_path=None,
         )
 
@@ -228,6 +246,147 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
             "Could not render `AGENTS.flow.svg` from `AGENTS.flow.d2`: render crashed",
             rendered,
         )
+
+    def test_runtime_package_build_contract_stays_checked_in(self) -> None:
+        result = _run_build_contract(self._runtime_package_build_contract_case())
+
+        self.assertEqual(result.result, "PASS")
+        self.assertEqual(result.detail, "build matched checked-in tree")
+
+
+class VerifyCorpusCompileFailContractTests(unittest.TestCase):
+    def test_compile_fail_manifest_loads_structured_location_and_related_sites(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            example_dir = Path(temp_dir).resolve()
+            prompts = example_dir / "prompts"
+            prompts.mkdir()
+            (prompts / "AGENTS.prompt").write_text(
+                "agent Demo:\n    role: \"Demo.\"\n",
+                encoding="utf-8",
+            )
+            (prompts / "helper.prompt").write_text(
+                "workflow Helper: \"Helper\"\n    \"Explain.\"\n",
+                encoding="utf-8",
+            )
+            manifest_path = example_dir / "cases.toml"
+            manifest_path.write_text(
+                """\
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "structured compile fail"
+status = "active"
+kind = "compile_fail"
+exception_type = "CompileError"
+error_code = "E204"
+location_line = 3
+related = [
+    { line = 1, label = "first field" },
+    { path = "prompts/helper.prompt", line = 2 },
+]
+""",
+                encoding="utf-8",
+            )
+
+            cases = _load_manifest(manifest_path)
+
+        self.assertEqual(len(cases), 1)
+        case = cases[0]
+        self.assertEqual(case.expected_location, ExpectedDiagnosticSite(line=3))
+        self.assertEqual(
+            case.expected_related,
+            (
+                ExpectedDiagnosticSite(line=1, label="first field"),
+                ExpectedDiagnosticSite(path=(prompts / "helper.prompt").resolve(), line=2),
+            ),
+        )
+
+    def test_compile_fail_manifest_rejects_message_contains(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            example_dir = Path(temp_dir).resolve()
+            prompts = example_dir / "prompts"
+            prompts.mkdir()
+            (prompts / "AGENTS.prompt").write_text(
+                "agent Demo:\n    role: \"Demo.\"\n",
+                encoding="utf-8",
+            )
+            manifest_path = example_dir / "cases.toml"
+            manifest_path.write_text(
+                """\
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "stale compile fail"
+status = "active"
+kind = "compile_fail"
+exception_type = "CompileError"
+message_contains = ["stale"]
+""",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ManifestError, "message_contains is retired"):
+                _load_manifest(manifest_path)
+
+    def test_compile_fail_contract_asserts_location_and_related_sites(self) -> None:
+        prompt_path = (REPO_ROOT / "examples/01_hello_world/prompts/AGENTS.prompt").resolve()
+        case = CaseSpec(
+            manifest_path=(REPO_ROOT / "examples/01_hello_world/cases.toml").resolve(),
+            example_dir=(REPO_ROOT / "examples/01_hello_world").resolve(),
+            name="structured compile fail proof",
+            kind="compile_fail",
+            prompt_path=prompt_path,
+            approx_ref_path=None,
+            exception_type="CompileError",
+            error_code="E204",
+            expected_location=ExpectedDiagnosticSite(line=7),
+            expected_related=(ExpectedDiagnosticSite(line=3, label="first field"),),
+        )
+        error = CompileError.from_parts(
+            code="E204",
+            summary="Duplicate typed field",
+            detail="The agent defines `output:` more than once.",
+            location=DiagnosticLocation(path=prompt_path, line=7, column=5),
+            related=(
+                DiagnosticRelatedLocation(
+                    label="first field",
+                    location=DiagnosticLocation(path=prompt_path, line=3, column=5),
+                ),
+            ),
+        )
+
+        _assert_expected_exception(case, error)
+
+    def test_compile_fail_contract_rejects_wrong_path(self) -> None:
+        prompt_path = (
+            REPO_ROOT / "examples/75_cross_root_standard_library_imports/prompts/AGENTS.prompt"
+        ).resolve()
+        case = CaseSpec(
+            manifest_path=(
+                REPO_ROOT / "examples/75_cross_root_standard_library_imports/cases.toml"
+            ).resolve(),
+            example_dir=(REPO_ROOT / "examples/75_cross_root_standard_library_imports").resolve(),
+            name="repo-scoped compile fail proof",
+            kind="compile_fail",
+            prompt_path=prompt_path,
+            approx_ref_path=None,
+            exception_type="CompileError",
+            error_code="E285",
+            expected_location=ExpectedDiagnosticSite(path=(REPO_ROOT / "pyproject.toml").resolve()),
+        )
+        error = CompileError.from_parts(
+            code="E285",
+            summary="Compile config is invalid",
+            detail="The compile config is invalid.",
+            location=DiagnosticLocation(path=prompt_path),
+        )
+
+        with self.assertRaises(VerificationError) as ctx:
+            _assert_expected_exception(case, error)
+
+        self.assertIn("expected path pyproject.toml", str(ctx.exception))
 
 
 if __name__ == "__main__":

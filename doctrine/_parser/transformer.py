@@ -14,12 +14,15 @@ from doctrine._parser.parts import (
     WorkflowBodyParts,
     _body_prose_location,
     _body_prose_value,
+    _expand_grouped_inherit,
+    _flatten_grouped_items,
     _positioned_body_prose,
     _positioned_render_profile,
     _positioned_schema_item,
     _schema_block_key,
     _schema_item_location,
     _schema_item_value,
+    _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
 
@@ -152,7 +155,41 @@ class DeclarationTransformerMixin:
             license=values.get("license"),
         )
 
-    def _agent(self, items, *, abstract: bool):
+    def _skill_package_host_contract(
+        self,
+        slots: tuple[model.SkillPackageHostSlot, ...],
+    ) -> tuple[model.SkillPackageHostSlot, ...]:
+        seen_keys: dict[str, model.SkillPackageHostSlot] = {}
+        for slot in slots:
+            existing = seen_keys.get(slot.key)
+            if existing is not None:
+                raise TransformParseFailure(
+                    f"Duplicate skill package host slot: {slot.key}",
+                    hints=("Keep each `host_contract:` slot key only once.",),
+                    line=slot.source_span.line if slot.source_span is not None else None,
+                    column=slot.source_span.column if slot.source_span is not None else None,
+                )
+            seen_keys[slot.key] = slot
+        return slots
+
+    def _skill_entry_binds(
+        self,
+        binds: tuple[model.SkillEntryBind, ...],
+    ) -> tuple[model.SkillEntryBind, ...]:
+        seen_keys: dict[str, model.SkillEntryBind] = {}
+        for bind in binds:
+            existing = seen_keys.get(bind.key)
+            if existing is not None:
+                raise TransformParseFailure(
+                    f"Duplicate skill entry bind: {bind.key}",
+                    hints=("Keep each `bind:` key only once per skill entry.",),
+                    line=bind.source_span.line if bind.source_span is not None else None,
+                    column=bind.source_span.column if bind.source_span is not None else None,
+                )
+            seen_keys[bind.key] = bind
+        return binds
+
+    def _agent(self, items, *, abstract: bool, source_span: model.SourceSpan | None = None):
         name = items[0]
         parent_ref: model.NameRef | None = None
         title: str | None = None
@@ -163,12 +200,14 @@ class DeclarationTransformerMixin:
         if not abstract and len(items) > fields_start and isinstance(items[fields_start], str):
             title = items[fields_start]
             fields_start += 1
+        fields = _flatten_grouped_items(items[fields_start:])
         return model.Agent(
             name=name,
             title=title,
-            fields=tuple(items[fields_start:]),
+            fields=fields,
             abstract=abstract,
             parent_ref=parent_ref,
+            source_span=source_span,
         )
 
     def _workflow_slot_value(
@@ -203,7 +242,14 @@ class DeclarationTransformerMixin:
     def _io_body(self, title: str, body: IoBodyParts) -> model.IoBody:
         return model.IoBody(title=title, preamble=body.preamble, items=body.items)
 
-    def _review_decl(self, items, *, abstract: bool, family: bool):
+    def _review_decl(
+        self,
+        items,
+        *,
+        abstract: bool,
+        family: bool,
+        source_span: model.SourceSpan | None = None,
+    ):
         name = items[0]
         parent_ref: model.NameRef | None = None
         title = items[1]
@@ -218,14 +264,15 @@ class DeclarationTransformerMixin:
             abstract=abstract,
             parent_ref=parent_ref,
             family=family,
+            source_span=source_span,
         )
 
 
 class SchemaDocumentTransformerMixin:
     """Shared schema and document lowering for the public parser boundary."""
 
-    @v_args(inline=True)
-    def schema_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def schema_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         schema_body = title_or_body
@@ -233,15 +280,18 @@ class SchemaDocumentTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             schema_body = body
-        return model.SchemaDecl(
-            name=name,
-            body=model.SchemaBody(
-                title=title,
-                preamble=schema_body.preamble,
-                items=schema_body.items,
+        return _with_source_span(
+            model.SchemaDecl(
+                name=name,
+                body=model.SchemaBody(
+                    title=title,
+                    preamble=schema_body.preamble,
+                    items=schema_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=schema_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=schema_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -260,6 +310,7 @@ class SchemaDocumentTransformerMixin:
         preamble: list[model.ProseLine] = []
         schema_items: list[model.SchemaItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         block_hints = {
             "sections": "Use exactly one of `sections:`, `inherit sections`, or `override sections:`.",
             "gates": "Use exactly one of `gates:`, `inherit gates`, or `override gates:`.",
@@ -325,43 +376,64 @@ class SchemaDocumentTransformerMixin:
 
     @v_args(meta=True)
     def schema_sections_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaSectionsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaSectionsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_gates_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaGatesBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaGatesBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_artifacts_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaArtifactsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaArtifactsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_groups_block(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaGroupsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaGroupsBlock(items=tuple(items)), meta),
+        )
 
-    @v_args(inline=True)
-    def schema_section_item(self, key, title, body=None):
-        return model.SchemaSection(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_section_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaSection(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def schema_section_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def schema_gate_item(self, key, title, body=None):
-        return model.SchemaGate(key=key, title=title, body=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_gate_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaGate(key=key, title=title, body=tuple(body or ())),
+            meta,
+        )
 
     def schema_gate_body(self, items):
         return tuple(items[0])
 
-    @v_args(inline=True)
-    def schema_artifact_item(self, key, title, body=None):
+    @v_args(meta=True, inline=True)
+    def schema_artifact_item(self, meta, key, title, body=None):
         refs = tuple(body or ())
         if len(refs) != 1:
             raise TransformParseFailure(
                 f"Schema artifact `{key}` must define exactly one `ref:` entry.",
                 hints=("Define one `ref:` line inside each schema artifact entry.",),
             )
-        return model.SchemaArtifact(key=key, title=title, ref=refs[0])
+        return _with_source_span(
+            model.SchemaArtifact(key=key, title=title, ref=refs[0]),
+            meta,
+        )
 
     def schema_artifact_body(self, items):
         return tuple(items)
@@ -369,9 +441,12 @@ class SchemaDocumentTransformerMixin:
     def schema_artifact_ref(self, items):
         return items[0]
 
-    @v_args(inline=True)
-    def schema_group_item(self, key, title, body=None):
-        return model.SchemaGroup(key=key, title=title, members=tuple(body or ()))
+    @v_args(meta=True, inline=True)
+    def schema_group_item(self, meta, key, title, body=None):
+        return _with_source_span(
+            model.SchemaGroup(key=key, title=title, members=tuple(body or ())),
+            meta,
+        )
 
     def schema_group_body(self, items):
         return tuple(items)
@@ -382,23 +457,47 @@ class SchemaDocumentTransformerMixin:
 
     @v_args(meta=True, inline=True)
     def schema_inherit(self, meta, key):
-        return _positioned_schema_item(meta, model.InheritItem(key=key))
+        return _positioned_schema_item(meta, _with_source_span(model.InheritItem(key=key), meta))
+
+    @v_args(meta=True, inline=True)
+    def schema_inherit_group(self, meta, keys=()):
+        return [
+            _positioned_schema_item(meta, item)
+            for item in _expand_grouped_inherit(
+                meta,
+                keys,
+                model.InheritItem,
+                allowed_keys=("sections", "gates", "artifacts", "groups"),
+            )
+        ]
 
     @v_args(meta=True)
     def schema_override_sections(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideSectionsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideSectionsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_gates(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideGatesBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideGatesBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_artifacts(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideArtifactsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideArtifactsBlock(items=tuple(items)), meta),
+        )
 
     @v_args(meta=True)
     def schema_override_groups(self, meta, items):
-        return _positioned_schema_item(meta, model.SchemaOverrideGroupsBlock(items=tuple(items)))
+        return _positioned_schema_item(
+            meta,
+            _with_source_span(model.SchemaOverrideGroupsBlock(items=tuple(items)), meta),
+        )
 
     def schema_block_key_sections(self, _items):
         return "sections"
@@ -412,8 +511,8 @@ class SchemaDocumentTransformerMixin:
     def schema_block_key_groups(self, _items):
         return "groups"
 
-    @v_args(inline=True)
-    def document_decl(self, name, parent_ref_or_title, title_or_body, body=None):
+    @v_args(meta=True, inline=True)
+    def document_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title
         document_body = title_or_body
@@ -421,15 +520,18 @@ class SchemaDocumentTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             document_body = body
-        return model.DocumentDecl(
-            name=name,
-            body=model.DocumentBody(
-                title=title,
-                preamble=document_body.preamble,
-                items=document_body.items,
+        return _with_source_span(
+            model.DocumentDecl(
+                name=name,
+                body=model.DocumentBody(
+                    title=title,
+                    preamble=document_body.preamble,
+                    items=document_body.items,
+                ),
+                parent_ref=parent_ref,
+                render_profile_ref=document_body.render_profile_ref,
             ),
-            parent_ref=parent_ref,
-            render_profile_ref=document_body.render_profile_ref,
+            meta,
         )
 
     @v_args(meta=True, inline=True)
@@ -448,6 +550,7 @@ class SchemaDocumentTransformerMixin:
         preamble: list[model.ProseLine] = []
         document_items: list[model.DocumentItem] = []
         render_profile_ref: model.NameRef | None = None
+        items = _flatten_grouped_items(items)
         for item in items:
             if isinstance(item, RenderProfilePart):
                 if render_profile_ref is not None:
@@ -488,47 +591,60 @@ class SchemaDocumentTransformerMixin:
     def document_override_block(self, value):
         return value
 
-    @v_args(inline=True)
-    def document_section_sugar(self, key, title, items):
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(items),
-            legacy_section=True,
+    @v_args(meta=True, inline=True)
+    def document_section_sugar(self, meta, key, title, items):
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(items),
+                legacy_section=True,
+            ),
+            meta,
         )
 
     def document_section_body(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def document_section_block(self, key, title, *parts):
+    @v_args(meta=True, inline=True)
+    def document_section_block(self, meta, key, title, *parts):
         requirement, when_expr, item_schema, row_schema, payload = self._split_readable_parts(parts)
-        return model.ReadableBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.ReadableBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )
 
-    @v_args(inline=True)
-    def document_inherit(self, key):
-        return model.InheritItem(key=key)
+    @v_args(meta=True, inline=True)
+    def document_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
 
-    @v_args(inline=True)
-    def document_override_section_block(self, key, *parts):
+    @v_args(meta=True, inline=True)
+    def document_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def document_override_section_block(self, meta, key, *parts):
         title, requirement, when_expr, item_schema, row_schema, payload = self._split_readable_override_parts(parts)
-        return model.DocumentOverrideBlock(
-            kind="section",
-            key=key,
-            title=title,
-            payload=tuple(payload),
-            requirement=requirement,
-            when_expr=when_expr,
-            item_schema=item_schema,
-            row_schema=row_schema,
+        return _with_source_span(
+            model.DocumentOverrideBlock(
+                kind="section",
+                key=key,
+                title=title,
+                payload=tuple(payload),
+                requirement=requirement,
+                when_expr=when_expr,
+                item_schema=item_schema,
+                row_schema=row_schema,
+            ),
+            meta,
         )

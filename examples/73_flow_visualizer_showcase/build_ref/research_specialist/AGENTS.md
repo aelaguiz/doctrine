@@ -28,10 +28,12 @@ Hand the research packet to WritingSpecialist. -> Writing Specialist
 
 ### Research Packet
 
-- Target: File
-- Path: `project_root/_authoring/RESEARCH_PACKET.md`
-- Shape: Markdown Document
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `project_root/_authoring/RESEARCH_PACKET.md` |
+| Shape | Markdown Document |
+| Requirement | Required |
 
 ### Shared Handoff
 
@@ -39,24 +41,14 @@ Hand the research packet to WritingSpecialist. -> Writing Specialist
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the artifact that is current after this turn.
-
-#### Use Now
-
-Name the file or comment the next owner should read first.
-
-#### Next Owner
-
-Name the honest next owner.
+- Current Artifact: Name the artifact that is current after this turn.
+- Use Now: Name the file or comment the next owner should read first.
+- Next Owner: Name the honest next owner.
 
 #### Trust Surface
 
-- Current Artifact
-- Use Now
-- Next Owner
+- `Current Artifact`
+- `Use Now`
+- `Next Owner`
 
-#### Standalone Read
-
-A downstream owner should be able to read this handoff alone and know what is current now, what to read first, and who owns next.
+- Standalone Read: A downstream owner should be able to read this handoff alone and know what is current now, what to read first, and who owns next.

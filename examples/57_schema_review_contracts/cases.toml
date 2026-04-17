@@ -56,25 +56,11 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Verdict",
-  "",
-  "State the review verdict.",
-  "",
-  "#### Reviewed Artifact",
-  "",
-  "Name the reviewed artifact.",
-  "",
-  "#### Analysis Performed",
-  "",
-  "Summarize the review analysis.",
-  "",
-  "#### Output Contents That Matter",
-  "",
-  "State what the next owner should read first.",
-  "",
-  "#### Next Owner",
-  "",
-  "Name ReviewLead when accepted and PlanAuthor when rejected.",
+  "- Verdict: State the review verdict.",
+  "- Reviewed Artifact: Name the reviewed artifact.",
+  "- Analysis Performed: Summarize the review analysis.",
+  "- Output Contents That Matter: State what the next owner should read first.",
+  "- Next Owner: Name ReviewLead when accepted and PlanAuthor when rejected.",
   "",
   "#### Failure Detail",
   "",
@@ -84,7 +70,6 @@ expected_lines = [
   "",
   "List exact failing gates, including Outline Complete and Evidence Grounded when they fail.",
 ]
-
 [[cases]]
 name = "schema review contracts must export at least one gate"
 status = "active"
@@ -93,7 +78,4 @@ prompt = "prompts/INVALID_SCHEMA_CONTRACT_WITHOUT_GATES.prompt"
 agent = "InvalidGateLessReviewDemo"
 exception_type = "CompileError"
 error_code = "E477"
-message_contains = [
-  "Review contract must export at least one gate",
-  "GateLessContract",
-]
+location_line = 41

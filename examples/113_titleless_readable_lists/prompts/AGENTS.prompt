@@ -1,0 +1,25 @@
+# This example shows titled and titleless ordered and unordered readable lists.
+
+agent TitlelessReadableListsDemo:
+    role: "Use titled and titleless readable lists clearly."
+    workflow: "Guide"
+        read_first: "Read First"
+            sequence steps:
+                "Read `home:issue.md` first."
+                "Then read this role's local rules, files, and outputs."
+                "Check `rally-memory` only when past work like this could help."
+
+        shared_rules: "Shared Rules"
+            bullets rules:
+                "Use `home:issue.md` as the shared ledger for this run."
+                "Leave one short saved note only when later readers need it."
+                "Keep notes run-local. Use `rally-memory` for cross-run lessons."
+
+        titled_examples: "Titled Examples"
+            sequence read_order: "Read Order" advisory
+                "Read the issue."
+                "Read the repo status."
+
+            bullets evidence: "Evidence"
+                current_status: "Read the current status."
+                latest_notes: "Read the latest validation notes."

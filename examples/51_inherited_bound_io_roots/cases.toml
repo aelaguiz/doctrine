@@ -15,13 +15,11 @@ expected_lines = [
   "",
   "Keep currentness attached to inherited concrete-turn bindings.",
   "",
-  "Current artifact: Approved Plan.",
+  "The current artifact is Approved Plan.",
   "",
   "## Inputs",
   "",
-  "### Approved Plan Binding",
-  "",
-  "#### Approved Plan",
+  "### Approved Plan",
   "",
   "- Source: File",
   "- Path: `unit_root/_authoring/APPROVED_PLAN.md`",
@@ -30,25 +28,19 @@ expected_lines = [
   "",
   "## Outputs",
   "",
-  "### Coordination Handoff Binding",
-  "",
-  "#### Coordination Handoff",
+  "### Coordination Handoff",
   "",
   "- Target: Turn Response",
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "##### Current Artifact",
+  "- Current Artifact: Name the one artifact that is current now.",
   "",
-  "Name the one artifact that is current now.",
+  "#### Trust Surface",
   "",
-  "##### Trust Surface",
+  "- `Current Artifact`",
   "",
-  "- Current Artifact",
-  "",
-  "##### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact is current now.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now.",
 ]
 
 [[cases]]
@@ -59,7 +51,7 @@ prompt = "prompts/INVALID_CONFLICTING_BOUND_ROOT.prompt"
 agent = "InvalidConflictingBoundRootDemo"
 exception_type = "CompileError"
 error_code = "E260"
-message_contains = [
-  "Conflicting concrete-turn binding roots resolve different artifacts",
-  "approved_plan",
+location_line = 28
+related = [
+    { label = "first `approved_plan` binding root", line = 16 },
 ]

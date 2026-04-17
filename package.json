@@ -5,5 +5,8 @@
   "description": "Pinned D2 runtime for Doctrine flow emission.",
   "dependencies": {
     "@terrastruct/d2": "0.1.33"
+  },
+  "devDependencies": {
+    "skills": "1.5.0"
   }
 }

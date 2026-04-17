@@ -1,0 +1,61 @@
+# Every readable block kind has a bare form that renders without an H3
+# heading or a `_kind · ...` descriptor line. This example proves parity:
+# `code`, `markdown`, and `html` kept the `readable_inline_*` forms from
+# earlier grammar work; `definitions`, `callout`, `table`, `footnotes`,
+# and `image` each got a `readable_bare_*` counterpart that drops the
+# CNAME and the heading string. `bullets`, `sequence`, and `checklist`
+# have always allowed the heading string to be omitted; the parser now
+# marks those instances anonymous too so the whole surface is uniform.
+
+agent ReadableBlockParityDemo:
+    role: "Render every readable block kind in its bare form."
+
+    workflow: "Bare Readable Blocks"
+        definitions:
+            short: "Short Form"
+                "One line about the short form."
+
+        callout:
+            kind: note
+            "This callout has no trailing title."
+
+        table:
+            columns:
+                column: "Column"
+                meaning: "Meaning"
+            rows:
+                row_a:
+                    column: "A"
+                    meaning: "first"
+                row_b:
+                    column: "B"
+                    meaning: "second"
+
+        footnotes:
+            cite: "Referenced in the citation."
+
+        image:
+            src: "./diagram.png"
+            alt: "Flow diagram"
+
+        bullets shared:
+            "First bare bullet."
+            "Second bare bullet."
+
+        sequence steps:
+            "Step one."
+            "Step two."
+
+        checklist gates:
+            "Check one."
+            "Check two."
+
+        code:
+            language: bash
+            text: """echo hi
+"""
+
+        markdown:
+            text: """Raw markdown line.
+Inline `backticks` survive.
+"""

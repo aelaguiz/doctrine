@@ -1,0 +1,11 @@
+output LessonsLeadOutput: "Lessons Lead Output"
+    inherit target
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+
+agent InvalidPatchWithoutParentOutputDemo:
+    role: "Fail loud when output patch syntax appears without a parent."
+    outputs: "Outputs"
+        LessonsLeadOutput

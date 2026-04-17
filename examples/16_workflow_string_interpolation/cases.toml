@@ -53,9 +53,11 @@ expected_lines = [
   "",
   "### Final Handoff Comment",
   "",
-  "- Target: Turn Response",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | Turn Response |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "Use this output contract when you leave the next owner one clear update.",
 ]
@@ -68,11 +70,7 @@ prompt = "prompts/INVALID_WORKFLOW_INTERPOLATION.prompt"
 agent = "InvalidWorkflowStringInterpolationAgent"
 exception_type = "CompileError"
 error_code = "E271"
-message_contains = [
-  "Workflow refs are not allowed in workflow strings",
-  "use `use` for workflow composition",
-  "SharedRead",
-]
+location_path = "prompts/INVALID_WORKFLOW_INTERPOLATION.prompt"
 
 [[cases]]
 name = "unknown workflow string interpolation fields fail loud"
@@ -82,10 +80,7 @@ prompt = "prompts/INVALID_FIELD_PATH.prompt"
 agent = "InvalidFieldPathInterpolationAgent"
 exception_type = "CompileError"
 error_code = "E273"
-message_contains = [
-  "Unknown addressable path on workflow strings",
-  "shared.contracts.TrackMetadata:source.missing",
-]
+location_path = "prompts/shared/contracts.prompt"
 
 [[cases]]
 name = "ambiguous workflow string interpolation refs fail loud"
@@ -95,9 +90,4 @@ prompt = "prompts/INVALID_AMBIGUOUS_INTERPOLATION.prompt"
 agent = "InvalidAmbiguousInterpolationAgent"
 exception_type = "CompileError"
 error_code = "E270"
-message_contains = [
-  "Ambiguous workflow string interpolation ref",
-  "SharedThing",
-  "input declaration",
-  "skill declaration",
-]
+location_path = "prompts/INVALID_AMBIGUOUS_INTERPOLATION.prompt"

@@ -1,0 +1,57 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "missing inherited output entry fails with E003"
+status = "active"
+kind = "compile_fail"
+agent = "InvalidMissingInheritedOutputDemo"
+exception_type = "CompileError"
+error_code = "E003"
+location_line = 11
+related = [
+    { label = "inherited `must_include` entry", line = 6 },
+]
+
+[[cases]]
+name = "output patch syntax without inherited output fails with E252"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_PATCH_WITHOUT_PARENT.prompt"
+agent = "InvalidPatchWithoutParentOutputDemo"
+exception_type = "CompileError"
+error_code = "E252"
+location_line = 2
+
+[[cases]]
+name = "undefined output inherit fails with E253"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNDEFINED_INHERIT.prompt"
+agent = "InvalidUndefinedInheritOutputDemo"
+exception_type = "CompileError"
+error_code = "E253"
+location_line = 11
+
+[[cases]]
+name = "inherited outputs fail loud when the parent has unkeyed top-level prose"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_UNKEYED_PARENT.prompt"
+agent = "InvalidUnkeyedParentOutputDemo"
+exception_type = "CompileError"
+error_code = "E254"
+location_line = 1
+
+[[cases]]
+name = "output override kind mismatch fails with E255"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_OVERRIDE_KIND.prompt"
+agent = "InvalidOverrideKindOutputDemo"
+exception_type = "CompileError"
+error_code = "E255"
+location_line = 15
+related = [
+    { label = "inherited `must_include` entry", line = 6 },
+]

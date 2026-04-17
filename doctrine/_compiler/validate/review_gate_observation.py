@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.review_diagnostics import review_compile_error
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -214,6 +215,7 @@ class ValidateReviewGateObservationMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        match_source_span: model.SourceSpan | None = None,
     ) -> None:
         if any(case.head is None for case in cases):
             return
@@ -239,8 +241,15 @@ class ValidateReviewGateObservationMixin:
 
         expected_members = {member.value for member in enum_decl.members}
         if seen_members != expected_members:
-            raise CompileError(
-                f"Review match must be exhaustive or include else in {owner_label}"
+            raise review_compile_error(
+                code="E484",
+                summary="Review outcome is not total",
+                detail=(
+                    f"Review match must be exhaustive or include `else` in "
+                    f"{owner_label}."
+                ),
+                unit=unit,
+                source_span=match_source_span,
             )
 
     def _compress_review_gate_branches_for_validation(

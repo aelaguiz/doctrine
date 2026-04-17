@@ -1,0 +1,6 @@
+document RuntimeAndCommands: "Runtime And Commands"
+    section summary: "Summary"
+        "Keep runtime setup and exact commands in one place."
+
+    section commands: "Commands"
+        "Run the listed checks before you ship a change."

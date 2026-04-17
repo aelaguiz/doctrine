@@ -18,22 +18,31 @@ expected_lines = [
   "",
   "### Lesson Plan File",
   "",
-  "- Target: File",
-  "- Path: `lesson_root/LESSON_PLAN.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
-  "- Structure: Lesson Plan",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `lesson_root/LESSON_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Lesson Plan |",
   "",
-  "#### Structure: Lesson Plan",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Lesson Plan` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Read Order** | Ordered List | Read the learner goal. Check the coaching move. |",
+  "| **Step Arc** | Table | Use the columns `Coaching Level` and `Evidence`. |",
   "",
   "##### Read Order",
   "",
-  "_Advisory \u00b7 ordered list_",
+  "_Advisory_",
   "",
   "1. Read the learner goal.",
   "2. Check the coaching move.",
   "",
-  "##### Step Arc",
+  "##### Step Arc Contract",
   "",
   "_Required \u00b7 table_",
   "",
@@ -50,9 +59,9 @@ prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateItemSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
-message_contains = [
-  "Duplicate item_schema key",
-  "step_label",
+location_line = 7
+related = [
+    { label = "first `step_label` item_schema", line = 4 },
 ]
 
 [[cases]]
@@ -63,9 +72,9 @@ prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_KEY.prompt"
 agent = "InvalidDuplicateRowSchemaKeyDemo"
 exception_type = "CompileError"
 error_code = "E295"
-message_contains = [
-  "Duplicate row_schema key",
-  "topic",
+location_line = 7
+related = [
+    { label = "first `topic` row_schema", line = 4 },
 ]
 
 [[cases]]
@@ -76,9 +85,7 @@ prompt = "prompts/INVALID_DUPLICATE_ITEM_SCHEMA_BLOCK.prompt"
 agent = "InvalidDuplicateItemSchemaBlockDemo"
 exception_type = "ParseError"
 error_code = "E199"
-message_contains = [
-  "Readable list bodies may define `item_schema:` only once.",
-]
+location_line = 7
 
 [[cases]]
 name = "readable tables reject repeated row_schema blocks"
@@ -88,6 +95,4 @@ prompt = "prompts/INVALID_DUPLICATE_ROW_SCHEMA_BLOCK.prompt"
 agent = "InvalidDuplicateRowSchemaBlockDemo"
 exception_type = "ParseError"
 error_code = "E199"
-message_contains = [
-  "Readable table bodies may define `row_schema:` only once.",
-]
+location_line = 7

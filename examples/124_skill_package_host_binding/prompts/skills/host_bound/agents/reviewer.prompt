@@ -1,0 +1,5 @@
+agent Reviewer:
+    role: "Review {{host:final_response}}."
+    workflow: "Review"
+        output: "Output"
+            host:final_response

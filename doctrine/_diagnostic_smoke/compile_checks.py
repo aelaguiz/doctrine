@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import textwrap
 from tempfile import TemporaryDirectory
 
 from doctrine.compiler import compile_prompt
@@ -13,6 +11,7 @@ from doctrine._diagnostic_smoke.fixtures import (
     _expect,
     _final_output_file_target_source,
     _final_output_json_source,
+    _final_output_missing_local_shape_source,
     _final_output_missing_emission_source,
     _final_output_non_output_ref_source,
     _final_output_prose_source,
@@ -27,15 +26,42 @@ from doctrine._diagnostic_smoke.fixtures import (
 )
 
 
+def _expect_compile_diagnostic(
+    exc: Exception,
+    *,
+    code: str,
+    line: int | None,
+    related: tuple[tuple[str, int | None], ...] = (),
+) -> None:
+    _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+    _expect(getattr(exc, "code", None) == code, f"expected {code}, got {getattr(exc, 'code', None)}")
+    location = getattr(exc, "location", None)
+    _expect(location is not None, "expected diagnostic location")
+    _expect(getattr(location, "line", None) == line, f"expected line {line}, got {getattr(location, 'line', None)}")
+    actual_related = tuple(
+        (
+            item.label,
+            item.location.line if item.location is not None else None,
+        )
+        for item in getattr(getattr(exc, "diagnostic", None), "related", ())
+    )
+    _expect(
+        actual_related == related,
+        f"expected related {related}, got {actual_related}",
+    )
+
+
 def run_compile_checks() -> None:
     _check_compile_missing_role_has_specific_code()
     _check_analysis_field_renders()
     _check_final_output_prose_renders()
     _check_final_output_json_renders()
-    _check_final_output_missing_schema_file_has_specific_code()
-    _check_final_output_invalid_schema_json_has_specific_code()
-    _check_final_output_missing_example_file_has_specific_code()
+    _check_final_output_invalid_lowered_schema_has_specific_code()
+    _check_final_output_excessive_nesting_has_specific_code()
+    _check_final_output_invalid_example_json_has_specific_code()
+    _check_final_output_missing_example_is_allowed()
     _check_final_output_non_output_ref_has_specific_code()
+    _check_final_output_missing_local_shape_has_specific_code()
     _check_final_output_missing_emission_has_specific_code()
     _check_final_output_file_target_has_specific_code()
     _check_reserved_analysis_slot_key_is_rejected()
@@ -58,9 +84,7 @@ def _check_compile_missing_role_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "MissingRole")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E205", f"expected E205, got {getattr(exc, 'code', None)}")
-            _expect("missing role field" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E205", line=1)
             return
         raise SmokeFailure("expected compile failure for missing role field, but compilation succeeded")
 
@@ -95,140 +119,114 @@ def _check_final_output_json_renders() -> None:
     source = _final_output_json_source()
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
-        root = prompt_path.parent.parent
-        (root / "schemas").mkdir(exist_ok=True)
-        (root / "examples").mkdir(exist_ok=True)
-        (root / "schemas" / "repo_status.schema.json").write_text(
-            textwrap.dedent(
-                """\
-                {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "summary": {
-                      "type": "string",
-                      "description": "Short natural-language status."
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": ["ok", "action_required"],
-                      "description": "Current repo outcome."
-                    },
-                    "next_step": {
-                      "type": ["string", "null"],
-                      "description": "Null only when no follow-up is needed."
-                    }
-                  }
-                }
-                """
-            ),
-            encoding="utf-8",
-        )
-        (root / "examples" / "repo_status.example.json").write_text(
-            textwrap.dedent(
-                """\
-                {
-                  "summary": "Branch is clean and checks passed.",
-                  "status": "ok",
-                  "next_step": null
-                }
-                """
-            ),
-            encoding="utf-8",
-        )
         prompt = parse_file(prompt_path)
         compiled = compile_prompt(prompt, "RepoStatusAgent")
         _expect(compiled.final_output is not None, "expected compiled final_output metadata")
-        _expect(compiled.final_output.format_mode == "json_schema", str(compiled.final_output))
+        _expect(compiled.final_output.format_mode == "json_object", str(compiled.final_output))
         _expect(compiled.final_output.schema_profile == "OpenAIStructuredOutput", str(compiled.final_output))
         rendered = render_markdown(compiled)
         _expect("| Format | Structured JSON |" in rendered, rendered)
         _expect("| Profile | OpenAIStructuredOutput |" in rendered, rendered)
         _expect("#### Payload Fields" in rendered, rendered)
-        _expect("| `next_step` | string \\| null | Null only when no follow-up is needed. |" in rendered, rendered)
+        _expect(
+            "| `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |" in rendered,
+            rendered,
+        )
 
 
-def _check_final_output_missing_schema_file_has_specific_code() -> None:
-    source = _final_output_json_source(schema_file="schemas/missing_repo_status.schema.json")
+def _check_final_output_invalid_lowered_schema_has_specific_code() -> None:
+    source = _final_output_json_source(
+        schema_body="""output schema RepoStatusSchema: "Repo Status Schema"
+    field status: "Status"
+        type: definitely_not_a_real_json_schema_type
+""",
+        example_body="""example:
+        status: "ok"
+""",
+    )
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
-        root = prompt_path.parent.parent
-        (root / "examples").mkdir(exist_ok=True)
-        (root / "examples" / "repo_status.example.json").write_text(
-            "{\n  \"status\": \"ok\"\n}\n",
-            encoding="utf-8",
-        )
         prompt = parse_file(prompt_path)
         try:
             compile_prompt(prompt, "RepoStatusAgent")
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E215", f"expected E215, got {getattr(exc, 'code', None)}")
-            _expect("missing or unreadable" in str(exc), str(exc))
-            _expect("schemas/missing_repo_status.schema.json" in str(exc), str(exc))
+            _expect(getattr(exc, "code", None) == "E217", f"expected E217, got {getattr(exc, 'code', None)}")
+            _expect("Draft 2020-12" in str(exc), str(exc))
+            _expect("output schema RepoStatusSchema" in str(exc), str(exc))
             return
-        raise SmokeFailure("expected compile failure for missing final_output schema file, but compilation succeeded")
+        raise SmokeFailure("expected compile failure for invalid lowered final_output schema, but compilation succeeded")
 
 
-def _check_final_output_invalid_schema_json_has_specific_code() -> None:
-    source = _final_output_json_source()
+def _check_final_output_excessive_nesting_has_specific_code() -> None:
+    source = _final_output_json_source(
+        schema_body="""output schema RepoStatusSchema: "Repo Status Schema"
+    field level_0: "Level 0"
+        type: object
+
+        field level_1: "Level 1"
+            type: object
+
+            field level_2: "Level 2"
+                type: object
+
+                field level_3: "Level 3"
+                    type: object
+
+                    field level_4: "Level 4"
+                        type: object
+
+                        field level_5: "Level 5"
+                            type: object
+
+                            field summary: "Summary"
+                                type: string
+""",
+    )
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
-        root = prompt_path.parent.parent
-        (root / "schemas").mkdir(exist_ok=True)
-        (root / "examples").mkdir(exist_ok=True)
-        (root / "schemas" / "repo_status.schema.json").write_text(
-            "{not json",
-            encoding="utf-8",
-        )
-        (root / "examples" / "repo_status.example.json").write_text(
-            "{\n  \"status\": \"ok\"\n}\n",
-            encoding="utf-8",
-        )
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "RepoStatusAgent")
+        except Exception as exc:
+            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
+            _expect(getattr(exc, "code", None) == "E218", f"expected E218, got {getattr(exc, 'code', None)}")
+            _expect("nesting exceeds 5 levels" in str(exc), str(exc))
+            _expect("output schema RepoStatusSchema" in str(exc), str(exc))
+            return
+        raise SmokeFailure("expected compile failure for excessive final_output schema nesting, but compilation succeeded")
+
+
+def _check_final_output_invalid_example_json_has_specific_code() -> None:
+    source = _final_output_json_source(
+        example_body="""example:
+        summary: 7
+        status: "ok"
+        next_step: null
+""",
+    )
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
         try:
             compile_prompt(prompt, "RepoStatusAgent")
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
             _expect(getattr(exc, "code", None) == "E216", f"expected E216, got {getattr(exc, 'code', None)}")
-            _expect("valid JSON object" in str(exc), str(exc))
-            _expect("schemas/repo_status.schema.json" in str(exc), str(exc))
+            _expect("does not match the lowered schema" in str(exc), str(exc))
             return
-        raise SmokeFailure("expected compile failure for invalid final_output schema JSON, but compilation succeeded")
+        raise SmokeFailure("expected compile failure for invalid final_output example instance, but compilation succeeded")
 
 
-def _check_final_output_missing_example_file_has_specific_code() -> None:
-    source = _final_output_json_source(example_file="examples/missing_repo_status.example.json")
+def _check_final_output_missing_example_is_allowed() -> None:
+    source = _final_output_json_source(example_body=None)
     with TemporaryDirectory() as tmp_dir:
         prompt_path = _write_prompt(tmp_dir, source)
-        root = prompt_path.parent.parent
-        (root / "schemas").mkdir(exist_ok=True)
-        (root / "schemas" / "repo_status.schema.json").write_text(
-            textwrap.dedent(
-                """\
-                {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "description": "Current repo outcome."
-                    }
-                  }
-                }
-                """
-            ),
-            encoding="utf-8",
-        )
         prompt = parse_file(prompt_path)
-        try:
-            compile_prompt(prompt, "RepoStatusAgent")
-        except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E215", f"expected E215, got {getattr(exc, 'code', None)}")
-            _expect("missing or unreadable" in str(exc), str(exc))
-            _expect("examples/missing_repo_status.example.json" in str(exc), str(exc))
-            return
-        raise SmokeFailure("expected compile failure for missing final_output example file, but compilation succeeded")
+        compiled = compile_prompt(prompt, "RepoStatusAgent")
+        rendered = render_markdown(compiled)
+        _expect("#### Payload Fields" in rendered, rendered)
+        _expect("#### Example" not in rendered, rendered)
 
 
 def _check_final_output_non_output_ref_has_specific_code() -> None:
@@ -239,10 +237,7 @@ def _check_final_output_non_output_ref_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E211", f"expected E211, got {getattr(exc, 'code', None)}")
-            _expect("output declaration" in str(exc), str(exc))
-            _expect("schema declaration" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E211", line=10)
             return
         raise SmokeFailure("expected compile failure for wrong-kind final_output ref, but compilation succeeded")
 
@@ -255,11 +250,22 @@ def _check_final_output_missing_emission_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E212", f"expected E212, got {getattr(exc, 'code', None)}")
-            _expect("not emitted by the concrete turn" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E212", line=10)
             return
         raise SmokeFailure("expected compile failure for non-emitted final_output, but compilation succeeded")
+
+
+def _check_final_output_missing_local_shape_has_specific_code() -> None:
+    source = _final_output_missing_local_shape_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "InvalidFinalOutputAgent")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E276", line=3)
+            return
+        raise SmokeFailure("expected compile failure for missing local final_output shape, but compilation succeeded")
 
 
 def _check_final_output_file_target_has_specific_code() -> None:
@@ -270,9 +276,12 @@ def _check_final_output_file_target_has_specific_code() -> None:
         try:
             compile_prompt(prompt, "InvalidFinalOutputAgent")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E213", f"expected E213, got {getattr(exc, 'code', None)}")
-            _expect("TurnResponse" in str(exc), str(exc))
+            _expect_compile_diagnostic(
+                exc,
+                code="E213",
+                line=2,
+                related=(("`final_output` field", 13),),
+            )
             return
         raise SmokeFailure("expected compile failure for file-backed final_output, but compilation succeeded")
 
@@ -285,9 +294,7 @@ def _check_reserved_analysis_slot_key_is_rejected() -> None:
         try:
             compile_prompt(prompt, "AnalysisDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("reserved typed agent field" in str(exc).lower(), str(exc))
-            _expect("analysis" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E299", line=7)
             return
         raise SmokeFailure("expected compile failure for reserved analysis slot key, but compilation succeeded")
 
@@ -298,9 +305,10 @@ def _check_output_schema_attachment_renders() -> None:
         prompt_path = _write_prompt(tmp_dir, source)
         prompt = parse_file(prompt_path)
         rendered = render_markdown(compile_prompt(prompt, "OutputDemo"))
-        _expect("- Schema: Lesson Inventory" in rendered, rendered)
-        _expect("### Required Sections" in rendered, rendered)
-        _expect("#### Summary" in rendered, rendered)
+        _expect("| Contract | Value |" in rendered, rendered)
+        _expect("| Schema | Lesson Inventory |" in rendered, rendered)
+        _expect("#### Required Sections" in rendered, rendered)
+        _expect("##### Summary" in rendered, rendered)
 
 
 def _check_input_structure_attachment_renders() -> None:
@@ -322,9 +330,7 @@ def _check_readable_guard_rejects_output_owned_refs() -> None:
         try:
             compile_prompt(prompt, "ReadableGuardDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("Readable guard reads disallowed source" in str(exc), str(exc))
-            _expect("BrokenComment.summary_present" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E296", line=6)
             return
         raise SmokeFailure("expected compile failure for readable guard source, but compilation succeeded")
 
@@ -337,9 +343,7 @@ def _check_readable_table_requires_columns() -> None:
         try:
             compile_prompt(prompt, "ReadableTableDemo")
         except Exception as exc:
-            _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect("Readable table must declare at least one column" in str(exc), str(exc))
-            _expect("BrokenGuide.release_gates" in str(exc), str(exc))
+            _expect_compile_diagnostic(exc, code="E297", line=2)
             return
         raise SmokeFailure("expected compile failure for readable table without columns, but compilation succeeded")
 

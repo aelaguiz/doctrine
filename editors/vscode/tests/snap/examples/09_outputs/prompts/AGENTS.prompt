@@ -1,20 +1,35 @@
-# This example sketches one output primitive with reusable supporting
+# This example shows the shipped output contract surface with reusable supporting
 # declarations:
 # - `output` is the produced-contract primitive
 # - `output target` is the destination kind
 # - `output shape` is the structural form
-# - `json schema` is the strict machine-readable structure when needed
+# - `output schema` is the strict machine-readable structure when needed
 #
 # Simple outputs can stay small.
 # Richer outputs can add more contract detail directly on `output`.
+# `output structure:` is now a typed document attachment, so free-form output
+# formatting guidance uses a different prose key in this example.
 # Paths like `section_root/...` and `lesson_root/...` stay plain path strings
 # in this example. The model assumes the surrounding turn guidance explains how
 # to interpret those prefixes; they are not promoted to separate root
 # declarations here.
 
-json schema LessonManifestSchema: "Lesson Manifest Schema"
-    profile: OpenAIStructuredOutput
-    file: "schemas/lesson_manifest.schema.json"
+output schema LessonManifestSchema: "Lesson Manifest Schema"
+    field title: "Title"
+        type: string
+        required
+
+    field steps: "Steps"
+        type: array
+        items: string
+        required
+
+    example:
+        title: "Intro To Pot Odds"
+        steps:
+            - "intro"
+            - "quiz"
+            - "review"
 
 output shape IssueSummaryText: "Issue Summary Text"
     kind: PlainText
@@ -28,7 +43,6 @@ output shape LessonManifestJson: "Lesson Manifest JSON"
     kind: JsonObject
 
     schema: LessonManifestSchema
-    example_file: "examples/lesson_manifest.example.json"
 
     explanation: "Field Notes"
         "`title` is the learner-facing title."
@@ -55,7 +69,7 @@ output IssueSummaryResponse: "Issue Summary Response"
     purpose: "Purpose"
         "Give a short human-readable summary back in the turn."
 
-    structure: "Expected Structure"
+    format_notes: "Expected Structure"
         "State the issue in one or two sentences."
         "End with the main blocker or next step if one matters."
 
@@ -123,7 +137,7 @@ output LessonManifestOutput: "Lesson Manifest Output"
             when: "Guided-walkthrough pacing is in scope."
 
     standalone_read: "Standalone Read"
-        "A downstream role should be able to read lesson_manifest.json and MANIFEST_VALIDATION.md and understand what was built and what was validated."
+        "lesson_manifest.json and MANIFEST_VALIDATION.md should stand on their own and say what was built and what was checked."
 
     notes: "Notes"
         "Interpret `lesson_root/...` from the current work context and surrounding instructions."

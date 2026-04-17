@@ -1,0 +1,60 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "workflow roots may own readable blocks directly"
+status = "active"
+kind = "render_contract"
+agent = "WorkflowRootReadableBlocksDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Use Evidence Note and Summary.",
+  "",
+  "## Guide",
+  "",
+  "1. Read `home:issue.md` first.",
+  "2. Then read this role's local rules.",
+  "",
+  "- Use `home:issue.md` as the shared ledger.",
+  "- End with the final JSON.",
+  "",
+  "> **NOTE — Evidence Note**",
+  "> _callout_",
+  "> Ground the current claim before you summarize.",
+  "",
+  "### Done When",
+  "",
+  "_definitions_",
+  "",
+  "- **Summary** — State the release result.",
+  "- **Next Owner** — Name the next owner.",
+]
+
+[[cases]]
+name = "custom authored slots may use workflow root readable blocks"
+status = "active"
+kind = "render_contract"
+agent = "CustomSlotWorkflowRootReadableBlocksDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Follow the guide from a custom authored slot.",
+  "",
+  "## Guide",
+  "",
+  "1. Read `home:issue.md` first.",
+  "2. Then read this role's local rules.",
+  "",
+  "- Use `home:issue.md` as the shared ledger.",
+  "- End with the final JSON.",
+  "",
+  "> **NOTE — Evidence Note**",
+  "> _callout_",
+  "> Ground the current claim before you summarize.",
+  "",
+  "### Done When",
+  "",
+  "_definitions_",
+  "",
+  "- **Summary** — State the release result.",
+  "- **Next Owner** — Name the next owner.",
+]

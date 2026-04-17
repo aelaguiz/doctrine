@@ -11,6 +11,7 @@ from doctrine._diagnostic_smoke.fixtures import SmokeFailure, _expect, _write_pr
 def run_parse_checks() -> None:
     _check_transform_errors_surface_as_parse_errors()
     _check_invalid_string_literals_surface_as_parse_errors()
+    _check_unterminated_multiline_string_surfaces_as_parse_error()
     _check_parse_text_preserves_source_path_for_compilation()
 
 
@@ -53,6 +54,27 @@ def _check_invalid_string_literals_surface_as_parse_errors() -> None:
             _expect("truncated \\xXX escape" in rendered, rendered)
             return
         raise SmokeFailure("expected invalid string literal parse failure, but parsing succeeded")
+
+
+def _check_unterminated_multiline_string_surfaces_as_parse_error() -> None:
+    # `\"""` escapes a triple-quote sequence inside the body, but an unclosed
+    # literal must still fail loudly.
+    source = '''document EscapeDemo: "Escape Demo"
+    markdown snippet: "Snippet" advisory
+        text: """
+Python code:
+
+\\"\\"\\"
+Hello, world.
+'''
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        try:
+            parse_file(prompt_path)
+        except Exception as exc:
+            _expect(type(exc).__name__ == "ParseError", f"expected ParseError, got {type(exc).__name__}")
+            return
+        raise SmokeFailure("expected unterminated multiline string parse failure, but parsing succeeded")
 
 
 def _check_parse_text_preserves_source_path_for_compilation() -> None:

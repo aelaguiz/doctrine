@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _humanize_key
+from doctrine._compiler.readable_diagnostics import readable_compile_error
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     AddressableProjectionTarget,
-    CompileError,
     DisplayValue,
     ReadableColumnsTarget,
     ReadableRowsTarget,
@@ -86,13 +87,14 @@ class ValidateAddressableDisplayMixin:
             (
                 model.AnalysisDecl,
                 model.SchemaDecl,
+                model.TableDecl,
                 model.DocumentDecl,
                 model.InputDecl,
                 model.InputSourceDecl,
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
                 model.EnumDecl,
             ),
@@ -229,6 +231,8 @@ class ValidateAddressableDisplayMixin:
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.SchemaDecl):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(target, model.TableDecl):
+            return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.DocumentDecl):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.WorkflowDecl):
@@ -245,11 +249,24 @@ class ValidateAddressableDisplayMixin:
                 model.OutputDecl,
                 model.OutputTargetDecl,
                 model.OutputShapeDecl,
-                model.JsonSchemaDecl,
+                model.OutputSchemaDecl,
                 model.SkillDecl,
             ),
         ):
             return DisplayValue(text=target.title, kind="title")
+        if isinstance(
+            target,
+            (
+                model.OutputSchemaField,
+                model.OutputSchemaDef,
+                model.OutputSchemaOverrideField,
+                model.OutputSchemaOverrideDef,
+            ),
+        ):
+            return DisplayValue(
+                text=target.title if target.title is not None else _humanize_key(target.key),
+                kind="title",
+            )
         if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
             return DisplayValue(text=target.title, kind="title")
         if isinstance(target, model.GuardedOutputScalar):
@@ -334,8 +351,15 @@ class ValidateAddressableDisplayMixin:
             return DisplayValue(text="Rows", kind="title")
         if isinstance(target, ReadableSchemaTarget):
             return DisplayValue(text=target.title, kind="title")
-        raise CompileError(
-            f"Internal compiler error: unsupported addressable target {type(target).__name__}"
+        raise compile_error(
+            code="E901",
+            summary="Internal compiler error",
+            detail=(
+                "Internal compiler error: unsupported addressable target "
+                f"{type(target).__name__}"
+            ),
+            path=node.unit.prompt_file.source_path,
+            source_span=getattr(target, "source_span", None),
         )
 
     def _display_addressable_title(
@@ -378,12 +402,24 @@ class ValidateAddressableDisplayMixin:
         root_decl = node.root_decl
         if isinstance(root_decl, model.InputDecl) and item.key == "source":
             if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Input source must stay typed: {root_decl.name}")
+                raise readable_compile_error(
+                    code="E275",
+                    summary="Input source must stay typed",
+                    detail=f"Input source must stay typed: {root_decl.name}",
+                    unit=node.unit,
+                    source_span=item.source_span,
+                )
             return self._resolve_input_source_spec(item.value, unit=node.unit).title
 
         if isinstance(root_decl, model.OutputDecl) and item.key == "target":
             if not isinstance(item.value, model.NameRef):
-                raise CompileError(f"Output target must stay typed: {root_decl.name}")
+                raise readable_compile_error(
+                    code="E275",
+                    summary="Output target must stay typed",
+                    detail=f"Output target must stay typed: {root_decl.name}",
+                    unit=node.unit,
+                    source_span=item.source_span,
+                )
             return self._resolve_output_target_spec(item.value, unit=node.unit).title
 
         if isinstance(root_decl, model.OutputDecl) and item.key == "shape":

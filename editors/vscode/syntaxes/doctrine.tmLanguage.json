@@ -25,7 +25,22 @@
       "include": "#documentDeclaration"
     },
     {
+      "include": "#tableDeclaration"
+    },
+    {
+      "include": "#renderProfileDeclaration"
+    },
+    {
+      "include": "#renderProfileRule"
+    },
+    {
       "include": "#workflow"
+    },
+    {
+      "include": "#routeOnlyDeclaration"
+    },
+    {
+      "include": "#groundingDeclaration"
     },
     {
       "include": "#abstractReview"
@@ -55,10 +70,16 @@
       "include": "#outputShape"
     },
     {
-      "include": "#output"
+      "include": "#outputSchema"
     },
     {
-      "include": "#jsonSchema"
+      "include": "#outputSchemaRouteField"
+    },
+    {
+      "include": "#outputSchemaRouteChoice"
+    },
+    {
+      "include": "#output"
     },
     {
       "include": "#skillEntry"
@@ -145,6 +166,9 @@
       "include": "#inherit"
     },
     {
+      "include": "#guardedOverrideOutputHeader"
+    },
+    {
       "include": "#override"
     },
     {
@@ -172,6 +196,9 @@
       "include": "#finalOutputOutputField"
     },
     {
+      "include": "#finalOutputRouteField"
+    },
+    {
       "include": "#ioPatchField"
     },
     {
@@ -197,6 +224,9 @@
     },
     {
       "include": "#reviewFieldBinding"
+    },
+    {
+      "include": "#reviewFieldBindingIdentity"
     },
     {
       "include": "#keyValueRef"
@@ -239,6 +269,9 @@
       "patterns": [
         {
           "include": "#stringInterpolation"
+        },
+        {
+          "include": "#rootedRuntimePathInString"
         }
       ]
     },
@@ -259,11 +292,14 @@
       "patterns": [
         {
           "include": "#stringInterpolation"
+        },
+        {
+          "include": "#rootedRuntimePathInString"
         }
       ]
     },
     "stringInterpolation": {
-      "match": "(\\{\\{)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
+      "match": "(\\{\\{)\\s*((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
       "captures": {
         "1": {
           "name": "punctuation.definition.interpolation.begin.doctrine"
@@ -282,16 +318,61 @@
         }
       }
     },
-    "import": {
-      "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+    "rootedRuntimePathInString": {
+      "name": "markup.inline.raw.runtime-path.doctrine",
+      "match": "(`)([A-Za-z_][A-Za-z0-9_-]*:)([A-Za-z0-9_./-]+)(`)",
       "captures": {
+        "1": {
+          "name": "punctuation.definition.raw.inline.begin.doctrine"
+        },
         "2": {
-          "name": "keyword.declaration.doctrine"
+          "name": "support.type.runtime-path.root.doctrine"
+        },
+        "3": {
+          "name": "string.unquoted.inline.runtime-path.doctrine"
         },
         "4": {
-          "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+          "name": "punctuation.definition.raw.inline.end.doctrine"
         }
       }
+    },
+    "import": {
+      "patterns": [
+        {
+          "match": "^(\\s*)(import)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(\\s+)(as)(\\s+)([A-Za-z_][A-Za-z0-9_]*))?\\s*$",
+          "captures": {
+            "2": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "4": {
+              "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+            },
+            "6": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "8": {
+              "name": "entity.name.type.doctrine"
+            }
+          }
+        },
+        {
+          "match": "^(\\s*)(from)(\\s+)((?:\\.+)?[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\s+)(import)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?(?:\\s*,\\s*[A-Za-z_][A-Za-z0-9_]*(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?)*)\\s*$",
+          "captures": {
+            "2": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "4": {
+              "name": "entity.name.namespace.doctrine support.type.reference.doctrine"
+            },
+            "7": {
+              "name": "keyword.declaration.doctrine"
+            },
+            "9": {
+              "name": "entity.name.type.doctrine support.type.reference.doctrine"
+            }
+          }
+        }
+      ]
     },
     "analysisDeclaration": {
       "match": "^(\\s*)(analysis)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
@@ -376,8 +457,50 @@
         }
       }
     },
+    "tableDeclaration": {
+      "match": "^(\\s*)(table)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(?=\\s*\")",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "renderProfileDeclaration": {
+      "match": "^(\\s*)(render_profile)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(:))?\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "5": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "renderProfileRule": {
+      "match": "^(\\s*)(review\\.contract_checks|analysis\\.stages|control\\.invalidations|guarded_sections|identity\\.(?:owner|debug|enum_wire)|properties|guard|sequence|bullets|checklist|definitions|table|callout|code|markdown|html|footnotes|image)(\\s+)(->)(\\s+)(sentence|titled_section|expanded_sequence|natural_ordered_prose|concise_explanatory_shell|title|title_and_key|wire_only)\\s*$",
+      "captures": {
+        "2": {
+          "name": "support.type.render-profile-target.doctrine support.type.reference.doctrine"
+        },
+        "4": {
+          "name": "keyword.operator.doctrine punctuation.separator.route.doctrine"
+        },
+        "6": {
+          "name": "support.type.render-profile-mode.doctrine entity.name.type.doctrine"
+        }
+      }
+    },
     "workflow": {
-      "match": "^(\\s*)(workflow|route_only|grounding)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
+      "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -395,6 +518,34 @@
           "name": "punctuation.section.inheritance.end.doctrine"
         },
         "9": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "routeOnlyDeclaration": {
+      "match": "^(\\s*)(route_only)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "groundingDeclaration": {
+      "match": "^(\\s*)(grounding)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
@@ -566,7 +717,7 @@
       }
     },
     "outputShape": {
-      "match": "^(\\s*)(output)(\\s+)(shape)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "match": "^(\\s*)(output)(\\s+)(shape)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -577,13 +728,22 @@
         "6": {
           "name": "entity.name.type.doctrine"
         },
+        "7": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
         "8": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "9": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "11": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
     "output": {
-      "match": "^(\\s*)(output)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "match": "^(\\s*)(output)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -591,13 +751,22 @@
         "4": {
           "name": "entity.name.type.doctrine"
         },
+        "5": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
         "6": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "7": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "9": {
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
-    "jsonSchema": {
-      "match": "^(\\s*)(json)(\\s+)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+    "outputSchema": {
+      "match": "^(\\s*)(output)(\\s+)(schema)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
       "captures": {
         "2": {
           "name": "keyword.declaration.doctrine"
@@ -608,8 +777,60 @@
         "6": {
           "name": "entity.name.type.doctrine"
         },
+        "7": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
         "8": {
+          "name": "entity.other.inherited-class.doctrine"
+        },
+        "9": {
+          "name": "punctuation.section.inheritance.end.doctrine"
+        },
+        "11": {
           "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "outputSchemaRouteField": {
+      "match": "^(\\s*)((override)(\\s+))?(route)(\\s+)(field)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")?\\s*$",
+      "captures": {
+        "3": {
+          "name": "keyword.control.doctrine"
+        },
+        "5": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "7": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "9": {
+          "name": "entity.name.section.doctrine"
+        },
+        "11": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "13": {
+          "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "outputSchemaRouteChoice": {
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")(\\s*)(->)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "entity.name.section.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "string.quoted.double.doctrine"
+        },
+        "8": {
+          "name": "keyword.control.doctrine"
+        },
+        "10": {
+          "name": "entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },
@@ -1038,7 +1259,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items|bind|emit|host_contract)\\b"
     },
     "routeSemanticRef": {
       "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
@@ -1111,13 +1332,22 @@
       }
     },
     "inherit": {
-      "match": "^(\\s*)(inherit)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
+      "match": "^(\\s*)(inherit)(\\s+)(?:([A-Za-z_][A-Za-z0-9_]*)(\\s*)|(\\{)(\\s*[^}]+\\s*)(\\}))\\s*$",
       "captures": {
         "2": {
           "name": "keyword.control.doctrine"
         },
         "4": {
           "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "6": {
+          "name": "punctuation.section.inheritance.begin.doctrine"
+        },
+        "7": {
+          "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "8": {
+          "name": "punctuation.section.inheritance.end.doctrine"
         }
       }
     },
@@ -1262,6 +1492,20 @@
         }
       }
     },
+    "finalOutputRouteField": {
+      "match": "^(\\s*)(route)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        },
+        "4": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "6": {
+          "name": "variable.other.member.doctrine"
+        }
+      }
+    },
     "ioPatchField": {
       "match": "^(\\s*)(inputs|outputs)(\\s*)(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\])(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")\\s*$",
       "captures": {
@@ -1388,8 +1632,16 @@
         }
       }
     },
+    "reviewFieldBindingIdentity": {
+      "match": "^(\\s*)(verdict|reviewed_artifact|failing_gates|blocked_gate)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.other.field.doctrine"
+        }
+      }
+    },
     "keyValueRef": {
-      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.section.doctrine"
@@ -1419,6 +1671,29 @@
         },
         "6": {
           "name": "string.quoted.double.doctrine"
+        }
+      }
+    },
+    "guardedOverrideOutputHeader": {
+      "match": "^(\\s*)(override)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(\"(?:\\\\.|[^\"\\\\])*\")(\\s+)(when)\\b(.*)(:)\\s*$",
+      "captures": {
+        "2": {
+          "name": "keyword.control.doctrine"
+        },
+        "4": {
+          "name": "entity.name.section.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "8": {
+          "name": "string.quoted.double.doctrine"
+        },
+        "10": {
+          "name": "keyword.control.doctrine"
+        },
+        "12": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     },
@@ -1454,7 +1729,7 @@
       }
     },
     "standaloneReference": {
-      "match": "^(\\s+)(?!(?:route)\\b)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "match": "^(\\s+)(?!(?:route)\\b)((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:(:)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine"

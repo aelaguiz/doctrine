@@ -1,0 +1,54 @@
+{
+  "run_mode": "batch",
+  "fail_threshold": "medium",
+  "targets": [
+    {
+      "target_name": "FounderEnrichmentSkill",
+      "authored_source": "skill FounderEnrichment\n\ndescription: Read the supplied founder sources and leave one founder dossier.\n\nworkflow:\n- Read Maria Santos's application.\n- Read Contrail's billing-module commits.\n- Read Maria's March 2026 advisor transcript.\n- Compare what Maria says she is building with what the code shows.\n- Leave one founder dossier.\n",
+      "emitted_markdown": "# FounderEnrichment\n\nRead the supplied founder sources and leave one founder dossier.\n\n- Read Maria Santos's application.\n- Read Contrail's billing-module commits.\n- Read Maria's March 2026 advisor transcript.\n- Compare what Maria says she is building with what the code shows.\n- Leave one founder dossier.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {},
+      "typed_declarations": {
+        "inputs": [
+          "founder_name",
+          "source_set",
+          "question"
+        ]
+      }
+    },
+    {
+      "target_name": "FounderTableMatcher",
+      "authored_source": "agent FounderTableMatcher\n\ndescription: Match founders into breakout tables for the event.\n\nworkflow:\n- Read the founder dossiers.\n- Seat 600 founders into tables of exactly 8.\n- Ensure no founder meets someone they already met.\n- Keep exact sector balance across the room.\n- Pick the final seating chart yourself from the prose instructions alone.\n\nleave behind:\n- seating_chart.md\n",
+      "emitted_markdown": "# FounderTableMatcher\n\nMatch founders into breakout tables for the event.\n\n- Read the founder dossiers.\n- Seat 600 founders into tables of exactly 8.\n- Ensure no founder meets someone they already met.\n- Keep exact sector balance across the room.\n- Pick the final seating chart yourself from the prose instructions alone.\n\nLeave behind `seating_chart.md`.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {}
+    },
+    {
+      "target_name": "FounderResearchCollector",
+      "authored_source": "agent FounderResearchCollector\n\ndescription: Read founder sources and leave a compact research handoff for review.\n\nworkflow:\n- Read the application, transcript, GitHub summary, and public notes for each founder.\n- Note claim-vs-build gaps.\n- Note timeline changes.\n- Leave the reviewer a folder of copied quotes and browser notes.\n\nleave behind:\n- raw_founder_notes/\n",
+      "emitted_markdown": "# FounderResearchCollector\n\nRead founder sources and leave a compact research handoff for review.\n\n- Read the application, transcript, GitHub summary, and public notes for each founder.\n- Note claim-vs-build gaps.\n- Note timeline changes.\n- Leave the reviewer a folder of copied quotes and browser notes.\n\nLeave behind `raw_founder_notes/`.\n",
+      "imported_skills": [],
+      "imported_modules": [],
+      "declared_constraints": {}
+    }
+  ],
+  "duplicate_hints": [],
+  "size_stats": {
+    "FounderEnrichmentSkill": {
+      "authored_line_count": 10,
+      "emitted_line_count": 8
+    },
+    "FounderTableMatcher": {
+      "authored_line_count": 12,
+      "emitted_line_count": 10
+    },
+    "FounderResearchCollector": {
+      "authored_line_count": 11,
+      "emitted_line_count": 9
+    }
+  },
+  "reading_metrics": {},
+  "notes": "This fixture is intentionally small and covers reusable method shape, deterministic-vs-prose ownership, and read-many handoff shape."
+}

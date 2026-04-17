@@ -1,0 +1,90 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "omitted io wrapper titles lower one direct declaration"
+status = "active"
+kind = "render_contract"
+agent = "OmittedIoWrapperTitlesDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Lower omitted IO wrapper titles into one child-owned heading.",
+  "",
+  "## Your Inputs",
+  "",
+  "### Lessons Issue Ledger",
+  "",
+  "- Source: File",
+  "- Path: `catalog/lessons_issue_ledger.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "Use this ledger to track repeated section issues.",
+  "Keep the ledger current after each section pass.",
+  "",
+  "## Your Outputs",
+  "",
+  "### Section Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "explicit io wrapper titles keep long-form nesting"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/EXPLICIT.prompt"
+agent = "ExplicitIoWrapperTitlesDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep explicit IO wrapper titles as the long form.",
+  "",
+  "## Your Inputs",
+  "",
+  "### Lessons Issue Ledger",
+  "",
+  "Use this ledger to track repeated section issues.",
+  "",
+  "#### Lessons Issue Ledger",
+  "",
+  "- Source: File",
+  "- Path: `catalog/lessons_issue_ledger.json`",
+  "- Shape: JSON Document",
+  "- Requirement: Required",
+  "",
+  "## Your Outputs",
+  "",
+  "### Section Handoff",
+  "",
+  "#### Section Handoff",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+]
+
+[[cases]]
+name = "omitted io wrapper title with multiple direct refs fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_MULTIPLE_DIRECT_REFS.prompt"
+agent = "InvalidMultipleDirectRefsIoWrapperDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 16
+related = [
+    { label = "direct `Lessons Issue Ledger` declaration", line = 17 },
+    { label = "direct `Forward Issue Ledger` declaration", line = 18 },
+]
+
+[[cases]]
+name = "omitted io wrapper title with keyed children fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/INVALID_KEYED_CHILD.prompt"
+agent = "InvalidKeyedChildIoWrapperDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 9

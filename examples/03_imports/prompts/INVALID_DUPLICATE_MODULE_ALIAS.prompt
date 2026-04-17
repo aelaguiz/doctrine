@@ -1,0 +1,6 @@
+import simple.greeting as shared
+import simple.object as shared
+
+
+agent DuplicateModuleAliasDemo:
+    role: "Trigger the duplicate module alias error."

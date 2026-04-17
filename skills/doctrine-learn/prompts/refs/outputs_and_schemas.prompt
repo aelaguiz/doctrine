@@ -1,0 +1,440 @@
+document OutputsAndSchemas: "Outputs And Schemas"
+    """This reference teaches how a turn emits its answer. `output` declares the
+artifact contract. `output shape` decides what kind of artifact it is. `output
+schema` owns the typed JSON payload for structured finals. `final_output:` on
+an agent marks one emitted `TurnResponse` output as the turn-ending assistant
+message.
+
+Keep outputs small and typed. Prefer an `output schema` block over prose when
+the host needs exact fields. Prefer one routed `route field` over a second
+`route_from` table when the final JSON itself owns the route choice.
+
+Read the source of truth in this order before you ship code:"""
+
+    bullets sources:
+        "`doctrine/grammars/doctrine.lark`"
+        "`docs/LANGUAGE_REFERENCE.md` (output and output schema sections)"
+        "`docs/AGENT_IO_DESIGN_NOTES.md`"
+
+    section output_declaration_shape: "Output Declaration Shape"
+        "A minimal prose output:"
+        code:
+            language: prompt-fragment
+            text: """output ReviewComment: "Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+"""
+        "Important rules:"
+        bullets rules:
+            "An output uses either `target` plus `shape`, or a titled `files:` section."
+            """Built-in targets used in the shipped corpus include `TurnResponse` and
+  `File`. Custom targets can be declared with `output target`."""
+            "Output shapes can be named with `output shape`."
+            """`schema:` on `output` attaches a Doctrine `schema` declaration for
+  schema-owned sections, gates, and artifacts."""
+            """`schema:` on `output shape` remains the owner-aware attachment point for
+  `output schema` when the shape kind is `JsonObject`."""
+            """A markdown-bearing `output` may not attach both `schema:` and `structure:`.
+  Pick exactly one artifact owner."""
+            "`structure:` on a markdown-bearing output attaches a named `document`."
+            """`render_profile:` may attach to a markdown-bearing output when exactly one
+  output artifact owns the markdown contract."""
+            """`outputs` blocks group outputs and bind them under local keys for a
+  concrete turn."""
+
+        "Output bodies may also contain:"
+        bullets body_items:
+            "authored fields and sections"
+            "readable declaration refs"
+            """readable block kinds such as `definitions`, `properties`, `table`,
+  explicit `guard` shells, `callout`, `code`, raw `markdown`, raw `html`,
+  `footnotes`, and `image`"""
+            "guarded output items like `next_owner: route.next_owner when route.exists`"
+            """keyed guarded sections like
+  `failure_detail: \"Failure Detail\" when verdict == ReviewVerdict.changes_requested:`"""
+            "`trust_surface`"
+            "`standalone_read`"
+
+        section output_targets_and_delivery_skills: "Output Targets And Delivery Skills"
+            """A custom `output target` may bind one reusable delivery skill with
+`delivery_skill:`. Put delivery behavior on the target, not on each output."""
+            code:
+                language: prompt-fragment
+                text: """skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"
+
+output LedgerNote: "Ledger Note"
+    target: LedgerNoteAppend
+        ledger_id: "current-ledger"
+    shape: MarkdownDocument
+    requirement: Advisory
+"""
+            """The emitted contract table renders one `Delivered Via` row after `Target` and
+before target config rows."""
+
+    section output_schema_shape: "Output Schema Shape"
+        """`output schema` owns the machine-readable payload fields for structured
+`JsonObject` outputs. Attach it through `schema:` on an `output shape` with
+`kind: JsonObject`."""
+        code:
+            language: prompt-fragment
+            text: """output schema RepoStatusSchema: "Repo Status Schema"
+    field summary: "Summary"
+        type: string
+        note: "Short natural-language status."
+
+    field status: "Status"
+        type: enum
+        values:
+            ok
+            action_required
+        note: "Current repo outcome."
+
+    field next_step: "Next Step"
+        type: string
+        nullable
+        note: "Null when no follow-up is needed."
+
+    example:
+        summary: "Branch is clean and checks passed."
+        status: "ok"
+        next_step: null
+
+
+output shape RepoStatusJson: "Repo Status JSON"
+    kind: JsonObject
+    schema: RepoStatusSchema
+
+
+output RepoStatusFinalResponse: "Repo Status Final Response"
+    target: TurnResponse
+    shape: RepoStatusJson
+    requirement: Required
+"""
+        """See `examples/79_final_output_output_schema` for the smallest shipped
+structured final, including inheritance and an `example:` block."""
+
+        section field_shapes: "Field Shapes"
+            "The shipped field shapes are:"
+            bullets field_forms:
+                "`field <key>: \"Title\"` with a `type:` line and optional `note:`."
+                "`route field <key>: \"Title\"` with routed enum-style members (see below)."
+                """`def <key>: \"Title\"` for reusable nested object defs referenced by `items:`
+  or `any_of`."""
+
+            "Type intrinsics:"
+            bullets intrinsics:
+                "`type: string`"
+                "`type: number`"
+                "`type: integer`"
+                "`type: boolean`"
+                "`type: enum` with a `values:` block (preferred shipped form)"
+                "`type: object` with nested `field` lines or an `any_of:` block"
+
+            "Range and shape constraints:"
+            bullets constraints:
+                "`min_length: <n>` / `max_length: <n>`"
+                "`minimum: <n>` / `maximum: <n>`"
+                "`exclusive_minimum: <n>` / `exclusive_maximum: <n>`"
+                "`multiple_of: <n>`"
+                "`format: <name>`"
+                "`pattern: \"<regex>\"`"
+                "`const: <literal>`"
+                "`items: <NameRef>` or `items:` indented block for typed array elements"
+                "`any_of:` with one or more `variant <Key>:` blocks"
+
+            "Nullability:"
+            bullets nullability:
+                "Use `nullable` when an `output schema` field or route field may be `null`."
+                """`required` and `optional` are retired inside `output schema`. Doctrine still
+  parses them there only so it can raise targeted upgrade errors (see
+  `docs/COMPILER_ERRORS.md` entries E236 and E237)."""
+                "Doctrine does not ship `?` shorthand for `output schema` fields."
+
+            "Enums:"
+            bullets enums:
+                "For a local closed string vocabulary, prefer `type: enum` plus `values:`."
+                """Legacy `type: string` plus `enum:` still compiles in the first cut. Both
+  forms lower to the same emitted string-enum wire shape."""
+
+        section example_blocks: "Example Blocks"
+            """`output schema` may declare an optional `example:` block. When present,
+Doctrine validates it against the schema and renders an `Example` section on
+the structured final output. If `example:` is omitted, the structured final
+still emits; the `Example` section is simply skipped."""
+
+        section output_shape_inheritance: "Output Shape Inheritance"
+            """`output shape` may inherit from another shape with `output shape
+Child[Parent]: \"Title\"`. Use `inherit kind` to keep the parent's shape kind
+and `override schema:` to swap the attached `output schema`."""
+            code:
+                language: prompt
+                text: """output shape RepoStatusJson[BaseRepoStatusJson]: "Repo Status JSON"
+    inherit kind
+    override schema: RepoStatusSchema
+"""
+
+    section output_inheritance: "Output Inheritance"
+        """Inherited outputs use the same explicit patching style Doctrine uses
+elsewhere."""
+        code:
+            language: prompt
+            text: """output BaseReply: "Base Reply"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    summary: "Summary"
+        "Summarize the shipped result."
+
+
+output LessonsLeadOutput[BaseReply]: "Lessons Lead Output"
+    inherit {target, shape, requirement, summary}
+
+    hit: "Test"
+        "blah blah blah"
+"""
+        "Important rules:"
+        bullets inheritance_rules:
+            "`output Child[Parent]: \"Title\"` inherits from another `output`."
+            "`inherit key` keeps one inherited top-level output entry."
+            "`inherit {target, shape, requirement}` keeps several in authored order."
+            "`override key:` replaces one inherited top-level output entry."
+            """Top-level keys such as `target`, `shape`, `requirement`, `schema`,
+  `structure`, `render_profile`, `trust_surface`, and `standalone_read` follow
+  the same explicit `inherit` or `override` model."""
+            "Children must account for every inherited top-level key exactly once."
+            "Inherited parent outputs must use stable keyed top-level items only."
+            """`outputs[...]` block inheritance is separate from `output[...]` declaration
+  inheritance."""
+            """v1 output inheritance is top-level only. If you need to change
+  `current_truth.invalidations`, override `current_truth` and rewrite that
+  whole top-level section."""
+
+        "See these shipped examples:"
+        bullets shipped:
+            "`examples/107_output_inheritance_basic` — smallest inherited output."
+            """`examples/108_output_inheritance_attachments` — inherited `render_profile`,
+  `trust_surface`, and `standalone_read`."""
+            """`examples/109_imported_review_handoff_output_inheritance` — imported
+  reusable handoff output inherited and extended locally."""
+            """`examples/110_final_output_inherited_output` — inherited output used
+  through `final_output:`."""
+            """`examples/111_inherited_output_route_semantics` — inherited output keeping
+  shared `route.*` readback."""
+            """`examples/112_output_inheritance_fail_loud` — fail-loud errors when
+  accounting is wrong."""
+
+    section final_output_section: "final_output"
+        """`final_output:` on an agent designates one emitted `TurnResponse` output as
+the final assistant message. That output renders under a dedicated `Final
+Output` section and is omitted from ordinary `Outputs` rendering for that
+agent.
+
+Short form:"""
+        code:
+            language: prompt-fragment
+            text: """final_output: RepoStatusFinalResponse
+"""
+        "Block form with route binding:"
+        code:
+            language: prompt-fragment
+            text: """final_output:
+    output: WriterDecision
+    route: next_route
+"""
+        "Block form on a review-driven agent:"
+        code:
+            language: prompt-fragment
+            text: """final_output:
+    output: AcceptanceControlFinalResponse
+    review_fields:
+        verdict
+        current_artifact: current_artifact
+        next_owner
+"""
+        "Important rules:"
+        bullets final_output_rules:
+            """When the designated output's `output shape` carries an `output schema`, the
+  final assistant message is structured JSON."""
+            """On review-driven agents, the designated final output may be either the
+  review's `comment_output:` or a second emitted `TurnResponse`."""
+            """`comment_output:` stays the review carrier even when `final_output:` points
+  at a second output."""
+            """A `review_fields:` binding accepts bare identity binds like `next_owner`
+  when the final-output field key matches the review semantic name."""
+            """The compiler emits whether a split final response is `control_ready`.
+  Authors do not declare that mode by hand."""
+
+        """See `examples/79_final_output_output_schema` for the smallest structured
+final. See `examples/87_workflow_route_output_binding` for a workflow-law
+ordinary final with shared `route.*` readback."""
+
+    section route_fields: "Route Fields"
+        """A structured final output may declare a first-class routed owner with `route
+field`. The route field owns the route choice keys, labels, and named target
+agents in one place. It lowers to an ordinary string enum on the wire."""
+        code:
+            language: prompt
+            text: """output schema WriterDecisionSchema: "Writer Decision Schema"
+    route field next_route: "Next Route"
+        seek_muse: "Send to Muse for fresh inspiration." -> Muse
+        ready_for_critic: "Send to PoemCritic for judgment." -> PoemCritic
+
+    field summary: "Summary"
+        type: string
+
+
+agent Writer:
+    role: "Choose the next owner from the final output itself."
+    outputs: "Outputs"
+        WriterDecision
+    final_output:
+        output: WriterDecision
+        route: next_route
+"""
+        """See `examples/120_route_field_final_output_contract` for the full route-field
+pattern."""
+
+        section nullable_route_fields: "Nullable Route Fields"
+            """Add `nullable` on a `route field` when `null` means \"no handoff on this
+turn.\" The emitted route contract still carries `route.selector` with the
+bound field path and null behavior."""
+            code:
+                language: prompt
+                text: """output schema WriterTurnResultSchema: "Writer Turn Result Schema"
+    route field next_route: "Next Route"
+        revise_more: "Send to RevisionPartner for one more pass." -> RevisionPartner
+        nullable
+        note: "Use null when the writer can finish without a handoff."
+
+    field kind: "Kind"
+        type: enum
+        values:
+            handoff
+            done
+
+    field summary: "Summary"
+        type: string
+"""
+            """See `examples/121_nullable_route_field_final_output_contract` for the
+shipped proof of null-means-no-handoff behavior."""
+
+        section route_only_final_output_contracts: "Route-Only final_output Contracts"
+            """When a `route_only` turn declares `final_output:`, the emitted
+`final_output.contract.json` carries the same compiler-owned route target in
+its top-level `route` block. See
+`examples/119_route_only_final_output_contract`."""
+
+    section shared_route_readback: "Shared route.* Readback"
+        """Any emitted output may read shared compiler-owned route semantics when the
+active workflow-law, `handoff_routing` law, `route_only`, `grounding`, or
+review branch resolves a real route:"""
+        bullets reads:
+            "`route.exists`"
+            "`route.next_owner`, `route.next_owner.key`, `route.next_owner.title`"
+            "`route.label`, `route.summary`"
+
+        """When every live routed branch comes from `route_from`, or when
+`final_output.route:` binds a `route field` on a structured final output,
+outputs may also read:"""
+        bullets choice_reads:
+            "`route.choice`, `route.choice.key`, `route.choice.title`, `route.choice.wire`"
+
+        "Important rules:"
+        bullets route_rules:
+            """Unguarded `route.*` reads fail loud when some active branches may not
+  route. Guard route-specific readback with `when route.exists:`."""
+            """Guard branch-specific detail with `when route.choice == Enum.member` when
+  several routed branches stay live."""
+            """In authored guards, `route.exists` means a routed owner exists on the live
+  branch. In emitted `final_output.contract.json`, `route.exists` means the
+  final response carries route semantics at all, even when a nullable route
+  field selected no handoff."""
+
+        """See `examples/87_workflow_route_output_binding` for shared `route.*` reads
+on ordinary workflow-law outputs and fail-loud unguarded route reads."""
+
+    section generated_schema_artifacts: "Generated Schema Artifacts"
+        "`emit_docs` writes structured finals alongside the agent's Markdown home:"
+        bullets artifacts:
+            """`schemas/<output-slug>.schema.json` — the exact lowered JSON Schema for
+  the structured final output."""
+            """`final_output.contract.json` — when the turn also needs final-response,
+  review, route, or resolved previous-turn IO metadata. The file carries a
+  top-level `route` block, a top-level `io` block, and (for reviews) a
+  `review` block."""
+            """`schemas/<output-slug>.schema.json` stays compliant with the OpenAI
+  structured-output profile. On the current profile, object properties stay
+  present on the wire, including normal fields, route fields, and
+  route-field overrides."""
+
+        """Harnesses should read the top-level `route` block in
+`final_output.contract.json` for runtime routing instead of copied owner
+strings in the payload."""
+
+    section trust_surface_and_guarded_output_items: "trust_surface And Guarded Output Items"
+        """`trust_surface:` on an output names the fields downstream owners may trust
+as portable truth. The currentness carrier field must be listed there.
+
+Guarded output items keep conditional readback on the output contract
+itself:"""
+        code:
+            language: prompt-fragment
+            text: """next_owner: route.next_owner when route.exists
+"""
+        "Guarded sections still work:"
+        code:
+            language: prompt-fragment
+            text: """failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+    failing_gates: "Failing Gates"
+        "Name the failing review gates in authored order."
+"""
+        "Important rules:"
+        bullets trust_rules:
+            """Guarded output items are still output-owned fields. They are required only
+  when their guard resolves true."""
+            """On ordinary outputs, guards may read declared inputs, enum members, and
+  `route.exists` when the active turn resolves route semantics."""
+            """On review-bound outputs, guards may also read `verdict`, `contract.*`, and
+  `fields.*`."""
+            """A guarded output item does not become portable truth unless it is also
+  listed in `trust_surface`."""
+
+    section pitfalls: "Pitfalls"
+        bullets items:
+            """Do not use `required` or `optional` inside `output schema`. The compiler
+  rejects both with targeted upgrade errors (E236 and E237). Use `nullable`
+  instead."""
+            """Do not attach both `schema:` and `structure:` on the same markdown-bearing
+  output. Pick one artifact owner."""
+            """Do not read `route.*` without a guard when some branches may not route.
+  Unguarded `route.*` reads fail loud."""
+            """Do not compose routing by hand out of copied output fields. Use `route
+  field` plus `final_output.route:` when the final JSON should own the route,
+  or `route_from` when a typed selector should own it."""
+            """Do not pretend a turn without a real route can still read `route.*`. If the
+  turn has `current none` and no routed branch, nothing in `route.*` is live."""
+            """Do not change `current_truth.invalidations` through top-level patching in
+  v1. Override `current_truth` as a whole section instead."""
+
+    section related: "Related References"
+        bullets refs:
+            """`references/agents-and-workflows.md` — for `final_output:` agent slot
+  semantics, `handoff_routing`, `route_from`, and `route_only`."""
+            """`references/reviews.md` — for review-driven `final_output` and
+  `review_fields:`."""
+            """`references/documents-and-tables.md` — for `structure:` attachments and
+  readable block composition."""
+            """`references/emit-targets.md` — for `emit_docs`, `emit_flow`, the emitted
+  schema files, and `final_output.contract.json`."""
+
+        """**Load when:** the author is shaping the turn's typed answer, wiring a
+`route field`, inheriting an output, or configuring structured-final
+emission."""

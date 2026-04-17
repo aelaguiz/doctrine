@@ -3,6 +3,7 @@ from __future__ import annotations
 from lark import v_args
 
 from doctrine import model
+from doctrine._parser.parts import _with_source_span
 
 
 class ExpressionTransformerMixin:
@@ -27,9 +28,9 @@ class ExpressionTransformerMixin:
     def field_path(self, items):
         return tuple(items)
 
-    @v_args(inline=True)
-    def expr_ref(self, parts):
-        return model.ExprRef(parts=tuple(parts))
+    @v_args(meta=True, inline=True)
+    def expr_ref(self, meta, parts):
+        return _with_source_span(model.ExprRef(parts=tuple(parts)), meta)
 
     @v_args(inline=True)
     def expr_number(self, value):
@@ -94,9 +95,9 @@ class ExpressionTransformerMixin:
     def ref_item(self, ref):
         return ref
 
-    @v_args(inline=True)
-    def route_stmt(self, label, target):
-        return model.RouteLine(label=label, target=target)
+    @v_args(meta=True, inline=True)
+    def route_stmt(self, meta, label, target):
+        return _with_source_span(model.RouteLine(label=label, target=target), meta)
 
     def block_lines(self, items):
         return tuple(items)

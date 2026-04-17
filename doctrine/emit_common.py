@@ -4,17 +4,23 @@ import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.support import path_location
 from doctrine.diagnostics import EmitError
 from doctrine.project_config import (
     PYPROJECT_FILE_NAME,
+    ProvidedPromptRoot,
     ProjectConfig,
     find_nearest_pyproject,
     load_project_config,
     load_project_config_for_source,
 )
+
+if TYPE_CHECKING:
+    from doctrine._compiler.indexing import IndexedUnit
+    from doctrine._compiler.session import CompilationSession
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -29,6 +35,12 @@ class EmitTarget:
     entrypoint: Path
     output_dir: Path
     project_config: ProjectConfig
+
+
+@dataclass(slots=True, frozen=True)
+class RuntimeEmitRoot:
+    unit: "IndexedUnit"
+    agent_name: str
 
 
 def _entrypoint_options_text(entrypoints: tuple[str, ...]) -> str:
@@ -100,9 +112,13 @@ def load_emit_targets(
     pyproject_path: str | Path | None = None,
     *,
     start_dir: str | Path | None = None,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> dict[str, EmitTarget]:
     config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
-    project_config = _load_emit_project_config(config_path)
+    project_config = _load_emit_project_config(
+        config_path,
+        provided_prompt_roots=provided_prompt_roots,
+    )
     emit = project_config.raw_emit if isinstance(project_config.raw_emit, dict) else {}
     raw_targets = emit.get("targets")
     if not isinstance(raw_targets, list) or not raw_targets:
@@ -184,12 +200,16 @@ def resolve_direct_emit_target(
     start_dir: str | Path | None = None,
     name: str | None = None,
     allowed_entrypoints: tuple[str, ...] = SUPPORTED_ENTRYPOINTS,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> EmitTarget:
     base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
     if pyproject_path is not None:
         config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
         config_dir = config_path.parent
-        project_config = _load_emit_project_config(config_path)
+        project_config = _load_emit_project_config(
+            config_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     else:
         config_dir = base_dir
         project_config = None
@@ -218,7 +238,10 @@ def resolve_direct_emit_target(
         )
 
     if project_config is None:
-        project_config = _load_compile_project_config_for_entrypoint(entrypoint_path)
+        project_config = _load_compile_project_config_for_entrypoint(
+            entrypoint_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     _validate_output_dir_within_project_root(
         output_dir_path,
         project_root=project_config.config_dir,
@@ -233,16 +256,30 @@ def resolve_direct_emit_target(
     )
 
 
-def _load_emit_project_config(config_path: Path) -> ProjectConfig:
+def _load_emit_project_config(
+    config_path: Path,
+    *,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+) -> ProjectConfig:
     try:
-        return load_project_config(config_path)
+        return load_project_config(
+            config_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     except tomllib.TOMLDecodeError as exc:
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
 
 
-def _load_compile_project_config_for_entrypoint(entrypoint_path: Path) -> ProjectConfig:
+def _load_compile_project_config_for_entrypoint(
+    entrypoint_path: Path,
+    *,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+) -> ProjectConfig:
     try:
-        return load_project_config_for_source(entrypoint_path)
+        return load_project_config_for_source(
+            entrypoint_path,
+            provided_prompt_roots=provided_prompt_roots,
+        )
     except tomllib.TOMLDecodeError as exc:
         config_path = find_nearest_pyproject(entrypoint_path.parent)
         if config_path is None:
@@ -250,13 +287,60 @@ def _load_compile_project_config_for_entrypoint(entrypoint_path: Path) -> Projec
         raise EmitError.from_toml_decode(path=config_path, exc=exc) from exc
 
 
-def root_concrete_agents(prompt_file: model.PromptFile) -> tuple[str, ...]:
-    names = [
-        declaration.name
-        for declaration in prompt_file.declarations
-        if isinstance(declaration, model.Agent) and not declaration.abstract
+def collect_runtime_emit_roots(
+    session: "CompilationSession",
+) -> tuple[RuntimeEmitRoot, ...]:
+    roots = [
+        RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
+        for agent_name in _unit_concrete_agent_names(session.root_unit)
     ]
-    return tuple(names)
+    seen_units: set[tuple[Path, tuple[str, ...]]] = set()
+    seen_runtime_packages: set[tuple[Path, tuple[str, ...]]] = set()
+
+    def walk(unit: "IndexedUnit") -> None:
+        unit_key = (unit.prompt_root, unit.module_parts)
+        if unit_key in seen_units:
+            return
+        seen_units.add(unit_key)
+        for imported_unit in unit.imported_units.values():
+            imported_key = (imported_unit.prompt_root, imported_unit.module_parts)
+            if (
+                imported_unit.module_source_kind == "runtime_package"
+                and imported_key not in seen_runtime_packages
+            ):
+                # Pre-order import traversal keeps runtime roots in first-seen
+                # graph order without asking the build handle to repeat imports.
+                concrete_agents = _unit_concrete_agent_names(imported_unit)
+                if len(concrete_agents) != 1:
+                    dotted_name = ".".join(imported_unit.module_parts)
+                    raise compile_error(
+                        code="E299",
+                        summary="Runtime package import must define one concrete agent",
+                        detail=(
+                            "Runtime package import must define exactly one concrete agent: "
+                            f"{dotted_name or '<entrypoint>'}"
+                        ),
+                        path=imported_unit.prompt_file.source_path,
+                    )
+                roots.append(
+                    RuntimeEmitRoot(
+                        unit=imported_unit,
+                        agent_name=concrete_agents[0],
+                    )
+                )
+                seen_runtime_packages.add(imported_key)
+            walk(imported_unit)
+
+    walk(session.root_unit)
+    return tuple(roots)
+
+
+def _unit_concrete_agent_names(unit: "IndexedUnit") -> tuple[str, ...]:
+    return tuple(
+        agent.name
+        for agent in unit.agents_by_name.values()
+        if not agent.abstract
+    )
 
 
 def entrypoint_relative_dir(entrypoint: Path) -> Path:
@@ -275,10 +359,6 @@ def entrypoint_relative_dir(entrypoint: Path) -> Path:
 
 def entrypoint_output_name(entrypoint: Path) -> str:
     return f"{entrypoint.stem}.md"
-
-
-def entrypoint_contract_name(entrypoint: Path) -> str:
-    return f"{entrypoint.stem}.contract.json"
 
 
 def _validate_output_dir_within_project_root(
@@ -337,8 +417,12 @@ def _validate_path_within_project_root(
         ) from exc
 
 
-def agent_slug(name: str) -> str:
+def name_slug(name: str) -> str:
     return CAMEL_BOUNDARY_RE.sub("_", name).lower()
+
+
+def agent_slug(name: str) -> str:
+    return name_slug(name)
 
 
 def resolve_config_file(config_dir: Path, value: str, *, label: str) -> Path:

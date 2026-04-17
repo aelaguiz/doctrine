@@ -1,0 +1,93 @@
+{
+  "contract_version": 1,
+  "agent": {
+    "name": "WriterRouteFieldFinalOutputDemo",
+    "slug": "writer_route_field_final_output_demo",
+    "entrypoint": "examples/120_route_field_final_output_contract/prompts/AGENTS.prompt"
+  },
+  "route": {
+    "exists": true,
+    "behavior": "always",
+    "has_unrouted_branch": false,
+    "unrouted_review_verdicts": [],
+    "selector": {
+      "surface": "final_output",
+      "field_path": [
+        "next_route"
+      ],
+      "null_behavior": "invalid"
+    },
+    "branches": [
+      {
+        "target": {
+          "key": "Muse",
+          "module_parts": [],
+          "name": "Muse",
+          "title": "Muse"
+        },
+        "label": "Send to Muse for fresh inspiration.",
+        "summary": "Send to Muse for fresh inspiration. Next owner: Muse.",
+        "choice_members": [
+          {
+            "member_key": "seek_muse",
+            "member_title": "Send to Muse for fresh inspiration.",
+            "member_wire": "seek_muse"
+          }
+        ]
+      },
+      {
+        "target": {
+          "key": "PoemCritic",
+          "module_parts": [],
+          "name": "PoemCritic",
+          "title": "Poem Critic"
+        },
+        "label": "Send to PoemCritic for judgment.",
+        "summary": "Send to PoemCritic for judgment. Next owner: Poem Critic.",
+        "choice_members": [
+          {
+            "member_key": "ready_for_critic",
+            "member_title": "Send to PoemCritic for judgment.",
+            "member_wire": "ready_for_critic"
+          }
+        ]
+      }
+    ]
+  },
+  "final_output": {
+    "exists": true,
+    "declaration_key": "WriterDecision",
+    "declaration_name": "WriterDecision",
+    "format_mode": "json_object",
+    "schema_profile": "OpenAIStructuredOutput",
+    "emitted_schema_relpath": "schemas/writer_decision.schema.json"
+  },
+  "io": {
+    "previous_turn_inputs": [],
+    "outputs": [
+      {
+        "declaration_key": "WriterDecision",
+        "declaration_name": "WriterDecision",
+        "title": "Writer Decision",
+        "target": {
+          "key": "TurnResponse",
+          "title": "Turn Response",
+          "config": {}
+        },
+        "derived_contract_mode": "structured_json",
+        "readback_mode": "structured_json",
+        "requires_final_output": true,
+        "shape": {
+          "name": "WriterDecisionJson",
+          "title": "Writer Decision JSON"
+        },
+        "schema": {
+          "name": "WriterDecisionSchema",
+          "title": "Writer Decision Schema",
+          "profile": "OpenAIStructuredOutput"
+        }
+      }
+    ],
+    "output_bindings": []
+  }
+}

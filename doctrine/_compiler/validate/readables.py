@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.readable_diagnostics import readable_compile_error
 from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
@@ -33,8 +34,19 @@ class ValidateReadablesMixin:
                 route_semantics=route_semantics,
             ):
                 return
-            raise CompileError(
-                f"Readable guard reads disallowed source in {owner_label}: {'.'.join(expr.parts)}"
+            raise readable_compile_error(
+                code="E296",
+                summary="Readable guard reads disallowed source",
+                detail=(
+                    f"Readable guard in {owner_label} reads disallowed source "
+                    f"`{'.'.join(expr.parts)}`."
+                ),
+                unit=unit,
+                source_span=expr.source_span,
+                hints=(
+                    "Read only declared inputs and enum members in readable guards.",
+                    "Do not read emitted output fields or workflow-local bindings inside readable `when` expressions.",
+                ),
             )
         if isinstance(expr, model.ExprBinary):
             self._validate_readable_guard_expr(

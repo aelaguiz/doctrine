@@ -22,6 +22,17 @@ from doctrine._compiler.constants import (
 # Canonical naming and small address helpers previously mixed into shared.py.
 
 _CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
+_INTERPOLATED_ADDRESSABLE_RE = re.compile(
+    r"^\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"(?:\s*:\s*([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*))?"
+    r"\s*$"
+)
+_INTERPOLATED_SELF_ADDRESSABLE_RE = re.compile(
+    r"^\s*self\s*:\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r"\s*$"
+)
 
 
 def _dotted_ref_name(ref: NameRef) -> str:
@@ -77,7 +88,35 @@ def _lowercase_initial(value: str) -> str:
 
 
 def _display_addressable_ref(ref: AddressableRef) -> str:
-    root = _dotted_ref_name(ref.root)
+    if ref.self_rooted or ref.root is None:
+        root = "self"
+    else:
+        root = _dotted_ref_name(ref.root)
     if not ref.path:
         return root
     return f"{root}:{'.'.join(ref.path)}"
+
+
+def _parse_interpolated_addressable_ref(
+    expression: str,
+    *,
+    source_span=None,
+) -> AddressableRef | None:
+    self_match = _INTERPOLATED_SELF_ADDRESSABLE_RE.fullmatch(expression)
+    if self_match is not None:
+        return AddressableRef(
+            root=None,
+            path=tuple(self_match.group(1).split(".")),
+            self_rooted=True,
+            source_span=source_span,
+        )
+
+    match = _INTERPOLATED_ADDRESSABLE_RE.fullmatch(expression)
+    if match is None:
+        return None
+
+    return AddressableRef(
+        root=_name_ref_from_dotted_name(match.group(1)),
+        path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
+        source_span=source_span,
+    )

@@ -17,6 +17,7 @@ prompt_file: _NL* declaration+ _NL*
             | analysis_decl
             | decision_decl
             | schema_decl
+            | table_decl
             | document_decl
             | workflow_decl
             | route_only_decl
@@ -31,15 +32,20 @@ prompt_file: _NL* declaration+ _NL*
             | outputs_decl
             | output_target_decl
             | output_shape_decl
+            | output_schema_decl
             | output_decl
-            | json_schema_decl
             | skill_package_decl
             | skill_decl
             | enum_decl
             | abstract_agent
             | agent
 
-import_decl: "import" import_path _NL
+import_decl: module_import_decl
+           | from_import_decl
+module_import_decl: "import" import_path import_alias? _NL
+from_import_decl: "from" import_path "import" imported_symbol_binding ("," imported_symbol_binding)* _NL
+imported_symbol_binding: CNAME import_alias?
+import_alias: "as" CNAME
 render_profile_decl: "render_profile" CNAME _NL
                    | "render_profile" CNAME ":" _NL _INDENT render_profile_rule+ _DEDENT
 render_profile_rule: dotted_name "->" CNAME _NL?
@@ -47,6 +53,7 @@ render_profile_rule: dotted_name "->" CNAME _NL?
 analysis_decl: "analysis" CNAME inheritance? ":" string _NL _INDENT analysis_body _DEDENT
 decision_decl: "decision" CNAME ":" string _NL _INDENT decision_body _DEDENT
 schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DEDENT
+table_decl: "table" CNAME ":" string _NL _INDENT table_decl_body _DEDENT
 document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
 route_only_decl: "route_only" CNAME ":" string _NL _INDENT route_only_body _DEDENT
@@ -59,12 +66,12 @@ inputs_decl: "inputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
 input_source_decl: "input" "source" CNAME ":" string _NL _INDENT record_body _DEDENT
 input_decl: "input" CNAME ":" string _NL _INDENT input_body _DEDENT
 outputs_decl: "outputs" CNAME inheritance? ":" string _NL _INDENT io_body _DEDENT
-output_target_decl: "output" "target" CNAME ":" string _NL _INDENT record_body _DEDENT
-output_shape_decl: "output" "shape" CNAME ":" string _NL _INDENT record_body _DEDENT
-output_decl: "output" CNAME ":" string _NL _INDENT output_body _DEDENT
-json_schema_decl: "json" "schema" CNAME ":" string _NL _INDENT record_body _DEDENT
+output_target_decl: "output" "target" CNAME ":" string _NL _INDENT output_target_body _DEDENT
+output_shape_decl: "output" "shape" CNAME inheritance? ":" string _NL _INDENT output_shape_body _DEDENT
+output_schema_decl: "output" "schema" CNAME inheritance? ":" string _NL _INDENT output_schema_body _DEDENT
+output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
-skill_decl: "skill" CNAME ":" string _NL _INDENT record_body _DEDENT
+skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
@@ -111,13 +118,19 @@ final_output_field: "final_output" ":" name_ref _NL?
                   | "final_output" ":" _NL _INDENT final_output_body _DEDENT
 final_output_body: final_output_body_item+
 ?final_output_body_item: final_output_output_stmt
+                       | final_output_route_stmt
                        | final_output_review_fields_stmt
 final_output_output_stmt: "output" ":" name_ref _NL?
+final_output_route_stmt: "route" ":" field_path _NL?
 final_output_review_fields_stmt: "review_fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
+grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
+review_grouped_inherit_keys: [review_item_key ("," review_item_key)* ","?]
+schema_grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
 agent_slot_abstract: "abstract" CNAME _NL?
-agent_slot_inherit: "inherit" CNAME _NL?
+agent_slot_inherit: "inherit" CNAME _NL? -> agent_slot_inherit
+                  | "inherit" "{" grouped_inherit_keys "}" _NL? -> agent_slot_inherit_group
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
 
 ?slot_value: string | name_ref
@@ -154,7 +167,7 @@ subject_map_entry: enum_member_ref ":" artifact_ref _NL?
 contract_stmt: "contract" ":" review_contract_ref _NL?
 comment_output_stmt: "comment_output" ":" output_ref _NL?
 fields_stmt: "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
-semantic_field_binding: semantic_field_name ":" field_path _NL?
+semantic_field_binding: semantic_field_name (":" field_path)? _NL?
 
 artifact_subject_expr: artifact_ref
                      | "{" artifact_ref ("," artifact_ref)* "}"
@@ -191,7 +204,8 @@ review_case_contract_stmt: "contract" ":" review_contract_ref _NL
 review_case_checks: "checks" ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_case_on_accept: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 review_case_on_reject: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
-review_inherit: "inherit" review_item_key _NL?
+review_inherit: "inherit" review_item_key _NL? -> review_inherit
+              | "inherit" "{" review_grouped_inherit_keys "}" _NL? -> review_inherit_group
 review_override_fields: "override" "fields" ":" _NL _INDENT semantic_field_binding+ _DEDENT
 review_override_pre_outcome_section_titled: "override" CNAME ":" string _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_override_pre_outcome_section_untitled: "override" CNAME ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
@@ -295,7 +309,8 @@ analysis_body_line: analysis_render_profile_stmt
 analysis_render_profile_stmt: "render_profile" ":" name_ref _NL?
 analysis_string: prose_line _NL?
 analysis_section: CNAME ":" string _NL _INDENT analysis_section_body _DEDENT
-analysis_inherit: "inherit" CNAME _NL?
+analysis_inherit: "inherit" CNAME _NL? -> analysis_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> analysis_inherit_group
 analysis_override_section: "override" CNAME ":" string? _NL _INDENT analysis_section_body _DEDENT
 analysis_section_body: analysis_section_item+
 ?analysis_section_item: prose_line _NL?
@@ -368,7 +383,8 @@ schema_artifact_body: _INDENT schema_artifact_ref* _DEDENT
 schema_group_body: _INDENT schema_group_member* _DEDENT
 schema_artifact_ref: "ref" ":" name_ref _NL?
 schema_group_member: CNAME _NL?
-schema_inherit: "inherit" schema_block_key _NL?
+schema_inherit: "inherit" schema_block_key _NL? -> schema_inherit
+              | "inherit" "{" schema_grouped_inherit_keys "}" _NL? -> schema_inherit_group
 schema_override_sections: "override" "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_override_gates: "override" "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
 schema_override_artifacts: "override" "artifacts" ":" _NL _INDENT schema_artifact_item+ _DEDENT
@@ -377,6 +393,12 @@ schema_block_key: "sections" -> schema_block_key_sections
                 | "gates" -> schema_block_key_gates
                 | "artifacts" -> schema_block_key_artifacts
                 | "groups" -> schema_block_key_groups
+
+table_decl_body: table_decl_body_line+
+?table_decl_body_line: readable_row_schema_block
+                     | readable_table_columns_block
+                     | readable_table_rows_block
+                     | readable_table_notes_block
 
 document_body: document_body_line+
 document_body_line: document_render_profile_stmt
@@ -390,7 +412,8 @@ document_readable_block: document_section_sugar
                        | document_section_block
                        | readable_nonsection_block
 document_section_sugar: CNAME ":" string _NL _INDENT document_section_body _DEDENT
-document_inherit: "inherit" CNAME _NL?
+document_inherit: "inherit" CNAME _NL? -> document_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> document_inherit_group
 document_override_block: document_override_section_block
                        | override_readable_nonsection_block
 
@@ -408,13 +431,20 @@ readable_nonsection_block: readable_sequence_block
                          | readable_bullets_block
                          | readable_checklist_block
                          | readable_definitions_block
+                         | readable_bare_definitions_block
                          | readable_table_block
                          | readable_callout_block
+                         | readable_bare_callout_block
                          | readable_code_block
+                         | readable_inline_code_block
                          | readable_markdown_block
+                         | readable_inline_markdown_block
                          | readable_html_block
+                         | readable_inline_html_block
                          | readable_footnotes_block
+                         | readable_bare_footnotes_block
                          | readable_image_block
+                         | readable_bare_image_block
                          | readable_rule_block
 override_readable_nonsection_block: override_readable_sequence_block
                                   | override_readable_properties_block
@@ -431,20 +461,29 @@ override_readable_nonsection_block: override_readable_sequence_block
                                   | override_readable_image_block
                                   | override_readable_rule_block
 
-readable_sequence_block: "sequence" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_sequence_block: "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_properties_block: "properties" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_properties_body _DEDENT
 readable_inline_properties_block: "properties" ":" _NL _INDENT readable_properties_body _DEDENT
 readable_guard_shell_block: "guard" CNAME readable_guard _NL _INDENT shared_readable_body _DEDENT
-readable_bullets_block: "bullets" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
-readable_checklist_block: "checklist" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_bullets_block: "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
+readable_checklist_block: "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_definitions_block: "definitions" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
-readable_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_bare_definitions_block: "definitions" ":" _NL _INDENT readable_definitions_body _DEDENT
+readable_table_block: readable_inline_table_block
+                    | readable_named_table_block
+                    | readable_bare_table_block
 readable_callout_block: "callout" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
+readable_bare_callout_block: "callout" ":" _NL _INDENT readable_callout_body _DEDENT
 readable_code_block: "code" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
+readable_inline_code_block: "code" ":" _NL _INDENT readable_code_body _DEDENT
 readable_markdown_block: "markdown" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+readable_inline_markdown_block: "markdown" ":" _NL _INDENT readable_raw_text_body _DEDENT
 readable_html_block: "html" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
+readable_inline_html_block: "html" ":" _NL _INDENT readable_raw_text_body _DEDENT
 readable_footnotes_block: "footnotes" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_footnotes_body _DEDENT
+readable_bare_footnotes_block: "footnotes" ":" _NL _INDENT readable_footnotes_body _DEDENT
 readable_image_block: "image" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_image_body _DEDENT
+readable_bare_image_block: "image" ":" _NL _INDENT readable_image_body _DEDENT
 readable_rule_block: "rule" CNAME readable_requirement? readable_guard? _NL?
 
 override_readable_sequence_block: "override" "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
@@ -453,7 +492,8 @@ override_readable_guard_shell_block: "override" "guard" CNAME readable_guard _NL
 override_readable_bullets_block: "override" "bullets" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_checklist_block: "override" "checklist" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 override_readable_definitions_block: "override" "definitions" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_definitions_body _DEDENT
-override_readable_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+override_readable_table_block: override_readable_inline_table_block
+                             | override_readable_named_table_block
 override_readable_callout_block: "override" "callout" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_callout_body _DEDENT
 override_readable_code_block: "override" "code" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_code_body _DEDENT
 override_readable_markdown_block: "override" "markdown" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_raw_text_body _DEDENT
@@ -490,6 +530,18 @@ readable_table_body: readable_table_body_line+
                          | readable_table_columns_block
                          | readable_table_rows_block
                          | readable_table_notes_block
+readable_inline_table_block: "table" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+readable_bare_table_block: "table" ":" _NL _INDENT readable_table_body _DEDENT
+readable_named_table_block: "table" CNAME ":" name_ref readable_requirement? readable_guard? readable_named_table_suffix
+readable_named_table_suffix: _NL _INDENT readable_table_use_body _DEDENT
+                           | _NL?
+override_readable_inline_table_block: "override" "table" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_table_body _DEDENT
+override_readable_named_table_block: "override" "table" CNAME ":" name_ref readable_requirement? readable_guard? readable_named_table_suffix
+readable_table_use_body: readable_table_use_body_line+
+?readable_table_use_body_line: readable_table_rows_block
+                             | readable_table_notes_block
+                             | readable_row_schema_block
+                             | readable_table_columns_block
 readable_row_schema_block: "row_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
 readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
 readable_table_column: CNAME ":" string _NL readable_table_column_body?
@@ -512,7 +564,7 @@ readable_callout_kind: "kind" ":" CNAME _NL?
 readable_code_body: readable_code_body_line+
 ?readable_code_body_line: readable_code_language
                         | readable_code_text
-readable_code_language: "language" ":" CNAME _NL?
+readable_code_language: "language" ":" CODE_LANGUAGE_ID _NL?
 readable_code_text: "text" ":" string _NL?
 
 readable_raw_text_body: readable_raw_text_line+
@@ -544,6 +596,7 @@ workflow_body_line: workflow_string
 
 ?workflow_item: workflow_skills_inline
               | workflow_skills_ref
+              | workflow_root_readable_block
               | local_section
               | workflow_use
               | workflow_inherit
@@ -556,11 +609,14 @@ workflow_skills_inline: "skills" ":" string _NL _INDENT skills_body _DEDENT
 workflow_skills_ref: "skills" ":" name_ref _NL?
 local_section: CNAME ":" string _NL _INDENT workflow_section_body _DEDENT
 workflow_use: "use" CNAME ":" name_ref _NL?
-workflow_inherit: "inherit" CNAME _NL?
+workflow_inherit: "inherit" CNAME _NL? -> workflow_inherit
+                | "inherit" "{" grouped_inherit_keys "}" _NL? -> workflow_inherit_group
 workflow_override_skills_inline: "override" "skills" ":" string _NL _INDENT skills_body _DEDENT
 workflow_override_skills_ref: "override" "skills" ":" name_ref _NL?
 workflow_override_section: "override" CNAME ":" string? _NL _INDENT workflow_section_body _DEDENT
 workflow_override_use: "override" CNAME ":" name_ref _NL?
+workflow_root_readable_block: readable_nonsection_block
+                            | override_readable_nonsection_block
 
 workflow_section_body: workflow_section_item+
 ?workflow_section_item: prose_line _NL?
@@ -589,10 +645,16 @@ skills_body_line: skills_string
 
 skills_section: CNAME ":" string _NL _INDENT skills_section_body _DEDENT
 skill_entry: "skill" CNAME ":" name_ref _NL skill_entry_body?
-skills_inherit: "inherit" CNAME _NL?
+skills_inherit: "inherit" CNAME _NL? -> skills_inherit
+              | "inherit" "{" grouped_inherit_keys "}" _NL? -> skills_inherit_group
 skills_override_section: "override" CNAME ":" string? _NL _INDENT skills_section_body _DEDENT
 skills_override_entry: "override" CNAME ":" name_ref _NL skill_entry_body?
-skill_entry_body: _INDENT record_body _DEDENT
+skill_entry_body: _INDENT skill_entry_body_line+ _DEDENT
+skill_entry_body_line: skill_entry_bind_block
+                     | record_item
+skill_entry_bind_block: "bind" ":" _NL _INDENT skill_entry_bind_item+ _DEDENT
+skill_entry_bind_item: CNAME ":" skill_entry_bind_target _NL?
+?skill_entry_bind_target: path_ref | name_ref
 
 skills_section_body: skills_section_item+
 ?skills_section_item: prose_line _NL?
@@ -609,28 +671,152 @@ io_body_line: io_string
         | io_inherit
         | io_override_section
 
-io_section: CNAME ":" string _NL _INDENT record_body _DEDENT
-io_inherit: "inherit" CNAME _NL?
-io_override_section: "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
+io_section: CNAME ":" name_ref _NL? -> io_section_ref
+          | CNAME ":" string? _NL _INDENT record_body _DEDENT
+io_inherit: "inherit" CNAME _NL? -> io_inherit
+          | "inherit" "{" grouped_inherit_keys "}" _NL? -> io_inherit_group
+io_override_section: "override" CNAME ":" name_ref _NL? -> io_override_section_ref
+                   | "override" CNAME ":" string? _NL _INDENT record_body _DEDENT
 
 input_body: input_body_line+
 input_body_line: input_structure_stmt
                | record_item
 input_structure_stmt: "structure" ":" name_ref _NL?
 
+output_target_body: output_target_body_line+
+output_target_body_line: output_target_delivery_skill_stmt
+                       | record_item
+output_target_delivery_skill_stmt: "delivery_skill" ":" name_ref _NL?
+
 output_body: output_body_line+
 output_body_line: output_record_item
+                | output_inherit
+                | output_override_item
                 | trust_surface_block
+                | output_override_trust_surface_block
                 | output_render_profile_stmt
+                | output_override_render_profile_stmt
                 | output_schema_stmt
+                | output_override_schema_stmt
                 | output_structure_stmt
+                | output_override_structure_stmt
 
-// `schema:` is owner-sensitive. In `output shape`, it stays the legacy json
-// schema config key. In `output`, it is a Doctrine schema attachment with its
-// own typed compiler path.
+output_inherit: "inherit" CNAME _NL? -> output_inherit
+              | "inherit" "{" grouped_inherit_keys "}" _NL? -> output_inherit_group
+?output_override_item: output_override_guarded_section
+                     | output_override_guarded_scalar_item
+                     | output_override_readable_block
+                     | output_override_keyed_item
+
+// `schema:` is owner-sensitive. In `output shape`, it points at an
+// `output schema` for JsonObject shapes. In `output`, it is a Doctrine schema
+// attachment with its own typed compiler path.
 output_schema_stmt: "schema" ":" name_ref _NL?
 output_structure_stmt: "structure" ":" name_ref _NL?
 output_render_profile_stmt: "render_profile" ":" name_ref _NL?
+output_override_schema_stmt: "override" "schema" ":" name_ref _NL?
+output_override_structure_stmt: "override" "structure" ":" name_ref _NL?
+output_override_render_profile_stmt: "override" "render_profile" ":" name_ref _NL?
+
+output_shape_body: output_shape_body_line+
+output_shape_body_line: output_shape_schema_item
+                      | output_shape_override_schema_item
+                      | output_record_item
+                      | output_inherit
+                      | output_override_item
+output_shape_schema_item: "schema" ":" name_ref _NL?
+output_shape_override_schema_item: "override" "schema" ":" name_ref _NL?
+
+output_schema_body: output_schema_body_line+
+?output_schema_body_line: output_schema_field
+                       | output_schema_route_field
+                       | output_schema_def
+                       | output_schema_example
+                       | output_schema_inherit
+                       | output_schema_override_field
+                       | output_schema_override_route_field
+                       | output_schema_override_def
+                       | output_schema_override_example
+
+output_schema_field: "field" CNAME ":" string _NL output_schema_item_body?
+output_schema_route_field: "route" "field" CNAME ":" string _NL output_schema_route_field_body?
+output_schema_def: "def" CNAME ":" string _NL output_schema_item_body?
+output_schema_example: "example" ":" _NL _INDENT output_schema_example_object _DEDENT
+output_schema_inherit: "inherit" CNAME _NL? -> output_schema_inherit
+                     | "inherit" "{" grouped_inherit_keys "}" _NL? -> output_schema_inherit_group
+output_schema_override_field: "override" "field" CNAME ":" string? _NL output_schema_item_body?
+output_schema_override_route_field: "override" "route" "field" CNAME ":" string? _NL output_schema_route_field_body?
+output_schema_override_def: "override" "def" CNAME ":" string? _NL output_schema_item_body?
+output_schema_override_example: "override" "example" ":" _NL _INDENT output_schema_example_object _DEDENT
+output_schema_item_body: _INDENT output_schema_item_line+ _DEDENT
+output_schema_route_field_body: _INDENT output_schema_route_field_line+ _DEDENT
+?output_schema_item_line: output_schema_type_stmt
+                       | output_schema_note_stmt
+                       | output_schema_format_stmt
+                       | output_schema_pattern_stmt
+                       | output_schema_const_stmt
+                       | output_schema_ref_stmt
+                       | output_schema_items_stmt
+                       | output_schema_items_block
+                       | output_schema_nullable_stmt
+                       | output_schema_required_stmt
+                       | output_schema_optional_stmt
+                       | output_schema_enum_block
+                       | output_schema_values_block
+                       | output_schema_any_of_block
+                       | output_schema_min_length_stmt
+                       | output_schema_max_length_stmt
+                       | output_schema_minimum_stmt
+                       | output_schema_maximum_stmt
+                       | output_schema_exclusive_minimum_stmt
+                       | output_schema_exclusive_maximum_stmt
+                       | output_schema_multiple_of_stmt
+                       | output_schema_min_items_stmt
+                       | output_schema_max_items_stmt
+                       | output_schema_field
+                       | output_schema_route_field
+                       | output_schema_def
+?output_schema_route_field_line: output_schema_item_line
+                              | output_schema_route_choice
+output_schema_type_stmt: "type" ":" CNAME _NL?
+output_schema_note_stmt: "note" ":" string _NL?
+output_schema_format_stmt: "format" ":" CNAME _NL?
+output_schema_pattern_stmt: "pattern" ":" string _NL?
+output_schema_const_stmt: "const" ":" output_schema_literal _NL?
+output_schema_ref_stmt: "ref" ":" name_ref _NL?
+output_schema_items_stmt: "items" ":" name_ref _NL?
+output_schema_items_block: "items" ":" _NL _INDENT output_schema_item_line+ _DEDENT
+output_schema_nullable_stmt: "nullable" _NL?
+output_schema_required_stmt: "required" _NL?
+output_schema_optional_stmt: "optional" _NL?
+output_schema_enum_block: "enum" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
+output_schema_values_block: "values" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
+output_schema_enum_value: output_schema_literal _NL?
+output_schema_route_choice: CNAME ":" string "->" name_ref _NL?
+output_schema_any_of_block: "any_of" ":" _NL _INDENT output_schema_variant+ _DEDENT
+output_schema_variant: "variant" CNAME? ":" _NL _INDENT output_schema_item_line+ _DEDENT
+output_schema_min_length_stmt: "min_length" ":" SIGNED_NUMBER _NL?
+output_schema_max_length_stmt: "max_length" ":" SIGNED_NUMBER _NL?
+output_schema_minimum_stmt: "minimum" ":" SIGNED_NUMBER _NL?
+output_schema_maximum_stmt: "maximum" ":" SIGNED_NUMBER _NL?
+output_schema_exclusive_minimum_stmt: "exclusive_minimum" ":" SIGNED_NUMBER _NL?
+output_schema_exclusive_maximum_stmt: "exclusive_maximum" ":" SIGNED_NUMBER _NL?
+output_schema_multiple_of_stmt: "multiple_of" ":" SIGNED_NUMBER _NL?
+output_schema_min_items_stmt: "min_items" ":" SIGNED_NUMBER _NL?
+output_schema_max_items_stmt: "max_items" ":" SIGNED_NUMBER _NL?
+output_schema_example_object: output_schema_example_entry+
+output_schema_example_entry: CNAME ":" output_schema_example_scalar _NL?
+                           | CNAME ":" _NL _INDENT output_schema_example_value_block _DEDENT
+?output_schema_example_value_block: output_schema_example_object
+                                 | output_schema_example_array
+output_schema_example_array: output_schema_example_array_item+
+output_schema_example_array_item: "-" output_schema_example_scalar _NL?
+                               | "-" _NL _INDENT output_schema_example_value_block _DEDENT
+?output_schema_example_scalar: string
+                             | SIGNED_NUMBER
+                             | "true" -> output_schema_example_true
+                             | "false" -> output_schema_example_false
+                             | "null" -> output_schema_example_null
 
 ?output_record_item: record_text
                    | guarded_output_section
@@ -639,11 +825,19 @@ output_render_profile_stmt: "render_profile" ":" name_ref _NL?
                    | output_record_keyed_item
                    | output_record_ref_item
 
+output_override_guarded_section: "override" CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+output_override_guarded_scalar_item: "override" CNAME ":" string "when" expr _NL output_record_item_body?
+                                  | "override" CNAME ":" path_ref "when" expr _NL output_record_item_body?
+                                  | "override" CNAME ":" name_ref "when" expr _NL output_record_item_body?
+
 guarded_output_section: CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
 guarded_output_scalar_item: CNAME ":" string "when" expr _NL output_record_item_body?
                          | CNAME ":" path_ref "when" expr _NL output_record_item_body?
                          | CNAME ":" name_ref "when" expr _NL output_record_item_body?
 output_record_body: output_record_item+
+output_override_keyed_item: "override" CNAME ":" string _NL output_record_item_body?
+                         | "override" CNAME ":" path_ref _NL output_record_item_body?
+                         | "override" CNAME ":" name_ref _NL output_record_item_body?
 output_record_keyed_item: CNAME ":" string _NL output_record_item_body?
                       | CNAME ":" path_ref _NL output_record_item_body?
                       | CNAME ":" name_ref _NL output_record_item_body?
@@ -651,6 +845,7 @@ output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
 
 trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
+output_override_trust_surface_block: "override" "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
 trust_surface_item: field_path trust_surface_when? _NL?
 trust_surface_when: "when" expr
 
@@ -660,11 +855,29 @@ record_body: record_item+
             | record_keyed_item
             | record_ref_item
 
+skill_decl_body: skill_decl_item+
+?skill_decl_item: skill_package_link_stmt
+                | record_item
+skill_package_link_stmt: "package" ":" string _NL?
+
 skill_package_body: skill_package_item+
 ?skill_package_item: package_metadata_block
+                   | package_emit_block
+                   | package_host_contract_block
                    | record_item
 package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
 package_metadata_item: CNAME ":" string _NL?
+package_emit_block: "emit" ":" _NL _INDENT package_emit_item+ _DEDENT
+package_emit_item: string ":" name_ref _NL?
+package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot+ _DEDENT
+package_host_slot: package_host_slot_family CNAME ":" string _NL?
+package_host_slot_family: "input" -> package_host_slot_family_input
+                         | "output" -> package_host_slot_family_output
+                         | "document" -> package_host_slot_family_document
+                         | "analysis" -> package_host_slot_family_analysis
+                         | "schema" -> package_host_slot_family_schema
+                         | "table" -> package_host_slot_family_table
+                         | "final_output" -> package_host_slot_family_final_output
 
 record_readable_block: record_section_block
                      | readable_nonsection_block
@@ -673,6 +886,9 @@ record_section_block: "section" CNAME ":" string readable_requirement? readable_
 output_readable_block: output_section_block
                      | readable_nonsection_block
 output_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
+output_override_readable_block: output_override_section_block
+                              | override_readable_nonsection_block
+output_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
 record_keyed_item: CNAME ":" record_head _NL record_item_body?
@@ -700,7 +916,8 @@ law_body: law_item+
          | law_override_section
 
 law_section: CNAME ":" _NL _INDENT law_stmt+ _DEDENT
-law_inherit: "inherit" CNAME _NL?
+law_inherit: "inherit" CNAME _NL? -> law_inherit
+           | "inherit" "{" grouped_inherit_keys "}" _NL? -> law_inherit_group
 law_override_section: "override" CNAME ":" _NL _INDENT law_stmt+ _DEDENT
 
 ?law_stmt: active_when_stmt
@@ -812,13 +1029,21 @@ emphasized_line: REQUIRED_KEYWORD string -> required_line
 ?string: MULTILINE_STRING
        | ESCAPED_STRING
 
+?output_schema_literal: string
+                      | SIGNED_NUMBER
+                      | CNAME -> output_schema_identifier
+                      | "true" -> output_schema_true
+                      | "false" -> output_schema_false
+                      | "null" -> output_schema_null
+
 REQUIRED_KEYWORD.2: /required(?=[ \t]*")/
 IMPORTANT_KEYWORD.2: /important(?=[ \t]*")/
 WARNING_KEYWORD.2: /warning(?=[ \t]*")/
 NOTE_KEYWORD.2: /note(?=[ \t]*")/
-PATH_REF: /[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
+PATH_REF: /(?:self|[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*):[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/
 LAW_WILDCARD: ".*"
-MULTILINE_STRING.2: /""".*?"""/s
+CODE_LANGUAGE_ID: /[A-Za-z_][A-Za-z0-9_-]*/
+MULTILINE_STRING.2: /"""(?:\\.|""?(?!")|[^"\\])*"""/s
 
 DOTS: /\.+/
 

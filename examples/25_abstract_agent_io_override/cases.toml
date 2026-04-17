@@ -42,10 +42,12 @@ expected_lines = [
   "",
   "#### Durable Section Truth",
   "",
-  "- Target: File",
-  "- Path: `section_root/_authoring/durable_section_truth.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `section_root/_authoring/durable_section_truth.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "### Coordination Handoff",
   "",
@@ -55,7 +57,6 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
 ]
-
 [[cases]]
 name = "concrete child can override abstract parent io blocks directly"
 status = "active"
@@ -94,10 +95,12 @@ expected_lines = [
   "",
   "#### Durable Section Truth",
   "",
-  "- Target: File",
-  "- Path: `section_root/_authoring/durable_section_truth.md`",
-  "- Shape: Markdown Document",
-  "- Requirement: Required",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `section_root/_authoring/durable_section_truth.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
   "",
   "### Coordination Handoff",
   "",
@@ -109,7 +112,6 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
 ]
-
 [[cases]]
 name = "wrong-kind abstract-parent io patch bases fail loud"
 status = "active"
@@ -118,7 +120,4 @@ prompt = "prompts/INVALID_WRONG_PATCH_BASE.prompt"
 agent = "InvalidWrongPatchBase"
 exception_type = "CompileError"
 error_code = "E249"
-message_contains = [
-  "Inputs patch fields must inherit from inputs blocks, not outputs blocks",
-  "BaseSectionOutputs",
-]
+location_line = 33

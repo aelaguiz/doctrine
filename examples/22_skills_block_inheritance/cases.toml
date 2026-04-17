@@ -18,13 +18,13 @@ expected_lines = [
   "",
   "### Copy Rewrite Skill",
   "",
-  "#### Purpose",
+  "_Required skill_",
+  "",
+  "**Purpose**",
   "",
   "Rewrite reader-facing text without changing the underlying guide job.",
   "",
-  "This skill is required for this role. If you cannot locate it, stop and escalate instead of guessing.",
-  "",
-  "#### Reason",
+  "**Reason**",
   "",
   "For this role, rewriting is the lead capability.",
   "",
@@ -32,13 +32,13 @@ expected_lines = [
   "",
   "#### Find Skills",
   "",
-  "##### Purpose",
+  "**Purpose**",
   "",
   "Find the right repo skill before you guess.",
   "",
   "#### Grounding Skill",
   "",
-  "##### Purpose",
+  "**Purpose**",
   "",
   "Ground the current claim before you write.",
 ]
@@ -51,7 +51,4 @@ prompt = "prompts/INVALID_CYCLIC_SKILLS_INHERITANCE.prompt"
 agent = "InvalidSkillsCycleDemo"
 exception_type = "CompileError"
 error_code = "E250"
-message_contains = [
-  "Skills inheritance cycle",
-  "CycleA -> CycleB -> CycleA",
-]
+location_line = 5

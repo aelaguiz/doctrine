@@ -15,18 +15,18 @@ expected_lines = [
   "",
   "Edit in exactly one typed mode and carry that mode through the handoff.",
   "",
-  "This pass runs only when edit is owed now.",
+  "Use this pass only when edit is owed now.",
   "",
-  "Use exactly one mode:",
+  "Choose one mode for this turn:",
   "- manifest-title",
   "- section-summary",
   "",
-  "If the mode is manifest-title:",
-  "- Current artifact: Approved Plan.",
+  "When the mode is manifest-title:",
+  "- The current artifact is Approved Plan.",
   "- Make sure CurrentHandoff.preserve_basis == ApprovedPlan.",
   "",
-  "If the mode is section-summary:",
-  "- Current artifact: Approved Structure.",
+  "When the mode is section-summary:",
+  "- The current artifact is Approved Structure.",
   "- Make sure CurrentHandoff.preserve_basis == ApprovedStructure.",
   "",
   "## Inputs",
@@ -61,24 +61,16 @@ expected_lines = [
   "- Shape: Comment",
   "- Requirement: Required",
   "",
-  "#### Current Artifact",
-  "",
-  "Name the one artifact that is current now.",
-  "",
-  "#### Active Mode",
-  "",
-  "Name the active mode for this pass.",
+  "- Current Artifact: Name the one artifact that is current now.",
+  "- Active Mode: Name the active mode for this pass.",
   "",
   "#### Trust Surface",
   "",
-  "- Current Artifact",
-  "- Active Mode",
+  "- `Current Artifact`",
+  "- `Active Mode`",
   "",
-  "#### Standalone Read",
-  "",
-  "This output should stand on its own. The next owner should know which artifact is current now and which mode is active.",
+  "- Standalone Read: This output should stand on its own. The next owner should know which artifact is current now and which mode is active.",
 ]
-
 [[cases]]
 name = "typed matches must cover every mode or include else"
 status = "active"
@@ -87,10 +79,7 @@ prompt = "prompts/INVALID_NONEXHAUSTIVE_MODE_MATCH.prompt"
 agent = "InvalidNonexhaustiveModeMatch"
 exception_type = "CompileError"
 error_code = "E342"
-message_contains = [
-  "Non-exhaustive mode match",
-  "EditMode",
-]
+location_line = 49
 
 [[cases]]
 name = "mode values must stay inside the referenced enum"
@@ -100,10 +89,7 @@ prompt = "prompts/INVALID_MODE_VALUE_OUTSIDE_ENUM.prompt"
 agent = "InvalidModeValueOutsideEnum"
 exception_type = "CompileError"
 error_code = "E341"
-message_contains = [
-  "Mode value outside enum",
-  "taxonomy",
-]
+location_line = 16
 
 [[cases]]
 name = "match arms cannot bind multiple current artifacts"
@@ -113,9 +99,9 @@ prompt = "prompts/INVALID_DUPLICATE_CURRENT_IN_MATCH_ARM.prompt"
 agent = "InvalidDuplicateCurrentInMatchArm"
 exception_type = "CompileError"
 error_code = "E332"
-message_contains = [
-  "Multiple current-subject forms",
-  "current artifact",
+location_line = 62
+related = [
+    { label = "first current-subject form", line = 59 },
 ]
 
 [[cases]]
@@ -126,6 +112,4 @@ prompt = "prompts/INVALID_ACTIVE_BRANCH_WITHOUT_CURRENT_AFTER_MATCH.prompt"
 agent = "InvalidActiveBranchWithoutCurrentAfterMatch"
 exception_type = "CompileError"
 error_code = "E331"
-message_contains = [
-  "Missing current-subject form",
-]
+location_line = 64

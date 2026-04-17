@@ -15,22 +15,39 @@ for repo setup and proof commands.
   contributor workflow
 - [WHY_DOCTRINE.md](WHY_DOCTRINE.md): why the project exists and why the
   runtime stays Markdown
-- [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the best starting point for
-  the shipped declaration model, composition rules, refs, interpolation, and
-  Markdown emission, including `skill package`
+- [../PRINCIPLES.md](../PRINCIPLES.md): authoring principles for thin
+  context, loadable modules, and clean harness boundaries
+- [THIN_HARNESS_FAT_SKILLS.md](THIN_HARNESS_FAT_SKILLS.md): Doctrine's durable
+  read of the thin-harness, fat-skills rule and how to use it in reviews
+- [AUTHORING_PATTERNS.md](AUTHORING_PATTERNS.md): the task-first guide for
+  choosing the right Doctrine surface when you are porting or authoring real
+  agent systems
+- [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the shipped syntax and
+  declaration reference for composition rules, refs, `output schema`,
+  `route field`, `final_output.route:`, target-owned `delivery_skill:`,
+  runtime packages, top-level `output[...]` inheritance, markdown emission,
+  and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
-  `SKILL.prompt`, source-root package bundles, `emit_skill`, and the package
-  example gallery
+  `SKILL.prompt`, explicit `emit:` document companions, source-root package
+  bundles, `emit_skill`, and the package example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
-  Markdown, generate skill-package trees, generate workflow flow diagrams, and
-  troubleshoot emit failures
+  Markdown, emit structured-output schema files, emit final-output, review,
+  and route metadata, generate runtime-package and skill-package trees,
+  generate workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
 ## Feature Guides
 
+- [AGENT_LINTER.md](AGENT_LINTER.md): install and use the bundled Doctrine
+  Agent Linter skill for prompt, package, flow, and repo-slice audits
+- [DOCTRINE_LEARN.md](DOCTRINE_LEARN.md): install and use the bundled
+  Doctrine Learn skill to teach an agent end-to-end Doctrine authoring —
+  principles, language, packaging, emit, and verification
 - [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md): inputs, outputs,
-  bindings, `trust_surface`, guarded output items, and portable truth
+  bindings, target-owned delivery skills, `final_output:`,
+  `final_output.route:`, generated schema files, emitted route metadata,
+  `trust_surface`, guarded output items, and portable truth
 - [WORKFLOW_LAW.md](WORKFLOW_LAW.md): workflow law, currentness, scope,
   preservation, invalidation, and route-only turns
 - [REVIEW_SPEC.md](REVIEW_SPEC.md): first-class `review`, contracts, verdict
@@ -40,6 +57,11 @@ for repo setup and proof commands.
 
 - [COMPILER_ERRORS.md](COMPILER_ERRORS.md): stable parse, compile, and emit
   error codes
+- [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md): easy author mistakes the compiler
+  still accepts today and should turn into clear compile errors
+- [WARNINGS.md](WARNINGS.md): evergreen plan for a first-class compiler
+  warning layer, including goals, non-goals, candidate families, and
+  guardrails
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
@@ -50,9 +72,10 @@ for repo setup and proof commands.
 ## Historical Context
 
 The shipped docs above are the live reference path.
-Old plans, worklogs, audits, and draft proposals are not part of that path.
-After a restore-point commit, delete them and use git history if you need the
-old context.
+Dated plans, worklogs, audits, and draft proposals are not part of that path.
+Some may stay in the repo while active work is still in flight. Once one is no
+longer active, delete it after a restore-point commit and use git history if
+you need the old context.
 
 ## Repo Truth
 
@@ -68,6 +91,9 @@ old context.
 - Absolute imports may also span explicitly configured shared `prompts/`
   roots through `[tool.doctrine.compile].additional_prompt_roots`, while
   relative imports stay rooted in the importing module's own `prompts/` tree.
+- Inside `SKILL.prompt` packages, prompt files may also import from the local
+  package source root. If a local module path collides with a repo-wide one,
+  Doctrine fails loud.
 - Emit and verification surfaces reuse shared compile sessions and preserve
   authored ordering even when batch compilation fans out across threads.
 - `build_ref/` is verifier-owned checked-in proof, not part of the public

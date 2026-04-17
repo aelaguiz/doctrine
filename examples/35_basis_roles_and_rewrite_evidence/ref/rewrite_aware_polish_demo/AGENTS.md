@@ -2,7 +2,7 @@ Separate comparison help, live truth, and rewrite evidence.
 
 ## Rewrite-Aware Polish
 
-Current artifact: Section Metadata.
+The current artifact is Section Metadata.
 
 Accepted Peer Set is support only for comparison.
 
@@ -38,10 +38,12 @@ Use the host-provided handoff facts that say whether this pass is a rewrite.
 
 ### Section Metadata
 
-- Target: File
-- Path: `unit_root/_authoring/section_metadata.json`
-- Shape: Json Object
-- Requirement: Required
+| Contract | Value |
+| --- | --- |
+| Target | File |
+| Path | `unit_root/_authoring/section_metadata.json` |
+| Shape | Json Object |
+| Requirement | Required |
 
 ### Coordination Handoff
 
@@ -49,24 +51,14 @@ Use the host-provided handoff facts that say whether this pass is a rewrite.
 - Shape: Comment
 - Requirement: Required
 
-#### Current Artifact
-
-Name the one artifact that is current now.
-
-#### Comparison Basis
-
-Name any comparison-only inputs used in this pass.
-
-#### Rewrite Evidence Exclusions
-
-Name any fields whose old values do not count as rewrite evidence.
+- Current Artifact: Name the one artifact that is current now.
+- Comparison Basis: Name any comparison-only inputs used in this pass.
+- Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.
 
 #### Trust Surface
 
-- Current Artifact
-- Comparison Basis
+- `Current Artifact`
+- `Comparison Basis`
 - Rewrite Evidence Exclusions on rewrite passes
 
-#### Standalone Read
-
-This output should stand on its own. The next owner should know what is current, what was comparison-only, and what old wording no longer counts as rewrite evidence.
+- Standalone Read: This output should stand on its own. The next owner should know what is current, what was comparison-only, and what old wording no longer counts as rewrite evidence.

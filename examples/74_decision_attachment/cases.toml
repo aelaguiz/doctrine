@@ -52,10 +52,8 @@ kind = "compile_fail"
 prompt = "prompts/INVALID_UNKNOWN_DECISION_REF.prompt"
 agent = "InvalidUnknownDecisionRef"
 exception_type = "CompileError"
-message_contains = [
-  "decision declaration",
-  "MissingDecision",
-]
+error_code = "E299"
+location_line = 5
 
 [[cases]]
 name = "multiple decision attachments render both decision scaffolds in order"
@@ -95,7 +93,7 @@ prompt = "prompts/INVALID_DUPLICATE_DECISION_REF.prompt"
 agent = "InvalidDuplicateDecisionRefDemo"
 exception_type = "CompileError"
 error_code = "E204"
-message_contains = [
-  "Duplicate typed field",
-  "decision:PlayableStrategyChoice",
+location_line = 13
+related = [
+    { label = "first `decision:PlayableStrategyChoice` field", line = 12 },
 ]

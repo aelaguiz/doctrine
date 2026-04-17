@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import (
     _INTERPOLATION_EXPR_RE,
     _INTERPOLATION_RE,
@@ -10,6 +11,7 @@ from doctrine._compiler.naming import (
     _display_addressable_ref,
     _dotted_ref_name,
     _name_ref_from_dotted_name,
+    _parse_interpolated_addressable_ref,
 )
 from doctrine._compiler.resolved_types import (
     AddressableNode,
@@ -237,8 +239,20 @@ class ValidateOutputsMixin:
             route_semantics=route_semantics,
         ):
             return
-        raise CompileError(
-            f"Output guard reads disallowed source in {owner_label}: {'.'.join(ref.parts)}"
+        raise compile_error(
+            code="E338",
+            summary="Output guard reads disallowed source",
+            detail=(
+                f"Output guard in {owner_label} reads disallowed source "
+                f"`{'.'.join(ref.parts)}`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=ref.source_span,
+            hints=(
+                "Read only declared inputs and enum members in output guards.",
+                "Do not read workflow-local bindings or emitted output fields inside guarded output items.",
+                "Route-bound outputs may also guard on compiler-owned route refs such as `route.exists` and `route.choice`.",
+            ),
         )
 
     def _output_guard_ref_allowed(
@@ -253,7 +267,9 @@ class ValidateOutputsMixin:
     ) -> bool:
         return (
             self._expr_ref_matches_input_decl(ref, unit=unit)
+            or self._expr_ref_matches_input_binding(ref)
             or self._expr_ref_matches_enum_member(ref, unit=unit)
+            or self._resolve_output_schema_route_choice_identity(ref, unit=unit) is not None
             or (
                 allow_route_semantics
                 and self._expr_ref_matches_route_semantic_ref(
@@ -294,9 +310,19 @@ class ValidateOutputsMixin:
                     review_semantics=review_semantics,
                     route_semantics=route_semantics,
                 ):
-                    raise CompileError(
-                        "standalone_read cannot interpolate guarded output detail "
-                        f"in {owner_label}: {_display_addressable_ref(ref)}"
+                    raise compile_error(
+                        code="E340",
+                        summary="Standalone read references guarded output detail",
+                        detail=(
+                            f"`standalone_read` in {owner_label} references guarded "
+                            f"output detail `{_display_addressable_ref(ref)}`."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=ref.source_span or getattr(item, "source_span", None),
+                        hints=(
+                            "Keep `standalone_read` at branch-level readback only.",
+                            "Do not interpolate guarded item detail inside `standalone_read`.",
+                        ),
                     )
 
     def _iter_output_items_with_paths(
@@ -402,6 +428,9 @@ class ValidateOutputsMixin:
         self,
         expression: str,
     ) -> model.AddressableRef | None:
+        ref = _parse_interpolated_addressable_ref(expression)
+        if ref is not None:
+            return ref
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if match is None:
             return None
@@ -420,6 +449,12 @@ class ValidateOutputsMixin:
         route_semantics: RouteSemanticContext | None = None,
     ) -> bool:
         _ = route_semantics
+        ref = self._rebind_self_addressable_ref(
+            ref,
+            unit=unit,
+            owner_label=owner_label,
+            surface_label="standalone_read",
+        )
         semantic_parts = self._review_semantic_addressable_parts(ref)
         if (
             review_semantics is not None
@@ -471,9 +506,117 @@ class ValidateOutputsMixin:
             root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
             if not self._ref_exists_in_registry(root, unit=unit, registry_name="inputs_by_name"):
                 continue
-            _target_unit, _decl = self._resolve_input_decl(root, unit=unit)
-            return True
+            target_unit, decl = self._resolve_input_decl(root, unit=unit)
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            return self._input_decl_supports_expr_field_path(
+                decl,
+                field_path=field_path,
+                unit=target_unit,
+            )
         return False
+
+    def _expr_ref_matches_input_binding(self, ref: model.ExprRef) -> bool:
+        if self._active_agent_key is None:
+            return False
+        agent_unit = (
+            self._load_module(self._active_agent_key[0])
+            if self._active_agent_key[0]
+            else self.root_unit
+        )
+        agent = agent_unit.agents_by_name.get(self._active_agent_key[1])
+        if agent is None:
+            return False
+        agent_contract = self._resolve_agent_contract(agent, unit=agent_unit)
+        for split_at in range(len(ref.parts), 0, -1):
+            binding = agent_contract.input_bindings_by_path.get(ref.parts[:split_at])
+            if binding is None:
+                continue
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            if not isinstance(binding.artifact.decl, model.InputDecl):
+                return False
+            return self._input_decl_supports_expr_field_path(
+                binding.artifact.decl,
+                field_path=field_path,
+                unit=binding.artifact.unit,
+            )
+        return False
+
+    def _input_decl_supports_expr_field_path(
+        self,
+        decl: model.InputDecl,
+        *,
+        field_path: tuple[str, ...],
+        unit: IndexedUnit,
+    ) -> bool:
+        scalar_items, _section_items, _extras = self._split_record_items(
+            decl.items,
+            scalar_keys={"source", "shape", "requirement"},
+            owner_label=f"input {decl.name}",
+        )
+        source_item = scalar_items.get("source")
+        if (
+            source_item is not None
+            and isinstance(source_item.value, model.NameRef)
+            and self._is_rally_previous_turn_input_source_ref(
+                source_item.value,
+                unit=unit,
+            )
+            and (unit.module_parts, decl.name) not in self._active_previous_turn_input_specs
+        ):
+            return True
+        if self._addressable_path_exists(
+            AddressableNode(unit=unit, root_decl=decl, target=decl),
+            field_path,
+        ):
+            return True
+        shape_item = scalar_items.get("shape")
+        if shape_item is None:
+            return False
+        if self._input_shape_is_builtin_json_object(shape_item.value):
+            return True
+        json_summary = self._resolve_final_output_json_shape_summary(
+            shape_item.value,
+            unit=unit,
+        )
+        if json_summary is None:
+            return False
+        return self._addressable_path_exists(
+            AddressableNode(
+                unit=json_summary.schema_unit,
+                root_decl=decl,
+                target=json_summary.schema_decl,
+            ),
+            field_path,
+        )
+
+    def _addressable_path_exists(
+        self,
+        start: AddressableNode,
+        path: tuple[str, ...],
+    ) -> bool:
+        current = start
+        for segment in path:
+            children = self._get_addressable_children(current)
+            if children is None:
+                return False
+            current = children.get(segment)
+            if current is None:
+                return False
+        return True
+
+    def _input_shape_is_builtin_json_object(
+        self,
+        value: model.RecordScalarValue,
+    ) -> bool:
+        return (
+            isinstance(value, model.NameRef)
+            and not value.module_parts
+            and value.declaration_name == "JsonObject"
+        )
 
     def _expr_ref_matches_output_decl(
         self,
@@ -485,7 +628,18 @@ class ValidateOutputsMixin:
             root = _name_ref_from_dotted_name(".".join(ref.parts[:split_at]))
             if not self._ref_exists_in_registry(root, unit=unit, registry_name="outputs_by_name"):
                 continue
-            _target_unit, _decl = self._resolve_output_decl(root, unit=unit)
+            target_unit, decl = self._resolve_output_decl(root, unit=unit)
+            field_path = ref.parts[split_at:]
+            if not field_path:
+                return True
+            current = AddressableNode(unit=target_unit, root_decl=decl, target=decl)
+            for segment in field_path:
+                children = self._get_addressable_children(current)
+                if children is None:
+                    return False
+                current = children.get(segment)
+                if current is None:
+                    return False
             return True
         return False
 
