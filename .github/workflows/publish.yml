@@ -73,8 +73,16 @@ jobs:
       - name: Set up Python toolchain
         uses: ./.github/actions/setup-python-uv
 
+      - name: Set up Node toolchain
+        uses: ./.github/actions/setup-node-npm
+        with:
+          cache-dependency-path: package-lock.json
+
       - name: Sync Python dependencies
         run: uv sync
+
+      - name: Install flow renderer dependency
+        run: npm ci
 
       - name: Build and smoke test package artifacts
         run: make verify-package
