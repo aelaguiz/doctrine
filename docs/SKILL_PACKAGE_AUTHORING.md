@@ -426,6 +426,8 @@ path-sensitive bundles, explicit emitted-doc packages, and binary assets.
 
 Doctrine also ships one real first-party skill package under
 `skills/agent-linter/`.
+See [AGENT_LINTER.md](AGENT_LINTER.md) for install, usage, and structured
+output proof.
 It is a good reference when you need a larger package that still stays lean.
 Use a source checkout for this reference package. The published Python package
 does not ship the repo-owned prompt tree or named emit target.
