@@ -24,6 +24,7 @@ Helpful defaults:
 - one normalized duplicate excerpt plus affected targets
 - say what good looks like when the fix would otherwise feel vague
 - coverage gaps printed clearly when exact evidence is missing
+- plain boundary calls when the real fix is to move behavior back into the harness
 - enough context that a tired human can fix the issue without re-reading the
   whole package
 
@@ -97,7 +98,9 @@ Useful sections include:
 
 - resolver fit
 - thin-harness fit
+- leverage fit
 - reusable-method fit
+- harness-boundary fit
 - deterministic split
 - evidence quality
 - actionability
@@ -119,6 +122,7 @@ Great output:
 - gives a fix the developer can act on now
 - pushes for the smallest credible fix first
 - names the shared owner when reuse is the real problem
+- makes it clear when a runtime or safety rule belongs back in the harness
 - gives a rewrite only when it is clearly useful
 - feels like a sharp review from a strong teammate, not a compliance dump
 - clears the fog fast and tells the reader where to start

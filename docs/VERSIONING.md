@@ -56,6 +56,9 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
+- Refreshing a first-party emitted skill bundle while keeping its stable code
+  catalog, install layout, and machine-readable proof shape unchanged is still
+  a patch-level public fix.
 - Restoring a broken stable surface such as routed previous-turn emit facts is
   still a patch fix. It is not a new additive feature when the public shape
   stays the same.

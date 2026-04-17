@@ -15,7 +15,7 @@ It does not act like the compiler.
 - Parse, type, route, or emit failures
 - Product truth
 - Repo-local policy that Doctrine does not ship
-- Hidden runtime state or memory
+- Hidden runtime state, memory, safety control, or orchestration
 - Generic code quality outside agent authoring
 
 ## Compiler Vs Linter
@@ -35,6 +35,7 @@ This skill may still flag:
 - prose that shadows a typed surface
 - prose that drifts from declared constraints
 - shared method text that hardcodes one case
+- prose that starts owning harness safety behavior or other runtime control
 - exact counting or assignment work forced into prose
 - read-many work that leaves raw notes instead of one compact artifact
 - weak resolver names or descriptions
@@ -46,12 +47,14 @@ The bundled `AL###` rules come from these Doctrine laws:
 
 - context is a budget
 - load depth on demand
+- help the harness load the right context at the right time
 - write for resolvers
 - keep runtime concerns out of authored doctrine
 - put exact truth in typed surfaces
 - reserve prose for judgment
 - reuse beats repetition
 - repeated work should become reusable doctrine
+- keep one shared owner so one fix lands in one place
 - make bloat visible
 - keep the harness thin and the reusable process fat
 - let the invocation supply the world and the skill supply the method
@@ -102,7 +105,7 @@ This package should not need a big helper harness.
 Keep these boundaries clear:
 
 - the skill owns the audit method
-- the runtime owns file access and normal tool calls
+- the runtime owns file access, normal tool calls, safety control, and runtime control flow
 - typed surfaces own exact truth
 - the report contract owns the human report shape
 
@@ -115,5 +118,6 @@ Do not:
 - re-report compiler errors
 - invent hidden context
 - turn one repo's policy into Doctrine law
+- turn one repo's safety overlay into Doctrine law
 - browse outside the inspected scope
 - rely on memory when the evidence is missing

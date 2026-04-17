@@ -6,7 +6,7 @@ Use this file to calibrate what strong findings look like.
 
 | Code | Title | Recognition test | Default recommendation |
 | --- | --- | --- | --- |
-| `AL100` | Oversized Always-On Context | The role home carries too much always-on text. | Move deep reference material into a shared skill, module, or docs index. |
+| `AL100` | Oversized Always-On Context | The role home carries too much always-on text, or new local bulk does not buy clearer loading, stronger reuse, or exact truth. | Move deep reference material into a shared skill, module, or docs index. |
 | `AL110` | Pasted Reference Instead Of Pointer | Long reference text is pasted where a shared pointer should exist. | Replace the pasted block with a pointer to one shared source. |
 | `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. | Move the reusable method into a skill. |
 | `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
@@ -15,7 +15,7 @@ Use this file to calibrate what strong findings look like.
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
 | `AL230` | Semantic Duplicate Across Agents | Several targets say the same rule in different words. | Collapse the semantic copies behind one shared owner. |
 | `AL240` | Skill Hardcodes Invocation Inputs | A skill hardcodes changing subject, dataset, or case facts. | Keep the method in the skill and move changing facts into inputs or source reads. |
-| `AL300` | Runtime Boundary Leak | The prompt starts owning runtime state, memory, scheduling, or orchestration. | Remove runtime ownership from the prompt. |
+| `AL300` | Runtime Boundary Leak | The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration. | Remove runtime ownership from the prompt. |
 | `AL310` | Shadow Control Plane | Prose creates a second source of truth that competes with a typed surface. | Delete the shadow surface and keep one canonical owner. |
 | `AL320` | Host-Namespace Jargon Without Grounding | Prose uses harness-specific verbs, paths, or env vars without grounding. | Replace private jargon with neutral language or a shared grounded owner. |
 | `AL400` | Exact Truth Hidden In Prose | Exact requirements are hidden in prose instead of a typed surface. | Move exact requirements into the declared contract. |
@@ -45,8 +45,8 @@ Use this file to calibrate what strong findings look like.
 
 ### `AL100` Oversized Always-On Context
 
-What it means: The role home carries too much always-on text.
-Why it matters: Context is a budget.
+What it means: The role home carries too much always-on text, or local prompt growth added bulk without buying clearer loading, stronger reuse, or stronger exact truth.
+Why it matters: Context is a budget. Extra local text should earn something durable.
 Default fix: Move deep reference material behind a pointer.
 Good: `Read the quoting guide only when a quote is weak.`
 Bad: `Keep the full quoting guide, glossary, archive, and style handbook in mind on every turn.`
@@ -54,7 +54,7 @@ Bad: `Keep the full quoting guide, glossary, archive, and style handbook in mind
 ### `AL110` Pasted Reference Instead Of Pointer
 
 What it means: Long reference text is pasted where one pointer would do.
-Why it matters: The same text will drift when copied.
+Why it matters: The same text will drift when copied, and copied reference text is a common way to add bulk without creating reuse.
 Default fix: Replace the pasted block with one shared pointer.
 Good: `Use the shared SummaryRubric skill before you finalize work.`
 Bad: `Here are the full 18 summary rules copied into this role home again.`
@@ -62,7 +62,7 @@ Bad: `Here are the full 18 summary rules copied into this role home again.`
 ### `AL120` Deep Procedure In The Role Home
 
 What it means: A reusable method is taught inline instead of through a skill.
-Why it matters: The role home gets fat and the method cannot be reused cleanly.
+Why it matters: The role home gets fat and the method cannot be reused cleanly. The added bulk did not buy reusable leverage.
 Default fix: Move the method into a skill.
 Good: `Use the InterviewSynthesis skill after you read the transcript.`
 Bad: `Step 1 read, step 2 cluster, step 3 compare, step 4 score, step 5 write...`
@@ -121,11 +121,11 @@ Bad: `Read Maria Santos's application and Contrail's billing commits.`
 
 ### `AL300` Runtime Boundary Leak
 
-What it means: The prompt starts owning runtime state, memory, scheduling, or orchestration.
+What it means: The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration.
 Why it matters: The prompt now competes with the harness.
 Default fix: Remove runtime ownership from the prompt.
 Good: `If a source is missing, leave a blocker note.`
-Bad: `Store this in long-term memory and rerun the cron in 30 minutes.`
+Bad: `Keep a safety strike count, auto-block future requests after three strikes, and rerun the cron in 30 minutes.`
 
 ### `AL310` Shadow Control Plane
 
@@ -306,7 +306,7 @@ Bad: One skill audits prompts, rewrites prompts, ships packages, and runs releas
 ### `AL910` Shared Law Trapped In Local Text
 
 What it means: One local role carries a rule that should be shared by many roles.
-Why it matters: Shared law in one local file will drift everywhere else.
+Why it matters: Shared law in one local file will drift everywhere else, and one rule change will need several edits.
 Default fix: Lift the shared law into a shared module or skill.
 Shared owner: Almost always required.
 Good: `Use the shared EvidenceSupportLaw module.`

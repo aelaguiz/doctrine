@@ -38,9 +38,11 @@ The skill looks first for the highest-value authoring problems:
 
 - weak resolver names or descriptions
 - fat always-on context
+- prompt bulk that does not buy clearer loading or stronger reuse
 - repeated rules that should be shared
 - skills that hardcode changing invocation facts
 - runtime-boundary leaks
+- safety or other runtime control that belongs in the harness
 - exact work forced into prose
 - authored-versus-emitted drift
 - contradiction across related surfaces
@@ -49,6 +51,8 @@ The skill looks first for the highest-value authoring problems:
 
 It uses exact evidence from the inspected surfaces.
 If the evidence is missing, it should say that plainly.
+Those calls still land under the existing `AL###` family. The skill teaches the
+judgment more clearly, not with a bigger public code set.
 
 ## Prompt Comments
 

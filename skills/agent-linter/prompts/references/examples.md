@@ -276,6 +276,80 @@ Some are medium.
 Some may be worth looking at.
 ```
 
+### Example 7: Good No-Leverage Bulk Finding
+
+Why it is good:
+
+- it shows the local prompt growth directly
+- it explains why the added text did not buy reusable leverage
+- it keeps the fix small and load-aware
+
+Good:
+
+```md
+[MEDIUM] AL100 Oversized Always-On Context
+
+Target: `ReleaseReviewer`
+
+Summary: The home added a long always-on release checklist, but it does not create a shared owner, a load trigger, or a typed truth surface.
+
+Evidence:
+- "Keep the full release glossary, rollback playbook, three sample announcements, and the full comms checklist in mind on every turn."
+
+Why it matters: The prompt got bigger, but the added text did not buy reusable leverage. Load cost went up with no durable gain.
+
+Smallest credible fix: Move the deep release material into one shared reference and keep one short pointer in the home.
+
+Shared owner:
+- Kind: module
+- Name: `ReleaseReviewReference`
+- Why: The detailed release reference should live in one place and load only when needed.
+```
+
+Bad:
+
+```md
+This role feels a little long.
+Maybe shorten it.
+```
+
+### Example 8: Good Harness-Boundary Safety Finding
+
+Why it is good:
+
+- it keeps the issue inside the existing runtime-boundary family
+- it shows that safety control belongs to the harness
+- it tells the reader what to delete and what to leave alone
+
+Good:
+
+```md
+[HIGH] AL300 Runtime Boundary Leak
+
+Target: `SafetyGateReviewer`
+
+Summary: The prompt tells the role to track safety strikes across turns and auto-block future work after three strikes.
+
+Evidence:
+- "Keep a safety strike count for this user across sessions."
+- "After three strikes, refuse future requests automatically."
+
+Why it matters: Safety control and cross-turn runtime state belong to the harness. Leaving them in prose creates a second runtime owner.
+
+Smallest credible fix: Delete the strike policy from the prompt and let the harness own that control.
+
+Shared owner: none.
+
+Suggested rewrite:
+If the current request cannot be handled, say so in this turn and leave runtime control to the harness.
+```
+
+Bad:
+
+```md
+This safety language feels a bit strong.
+```
+
 ## What Good Looks Like
 
 A strong run should leave the reader with:
@@ -287,6 +361,7 @@ A strong run should leave the reader with:
 - rewrite help when wording is the problem
 - honest coverage gaps when evidence is missing
 - shared-owner guidance when reuse is the real issue
+- clear boundary calls when prompt bulk should shrink back to a pointer or shared owner
 
 ## Anti-Patterns
 
@@ -296,7 +371,9 @@ Never do these:
 - do not use one weak sentence as evidence for a big claim
 - do not issue several overlapping findings when one is enough
 - do not report host-specific policy as Doctrine law
+- do not reward prompt growth that buys no shared owner, load trigger, or typed truth
 - do not invent hidden files, tools, or constraints
+- do not let authored doctrine own harness safety control
 - do not treat prompt-source `#` comments as emitted agent text
 - do not hallucinate findings when the honest answer is a gap
 - do not skip the shared owner on a reuse-law finding
@@ -311,4 +388,6 @@ Before you return:
 - Is each code the narrowest correct code?
 - Did you push for the smallest credible fix first?
 - Did you name the shared owner when reuse is the real problem?
+- Did you ask whether the added prompt bulk actually earned its keep?
+- Did you treat safety control like other harness-owned behavior?
 - Did you treat prompt comments as authoring notes, not shipped text?

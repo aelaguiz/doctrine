@@ -95,6 +95,10 @@ payload text and breaking releases with no real upgrade steps.
 ### Changed
 - Changed the public skill install story to one line:
   `npx skills add .`.
+- Tightened the first-party `agent-linter` skill so it more clearly treats
+  prompt bulk without reusable leverage as bloat and keeps safety guidance in
+  the existing runtime-boundary family, without changing the stable `AL###`
+  catalog or the saved proof schema.
 - Changed package verification to include pinned `skills` CLI smoke tests for
   discovery and Codex install.
 - Changed the public docs, teaching examples, and VS Code support to teach

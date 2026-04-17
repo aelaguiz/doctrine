@@ -73,9 +73,12 @@ Ask these first:
 
 - Is the resolver clear about what the target is for and when to load it?
 - Is the always-on context too fat?
+- Did the added prompt bulk earn reusable leverage, clearer loading, or exact truth?
+- Is the prompt helping the harness load the right context at the right time, or trying to carry everything always-on?
 - Is a reusable method pasted inline instead of shared?
+- Will one fix land in one shared place, or did the author create several owners?
 - Is a skill acting like a reusable method call, or did it hardcode changing facts?
-- Did prose start owning runtime state, memory, scheduling, or orchestration?
+- Did prose start owning runtime state, memory, safety control, scheduling, or orchestration?
 - Is exact work stuck in prose that should live on a typed or deterministic surface?
 - Do authored and emitted surfaces drift?
 - Do related surfaces contradict each other?
@@ -87,7 +90,10 @@ Ask these first:
 Use these rules when the signal is real:
 
 - Keep the harness thin. The prompt should teach judgment, not recreate tooling.
+- Help the harness load the right context at the right time instead of stuffing more doctrine into always-on text.
 - Keep the skill fat. Reusable process belongs in the skill.
+- Add local prompt text only when it earns reusable leverage, clearer loading, or stronger exact truth.
+- Keep one shared owner for shared truth so one fix lands in one place.
 - Treat the target like parameters to one method call. The skill supplies the process. The inspected surface supplies the world.
 - Keep latent work in latent space. Reading, synthesis, and judgment belong to the model.
 - Keep deterministic work on deterministic surfaces. Exact counting, routing, validation, assignment, and contract truth should not hide in prose.
