@@ -40,6 +40,25 @@ table hidden inside another document. The compiler lowers named table use back
 to the ordinary document table path, so rendering and inheritance stay the
 same.
 
+## Output Inheritance Design
+
+`output X[Parent]` reuses the same explicit-inherit, explicit-override shape
+that `workflow`, `review`, `document`, and IO blocks already use. A child
+names every parent entry it keeps with `inherit`, and every change it makes
+with `override`. This keeps output composition loud at authoring time and
+avoids implicit merge rules. Route fields, attachments, readable blocks, and
+trust surfaces all take part in the same composition.
+
+## Skill Package Host Binding Design
+
+`host_contract:` lets a `skill package` declare the typed slots it needs
+from its host. `bind:` in the calling agent fills those slots once. Emitted
+documents and bundled agents inside the package read their host facts
+through `host:` refs. The design keeps package bodies reusable and keeps the
+typed link explicit, instead of repeating host IO prose across every inline
+skill bridge. `SKILL.contract.json` makes the same link machine-readable for
+harnesses that load the package.
+
 ## Shipped Boundaries
 
 Doctrine's current shipped surface is proven across the numbered corpus listed
@@ -80,6 +99,9 @@ The language intentionally does not ship:
 - a second capability surface parallel to `skill`
 - arbitrary free-prose parsing as semantics
 - a generic readable-block `ref:` system
+- a second harness plane parallel to the host runtime
+- vibe-based or LLM-judged lint in the compiler — see
+  [WARNINGS.md](WARNINGS.md) for the scoped first-class warning plan
 
 When a new feature earns its place, the expected path is:
 

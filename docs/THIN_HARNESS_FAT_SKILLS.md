@@ -27,6 +27,9 @@ For the repo-wide value statement, see [../PRINCIPLES.md](../PRINCIPLES.md).
 - Write names and descriptions so a resolver can load the right thing.
 - Reuse one shared home instead of copying long instructions into many places.
 - If a one-off pattern repeats, turn it into reusable doctrine.
+- When a skill package still needs host truth, bind it once with typed
+  package host slots instead of repeating the same inputs, outputs, and final
+  answer prose in every agent home.
 
 ## Deterministic Truth Versus Judgment
 
@@ -42,6 +45,8 @@ For the repo-wide value statement, see [../PRINCIPLES.md](../PRINCIPLES.md).
 - One fix lands in one shared place.
 - The compiler or emitted typed surface owns exact truth.
 - Names and descriptions make the load path obvious.
+- A skill package declares `host_contract:` once, the agent binds it once, and
+  the package reuses `host:` across its prompt-authored emitted tree.
 
 ## Warning Signs
 
@@ -50,6 +55,8 @@ For the repo-wide value statement, see [../PRINCIPLES.md](../PRINCIPLES.md).
 - A doc tries to control runtime state, scheduling, or tool orchestration.
 - Exact contracts live only in prose.
 - A feature adds more prompt bulk than reusable leverage.
+- A skill package repeats the same host IO prose in many inline skill bridges
+  because the typed link was never modeled.
 
 ## Review Questions
 
@@ -69,7 +76,12 @@ When you review a change, ask:
   authoring work
 - [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md): the shipped typed surfaces
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): how reusable skills
-  package and emit
+  package and emit, including `host_contract:` and `bind:` for typed host
+  slots
+- [AGENT_LINTER.md](AGENT_LINTER.md): the shipped judgment-first review skill
+  that catches principle pressure the compiler cannot prove
+- [WARNINGS.md](WARNINGS.md): the scoped plan for a first-class compiler
+  warning layer
 
 ## Source Note
 
