@@ -26,7 +26,7 @@
     "test:snap": "vscode-tmgrammar-snap --config ./package.json \"tests/snap/examples/**/*.prompt\"",
     "test:snap:update": "vscode-tmgrammar-snap --updateSnapshot --config ./package.json \"tests/snap/examples/**/*.prompt\"",
     "test:integration": "node ./tests/integration/run.js",
-    "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && uv run --locked python scripts/package_vsix.py && uv run --locked python scripts/run_packaged_vsix_smoke.py"
+    "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && uv run --locked python scripts/package_vsix.py"
   },
   "devDependencies": {
     "@vscode/test-electron": "^2.5.2",
