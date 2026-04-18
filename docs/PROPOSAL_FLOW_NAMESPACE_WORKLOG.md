@@ -330,3 +330,28 @@ Plan: [docs/PROPOSAL_FLOW_NAMESPACE.md](/Users/aelaguiz/workspace/doctrine/docs/
   - keep the implement loop armed for the next fresh audit
   - let the audit decide whether to stop on the real release-cut blocker or
     continue if a clean committed tree becomes available
+- Landed the real Phase 5 release-cut slice:
+  - found that `make release-tag` still rejected the `v4.0.0` changelog entry
+    because the helper only accepts single-line required header fields
+  - rewrote the `v4.0.0` changelog header into the exact helper shape
+  - reran the release-only proof set and got back to green
+  - committed the changelog repair as `08330e6`
+  - cut and pushed the signed annotated `v4.0.0` tag from that clean commit
+- Ran:
+  - `uv run --locked python -m unittest tests.test_package_release`
+  - `uv run --locked python -m unittest tests.test_release_flow`
+  - `make verify-package`
+  - `git commit -m "Fix v4.0.0 changelog release header"`
+  - `make release-tag RELEASE=v4.0.0 CHANNEL=stable`
+  - `git tag --list 'v4.0.0'`
+  - `git rev-list -n 1 v4.0.0`
+- Result:
+  - `OK` (`5` tests)
+  - `OK` (`24` tests)
+  - `make verify-package` passed
+  - commit `08330e6` created cleanly
+  - signed annotated tag `v4.0.0` was created and pushed
+  - `v4.0.0` points at `08330e684703a23e70fe9cec48e0ec89ffab6bcd`
+- Next:
+  - keep the implement loop armed for one fresh audit closeout pass
+  - let that audit decide whether the plan can finally move to complete

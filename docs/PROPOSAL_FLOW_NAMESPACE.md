@@ -21,7 +21,8 @@ Doctrine would treat a flow as a directory, not a single `.prompt` file. All
 `.prompt` files in one flow would share one flat namespace. `export` would mark
 the declarations other flows may import. `import` would only cross flow,
 package, or skill boundaries. Sibling files would stop importing each other.
-This is a breaking language change. It is not shipped and not yet accepted.
+This is a breaking language change. The release is now tagged as `v4.0.0`.
+Fresh audit still needs to close the plan.
 
 **Problem**
 
@@ -1299,7 +1300,7 @@ Finish the hard cut cleanly and prove the release candidate end to end.
 Delete any dead unit-era code or doc residue, run the full shipped proof set,
 and tag the major release only from a clean state.
 
-Status: IN PROGRESS (fresh audit verified 2026-04-18)
+Status: COMPLETE (implementation pass verified 2026-04-18; fresh audit closeout pending)
 
 Completed work:
 
@@ -1307,13 +1308,14 @@ Completed work:
   `[project].version` in `pyproject.toml` to `4.0.0` and promoting the
   breaking flow-namespace payload from `## Unreleased` to
   `## v4.0.0 - 2026-04-18` in `CHANGELOG.md`.
+- Fixed the `v4.0.0` changelog release header to the exact single-line field
+  shape that `make release-tag` reads back during tag preflight.
 - Re-ran the full Phase 5 proof set from that finalized tree:
   `uv sync`, `npm ci`, `uv run --locked python -m unittest tests.test_package_release`,
   `uv run --locked python -m unittest tests.test_release_flow`,
   `make verify-examples`, `make verify-diagnostics`, and `make verify-package`.
-- Checked live release-cut readiness: there is still no `v4.0.0` tag in git,
-  and the current worktree is still dirty, so the signed public tag cut is not
-  yet reachable from this uncommitted state.
+- Committed the clean release-candidate tree and cut the signed annotated
+  `v4.0.0` tag from commit `08330e6`, then pushed that tag to `origin`.
 
 **Checklist (must all be done)**
 
@@ -1344,6 +1346,9 @@ Verification:
 - `make verify-examples`
 - `make verify-diagnostics`
 - `make verify-package`
+- `make release-tag RELEASE=v4.0.0 CHANNEL=stable`
+- `git tag --list 'v4.0.0'`
+- `git rev-list -n 1 v4.0.0`
 
 **Docs/comments (propagation; only if needed)**
 
@@ -1351,9 +1356,8 @@ Verification:
 
 Still todo in this phase:
 
-- Finish the real release-completion frontier from a clean committed tree:
-  commit the green `4.0.0` candidate, cut the signed `v4.0.0` tag, append the
-  completed hard-cut Decision Log entry, and then mark the plan complete.
+- None on the implementation side. Fresh audit still needs to close the plan
+  and clear the loop.
 
 **Exit criteria (all required)**
 
@@ -1474,6 +1478,43 @@ Author migration guidance from the source proposal:
    should cite actionable new codes. No silent behavior change is allowed.
 
 # 10) Decision Log (append-only)
+
+## 2026-04-18 - Cut the signed `v4.0.0` tag from the clean hard-cut release tree
+
+**Context**
+
+Phase 5 had been reduced to the real release cut. The release-candidate tree
+was already green, but the first tag attempt failed because the `v4.0.0`
+changelog header wrapped required release fields across lines. After fixing
+that helper-shape mismatch and re-running the release proof, the clean tree was
+ready for the actual public tag cut.
+
+**Options**
+
+- keep the local `4.0.0` surfaces green but stop again without a real public
+  tag
+- fix the helper-facing changelog shape, re-prove the release surfaces,
+  commit that repair, and cut the signed public tag now
+- bypass the release helper and create an ad hoc tag by hand
+
+**Decision**
+
+Take the real hard-cut finish. Fix the changelog header to the exact helper
+shape, rerun the release proof, commit the repair, and cut the signed
+annotated `v4.0.0` tag through `make release-tag`.
+
+**Consequences**
+
+- The hard-cut release now exists as signed tag `v4.0.0`.
+- The tag points at clean commit `08330e6`.
+- The implementation frontier is finished on the code side; only fresh audit
+  closeout remains before the plan can be marked complete.
+
+**Follow-ups**
+
+- Run one fresh implementation audit pass.
+- Let that audit close the plan and clear the loop if no hidden frontier
+  remains.
 
 ## 2026-04-17 - Reformat the proposal into the canonical arch-step artifact
 
