@@ -1,12 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeAlias
-from weakref import WeakKeyDictionary
 
 import doctrine._model.declarations as model
+from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
+from doctrine._compiler.declaration_validation import (
+    validate_enum_decl,
+    validate_render_profile_decl,
+)
 from doctrine._compiler.diagnostics import compile_error, file_scoped_related, related_prompt_site
+from doctrine._compiler.flow_boundary import (
+    FlowBoundaryKind,
+    _FLOW_ENTRYPOINT_FILENAMES,
+    discover_flow_members,
+    flow_boundary_kind_for_path,
+    resolve_flow_entrypoint,
+)
 from doctrine._model.core import ImportPath
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
@@ -16,55 +27,8 @@ if TYPE_CHECKING:
 
 from doctrine._compiler.support import dotted_decl_name, path_location
 
-_KNOWN_RENDER_PROFILE_TARGETS = {
-    "review.contract_checks",
-    "analysis.stages",
-    "control.invalidations",
-    "guarded_sections",
-    "identity.owner",
-    "identity.debug",
-    "identity.enum_wire",
-    "properties",
-    "guard",
-    "sequence",
-    "bullets",
-    "checklist",
-    "definitions",
-    "table",
-    "callout",
-    "code",
-    "markdown",
-    "html",
-    "footnotes",
-    "image",
-}
-_KNOWN_RENDER_PROFILE_MODES = {
-    "sentence",
-    "titled_section",
-    "expanded_sequence",
-    "natural_ordered_prose",
-    "concise_explanatory_shell",
-    "title",
-    "title_and_key",
-    "wire_only",
-}
-_RENDER_PROFILE_TARGET_MODE_CONSTRAINTS = {
-    "analysis.stages": {"natural_ordered_prose", "titled_section"},
-    "review.contract_checks": {"sentence", "titled_section"},
-    "control.invalidations": {"sentence", "expanded_sequence"},
-    "identity.owner": {"title", "title_and_key"},
-    "identity.debug": {"title", "title_and_key"},
-    "identity.enum_wire": {"title", "title_and_key", "wire_only"},
-}
-
 ModuleSourceKind: TypeAlias = Literal["entrypoint", "file_module", "runtime_package"]
-FlowBoundaryKind: TypeAlias = Literal["agent_flow", "skill_flow"]
 FlowLoadKey: TypeAlias = tuple[Path, Path]
-_FLOW_ENTRYPOINT_FILENAMES: dict[str, FlowBoundaryKind] = {
-    "AGENTS.prompt": "agent_flow",
-    "SOUL.prompt": "agent_flow",
-    "SKILL.prompt": "skill_flow",
-}
 
 
 @dataclass(slots=True, frozen=True)
@@ -73,13 +37,6 @@ class ResolvedModuleSource:
     prompt_path: Path
     module_source_kind: ModuleSourceKind
     package_root: Path | None = None
-
-
-@dataclass(slots=True, frozen=True)
-class ImportedSymbolBinding:
-    target_name: str
-    target_unit: "IndexedUnit"
-    import_decl: model.ImportDecl
 
 
 @dataclass(slots=True, frozen=True)
@@ -110,7 +67,21 @@ class UnitDeclarations:
     agents_by_name: dict[str, model.Agent]
 
 
-@dataclass(slots=True, frozen=True, eq=False, weakref_slot=True)
+@dataclass(slots=True, frozen=True)
+class ImportedSymbolBinding:
+    target_name: str
+    target_unit: IndexedUnit
+    import_decl: model.ImportDecl
+
+
+@dataclass(slots=True, frozen=True)
+class LoadedImports:
+    imported_units: dict[tuple[str, ...], IndexedUnit]
+    visible_imported_units: dict[tuple[str, ...], IndexedUnit]
+    imported_symbols_by_name: dict[str, ImportedSymbolBinding]
+
+
+@dataclass(slots=True, frozen=True, eq=False)
 class IndexedUnit:
     prompt_root: Path
     module_parts: tuple[str, ...]
@@ -119,13 +90,8 @@ class IndexedUnit:
     prompt_file: model.PromptFile
     imports: tuple[model.ImportDecl, ...]
     exported_names: frozenset[str]
-
-
-@dataclass(slots=True, frozen=True)
-class LoadedImports:
-    imported_units: dict[tuple[str, ...], IndexedUnit]
-    visible_imported_units: dict[tuple[str, ...], IndexedUnit]
-    imported_symbols_by_name: dict[str, ImportedSymbolBinding]
+    declarations: UnitDeclarations
+    loaded_imports: LoadedImports
 
 
 @dataclass(slots=True, frozen=True)
@@ -139,8 +105,6 @@ class IndexedFlow:
     entrypoint_unit: IndexedUnit
     units_by_path: dict[Path, IndexedUnit]
     units_by_module_parts: dict[tuple[str, ...], IndexedUnit]
-    unit_declarations_by_path: dict[Path, UnitDeclarations]
-    loaded_imports_by_path: dict[Path, "LoadedImports"]
     declaration_owner_units_by_id: dict[int, IndexedUnit]
     exported_names: frozenset[str]
     render_profiles_by_name: dict[str, model.RenderProfileDecl]
@@ -169,163 +133,12 @@ class IndexedFlow:
     agents_by_name: dict[str, model.Agent]
 
 
-_FLOW_OWNER_BY_UNIT: WeakKeyDictionary[IndexedUnit, IndexedFlow] = WeakKeyDictionary()
-_STANDALONE_DECLARATIONS_BY_UNIT: WeakKeyDictionary[IndexedUnit, UnitDeclarations] = (
-    WeakKeyDictionary()
-)
-_STANDALONE_LOADED_IMPORTS_BY_UNIT: WeakKeyDictionary[IndexedUnit, "LoadedImports"] = (
-    WeakKeyDictionary()
-)
-
-
-def _unit_source_path(unit: IndexedUnit) -> Path | None:
-    source_path = unit.prompt_file.source_path
-    if source_path is None:
-        return None
-    return source_path.resolve()
-
-
-def _register_unit_state(
-    unit: IndexedUnit,
-    *,
-    declarations: UnitDeclarations,
-    loaded_imports: "LoadedImports",
-) -> None:
-    _STANDALONE_DECLARATIONS_BY_UNIT[unit] = declarations
-    _STANDALONE_LOADED_IMPORTS_BY_UNIT[unit] = loaded_imports
-
-
-def _register_flow_owner(flow: IndexedFlow) -> None:
-    for unit in flow.units_by_path.values():
-        _FLOW_OWNER_BY_UNIT[unit] = flow
-        _STANDALONE_DECLARATIONS_BY_UNIT.pop(unit, None)
-        _STANDALONE_LOADED_IMPORTS_BY_UNIT.pop(unit, None)
-
-
 def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
-    owner_flow = _FLOW_OWNER_BY_UNIT.get(unit)
-    source_path = _unit_source_path(unit)
-    if owner_flow is not None and source_path is not None:
-        declarations = owner_flow.unit_declarations_by_path.get(source_path)
-        if declarations is not None:
-            return declarations
-    declarations = _STANDALONE_DECLARATIONS_BY_UNIT.get(unit)
-    if declarations is not None:
-        return declarations
-    raise compile_error(
-        code="E901",
-        summary="Internal compiler error",
-        detail="Internal compiler error: missing indexed unit declarations.",
-        path=source_path,
-        hints=("This is a compiler bug, not a prompt authoring error.",),
-    )
+    return unit.declarations
 
 
-def unit_loaded_imports(unit: IndexedUnit) -> "LoadedImports":
-    owner_flow = _FLOW_OWNER_BY_UNIT.get(unit)
-    source_path = _unit_source_path(unit)
-    if owner_flow is not None and source_path is not None:
-        loaded_imports = owner_flow.loaded_imports_by_path.get(source_path)
-        if loaded_imports is not None:
-            return loaded_imports
-    loaded_imports = _STANDALONE_LOADED_IMPORTS_BY_UNIT.get(unit)
-    if loaded_imports is not None:
-        return loaded_imports
-    raise compile_error(
-        code="E901",
-        summary="Internal compiler error",
-        detail="Internal compiler error: missing indexed unit import state.",
-        path=source_path,
-        hints=("This is a compiler bug, not a prompt authoring error.",),
-    )
-
-
-def flow_boundary_kind_for_path(path: Path) -> FlowBoundaryKind | None:
-    return _FLOW_ENTRYPOINT_FILENAMES.get(path.name)
-
-
-def resolve_flow_entrypoint(source_path: Path, *, prompt_root: Path | None = None) -> Path:
-    resolved = source_path.resolve()
-    boundary_kind = flow_boundary_kind_for_path(resolved)
-    if boundary_kind is not None:
-        if prompt_root is not None:
-            resolved_prompt_root = prompt_root.resolve()
-            try:
-                resolved.relative_to(resolved_prompt_root)
-            except ValueError:
-                pass
-            else:
-                return resolved
-        else:
-            return resolved
-    resolved_prompt_root = None if prompt_root is None else prompt_root.resolve()
-    search_roots = (resolved.parent, *resolved.parents) if resolved.is_file() else (resolved, *resolved.parents)
-    for candidate in search_roots:
-        if resolved_prompt_root is not None:
-            try:
-                candidate.relative_to(resolved_prompt_root)
-            except ValueError:
-                continue
-        for entrypoint_name in _FLOW_ENTRYPOINT_FILENAMES:
-            entrypoint_path = candidate / entrypoint_name
-            if entrypoint_path.is_file():
-                return entrypoint_path
-    raise compile_error(
-        code="E292",
-        summary="Could not resolve flow root",
-        detail=f"Could not resolve a flow entrypoint for {resolved}.",
-        path=resolved,
-    )
-
-
-def _is_hidden_path(path: Path) -> bool:
-    return any(part.startswith(".") for part in path.parts)
-
-
-def _is_editor_backup(path: Path) -> bool:
-    return (
-        path.name.endswith("~")
-        or path.name.endswith(".bak")
-        or path.name.endswith(".swp")
-        or path.name.endswith(".tmp")
-    )
-
-
-def discover_flow_members(
-    flow_root: Path,
-    *,
-    entrypoint_path: Path | None = None,
-) -> tuple[Path, ...]:
-    flow_root = flow_root.resolve()
-    resolved_entrypoint = None if entrypoint_path is None else entrypoint_path.resolve()
-    member_paths: list[Path] = []
-    for path in sorted(flow_root.rglob("*.prompt")):
-        if path.is_symlink():
-            continue
-        relative_path = path.relative_to(flow_root)
-        if _is_hidden_path(relative_path) or _is_editor_backup(path):
-            continue
-        if (
-            resolved_entrypoint is not None
-            and path.name in _FLOW_ENTRYPOINT_FILENAMES
-            and path.resolve() != resolved_entrypoint
-        ):
-            continue
-        if relative_path != Path(path.name):
-            parent_parts = relative_path.parts[:-1]
-            nested_flow = False
-            for depth in range(1, len(parent_parts) + 1):
-                candidate_dir = flow_root.joinpath(*parent_parts[:depth])
-                if any(
-                    (candidate_dir / entrypoint_name).is_file()
-                    for entrypoint_name in _FLOW_ENTRYPOINT_FILENAMES
-                ):
-                    nested_flow = True
-                    break
-            if nested_flow:
-                continue
-        member_paths.append(path.resolve())
-    return tuple(member_paths)
+def unit_loaded_imports(unit: IndexedUnit) -> LoadedImports:
+    return unit.loaded_imports
 
 
 def _module_parts_for_prompt_path(prompt_root: Path, prompt_path: Path) -> tuple[str, ...]:
@@ -579,30 +392,10 @@ def build_indexed_flow(
     declaration_owner_units_by_id: dict[int, IndexedUnit] = {}
     exported_names: set[str] = set()
 
-    render_profiles_by_name: dict[str, model.RenderProfileDecl] = {}
-    analyses_by_name: dict[str, model.AnalysisDecl] = {}
-    decisions_by_name: dict[str, model.DecisionDecl] = {}
-    schemas_by_name: dict[str, model.SchemaDecl] = {}
-    tables_by_name: dict[str, model.TableDecl] = {}
-    documents_by_name: dict[str, model.DocumentDecl] = {}
-    workflows_by_name: dict[str, model.WorkflowDecl] = {}
-    route_onlys_by_name: dict[str, model.RouteOnlyDecl] = {}
-    groundings_by_name: dict[str, model.GroundingDecl] = {}
-    reviews_by_name: dict[str, model.ReviewDecl] = {}
-    inputs_blocks_by_name: dict[str, model.InputsDecl] = {}
-    inputs_by_name: dict[str, model.InputDecl] = {}
-    input_sources_by_name: dict[str, model.InputSourceDecl] = {}
-    outputs_blocks_by_name: dict[str, model.OutputsDecl] = {}
-    outputs_by_name: dict[str, model.OutputDecl] = {}
-    output_targets_by_name: dict[str, model.OutputTargetDecl] = {}
-    output_shapes_by_name: dict[str, model.OutputShapeDecl] = {}
-    output_schemas_by_name: dict[str, model.OutputSchemaDecl] = {}
-    skills_by_name: dict[str, model.SkillDecl] = {}
-    skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
+    flow_registries: dict[str, dict[str, object]] = {
+        kind.registry_attr: {} for kind in DECLARATION_KINDS
+    }
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
-    skills_blocks_by_name: dict[str, model.SkillsDecl] = {}
-    enums_by_name: dict[str, model.EnumDecl] = {}
-    agents_by_name: dict[str, model.Agent] = {}
     resolved_overrides = (
         None
         if prompt_file_overrides is None
@@ -639,174 +432,15 @@ def build_indexed_flow(
             entrypoint_unit = indexed_unit
         declarations = unit_declarations(indexed_unit)
 
-        _register_flow_registry(
-            render_profiles_by_name,
-            declarations.render_profiles_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            analyses_by_name,
-            declarations.analyses_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            decisions_by_name,
-            declarations.decisions_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            schemas_by_name,
-            declarations.schemas_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            tables_by_name,
-            declarations.tables_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            documents_by_name,
-            declarations.documents_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            workflows_by_name,
-            declarations.workflows_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            route_onlys_by_name,
-            declarations.route_onlys_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            groundings_by_name,
-            declarations.groundings_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            reviews_by_name,
-            declarations.reviews_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            inputs_blocks_by_name,
-            declarations.inputs_blocks_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            inputs_by_name,
-            declarations.inputs_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            input_sources_by_name,
-            declarations.input_sources_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            outputs_blocks_by_name,
-            declarations.outputs_blocks_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            outputs_by_name,
-            declarations.outputs_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            output_targets_by_name,
-            declarations.output_targets_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            output_shapes_by_name,
-            declarations.output_shapes_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            output_schemas_by_name,
-            declarations.output_schemas_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            skills_by_name,
-            declarations.skills_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            skills_blocks_by_name,
-            declarations.skills_blocks_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            skill_packages_by_name,
-            declarations.skill_packages_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
+        for kind in DECLARATION_KINDS:
+            _register_flow_registry(
+                flow_registries[kind.registry_attr],
+                getattr(declarations, kind.registry_attr),
+                owner_unit=indexed_unit,
+                declaration_owner_units_by_id=declaration_owner_units_by_id,
+                flow_parts=flow_parts,
+                source_path=member_path,
+            )
         for declaration in declarations.skill_packages_by_name.values():
             _register_skill_package_id(
                 skill_packages_by_id,
@@ -814,32 +448,8 @@ def build_indexed_flow(
                 module_parts=flow_parts,
                 source_path=member_path,
             )
-        _register_flow_registry(
-            enums_by_name,
-            declarations.enums_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
-        _register_flow_registry(
-            agents_by_name,
-            declarations.agents_by_name,
-            owner_unit=indexed_unit,
-            declaration_owner_units_by_id=declaration_owner_units_by_id,
-            flow_parts=flow_parts,
-            source_path=member_path,
-        )
 
     assert entrypoint_unit is not None
-    unit_declarations_by_path = {
-        member_path: unit_declarations(indexed_unit)
-        for member_path, indexed_unit in units_by_path.items()
-    }
-    loaded_imports_by_path = {
-        member_path: unit_loaded_imports(indexed_unit)
-        for member_path, indexed_unit in units_by_path.items()
-    }
     indexed_flow = IndexedFlow(
         prompt_root=prompt_root,
         flow_root=flow_root,
@@ -850,42 +460,16 @@ def build_indexed_flow(
         entrypoint_unit=entrypoint_unit,
         units_by_path=units_by_path,
         units_by_module_parts=units_by_module_parts,
-        unit_declarations_by_path=unit_declarations_by_path,
-        loaded_imports_by_path=loaded_imports_by_path,
         declaration_owner_units_by_id=declaration_owner_units_by_id,
         exported_names=frozenset(exported_names),
-        render_profiles_by_name=render_profiles_by_name,
-        analyses_by_name=analyses_by_name,
-        decisions_by_name=decisions_by_name,
-        schemas_by_name=schemas_by_name,
-        tables_by_name=tables_by_name,
-        documents_by_name=documents_by_name,
-        workflows_by_name=workflows_by_name,
-        route_onlys_by_name=route_onlys_by_name,
-        groundings_by_name=groundings_by_name,
-        reviews_by_name=reviews_by_name,
-        inputs_blocks_by_name=inputs_blocks_by_name,
-        inputs_by_name=inputs_by_name,
-        input_sources_by_name=input_sources_by_name,
-        outputs_blocks_by_name=outputs_blocks_by_name,
-        outputs_by_name=outputs_by_name,
-        output_targets_by_name=output_targets_by_name,
-        output_shapes_by_name=output_shapes_by_name,
-        output_schemas_by_name=output_schemas_by_name,
-        skills_by_name=skills_by_name,
-        skill_packages_by_name=skill_packages_by_name,
         skill_packages_by_id=skill_packages_by_id,
-        skills_blocks_by_name=skills_blocks_by_name,
-        enums_by_name=enums_by_name,
-        agents_by_name=agents_by_name,
+        **flow_registries,
     )
-    _register_flow_owner(indexed_flow)
     if session is None:
         return indexed_flow
 
-    rebound_loaded_imports_by_path: dict[Path, LoadedImports] = {}
-    for member_path, indexed_unit in units_by_path.items():
-        rebound_loaded_imports_by_path[member_path] = _rebind_loaded_imports_to_flow(
+    for indexed_unit in units_by_path.values():
+        rebound_li = _rebind_loaded_imports_to_flow(
             load_imports(
                 session,
                 list(indexed_unit.imports),
@@ -899,12 +483,12 @@ def build_indexed_flow(
             ),
             flow_units_by_module_parts=units_by_module_parts,
         )
-
-    indexed_flow = replace(
-        indexed_flow,
-        loaded_imports_by_path=rebound_loaded_imports_by_path,
-    )
-    _register_flow_owner(indexed_flow)
+        # Install the rebound imports on the frozen unit in place. This one
+        # shortcut lets bindings elsewhere that already reference this unit
+        # (e.g. ImportedSymbolBinding.target_unit on sibling flows) observe
+        # the final loaded_imports without cascading dataclasses.replace()
+        # work back through every binding that names this unit.
+        object.__setattr__(indexed_unit, "loaded_imports", rebound_li)
     return indexed_flow
 
 
@@ -976,110 +560,6 @@ def _register_skill_package_id(
             hints=("Keep each skill package id unique within one module.",),
         )
     registry[package_id] = declaration
-
-
-def _validate_enum_decl(
-    decl: model.EnumDecl,
-    *,
-    owner_label: str,
-    source_path: Path | None,
-) -> None:
-    seen_keys: dict[str, model.EnumMember] = {}
-    seen_wire_values: dict[str, model.EnumMember] = {}
-    for member in decl.members:
-        existing_key = seen_keys.get(member.key)
-        if existing_key is not None:
-            raise compile_error(
-                code="E293",
-                summary="Duplicate enum member key",
-                detail=f"Enum `{owner_label}` repeats member key `{member.key}`.",
-                path=source_path,
-                source_span=member.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first member",
-                        path=source_path,
-                        source_span=existing_key.source_span,
-                    ),
-                ),
-                hints=("Keep each enum member key only once.",),
-            )
-        seen_keys[member.key] = member
-        existing_wire = seen_wire_values.get(member.value)
-        if existing_wire is not None:
-            raise compile_error(
-                code="E294",
-                summary="Duplicate enum member wire",
-                detail=f"Enum `{owner_label}` repeats wire value `{member.value}`.",
-                path=source_path,
-                source_span=member.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first member",
-                        path=source_path,
-                        source_span=existing_wire.source_span,
-                    ),
-                ),
-                hints=("Keep each enum wire value only once.",),
-            )
-        seen_wire_values[member.value] = member
-
-
-def _validate_render_profile_decl(
-    decl: model.RenderProfileDecl,
-    *,
-    owner_label: str,
-    source_path: Path | None,
-) -> None:
-    seen_targets: dict[tuple[str, ...], model.RenderProfileRule] = {}
-    for rule in decl.rules:
-        target_text = ".".join(rule.target_parts)
-        if target_text not in _KNOWN_RENDER_PROFILE_TARGETS:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Unknown render_profile target in {owner_label}: {target_text}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Use only shipped render_profile targets.",),
-            )
-        if rule.mode not in _KNOWN_RENDER_PROFILE_MODES:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Unknown render_profile mode in {owner_label}: {rule.mode}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Use only shipped render_profile modes.",),
-            )
-        allowed_modes = _RENDER_PROFILE_TARGET_MODE_CONSTRAINTS.get(target_text)
-        if allowed_modes is not None and rule.mode not in allowed_modes:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Invalid render_profile mode for {target_text} in {owner_label}: {rule.mode}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Keep each render_profile target on one of its shipped supported modes.",),
-            )
-        existing_rule = seen_targets.get(rule.target_parts)
-        if existing_rule is not None:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Duplicate render_profile rule target in {owner_label}: {target_text}",
-                path=source_path,
-                source_span=rule.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first rule",
-                        path=source_path,
-                        source_span=existing_rule.source_span,
-                    ),
-                ),
-                hints=("Declare each render_profile target at most once.",),
-            )
-        seen_targets[rule.target_parts] = rule
 
 
 def _resolve_import_path(
@@ -1248,7 +728,7 @@ def index_unit(
                 module_parts,
                 source_path=prompt_file.source_path,
             )
-            _validate_render_profile_decl(
+            validate_render_profile_decl(
                 declaration,
                 owner_label=dotted_decl_name(module_parts, declaration.name),
                 source_path=prompt_file.source_path,
@@ -1469,7 +949,7 @@ def index_unit(
                 module_parts,
                 source_path=prompt_file.source_path,
             )
-            _validate_enum_decl(
+            validate_enum_decl(
                 declaration,
                 owner_label=dotted_decl_name(module_parts, declaration.name),
                 source_path=prompt_file.source_path,
@@ -1513,6 +993,32 @@ def index_unit(
     else:
         loaded_imports = _empty_loaded_imports()
 
+    declarations = UnitDeclarations(
+        render_profiles_by_name=render_profiles_by_name,
+        analyses_by_name=analyses_by_name,
+        decisions_by_name=decisions_by_name,
+        schemas_by_name=schemas_by_name,
+        tables_by_name=tables_by_name,
+        documents_by_name=documents_by_name,
+        workflows_by_name=workflows_by_name,
+        route_onlys_by_name=route_onlys_by_name,
+        groundings_by_name=groundings_by_name,
+        reviews_by_name=reviews_by_name,
+        inputs_blocks_by_name=inputs_blocks_by_name,
+        inputs_by_name=inputs_by_name,
+        input_sources_by_name=input_sources_by_name,
+        outputs_blocks_by_name=outputs_blocks_by_name,
+        outputs_by_name=outputs_by_name,
+        output_targets_by_name=output_targets_by_name,
+        output_shapes_by_name=output_shapes_by_name,
+        output_schemas_by_name=output_schemas_by_name,
+        skills_by_name=skills_by_name,
+        skill_packages_by_name=skill_packages_by_name,
+        skill_packages_by_id=skill_packages_by_id,
+        skills_blocks_by_name=skills_blocks_by_name,
+        enums_by_name=enums_by_name,
+        agents_by_name=agents_by_name,
+    )
     indexed_unit = IndexedUnit(
         prompt_root=prompt_root,
         module_parts=module_parts,
@@ -1521,35 +1027,7 @@ def index_unit(
         prompt_file=prompt_file,
         imports=tuple(imports),
         exported_names=exported_names,
-    )
-    _register_unit_state(
-        indexed_unit,
-        declarations=UnitDeclarations(
-            render_profiles_by_name=render_profiles_by_name,
-            analyses_by_name=analyses_by_name,
-            decisions_by_name=decisions_by_name,
-            schemas_by_name=schemas_by_name,
-            tables_by_name=tables_by_name,
-            documents_by_name=documents_by_name,
-            workflows_by_name=workflows_by_name,
-            route_onlys_by_name=route_onlys_by_name,
-            groundings_by_name=groundings_by_name,
-            reviews_by_name=reviews_by_name,
-            inputs_blocks_by_name=inputs_blocks_by_name,
-            inputs_by_name=inputs_by_name,
-            input_sources_by_name=input_sources_by_name,
-            outputs_blocks_by_name=outputs_blocks_by_name,
-            outputs_by_name=outputs_by_name,
-            output_targets_by_name=output_targets_by_name,
-            output_shapes_by_name=output_shapes_by_name,
-            output_schemas_by_name=output_schemas_by_name,
-            skills_by_name=skills_by_name,
-            skill_packages_by_name=skill_packages_by_name,
-            skill_packages_by_id=skill_packages_by_id,
-            skills_blocks_by_name=skills_blocks_by_name,
-            enums_by_name=enums_by_name,
-            agents_by_name=agents_by_name,
-        ),
+        declarations=declarations,
         loaded_imports=loaded_imports,
     )
     return indexed_unit

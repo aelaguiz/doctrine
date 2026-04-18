@@ -238,30 +238,23 @@ class CompilationSession:
                 for unit, agent_name in agent_roots
             )
 
+        keys = []
+        for unit, agent_name in agent_roots:
+            flow = self.flow_for_unit(unit)
+            keys.append(
+                (flow.prompt_root.resolve(), flow.flow_root.resolve(), agent_name)
+            )
         with ThreadPoolExecutor(max_workers=default_worker_count(len(agent_roots))) as executor:
             futures = {
-                (
-                    self.flow_for_unit(unit).prompt_root.resolve(),
-                    self.flow_for_unit(unit).flow_root.resolve(),
-                    agent_name,
-                ): executor.submit(
+                key: executor.submit(
                     self.compile_agent_from_unit,
                     unit,
                     agent_name,
                     previous_turn_contexts=previous_turn_contexts,
                 )
-                for unit, agent_name in agent_roots
+                for key, (unit, agent_name) in zip(keys, agent_roots)
             }
-            return tuple(
-                futures[
-                    (
-                        self.flow_for_unit(unit).prompt_root.resolve(),
-                        self.flow_for_unit(unit).flow_root.resolve(),
-                        agent_name,
-                    )
-                ].result()
-                for unit, agent_name in agent_roots
-            )
+            return tuple(futures[key].result() for key in keys)
 
     def compile_skill_package(
         self,

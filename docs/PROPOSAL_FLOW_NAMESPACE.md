@@ -1,7 +1,7 @@
 ---
 title: "Doctrine - Flow Namespace - Architecture Plan"
 date: 2026-04-17
-status: active
+status: complete
 fallback_policy: forbidden
 owners: []
 reviewers: []
@@ -22,7 +22,7 @@ Doctrine would treat a flow as a directory, not a single `.prompt` file. All
 the declarations other flows may import. `import` would only cross flow,
 package, or skill boundaries. Sibling files would stop importing each other.
 This is a breaking language change. The release is now tagged as `v4.0.0`.
-Fresh audit still needs to close the plan.
+Fresh 2026-04-18 audit closed the plan.
 
 **Problem**
 
@@ -60,51 +60,34 @@ and cut `4.0`.
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
 Date: 2026-04-18
-Verdict (code): NOT COMPLETE
+Verdict (code): COMPLETE
 Manual QA: pending (non-blocking)
 
 ## Code blockers (why code is not done)
-- Fresh 2026-04-18 proof reruns are green: `uv sync`, `npm ci`,
-  `make verify-examples`, `make verify-diagnostics`, `make verify-package`,
-  and `uv run --locked python -m unittest tests.test_release_flow` all passed.
-- I did not find evidence that `DOC_PATH` weakened requirements, scope,
-  acceptance criteria, or phase obligations to hide unfinished work. The miss
-  was the stale audit story, not a narrowed plan.
-- The real remaining ordered frontier is now the unfinished Phase 5
-  release-completion arc: take the already-green `4.0.0` release-candidate
-  tree to a clean committed state, cut the signed `v4.0.0` tag from that
-  state, append the completed hard-cut Decision Log entry, and only then mark
-  the plan complete.
+- None. Fresh 2026-04-18 audit verified the full approved Phase 1 through
+  Phase 5 frontier against repo reality.
+- Fresh evidence:
+  - `git status --short` stayed clean before and after the proof reruns.
+  - `git tag --list 'v4.0.0'` returned `v4.0.0`.
+  - `git rev-parse --verify v4.0.0^{tag}` succeeded.
+  - `git ls-remote --tags origin refs/tags/v4.0.0 refs/tags/v4.0.0^{}` showed
+    the pushed annotated tag and peeled release commit.
+  - `uv sync`, `npm ci`, `uv run --locked python -m unittest tests.test_package_release`,
+    `uv run --locked python -m unittest tests.test_release_flow`,
+    `make verify-examples`, `make verify-diagnostics`, and
+    `make verify-package` all passed.
+- I did not find evidence that execution weakened requirements, scope,
+  acceptance criteria, or phase obligations to hide unfinished work.
 
 ## Reopened phases (false-complete fixes)
-- None. Phase 1 through Phase 4 stay complete on fresh audit, and Phase 5
-  remains honestly in progress.
+- None. Phase 1 through Phase 5 stay complete on fresh audit.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Phase 5 release completion is still unfinished even though the release
-  candidate tree and proof set are green.
-  - Evidence anchors:
-    - `pyproject.toml:7`
-    - `CHANGELOG.md:18`
-    - `git tag --list 'v4.0.0'` returned no tag
-    - `git status --short` shows the worktree is still dirty
-  - Plan expects:
-    - the final hard-cut pass to run from a clean committed tree, cut the next
-      major release tag, record the completed hard-cut sequence in Section 10,
-      and only then close the plan
-  - Code reality:
-    - the package version and changelog are already at `4.0.0`, and this fresh
-      audit reran the full Phase 5 proof set successfully, but there is still
-      no `v4.0.0` tag and the real release cut is still blocked on the dirty
-      worktree
-  - Fix:
-    - commit the green `4.0.0` release-candidate tree, cut the signed
-      `v4.0.0` tag from that clean state, append the final hard-cut Decision
-      Log entry, and then mark Phase 5 and the plan complete
+- None. Fresh audit found no remaining code frontier.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- Run the author migration walkthrough from Section 8.3 after the real release
-  cut lands.
+- Run the author migration walkthrough from Section 8.3 if you still want the
+  extra human readback.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -113,8 +96,8 @@ arch_skill:planning_passes
 deep_dive_pass_1: done 2026-04-17
 external_research_grounding: not started
 deep_dive_pass_2: not started
-recommended_flow: implement
-note: Deep-dive pass 1 and the phase plan are now strong enough for implementation. Use external research only if coding uncovers a new blocker.
+recommended_flow: complete; optional arch-docs follow-through only
+note: Planning, implementation, and fresh audit all closed on 2026-04-18. This block tracks stage order only.
 -->
 <!-- arch_skill:block:planning_passes:end -->
 
@@ -1300,7 +1283,7 @@ Finish the hard cut cleanly and prove the release candidate end to end.
 Delete any dead unit-era code or doc residue, run the full shipped proof set,
 and tag the major release only from a clean state.
 
-Status: COMPLETE (implementation pass verified 2026-04-18; fresh audit closeout pending)
+Status: COMPLETE (fresh audit verified 2026-04-18)
 
 Completed work:
 
@@ -1356,8 +1339,7 @@ Verification:
 
 Still todo in this phase:
 
-- None on the implementation side. Fresh audit still needs to close the plan
-  and clear the loop.
+- None. Fresh 2026-04-18 audit confirmed the release cut and closed the plan.
 
 **Exit criteria (all required)**
 

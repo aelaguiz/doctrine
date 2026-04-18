@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession, ProvidedPromptRoot
-from doctrine._compiler.indexing import unit_loaded_imports
+from doctrine._compiler.indexing import unit_declarations, unit_loaded_imports
 from doctrine._compiler.support import resolve_prompt_root
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
@@ -653,6 +653,62 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertIn("Ambiguous import module", error_text)
         self.assertIn("skill package source root", error_text)
         self.assertIn("entrypoint prompts root", error_text)
+
+    def test_two_sessions_in_one_process_keep_unit_state_isolated(self) -> None:
+        with tempfile.TemporaryDirectory() as a_dir, tempfile.TemporaryDirectory() as b_dir:
+            prompts_a = Path(a_dir).resolve() / "prompts"
+            prompts_b = Path(b_dir).resolve() / "prompts"
+            prompts_a.mkdir(parents=True)
+            prompts_b.mkdir(parents=True)
+            (prompts_a / "shared").mkdir()
+            (prompts_a / "shared" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    export workflow Shared: "Shared"
+                        "Use the shared step."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts_a / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import shared
+
+                    agent DemoA:
+                        role: "Session A home."
+                        workflow: "Run"
+                            use step: shared.Shared
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts_b / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent DemoB:
+                        role: "Session B home. No imports, no declarations."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session_a = CompilationSession(parse_file(prompts_a / "AGENTS.prompt"))
+            session_b = CompilationSession(parse_file(prompts_b / "AGENTS.prompt"))
+
+            entry_a = session_a.root_flow.entrypoint_unit
+            entry_b = session_b.root_flow.entrypoint_unit
+
+            self.assertIn("DemoA", unit_declarations(entry_a).agents_by_name)
+            self.assertNotIn("DemoB", unit_declarations(entry_a).agents_by_name)
+            self.assertIn("DemoB", unit_declarations(entry_b).agents_by_name)
+            self.assertNotIn("DemoA", unit_declarations(entry_b).agents_by_name)
+
+            self.assertIn(
+                ("shared",),
+                unit_loaded_imports(entry_a).imported_units,
+            )
+            self.assertEqual(unit_loaded_imports(entry_b).imported_units, {})
 
 
 if __name__ == "__main__":
