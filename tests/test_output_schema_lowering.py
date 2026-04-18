@@ -406,8 +406,8 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             """,
             schema_name="ChildPayload",
             extra_files={
-                "prompts/shared/base.prompt": """
-                output schema BasePayload: "Base Payload"
+                "prompts/shared/base/AGENTS.prompt": """
+                export output schema BasePayload: "Base Payload"
                     def SharedNote: "Shared Note"
                         type: object
 

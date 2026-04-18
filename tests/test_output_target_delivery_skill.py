@@ -157,11 +157,11 @@ class OutputTargetDeliverySkillTests(unittest.TestCase):
             """,
             agent_name="Demo",
             extra_files={
-                "prompts/shared/delivery.prompt": """
-                skill NoteDelivery: "note-delivery"
+                "prompts/shared/delivery/AGENTS.prompt": """
+                export skill NoteDelivery: "note-delivery"
                     purpose: "Append a note."
 
-                output target IssueNoteAppend: "Issue Note Append"
+                export output target IssueNoteAppend: "Issue Note Append"
                     delivery_skill: NoteDelivery
                     required: "Required"
                         note_id: "Note ID"

@@ -208,8 +208,8 @@ class TableDeclarationTests(unittest.TestCase):
                     ReleaseGuideFile
             """,
             extra_files={
-                "prompts/shared/tables.prompt": """
-                table ReleaseGates: "Release Gates"
+                "prompts/shared/tables/AGENTS.prompt": """
+                export table ReleaseGates: "Release Gates"
                     columns:
                         gate: "Gate"
                             "What must pass before shipment."

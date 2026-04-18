@@ -333,15 +333,15 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
             """,
             agent_name="Demo",
             extra_files={
-                "prompts/shared/base.prompt": """
-                output schema BasePayload: "Shared Base Payload Title"
+                "prompts/shared/base/AGENTS.prompt": """
+                export output schema BasePayload: "Shared Base Payload Title"
                     field kind: "Kind"
                         type: string
 
                     example:
                         kind: "shared_base"
 
-                output shape BaseJson: "Base JSON"
+                export output shape BaseJson: "Base JSON"
                     kind: JsonObject
                     schema: BasePayload
 

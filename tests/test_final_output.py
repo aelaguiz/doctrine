@@ -788,21 +788,21 @@ class FinalOutputTests(unittest.TestCase):
         # TurnResponse output comes from an imported module.
         agent = self._compile_agent(
             """
-            import shared.outputs
+            from shared.outputs import ImportedFinalReply
 
             agent ImportedFinalAgent:
                 role: "Use an imported final output."
                 workflow: "Reply"
                     "Reply and stop."
                 outputs: "Outputs"
-                    shared.outputs.ImportedFinalReply
-                final_output: shared.outputs.ImportedFinalReply
+                    ImportedFinalReply
+                final_output: ImportedFinalReply
             """,
             agent_name="ImportedFinalAgent",
             extra_files={
-                "prompts/shared/outputs.prompt": textwrap.dedent(
+                "prompts/shared/outputs/AGENTS.prompt": textwrap.dedent(
                     """\
-                    output ImportedFinalReply: "Imported Final Reply"
+                    export output ImportedFinalReply: "Imported Final Reply"
                         target: TurnResponse
                         shape: CommentText
                         requirement: Required
