@@ -44,14 +44,20 @@ def edge_style(kind: str) -> tuple[str, int | None]:
 def _identity_hash(prompt_root: Path | None, flow_root: Path | None) -> str:
     if prompt_root is None and flow_root is None:
         return ""
-    raw = "|".join(
-        value
-        for value in (
-            "" if prompt_root is None else str(prompt_root),
-            "" if flow_root is None else str(flow_root),
-        )
-    )
-    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:8] + "_"
+    # Hash the flow's position relative to its prompt root so identifiers stay
+    # reproducible across machines. Absolute paths would bake the local
+    # filesystem into the emitted diagram.
+    if prompt_root is not None and flow_root is not None:
+        try:
+            identity = flow_root.relative_to(prompt_root).as_posix()
+        except ValueError:
+            identity = flow_root.as_posix()
+    elif flow_root is not None:
+        identity = flow_root.as_posix()
+    else:
+        assert prompt_root is not None
+        identity = prompt_root.as_posix()
+    return hashlib.sha1(identity.encode("utf-8")).hexdigest()[:8] + "_"
 
 
 def agent_key(node: FlowAgentNode) -> AgentKey:

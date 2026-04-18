@@ -7,7 +7,7 @@ shared_inputs: {
     fill: "#F5F8FF"
     stroke: "#2F6FEB"
   }
-  input_7bcf353c_currenthandoff: {
+  input_3a52ce78_currenthandoff: {
     label: "Current Handoff\nShared Input\nSource: Prompt\nShape: Json Object\nRequirement: Required\nUsed by:\nBlockedSectionReviewDemo,\nRebuildSectionReviewDemo,\nStructureChangeDemo"
     shape: rectangle
     style: {
@@ -31,7 +31,7 @@ agent_handoffs: {
       fill: "transparent"
       stroke: "transparent"
     }
-    agent_7bcf353c_structurechangedemo: {
+    agent_3a52ce78_structurechangedemo: {
       label: "StructureChangeDemo\nAgent\nInvalidate downstream review\nwhen structure changes."
       shape: rectangle
       style: {
@@ -40,7 +40,7 @@ agent_handoffs: {
       }
     }
 
-    agent_7bcf353c_blockedsectionreviewdemo: {
+    agent_3a52ce78_blockedsectionreviewdemo: {
       label: "BlockedSectionReviewDemo\nAgent\nDo not keep reviewing against\ninvalidated downstream truth.\nMay end with no current\nartifact"
       shape: rectangle
       style: {
@@ -57,7 +57,7 @@ agent_handoffs: {
       fill: "transparent"
       stroke: "transparent"
     }
-    agent_7bcf353c_routingowner: {
+    agent_3a52ce78_routingowner: {
       label: "RoutingOwner\nAgent\nHandle reroutes when\nspecialist work cannot\ncontinue."
       shape: rectangle
       style: {
@@ -74,7 +74,7 @@ agent_handoffs: {
       fill: "transparent"
       stroke: "transparent"
     }
-    agent_7bcf353c_rebuildsectionreviewdemo: {
+    agent_3a52ce78_rebuildsectionreviewdemo: {
       label: "RebuildSectionReviewDemo\nAgent\nRebuild invalidated review\nwork and reissue it as current\ntruth."
       shape: rectangle
       style: {
@@ -92,7 +92,7 @@ shared_outputs_and_carriers: {
     fill: "#F3FFF8"
     stroke: "#067647"
   }
-  output_7bcf353c_invalidationhandoff: {
+  output_3a52ce78_invalidationhandoff: {
     label: "Invalidation Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nStructureChangeDemo\nTrust: Current Artifact,\nInvalidations\nCarries current for Section\nMetadata\nCarries invalidation for\nSection Review"
     shape: rectangle
     style: {
@@ -101,7 +101,7 @@ shared_outputs_and_carriers: {
     }
   }
 
-  output_7bcf353c_sectionmetadata: {
+  output_3a52ce78_sectionmetadata: {
     label: "Section Metadata\nCarrier Output\nTarget: File\nPath: unit_root/_authoring/sec\ntion_metadata.json\nShape: Json Object\nRequirement: Required\nProduced by:\nStructureChangeDemo\nCurrent via Invalidation\nHandoff.Current Artifact"
     shape: rectangle
     style: {
@@ -110,7 +110,7 @@ shared_outputs_and_carriers: {
     }
   }
 
-  output_7bcf353c_blockedreviewhandoff: {
+  output_3a52ce78_blockedreviewhandoff: {
     label: "Blocked Review Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nBlockedSectionReviewDemo\nTrust: Invalidations"
     shape: rectangle
     style: {
@@ -119,7 +119,7 @@ shared_outputs_and_carriers: {
     }
   }
 
-  output_7bcf353c_rebuildhandoff: {
+  output_3a52ce78_rebuildhandoff: {
     label: "Rebuild Handoff\nCarrier Output\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by:\nRebuildSectionReviewDemo\nTrust: Current Artifact\nCarries current for Section\nReview"
     shape: rectangle
     style: {
@@ -128,7 +128,7 @@ shared_outputs_and_carriers: {
     }
   }
 
-  output_7bcf353c_sectionreview: {
+  output_3a52ce78_sectionreview: {
     label: "Section Review\nCarrier Output\nTarget: File\nPath: unit_root/_authoring/SEC\nTION_REVIEW.md\nShape: Markdown Document\nRequirement: Required\nProduced by:\nRebuildSectionReviewDemo\nInvalidated via Invalidation\nHandoff.Invalidations\nCurrent via Rebuild\nHandoff.Current Artifact"
     shape: rectangle
     style: {
@@ -138,7 +138,7 @@ shared_outputs_and_carriers: {
   }
 }
 
-shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo: {
+shared_inputs.input_3a52ce78_currenthandoff -> agent_handoffs.route_starts.agent_3a52ce78_structurechangedemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -146,7 +146,7 @@ shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.route_starts.agent
   }
 }
 
-agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo -> shared_outputs_and_carriers.output_7bcf353c_invalidationhandoff: {
+agent_handoffs.route_starts.agent_3a52ce78_structurechangedemo -> shared_outputs_and_carriers.output_3a52ce78_invalidationhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -154,7 +154,7 @@ agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo -> shared_outputs
   }
 }
 
-agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo -> shared_outputs_and_carriers.output_7bcf353c_sectionmetadata: {
+agent_handoffs.route_starts.agent_3a52ce78_structurechangedemo -> shared_outputs_and_carriers.output_3a52ce78_sectionmetadata: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -162,14 +162,14 @@ agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo -> shared_outputs
   }
 }
 
-agent_handoffs.route_starts.agent_7bcf353c_structurechangedemo -> agent_handoffs.primary_lane.agent_7bcf353c_routingowner: {
+agent_handoffs.route_starts.agent_3a52ce78_structurechangedemo -> agent_handoffs.primary_lane.agent_3a52ce78_routingowner: {
   label: "Route the same issue back to\nRoutingOwner for rebuild."
   style: {
     stroke: "#D92D20"
   }
 }
 
-shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.route_starts.agent_7bcf353c_blockedsectionreviewdemo: {
+shared_inputs.input_3a52ce78_currenthandoff -> agent_handoffs.route_starts.agent_3a52ce78_blockedsectionreviewdemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -177,7 +177,7 @@ shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.route_starts.agent
   }
 }
 
-agent_handoffs.route_starts.agent_7bcf353c_blockedsectionreviewdemo -> shared_outputs_and_carriers.output_7bcf353c_blockedreviewhandoff: {
+agent_handoffs.route_starts.agent_3a52ce78_blockedsectionreviewdemo -> shared_outputs_and_carriers.output_3a52ce78_blockedreviewhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -185,14 +185,14 @@ agent_handoffs.route_starts.agent_7bcf353c_blockedsectionreviewdemo -> shared_ou
   }
 }
 
-agent_handoffs.route_starts.agent_7bcf353c_blockedsectionreviewdemo -> agent_handoffs.primary_lane.agent_7bcf353c_routingowner: {
+agent_handoffs.route_starts.agent_3a52ce78_blockedsectionreviewdemo -> agent_handoffs.primary_lane.agent_3a52ce78_routingowner: {
   label: "Route the same issue back to\nRoutingOwner until review is\nrebuilt."
   style: {
     stroke: "#D92D20"
   }
 }
 
-shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.secondary_lanes.agent_7bcf353c_rebuildsectionreviewdemo: {
+shared_inputs.input_3a52ce78_currenthandoff -> agent_handoffs.secondary_lanes.agent_3a52ce78_rebuildsectionreviewdemo: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -200,7 +200,7 @@ shared_inputs.input_7bcf353c_currenthandoff -> agent_handoffs.secondary_lanes.ag
   }
 }
 
-agent_handoffs.secondary_lanes.agent_7bcf353c_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_7bcf353c_rebuildhandoff: {
+agent_handoffs.secondary_lanes.agent_3a52ce78_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_3a52ce78_rebuildhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -208,7 +208,7 @@ agent_handoffs.secondary_lanes.agent_7bcf353c_rebuildsectionreviewdemo -> shared
   }
 }
 
-agent_handoffs.secondary_lanes.agent_7bcf353c_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_7bcf353c_sectionreview: {
+agent_handoffs.secondary_lanes.agent_3a52ce78_rebuildsectionreviewdemo -> shared_outputs_and_carriers.output_3a52ce78_sectionreview: {
   label: "produces"
   style: {
     stroke: "#067647"
