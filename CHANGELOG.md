@@ -27,30 +27,12 @@ Release kind: Breaking
 Release channel: stable
 Release version: v4.0.0
 Language version: 3.0 -> 4.0
-Affected surfaces: Doctrine import language, flow-boundary ownership, package
-metadata, import diagnostics, first-party `doctrine-learn` teaching refs and
-public install trees, the numbered example corpus, and docs that teach imports
-and namespace ownership.
-Who must act: authors using same-flow imports, authors relying on relative
-imports, authors crossing flow boundaries without `export`, downstream readers
-who learned the old import story from shipped docs or examples, and release
-operators who install `doctrine-agents` by pinned package version.
-Who does not need to act: authors whose flows already use bare same-flow refs
-and explicit cross-flow `export`, and users who only consume emitted runtime
-docs without depending on old import authoring.
-Upgrade steps: (1) install `doctrine-agents==4.0.0`; (2) delete same-flow
-imports and use bare refs inside one flow; (3) replace any remaining relative
-import with an absolute cross-flow import; (4) mark declarations `export`
-when another flow must read them; (5) rename sibling declarations that now
-collide inside one flat flow namespace; (6) refresh local examples and docs to
-the flow-root model.
+Affected surfaces: Doctrine import language, flow-boundary ownership, package metadata, import diagnostics, first-party `doctrine-learn` teaching refs and public install trees, the numbered example corpus, and docs that teach imports and namespace ownership.
+Who must act: authors using same-flow imports, authors relying on relative imports, authors crossing flow boundaries without `export`, downstream readers who learned the old import story from shipped docs or examples, and release operators who install `doctrine-agents` by pinned package version.
+Who does not need to act: authors whose flows already use bare same-flow refs and explicit cross-flow `export`, and users who only consume emitted runtime docs without depending on old import authoring.
+Upgrade steps: (1) install `doctrine-agents==4.0.0`; (2) delete same-flow imports and use bare refs inside one flow; (3) replace any remaining relative import with an absolute cross-flow import; (4) mark declarations `export` when another flow must read them; (5) rename sibling declarations that now collide inside one flat flow namespace; (6) refresh local examples and docs to the flow-root model.
 Verification: `uv sync && npm ci && uv run --locked python -m unittest tests.test_package_release tests.test_release_flow && make verify-package && make verify-examples && make verify-diagnostics`
-Support-surface version changes: Doctrine language 3.0 -> 4.0; package
-metadata 2.0.0 -> 4.0.0; distribution name `doctrine-agents` unchanged; docs
-and example corpus now teach flow-owned namespaces, `export`-gated cross-flow
-visibility, and retired same-flow plus relative imports; first-party
-`doctrine-learn` public install trees now mirror the flow-root teaching
-surface.
+Support-surface version changes: Doctrine language 3.0 -> 4.0; package metadata 2.0.0 -> 4.0.0; distribution name `doctrine-agents` unchanged; docs and example corpus now teach flow-owned namespaces, `export`-gated cross-flow visibility, and retired same-flow plus relative imports; first-party `doctrine-learn` public install trees now mirror the flow-root teaching surface.
 
 Old behavior: prompt files could be treated like module owners, relative
 imports were still documented, same-flow imports were tolerated in examples,
