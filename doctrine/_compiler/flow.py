@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_INPUT_SOURCES,
@@ -64,8 +65,16 @@ class FlowMixin:
     """Flow extraction helper owner for CompilationContext."""
 
     def extract_target_flow_graph(self, agent_names: tuple[str, ...]) -> FlowGraph:
+        root_agents: list[tuple[IndexedUnit, str]] = []
+        for agent_name in agent_names:
+            agent = self.root_flow.agents_by_name.get(agent_name)
+            if agent is None:
+                root_agents.append((self.root_entrypoint_unit, agent_name))
+                continue
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(agent)]
+            root_agents.append((owner_unit, agent_name))
         return self.extract_target_flow_graph_from_units(
-            tuple((self.root_unit, agent_name) for agent_name in agent_names)
+            tuple(root_agents)
         )
 
     def extract_target_flow_graph_from_units(
@@ -74,7 +83,7 @@ class FlowMixin:
     ) -> FlowGraph:
         root_agents: list[tuple[IndexedUnit, model.Agent]] = []
         for unit, agent_name in agent_roots:
-            agent = unit.agents_by_name.get(agent_name)
+            agent = unit_declarations(unit).agents_by_name.get(agent_name)
             if agent is None:
                 module_label = (
                     "the root prompt file"
@@ -108,22 +117,10 @@ class FlowMixin:
         agent_notes: dict[FlowAgentKey, list[str]] = {}
         input_notes: dict[FlowArtifactKey, list[str]] = {}
         output_notes: dict[FlowArtifactKey, list[str]] = {}
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ] = {}
+        edges: dict[tuple[object, ...], FlowEdge] = {}
 
         for unit, agent in root_agents:
-            agent_key = (unit.module_parts, agent.name)
+            agent_key = self._flow_agent_key(unit, agent.name)
             self._flow_upsert_agent_node(agent_nodes, agent, unit=unit)
 
             agent_contract = self._resolve_agent_contract(agent, unit=unit)
@@ -194,9 +191,13 @@ class FlowMixin:
                         source_module_parts=input_key[0],
                         source_name=input_key[1],
                         target_kind="agent",
-                        target_module_parts=agent_key[0],
-                        target_name=agent_key[1],
+                        target_module_parts=unit.module_parts,
+                        target_name=agent_key[2],
                         label="consumes",
+                        source_prompt_root=self._flow_identity(input_unit)[0],
+                        source_flow_root=self._flow_identity(input_unit)[1],
+                        target_prompt_root=agent_key[0],
+                        target_flow_root=agent_key[1],
                     ),
                 )
 
@@ -222,12 +223,16 @@ class FlowMixin:
                     FlowEdge(
                         kind="produce",
                         source_kind="agent",
-                        source_module_parts=agent_key[0],
-                        source_name=agent_key[1],
+                        source_module_parts=unit.module_parts,
+                        source_name=agent_key[2],
                         target_kind="output",
                         target_module_parts=output_key[0],
                         target_name=output_key[1],
                         label="produces",
+                        source_prompt_root=agent_key[0],
+                        source_flow_root=agent_key[1],
+                        target_prompt_root=self._flow_identity(output_unit)[0],
+                        target_flow_root=self._flow_identity(output_unit)[1],
                     ),
                 )
 
@@ -263,8 +268,15 @@ class FlowMixin:
                     module_parts=node.module_parts,
                     name=node.name,
                     title=node.title,
+                    prompt_root=node.prompt_root,
+                    flow_root=node.flow_root,
                     detail_lines=node.detail_lines,
-                    notes=tuple(agent_notes.get((node.module_parts, node.name), ())),
+                    notes=tuple(
+                        agent_notes.get(
+                            (node.prompt_root, node.flow_root, node.name),
+                            (),
+                        )
+                    ),
                 )
                 for node in agent_nodes.values()
             ),
@@ -273,11 +285,18 @@ class FlowMixin:
                     module_parts=node.module_parts,
                     name=node.name,
                     title=node.title,
+                    prompt_root=node.prompt_root,
+                    flow_root=node.flow_root,
                     source_title=node.source_title,
                     shape_title=node.shape_title,
                     requirement_title=node.requirement_title,
                     detail_lines=node.detail_lines,
-                    notes=tuple(input_notes.get((node.module_parts, node.name), ())),
+                    notes=tuple(
+                        input_notes.get(
+                            (node.prompt_root, node.flow_root, node.name),
+                            (),
+                        )
+                    ),
                 )
                 for node in input_nodes.values()
             ),
@@ -286,13 +305,20 @@ class FlowMixin:
                     module_parts=node.module_parts,
                     name=node.name,
                     title=node.title,
+                    prompt_root=node.prompt_root,
+                    flow_root=node.flow_root,
                     target_title=node.target_title,
                     primary_path=node.primary_path,
                     shape_title=node.shape_title,
                     requirement_title=node.requirement_title,
                     detail_lines=node.detail_lines,
                     trust_surface=node.trust_surface,
-                    notes=tuple(output_notes.get((node.module_parts, node.name), ())),
+                    notes=tuple(
+                        output_notes.get(
+                            (node.prompt_root, node.flow_root, node.name),
+                            (),
+                        )
+                    ),
                 )
                 for node in output_nodes.values()
             ),
@@ -312,19 +338,7 @@ class FlowMixin:
         input_notes: dict[FlowArtifactKey, list[str]],
         output_nodes: dict[FlowArtifactKey, FlowOutputNode],
         output_notes: dict[FlowArtifactKey, list[str]],
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
         owner_label: str,
         slot_key: str,
         review_output_contexts: frozenset[tuple[OutputDeclKey, ReviewSemanticContext]],
@@ -333,12 +347,13 @@ class FlowMixin:
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         workflow_stack: tuple[tuple[tuple[str, ...], str], ...],
     ) -> None:
-        agent_key = (agent_unit.module_parts, agent.name)
+        agent_key = self._flow_agent_key(agent_unit, agent.name)
 
         for item in workflow_body.items:
             if isinstance(item, ResolvedSectionItem):
                 self._collect_flow_from_section_items(
                     item.items,
+                    agent_unit=agent_unit,
                     agent_key=agent_key,
                     agent_nodes=agent_nodes,
                     edges=edges,
@@ -484,7 +499,7 @@ class FlowMixin:
                 )
                 self._flow_append_note(
                     output_notes,
-                    (carrier.unit.module_parts, carrier.decl.name),
+                    self._flow_artifact_key(carrier.unit, carrier.decl.name),
                     f"Carries current for {target_label}",
                 )
 
@@ -545,7 +560,7 @@ class FlowMixin:
                     )
                 self._flow_append_note(
                     output_notes,
-                    (carrier.unit.module_parts, carrier.decl.name),
+                    self._flow_artifact_key(carrier.unit, carrier.decl.name),
                     f"Carries invalidation for {target_label}",
                 )
 
@@ -563,12 +578,16 @@ class FlowMixin:
                     FlowEdge(
                         kind="law_route",
                         source_kind="agent",
-                        source_module_parts=agent_key[0],
-                        source_name=agent_key[1],
+                        source_module_parts=agent_unit.module_parts,
+                        source_name=agent.name,
                         target_kind="agent",
                         target_module_parts=target_unit.module_parts,
                         target_name=target_agent.name,
                         label=route_label,
+                        source_prompt_root=agent_key[0],
+                        source_flow_root=agent_key[1],
+                        target_prompt_root=self._flow_identity(target_unit)[0],
+                        target_flow_root=self._flow_identity(target_unit)[1],
                     ),
                 )
 
@@ -598,19 +617,7 @@ class FlowMixin:
         agent: model.Agent,
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         agent_nodes: dict[FlowAgentKey, FlowAgentNode],
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
     ) -> None:
         for _output_key, route_context in sorted(route_output_contexts, key=lambda item: item[0]):
             selector = route_context.selector
@@ -632,19 +639,7 @@ class FlowMixin:
         agent: model.Agent,
         agent_contract: AgentContract,
         agent_nodes: dict[FlowAgentKey, FlowAgentNode],
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
     ) -> None:
         review_field = next(
             (field for field in agent.fields if isinstance(field, model.ReviewField)),
@@ -686,28 +681,26 @@ class FlowMixin:
         route_context: RouteSemanticContext,
         owner_label: str,
         agent_nodes: dict[FlowAgentKey, FlowAgentNode],
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
     ) -> None:
-        agent_key = (agent_unit.module_parts, agent.name)
+        agent_key = self._flow_agent_key(agent_unit, agent.name)
         for branch in route_context.branches:
-            target_unit = (
-                self._load_module(branch.target_module_parts)
-                if branch.target_module_parts
-                else self.root_unit
-            )
-            target_agent = target_unit.agents_by_name.get(branch.target_name)
+            if branch.target_module_parts:
+                target_unit = self._load_module(branch.target_module_parts)
+                target_agent = unit_declarations(target_unit).agents_by_name.get(
+                    branch.target_name
+                )
+            else:
+                target_agent = self.session.flow_for_unit(agent_unit).agents_by_name.get(
+                    branch.target_name
+                )
+                target_unit = (
+                    agent_unit
+                    if target_agent is None
+                    else self.session.flow_for_unit(agent_unit).declaration_owner_units_by_id[
+                        id(target_agent)
+                    ]
+                )
             if target_agent is None:
                 raise compile_error(
                     code="E299",
@@ -725,12 +718,16 @@ class FlowMixin:
                 FlowEdge(
                     kind="authored_route",
                     source_kind="agent",
-                    source_module_parts=agent_key[0],
-                    source_name=agent_key[1],
+                    source_module_parts=agent_unit.module_parts,
+                    source_name=agent.name,
                     target_kind="agent",
                     target_module_parts=target_unit.module_parts,
                     target_name=target_agent.name,
                     label=branch.label,
+                    source_prompt_root=agent_key[0],
+                    source_flow_root=agent_key[1],
+                    target_prompt_root=self._flow_identity(target_unit)[0],
+                    target_flow_root=self._flow_identity(target_unit)[1],
                 ),
             )
 
@@ -738,26 +735,16 @@ class FlowMixin:
         self,
         items: tuple[ResolvedSectionBodyItem, ...],
         *,
+        agent_unit: IndexedUnit,
         agent_key: FlowAgentKey,
         agent_nodes: dict[FlowAgentKey, FlowAgentNode],
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
     ) -> None:
         for item in items:
             if isinstance(item, ResolvedSectionItem):
                 self._collect_flow_from_section_items(
                     item.items,
+                    agent_unit=agent_unit,
                     agent_key=agent_key,
                     agent_nodes=agent_nodes,
                     edges=edges,
@@ -765,12 +752,31 @@ class FlowMixin:
                 continue
             if not isinstance(item, ResolvedRouteLine):
                 continue
-            target_unit = (
-                self._load_module(item.target_module_parts)
-                if item.target_module_parts
-                else self.root_unit
-            )
-            target_agent = target_unit.agents_by_name.get(item.target_name)
+            if item.target_module_parts:
+                target_unit = self._load_module(item.target_module_parts)
+                target_agent = unit_declarations(target_unit).agents_by_name.get(
+                    item.target_name
+                )
+                target_prompt_root, target_flow_root = self._flow_identity(target_unit)
+            else:
+                current_flow = self.session.flow_by_key(agent_key[0], agent_key[1])
+                if current_flow is None:
+                    raise compile_error(
+                        code="E901",
+                        summary="Internal compiler error",
+                        detail=(
+                            "Internal compiler error: missing current flow during flow extraction."
+                        ),
+                        path=self.root_flow.entrypoint_path,
+                    )
+                target_agent = current_flow.agents_by_name.get(item.target_name)
+                target_unit = (
+                    self.root_entrypoint_unit
+                    if target_agent is None
+                    else current_flow.declaration_owner_units_by_id[id(target_agent)]
+                )
+                target_prompt_root = current_flow.prompt_root.resolve()
+                target_flow_root = current_flow.flow_root.resolve()
             if target_agent is not None:
                 self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
             self._flow_add_edge(
@@ -778,12 +784,20 @@ class FlowMixin:
                 FlowEdge(
                     kind="authored_route",
                     source_kind="agent",
-                    source_module_parts=agent_key[0],
-                    source_name=agent_key[1],
+                    source_module_parts=agent_unit.module_parts,
+                    source_name=agent_key[2],
                     target_kind="agent",
-                    target_module_parts=item.target_module_parts,
+                    target_module_parts=(
+                        target_unit.module_parts
+                        if target_agent is not None
+                        else item.target_module_parts
+                    ),
                     target_name=item.target_name,
                     label=item.label,
+                    source_prompt_root=agent_key[0],
+                    source_flow_root=agent_key[1],
+                    target_prompt_root=target_prompt_root,
+                    target_flow_root=target_flow_root,
                 ),
             )
 
@@ -794,13 +808,16 @@ class FlowMixin:
         *,
         unit: IndexedUnit,
     ) -> None:
-        key = (unit.module_parts, agent.name)
+        prompt_root, flow_root = self._flow_identity(unit)
+        key = (prompt_root, flow_root, agent.name)
         if key in nodes:
             return
         nodes[key] = FlowAgentNode(
             module_parts=unit.module_parts,
             name=agent.name,
             title=agent.title or agent.name,
+            prompt_root=prompt_root,
+            flow_root=flow_root,
             detail_lines=self._flow_agent_detail_lines(agent, unit=unit),
         )
 
@@ -811,7 +828,8 @@ class FlowMixin:
         *,
         unit: IndexedUnit,
     ) -> None:
-        key = (unit.module_parts, decl.name)
+        prompt_root, flow_root = self._flow_identity(unit)
+        key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
         source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
@@ -822,6 +840,8 @@ class FlowMixin:
             module_parts=unit.module_parts,
             name=decl.name,
             title=decl.title,
+            prompt_root=prompt_root,
+            flow_root=flow_root,
             source_title=source_title,
             shape_title=shape_title,
             requirement_title=requirement_title,
@@ -837,7 +857,8 @@ class FlowMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
     ) -> None:
-        key = (unit.module_parts, decl.name)
+        prompt_root, flow_root = self._flow_identity(unit)
+        key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
         target_title, primary_path, shape_title, requirement_title, detail_lines = (
@@ -850,6 +871,8 @@ class FlowMixin:
             module_parts=unit.module_parts,
             name=decl.name,
             title=decl.title,
+            prompt_root=prompt_root,
+            flow_root=flow_root,
             target_title=target_title,
             primary_path=primary_path,
             shape_title=shape_title,
@@ -1325,7 +1348,7 @@ class FlowMixin:
         resolved: ResolvedLawPath,
         note: str,
     ) -> None:
-        key = (resolved.unit.module_parts, resolved.decl.name)
+        key = self._flow_artifact_key(resolved.unit, resolved.decl.name)
         if isinstance(resolved.decl, model.InputDecl):
             self._flow_append_note(input_notes, key, note)
             return
@@ -1334,8 +1357,8 @@ class FlowMixin:
 
     def _flow_append_note(
         self,
-        notes_by_key: dict[tuple[tuple[str, ...], str], list[str]],
-        key: tuple[tuple[str, ...], str],
+        notes_by_key: dict[object, list[str]],
+        key: object,
         note: str,
     ) -> None:
         bucket = notes_by_key.setdefault(key, [])
@@ -1344,27 +1367,19 @@ class FlowMixin:
 
     def _flow_add_edge(
         self,
-        edges: dict[
-            tuple[
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-                tuple[str, ...],
-                str,
-                str,
-            ],
-            FlowEdge,
-        ],
+        edges: dict[tuple[object, ...], FlowEdge],
         edge: FlowEdge,
     ) -> None:
         key = (
             edge.kind,
             edge.source_kind,
+            edge.source_prompt_root,
+            edge.source_flow_root,
             edge.source_module_parts,
             edge.source_name,
             edge.target_kind,
+            edge.target_prompt_root,
+            edge.target_flow_root,
             edge.target_module_parts,
             edge.target_name,
             edge.label,

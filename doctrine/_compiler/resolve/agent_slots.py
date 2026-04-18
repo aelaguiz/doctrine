@@ -613,12 +613,17 @@ class ResolveAgentSlotsMixin:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         matches: list[tuple[object, IndexedUnit, model.InputDecl | model.OutputDecl]] = []
         for lookup_target in lookup_targets:
-            input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
-            output_decl = self._resolve_local_output_decl(
+            input_match = self._resolve_visible_input_decl(
                 lookup_target.declaration_name,
                 unit=lookup_target.unit,
             )
-            if input_decl is not None and output_decl is not None:
+            output_match = self._resolve_visible_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if input_match is not None and output_match is not None:
+                input_unit, input_decl = input_match
+                output_unit, output_decl = output_match
                 raise reference_compile_error(
                     code="E270",
                     summary="Ambiguous declaration reference",
@@ -630,21 +635,24 @@ class ResolveAgentSlotsMixin:
                         for related in (
                             reference_related_site(
                                 label="input declaration",
-                                unit=lookup_target.unit,
+                                unit=input_unit,
                                 source_span=input_decl.source_span,
                             ),
                             reference_related_site(
                                 label="output declaration",
-                                unit=lookup_target.unit,
+                                unit=output_unit,
                                 source_span=output_decl.source_span,
                             ),
                         )
                         if related.location.line is not None
                     ),
                 )
-            decl = input_decl if input_decl is not None else output_decl
-            if decl is not None:
-                matches.append((lookup_target, lookup_target.unit, decl))
+            if input_match is not None:
+                input_unit, input_decl = input_match
+                matches.append((lookup_target, input_unit, input_decl))
+            if output_match is not None:
+                output_unit, output_decl = output_match
+                matches.append((lookup_target, output_unit, output_decl))
         if len(matches) > 1:
             imported_target = next(
                 (

@@ -1,6 +1,3 @@
-from refs.query_patterns import QueryPatterns
-from refs.receipts_template import ReceiptsTemplate
-
 skill package MixedResearchReviewKit: "Mixed Research Review Kit"
     metadata:
         name: "mixed-research-review-kit"

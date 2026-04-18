@@ -5,7 +5,19 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import doctrine._model.declarations as model
+from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
+from doctrine._compiler.declaration_validation import (
+    validate_enum_decl,
+    validate_render_profile_decl,
+)
 from doctrine._compiler.diagnostics import compile_error, file_scoped_related, related_prompt_site
+from doctrine._compiler.flow_boundary import (
+    FlowBoundaryKind,
+    _FLOW_ENTRYPOINT_FILENAMES,
+    discover_flow_members,
+    flow_boundary_kind_for_path,
+    resolve_flow_entrypoint,
+)
 from doctrine._model.core import ImportPath
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
@@ -15,49 +27,8 @@ if TYPE_CHECKING:
 
 from doctrine._compiler.support import dotted_decl_name, path_location
 
-_KNOWN_RENDER_PROFILE_TARGETS = {
-    "review.contract_checks",
-    "analysis.stages",
-    "control.invalidations",
-    "guarded_sections",
-    "identity.owner",
-    "identity.debug",
-    "identity.enum_wire",
-    "properties",
-    "guard",
-    "sequence",
-    "bullets",
-    "checklist",
-    "definitions",
-    "table",
-    "callout",
-    "code",
-    "markdown",
-    "html",
-    "footnotes",
-    "image",
-}
-_KNOWN_RENDER_PROFILE_MODES = {
-    "sentence",
-    "titled_section",
-    "expanded_sequence",
-    "natural_ordered_prose",
-    "concise_explanatory_shell",
-    "title",
-    "title_and_key",
-    "wire_only",
-}
-_RENDER_PROFILE_TARGET_MODE_CONSTRAINTS = {
-    "analysis.stages": {"natural_ordered_prose", "titled_section"},
-    "review.contract_checks": {"sentence", "titled_section"},
-    "control.invalidations": {"sentence", "expanded_sequence"},
-    "identity.owner": {"title", "title_and_key"},
-    "identity.debug": {"title", "title_and_key"},
-    "identity.enum_wire": {"title", "title_and_key", "wire_only"},
-}
-
-ModuleLoadKey: TypeAlias = tuple[Path, tuple[str, ...]]
 ModuleSourceKind: TypeAlias = Literal["entrypoint", "file_module", "runtime_package"]
+FlowLoadKey: TypeAlias = tuple[Path, Path]
 
 
 @dataclass(slots=True, frozen=True)
@@ -69,20 +40,7 @@ class ResolvedModuleSource:
 
 
 @dataclass(slots=True, frozen=True)
-class ImportedSymbolBinding:
-    target_name: str
-    target_unit: "IndexedUnit"
-    import_decl: model.ImportDecl
-
-
-@dataclass(slots=True, frozen=True)
-class IndexedUnit:
-    prompt_root: Path
-    module_parts: tuple[str, ...]
-    module_source_kind: ModuleSourceKind
-    package_root: Path | None
-    prompt_file: model.PromptFile
-    imports: tuple[model.ImportDecl, ...]
+class UnitDeclarations:
     render_profiles_by_name: dict[str, model.RenderProfileDecl]
     analyses_by_name: dict[str, model.AnalysisDecl]
     decisions_by_name: dict[str, model.DecisionDecl]
@@ -107,9 +65,13 @@ class IndexedUnit:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
-    imported_units: dict[tuple[str, ...], "IndexedUnit"]
-    visible_imported_units: dict[tuple[str, ...], "IndexedUnit"]
-    imported_symbols_by_name: dict[str, ImportedSymbolBinding]
+
+
+@dataclass(slots=True, frozen=True)
+class ImportedSymbolBinding:
+    target_name: str
+    target_unit: IndexedUnit
+    import_decl: model.ImportDecl
 
 
 @dataclass(slots=True, frozen=True)
@@ -117,6 +79,417 @@ class LoadedImports:
     imported_units: dict[tuple[str, ...], IndexedUnit]
     visible_imported_units: dict[tuple[str, ...], IndexedUnit]
     imported_symbols_by_name: dict[str, ImportedSymbolBinding]
+
+
+@dataclass(slots=True, frozen=True, eq=False)
+class IndexedUnit:
+    prompt_root: Path
+    module_parts: tuple[str, ...]
+    module_source_kind: ModuleSourceKind
+    package_root: Path | None
+    prompt_file: model.PromptFile
+    imports: tuple[model.ImportDecl, ...]
+    exported_names: frozenset[str]
+    declarations: UnitDeclarations
+    loaded_imports: LoadedImports
+
+
+@dataclass(slots=True, frozen=True)
+class IndexedFlow:
+    prompt_root: Path
+    flow_root: Path
+    flow_parts: tuple[str, ...]
+    entrypoint_path: Path
+    boundary_kind: FlowBoundaryKind
+    member_paths: tuple[Path, ...]
+    entrypoint_unit: IndexedUnit
+    units_by_path: dict[Path, IndexedUnit]
+    units_by_module_parts: dict[tuple[str, ...], IndexedUnit]
+    declaration_owner_units_by_id: dict[int, IndexedUnit]
+    exported_names: frozenset[str]
+    render_profiles_by_name: dict[str, model.RenderProfileDecl]
+    analyses_by_name: dict[str, model.AnalysisDecl]
+    decisions_by_name: dict[str, model.DecisionDecl]
+    schemas_by_name: dict[str, model.SchemaDecl]
+    tables_by_name: dict[str, model.TableDecl]
+    documents_by_name: dict[str, model.DocumentDecl]
+    workflows_by_name: dict[str, model.WorkflowDecl]
+    route_onlys_by_name: dict[str, model.RouteOnlyDecl]
+    groundings_by_name: dict[str, model.GroundingDecl]
+    reviews_by_name: dict[str, model.ReviewDecl]
+    inputs_blocks_by_name: dict[str, model.InputsDecl]
+    inputs_by_name: dict[str, model.InputDecl]
+    input_sources_by_name: dict[str, model.InputSourceDecl]
+    outputs_blocks_by_name: dict[str, model.OutputsDecl]
+    outputs_by_name: dict[str, model.OutputDecl]
+    output_targets_by_name: dict[str, model.OutputTargetDecl]
+    output_shapes_by_name: dict[str, model.OutputShapeDecl]
+    output_schemas_by_name: dict[str, model.OutputSchemaDecl]
+    skills_by_name: dict[str, model.SkillDecl]
+    skill_packages_by_name: dict[str, model.SkillPackageDecl]
+    skill_packages_by_id: dict[str, model.SkillPackageDecl]
+    skills_blocks_by_name: dict[str, model.SkillsDecl]
+    enums_by_name: dict[str, model.EnumDecl]
+    agents_by_name: dict[str, model.Agent]
+
+
+def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
+    return unit.declarations
+
+
+def unit_loaded_imports(unit: IndexedUnit) -> LoadedImports:
+    return unit.loaded_imports
+
+
+def _module_parts_for_prompt_path(prompt_root: Path, prompt_path: Path) -> tuple[str, ...]:
+    resolved_prompt_root = prompt_root.resolve()
+    resolved_prompt_path = prompt_path.resolve()
+    relative_path = resolved_prompt_path.relative_to(resolved_prompt_root)
+    if resolved_prompt_path.name in _FLOW_ENTRYPOINT_FILENAMES:
+        return relative_path.parent.parts
+    return relative_path.with_suffix("").parts
+
+
+def _flow_module_source_kind(
+    *,
+    prompt_path: Path,
+    entrypoint_path: Path,
+    entrypoint_module_source_kind: ModuleSourceKind,
+) -> ModuleSourceKind:
+    if prompt_path.resolve() == entrypoint_path.resolve():
+        return entrypoint_module_source_kind
+    return "file_module"
+
+
+def _flow_package_root(
+    *,
+    flow_root: Path,
+    boundary_kind: FlowBoundaryKind,
+    entrypoint_module_source_kind: ModuleSourceKind,
+) -> Path | None:
+    if boundary_kind == "skill_flow" or entrypoint_module_source_kind == "runtime_package":
+        return flow_root
+    return None
+
+
+def _register_flow_registry(
+    registry: dict[str, object],
+    unit_registry: dict[str, object],
+    *,
+    owner_unit: IndexedUnit,
+    declaration_owner_units_by_id: dict[int, IndexedUnit],
+    flow_parts: tuple[str, ...],
+    source_path: Path | None,
+) -> None:
+    for name, declaration in unit_registry.items():
+        existing = registry.get(name)
+        if existing is not None:
+            existing_owner_unit = declaration_owner_units_by_id.get(id(existing))
+            existing_owner_path = (
+                None
+                if existing_owner_unit is None
+                else existing_owner_unit.prompt_file.source_path
+            )
+            if (
+                existing_owner_path is not None
+                and source_path is not None
+                and existing_owner_path.resolve() != source_path.resolve()
+            ):
+                flow_label = ".".join(flow_parts) or "the root flow"
+                raise compile_error(
+                    code="E316",
+                    summary="Sibling declaration collision",
+                    detail=(
+                        f"Declaration `{name}` is defined more than once in flow "
+                        f"`{flow_label}` across sibling prompt files."
+                    ),
+                    path=source_path,
+                    source_span=getattr(declaration, "source_span", None),
+                    related=(
+                        related_prompt_site(
+                            label="first declaration",
+                            path=existing_owner_path,
+                            source_span=getattr(existing, "source_span", None),
+                        ),
+                    ),
+                    hints=(
+                        "Keep one declaration name per flow, or rename one sibling declaration.",
+                    ),
+                )
+        _register_decl(
+            registry,
+            declaration,
+            name,
+            flow_parts,
+            source_path=source_path,
+        )
+        registry[name] = declaration
+        declaration_owner_units_by_id[id(declaration)] = owner_unit
+
+
+def lookup_flow_registry_decl(
+    flow: IndexedFlow,
+    *,
+    registry_name: str,
+    declaration_name: str,
+) -> tuple[IndexedUnit, object] | None:
+    registry = getattr(flow, registry_name)
+    declaration = registry.get(declaration_name)
+    if declaration is None:
+        return None
+    owner_unit = flow.declaration_owner_units_by_id[id(declaration)]
+    return owner_unit, declaration
+
+
+def _empty_loaded_imports() -> LoadedImports:
+    return LoadedImports(
+        imported_units={},
+        visible_imported_units={},
+        imported_symbols_by_name={},
+    )
+
+
+def _raise_same_flow_import_retired(
+    import_decl: model.ImportDecl,
+    *,
+    importer_path: Path | None,
+    target_path: Path | None,
+    resolved_module_parts: tuple[str, ...],
+    flow_parts: tuple[str, ...],
+) -> None:
+    dotted_name = ".".join(resolved_module_parts)
+    flow_label = ".".join(flow_parts) or "the root flow"
+    raise compile_error(
+        code="E315",
+        summary="Same-flow import retired",
+        detail=(
+            f"Import `{dotted_name}` stays inside flow `{flow_label}`. "
+            "Sibling prompt files already share one flat namespace."
+        ),
+        path=importer_path,
+        source_span=import_decl.source_span,
+        related=(
+            file_scoped_related(
+                label="same-flow member",
+                path=target_path,
+            ),
+        ),
+        hints=(
+            "Delete the import and use the declaration by bare name inside the flow.",
+            "Keep `import` only for real cross-flow boundaries.",
+        ),
+    )
+
+
+def _raise_duplicate_import_name(
+    import_decl: model.ImportDecl,
+    *,
+    importer_path: Path | None,
+    existing_import_decl: model.ImportDecl,
+    visible_name: str,
+) -> None:
+    raise compile_error(
+        code="E307",
+        summary="Duplicate imported name",
+        detail=(
+            f"Imported name `{visible_name}` is defined more than once in the same "
+            "prompt file."
+        ),
+        path=importer_path,
+        source_span=import_decl.source_span,
+        related=(
+            related_prompt_site(
+                label="first import",
+                path=importer_path,
+                source_span=existing_import_decl.source_span,
+            ),
+        ),
+        hints=(
+            "Keep each imported name visible only once per prompt file.",
+            "Rename one import with `as` when both flows or symbols must stay visible.",
+        ),
+    )
+
+
+def _rebind_unit_to_flow(
+    target_unit: IndexedUnit,
+    *,
+    flow_units_by_module_parts: dict[tuple[str, ...], IndexedUnit],
+) -> IndexedUnit:
+    rebound_unit = flow_units_by_module_parts.get(target_unit.module_parts)
+    if rebound_unit is None:
+        return target_unit
+    if rebound_unit.prompt_root != target_unit.prompt_root:
+        return target_unit
+    return rebound_unit
+
+
+def _rebind_loaded_imports_to_flow(
+    loaded_imports: LoadedImports,
+    *,
+    flow_units_by_module_parts: dict[tuple[str, ...], IndexedUnit],
+) -> LoadedImports:
+    imported_units = {
+        module_parts: _rebind_unit_to_flow(
+            target_unit,
+            flow_units_by_module_parts=flow_units_by_module_parts,
+        )
+        for module_parts, target_unit in loaded_imports.imported_units.items()
+    }
+    visible_imported_units = {
+        module_parts: _rebind_unit_to_flow(
+            target_unit,
+            flow_units_by_module_parts=flow_units_by_module_parts,
+        )
+        for module_parts, target_unit in loaded_imports.visible_imported_units.items()
+    }
+    imported_symbols_by_name = {
+        name: ImportedSymbolBinding(
+            target_name=binding.target_name,
+            target_unit=_rebind_unit_to_flow(
+                binding.target_unit,
+                flow_units_by_module_parts=flow_units_by_module_parts,
+            ),
+            import_decl=binding.import_decl,
+        )
+        for name, binding in loaded_imports.imported_symbols_by_name.items()
+    }
+    return LoadedImports(
+        imported_units=imported_units,
+        visible_imported_units=visible_imported_units,
+        imported_symbols_by_name=imported_symbols_by_name,
+    )
+
+
+def build_indexed_flow(
+    *,
+    prompt_root: Path,
+    entrypoint_path: Path,
+    session: "CompilationSession" | None = None,
+    ancestry: tuple[FlowLoadKey, ...] = (),
+    entrypoint_module_source_kind: ModuleSourceKind = "entrypoint",
+    prompt_file_overrides: dict[Path, model.PromptFile] | None = None,
+) -> IndexedFlow:
+    resolved_entrypoint = entrypoint_path.resolve()
+    boundary_kind = flow_boundary_kind_for_path(resolved_entrypoint)
+    assert boundary_kind is not None
+    resolved_prompt_root = prompt_root.resolve()
+    flow_root = resolved_entrypoint.parent.resolve()
+    flow_parts = flow_root.relative_to(resolved_prompt_root).parts
+    package_root = _flow_package_root(
+        flow_root=flow_root,
+        boundary_kind=boundary_kind,
+        entrypoint_module_source_kind=entrypoint_module_source_kind,
+    )
+    member_paths = discover_flow_members(
+        flow_root,
+        entrypoint_path=resolved_entrypoint,
+    )
+
+    units_by_path: dict[Path, IndexedUnit] = {}
+    units_by_module_parts: dict[tuple[str, ...], IndexedUnit] = {}
+    entrypoint_unit: IndexedUnit | None = None
+    declaration_owner_units_by_id: dict[int, IndexedUnit] = {}
+    exported_names: set[str] = set()
+
+    flow_registries: dict[str, dict[str, object]] = {
+        kind.registry_attr: {} for kind in DECLARATION_KINDS
+    }
+    skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
+    resolved_overrides = (
+        None
+        if prompt_file_overrides is None
+        else {path.resolve(): prompt_file for path, prompt_file in prompt_file_overrides.items()}
+    )
+
+    for member_path in member_paths:
+        if resolved_overrides is None:
+            prompt_file = parse_file(member_path)
+        else:
+            prompt_file = resolved_overrides.get(member_path.resolve())
+            if prompt_file is None:
+                prompt_file = parse_file(member_path)
+        module_parts = _module_parts_for_prompt_path(prompt_root, member_path)
+        indexed_unit = index_unit(
+            session,
+            prompt_file,
+            prompt_root=prompt_root,
+            module_parts=module_parts,
+            module_source_kind=_flow_module_source_kind(
+                prompt_path=member_path,
+                entrypoint_path=resolved_entrypoint,
+                entrypoint_module_source_kind=entrypoint_module_source_kind,
+            ),
+            package_root=package_root,
+            ancestry=(),
+            allow_parallel_imports=False,
+            resolve_imports=False,
+        )
+        units_by_path[member_path.resolve()] = indexed_unit
+        units_by_module_parts[module_parts] = indexed_unit
+        exported_names.update(indexed_unit.exported_names)
+        if member_path.resolve() == resolved_entrypoint:
+            entrypoint_unit = indexed_unit
+        declarations = unit_declarations(indexed_unit)
+
+        for kind in DECLARATION_KINDS:
+            _register_flow_registry(
+                flow_registries[kind.registry_attr],
+                getattr(declarations, kind.registry_attr),
+                owner_unit=indexed_unit,
+                declaration_owner_units_by_id=declaration_owner_units_by_id,
+                flow_parts=flow_parts,
+                source_path=member_path,
+            )
+        for declaration in declarations.skill_packages_by_name.values():
+            _register_skill_package_id(
+                skill_packages_by_id,
+                declaration,
+                module_parts=flow_parts,
+                source_path=member_path,
+            )
+
+    assert entrypoint_unit is not None
+    indexed_flow = IndexedFlow(
+        prompt_root=prompt_root,
+        flow_root=flow_root,
+        flow_parts=flow_parts,
+        entrypoint_path=resolved_entrypoint,
+        boundary_kind=boundary_kind,
+        member_paths=member_paths,
+        entrypoint_unit=entrypoint_unit,
+        units_by_path=units_by_path,
+        units_by_module_parts=units_by_module_parts,
+        declaration_owner_units_by_id=declaration_owner_units_by_id,
+        exported_names=frozenset(exported_names),
+        skill_packages_by_id=skill_packages_by_id,
+        **flow_registries,
+    )
+    if session is None:
+        return indexed_flow
+
+    for indexed_unit in units_by_path.values():
+        rebound_li = _rebind_loaded_imports_to_flow(
+            load_imports(
+                session,
+                list(indexed_unit.imports),
+                prompt_root=indexed_unit.prompt_root,
+                package_root=indexed_unit.package_root,
+                module_parts=indexed_unit.module_parts,
+                importer_path=indexed_unit.prompt_file.source_path,
+                ancestry=ancestry,
+                allow_parallel_imports=False,
+                current_flow=indexed_flow,
+            ),
+            flow_units_by_module_parts=units_by_module_parts,
+        )
+        # Install the rebound imports on the frozen unit in place. This one
+        # shortcut lets bindings elsewhere that already reference this unit
+        # (e.g. ImportedSymbolBinding.target_unit on sibling flows) observe
+        # the final loaded_imports without cascading dataclasses.replace()
+        # work back through every binding that names this unit.
+        object.__setattr__(indexed_unit, "loaded_imports", rebound_li)
+    return indexed_flow
 
 
 def _clone_doctrine_error(error: DoctrineError) -> DoctrineError:
@@ -189,110 +562,6 @@ def _register_skill_package_id(
     registry[package_id] = declaration
 
 
-def _validate_enum_decl(
-    decl: model.EnumDecl,
-    *,
-    owner_label: str,
-    source_path: Path | None,
-) -> None:
-    seen_keys: dict[str, model.EnumMember] = {}
-    seen_wire_values: dict[str, model.EnumMember] = {}
-    for member in decl.members:
-        existing_key = seen_keys.get(member.key)
-        if existing_key is not None:
-            raise compile_error(
-                code="E293",
-                summary="Duplicate enum member key",
-                detail=f"Enum `{owner_label}` repeats member key `{member.key}`.",
-                path=source_path,
-                source_span=member.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first member",
-                        path=source_path,
-                        source_span=existing_key.source_span,
-                    ),
-                ),
-                hints=("Keep each enum member key only once.",),
-            )
-        seen_keys[member.key] = member
-        existing_wire = seen_wire_values.get(member.value)
-        if existing_wire is not None:
-            raise compile_error(
-                code="E294",
-                summary="Duplicate enum member wire",
-                detail=f"Enum `{owner_label}` repeats wire value `{member.value}`.",
-                path=source_path,
-                source_span=member.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first member",
-                        path=source_path,
-                        source_span=existing_wire.source_span,
-                    ),
-                ),
-                hints=("Keep each enum wire value only once.",),
-            )
-        seen_wire_values[member.value] = member
-
-
-def _validate_render_profile_decl(
-    decl: model.RenderProfileDecl,
-    *,
-    owner_label: str,
-    source_path: Path | None,
-) -> None:
-    seen_targets: dict[tuple[str, ...], model.RenderProfileRule] = {}
-    for rule in decl.rules:
-        target_text = ".".join(rule.target_parts)
-        if target_text not in _KNOWN_RENDER_PROFILE_TARGETS:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Unknown render_profile target in {owner_label}: {target_text}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Use only shipped render_profile targets.",),
-            )
-        if rule.mode not in _KNOWN_RENDER_PROFILE_MODES:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Unknown render_profile mode in {owner_label}: {rule.mode}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Use only shipped render_profile modes.",),
-            )
-        allowed_modes = _RENDER_PROFILE_TARGET_MODE_CONSTRAINTS.get(target_text)
-        if allowed_modes is not None and rule.mode not in allowed_modes:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Invalid render_profile mode for {target_text} in {owner_label}: {rule.mode}",
-                path=source_path,
-                source_span=rule.source_span,
-                hints=("Keep each render_profile target on one of its shipped supported modes.",),
-            )
-        existing_rule = seen_targets.get(rule.target_parts)
-        if existing_rule is not None:
-            raise compile_error(
-                code="E298",
-                summary="Invalid render_profile declaration",
-                detail=f"Duplicate render_profile rule target in {owner_label}: {target_text}",
-                path=source_path,
-                source_span=rule.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first rule",
-                        path=source_path,
-                        source_span=existing_rule.source_span,
-                    ),
-                ),
-                hints=("Declare each render_profile target at most once.",),
-            )
-        seen_targets[rule.target_parts] = rule
-
-
 def _resolve_import_path(
     import_decl: model.ImportDecl, *, module_parts: tuple[str, ...], source_path: Path | None
 ) -> tuple[str, ...]:
@@ -316,10 +585,6 @@ def _resolve_import_path(
         )
 
     return (*package_parts, *import_path.module_parts)
-
-
-def _module_load_key(prompt_root: Path, module_parts: tuple[str, ...]) -> ModuleLoadKey:
-    return (prompt_root, module_parts)
 
 
 def _module_path_for_root(prompt_root: Path, module_parts: tuple[str, ...]) -> Path:
@@ -384,42 +649,48 @@ def _resolve_module_source_in_root(
     return None
 
 
-def _waiting_module_key(ancestry: tuple[ModuleLoadKey, ...]) -> ModuleLoadKey | None:
+def _flow_load_key(prompt_root: Path, flow_root: Path) -> FlowLoadKey:
+    return (prompt_root.resolve(), flow_root.resolve())
+
+
+def _waiting_flow_key(ancestry: tuple[FlowLoadKey, ...]) -> FlowLoadKey | None:
     if not ancestry:
         return None
     return ancestry[-1]
 
 
-def _has_module_wait_cycle(
+def _has_flow_wait_cycle(
     session: "CompilationSession",
     *,
-    waiting_module: ModuleLoadKey,
-    target_module: ModuleLoadKey,
+    waiting_flow: FlowLoadKey,
+    target_flow: FlowLoadKey,
 ) -> bool:
-    current = target_module
-    seen: set[ModuleLoadKey] = set()
+    current = target_flow
+    seen: set[FlowLoadKey] = set()
     while current is not None:
-        if current == waiting_module:
+        if current == waiting_flow:
             return True
         if current in seen:
             return False
         seen.add(current)
-        current = session._module_waits.get(current)
+        current = session._flow_waits.get(current)
     return False
 
 
 def index_unit(
-    session: "CompilationSession",
+    session: "CompilationSession" | None,
     prompt_file: model.PromptFile,
     *,
     prompt_root: Path,
     module_parts: tuple[str, ...],
     module_source_kind: ModuleSourceKind,
     package_root: Path | None,
-    ancestry: tuple[ModuleLoadKey, ...],
+    ancestry: tuple[FlowLoadKey, ...],
     allow_parallel_imports: bool,
+    resolve_imports: bool = True,
 ) -> IndexedUnit:
     imports: list[model.ImportDecl] = []
+    exported_names = frozenset(prompt_file.exported_names)
     render_profiles_by_name: dict[str, model.RenderProfileDecl] = {}
     analyses_by_name: dict[str, model.AnalysisDecl] = {}
     decisions_by_name: dict[str, model.DecisionDecl] = {}
@@ -457,7 +728,7 @@ def index_unit(
                 module_parts,
                 source_path=prompt_file.source_path,
             )
-            _validate_render_profile_decl(
+            validate_render_profile_decl(
                 declaration,
                 owner_label=dotted_decl_name(module_parts, declaration.name),
                 source_path=prompt_file.source_path,
@@ -678,7 +949,7 @@ def index_unit(
                 module_parts,
                 source_path=prompt_file.source_path,
             )
-            _validate_enum_decl(
+            validate_enum_decl(
                 declaration,
                 owner_label=dotted_decl_name(module_parts, declaration.name),
                 source_path=prompt_file.source_path,
@@ -707,24 +978,22 @@ def index_unit(
             hints=("This is a compiler bug, not a prompt authoring error.",),
         )
 
-    loaded_imports = load_imports(
-        session,
-        imports,
-        prompt_root=prompt_root,
-        package_root=package_root,
-        module_parts=module_parts,
-        importer_path=prompt_file.source_path,
-        ancestry=ancestry,
-        allow_parallel_imports=allow_parallel_imports,
-    )
+    if resolve_imports:
+        assert session is not None
+        loaded_imports = load_imports(
+            session,
+            imports,
+            prompt_root=prompt_root,
+            package_root=package_root,
+            module_parts=module_parts,
+            importer_path=prompt_file.source_path,
+            ancestry=ancestry,
+            allow_parallel_imports=allow_parallel_imports,
+        )
+    else:
+        loaded_imports = _empty_loaded_imports()
 
-    return IndexedUnit(
-        prompt_root=prompt_root,
-        module_parts=module_parts,
-        module_source_kind=module_source_kind,
-        package_root=package_root,
-        prompt_file=prompt_file,
-        imports=tuple(imports),
+    declarations = UnitDeclarations(
         render_profiles_by_name=render_profiles_by_name,
         analyses_by_name=analyses_by_name,
         decisions_by_name=decisions_by_name,
@@ -749,10 +1018,19 @@ def index_unit(
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
-        imported_units=loaded_imports.imported_units,
-        visible_imported_units=loaded_imports.visible_imported_units,
-        imported_symbols_by_name=loaded_imports.imported_symbols_by_name,
     )
+    indexed_unit = IndexedUnit(
+        prompt_root=prompt_root,
+        module_parts=module_parts,
+        module_source_kind=module_source_kind,
+        package_root=package_root,
+        prompt_file=prompt_file,
+        imports=tuple(imports),
+        exported_names=exported_names,
+        declarations=declarations,
+        loaded_imports=loaded_imports,
+    )
+    return indexed_unit
 
 
 def _visible_imported_module_parts(
@@ -791,8 +1069,9 @@ def load_imports(
     package_root: Path | None,
     module_parts: tuple[str, ...],
     importer_path: Path | None,
-    ancestry: tuple[ModuleLoadKey, ...],
+    ancestry: tuple[FlowLoadKey, ...],
     allow_parallel_imports: bool,
+    current_flow: IndexedFlow | None = None,
 ) -> LoadedImports:
     imported_units: dict[tuple[str, ...], IndexedUnit] = {}
     visible_imported_units: dict[tuple[str, ...], IndexedUnit] = {}
@@ -823,6 +1102,29 @@ def load_imports(
 
     for resolved_module_parts, import_decl in resolved_imports:
         try:
+            if current_flow is not None:
+                resolved_source = resolve_module_source(
+                    session,
+                    resolved_module_parts,
+                    prompt_root=prompt_root if import_decl.path.level > 0 else None,
+                    package_import_root=package_root if import_decl.path.level == 0 else None,
+                    importer_path=importer_path,
+                    import_decl=import_decl,
+                )
+                same_flow_unit = current_flow.units_by_module_parts.get(resolved_module_parts)
+                if (
+                    same_flow_unit is not None
+                    and same_flow_unit.prompt_file.source_path is not None
+                    and same_flow_unit.prompt_file.source_path.resolve()
+                    == resolved_source.prompt_path.resolve()
+                ):
+                    _raise_same_flow_import_retired(
+                        import_decl,
+                        importer_path=importer_path,
+                        target_path=same_flow_unit.prompt_file.source_path,
+                        resolved_module_parts=resolved_module_parts,
+                        flow_parts=current_flow.flow_parts,
+                    )
             target_unit = load_module(
                 session,
                 resolved_module_parts,
@@ -854,26 +1156,11 @@ def load_imports(
                 )
                 if not same_visible_target:
                     visible_name = ".".join(visible_module_parts)
-                    raise compile_error(
-                        code="E306",
-                        summary="Duplicate module alias",
-                        detail=(
-                            f"Visible import module `{visible_name}` is defined more than once "
-                            "in the same prompt file."
-                        ),
-                        path=importer_path,
-                        source_span=import_decl.source_span,
-                        related=(
-                            related_prompt_site(
-                                label="first import",
-                                path=importer_path,
-                                source_span=existing_decl.source_span,
-                            ),
-                        ),
-                        hints=(
-                            "Keep each visible import module name only once per prompt file.",
-                            "Rename one import with `as` when both modules must stay visible.",
-                        ),
+                    _raise_duplicate_import_name(
+                        import_decl,
+                        importer_path=importer_path,
+                        existing_import_decl=existing_decl,
+                        visible_name=visible_name,
                     )
             else:
                 visible_imported_units[visible_module_parts] = target_unit
@@ -884,26 +1171,11 @@ def load_imports(
         visible_name = import_decl.alias or import_decl.imported_name
         existing_binding = imported_symbols_by_name.get(visible_name)
         if existing_binding is not None:
-            raise compile_error(
-                code="E307",
-                summary="Duplicate imported symbol",
-                detail=(
-                    f"Imported symbol `{visible_name}` is defined more than once in the "
-                    "same prompt file."
-                ),
-                path=importer_path,
-                source_span=import_decl.source_span,
-                related=(
-                    related_prompt_site(
-                        label="first import",
-                        path=importer_path,
-                        source_span=existing_binding.import_decl.source_span,
-                    ),
-                ),
-                hints=(
-                    "Keep each imported symbol visible only once per prompt file.",
-                    "Rename one symbol with `as` when both imports must stay visible.",
-                ),
+            _raise_duplicate_import_name(
+                import_decl,
+                importer_path=importer_path,
+                existing_import_decl=existing_binding.import_decl,
+                visible_name=visible_name,
             )
         imported_symbols_by_name[visible_name] = ImportedSymbolBinding(
             target_name=import_decl.imported_name,
@@ -923,7 +1195,7 @@ def load_module(
     *,
     prompt_root: Path | None,
     package_import_root: Path | None = None,
-    ancestry: tuple[ModuleLoadKey, ...],
+    ancestry: tuple[FlowLoadKey, ...],
     importer_path: Path | None = None,
     import_decl: model.ImportDecl | None = None,
 ) -> IndexedUnit:
@@ -935,75 +1207,119 @@ def load_module(
         importer_path=importer_path,
         import_decl=import_decl,
     )
-    module_key = _module_load_key(resolved_source.prompt_root, module_parts)
-    cached = session._module_cache.get(module_key)
+    indexed_flow = load_flow(
+        session,
+        source_path=resolved_source.prompt_path,
+        prompt_root=resolved_source.prompt_root,
+        ancestry=ancestry,
+        importer_path=importer_path,
+        import_decl=import_decl,
+        entrypoint_module_source_kind=resolved_source.module_source_kind,
+    )
+    cached = indexed_flow.units_by_module_parts.get(module_parts)
     if cached is not None:
         return cached
-    if module_key in ancestry:
+    raise compile_error(
+        code="E280",
+        summary="Missing import module",
+        detail=(
+            f"Import module `{'.'.join(module_parts)}` is not a member of flow "
+            f"`{indexed_flow.flow_root}`."
+        ),
+        path=importer_path if importer_path is not None else resolved_source.prompt_path,
+        source_span=None if import_decl is None else import_decl.source_span,
+        hints=("Create the missing prompt file, or fix the import path.",),
+    )
+
+
+def load_flow(
+    session: "CompilationSession",
+    *,
+    source_path: Path,
+    prompt_root: Path,
+    ancestry: tuple[FlowLoadKey, ...],
+    importer_path: Path | None = None,
+    import_decl: model.ImportDecl | None = None,
+    entrypoint_module_source_kind: ModuleSourceKind = "entrypoint",
+) -> IndexedFlow:
+    resolved_prompt_root = prompt_root.resolve()
+    entrypoint_path = resolve_flow_entrypoint(source_path, prompt_root=resolved_prompt_root)
+    flow_root = entrypoint_path.parent.resolve()
+    flow_key = _flow_load_key(resolved_prompt_root, flow_root)
+    cached = session._flow_cache.get(flow_key)
+    if cached is not None:
+        return cached
+    if flow_key in ancestry:
         raise compile_error(
             code="E289",
             summary="Cyclic import module",
-            detail=f"Import cycle: {'.'.join(module_parts)}.",
+            detail=(
+                "Import cycle: "
+                f"{'.'.join(source_path.resolve().relative_to(resolved_prompt_root).with_suffix('').parts)}."
+            ),
             path=importer_path,
             source_span=None if import_decl is None else import_decl.source_span,
         )
 
-    with session._module_lock:
-        cached = session._module_cache.get(module_key)
+    with session._flow_lock:
+        cached = session._flow_cache.get(flow_key)
         if cached is not None:
             return cached
 
-        cached_error = session._module_load_errors.get(module_key)
+        cached_error = session._flow_load_errors.get(flow_key)
         if cached_error is not None:
             if isinstance(cached_error, DoctrineError):
                 raise _clone_doctrine_error(cached_error)
             raise cached_error
 
-        ready = session._module_loading.get(module_key)
+        ready = session._flow_loading.get(flow_key)
         if ready is None:
-            ready = session._module_loading[module_key] = session._new_module_ready_event()
+            ready = session._flow_loading[flow_key] = session._new_flow_ready_event()
             is_loader = True
         else:
             is_loader = False
 
     if not is_loader:
-        waiting_module = _waiting_module_key(ancestry)
-        if waiting_module is not None:
-            with session._module_lock:
-                if _has_module_wait_cycle(
+        waiting_flow = _waiting_flow_key(ancestry)
+        if waiting_flow is not None:
+            with session._flow_lock:
+                if _has_flow_wait_cycle(
                     session,
-                    waiting_module=waiting_module,
-                    target_module=module_key,
+                    waiting_flow=waiting_flow,
+                    target_flow=flow_key,
                 ):
                     raise compile_error(
                         code="E289",
                         summary="Cyclic import module",
-                        detail=f"Import cycle: {'.'.join(module_parts)}.",
+                        detail=(
+                            "Import cycle: "
+                            f"{'.'.join(source_path.resolve().relative_to(resolved_prompt_root).with_suffix('').parts)}."
+                        ),
                         path=importer_path,
                         source_span=None if import_decl is None else import_decl.source_span,
                     )
-                session._module_waits[waiting_module] = module_key
+                session._flow_waits[waiting_flow] = flow_key
         try:
             ready.wait()
         finally:
-            if waiting_module is not None:
-                with session._module_lock:
-                    if session._module_waits.get(waiting_module) == module_key:
-                        session._module_waits.pop(waiting_module, None)
-        with session._module_lock:
-            cached = session._module_cache.get(module_key)
+            if waiting_flow is not None:
+                with session._flow_lock:
+                    if session._flow_waits.get(waiting_flow) == flow_key:
+                        session._flow_waits.pop(waiting_flow, None)
+        with session._flow_lock:
+            cached = session._flow_cache.get(flow_key)
             if cached is not None:
                 return cached
-            cached_error = session._module_load_errors.get(module_key)
+            cached_error = session._flow_load_errors.get(flow_key)
         if cached_error is None:
             raise compile_error(
                 code="E901",
                 summary="Internal compiler error",
                 detail=(
-                    "Internal compiler error: module load finished without a result: "
-                    f"{'.'.join(module_parts)}"
+                    "Internal compiler error: flow load finished without a result: "
+                    f"{entrypoint_path}"
                 ),
-                path=importer_path if importer_path is not None else resolved_source.prompt_path,
+                path=importer_path if importer_path is not None else entrypoint_path,
                 source_span=None if import_decl is None else import_decl.source_span,
                 hints=("This is a compiler bug, not a prompt authoring error.",),
             )
@@ -1011,39 +1327,34 @@ def load_module(
             raise _clone_doctrine_error(cached_error)
         raise cached_error
 
-    module_path = resolved_source.prompt_path
     try:
         try:
-            prompt_file = parse_file(module_path)
-            indexed = index_unit(
-                session,
-                prompt_file,
-                prompt_root=resolved_source.prompt_root,
-                module_parts=module_parts,
-                module_source_kind=resolved_source.module_source_kind,
-                package_root=resolved_source.package_root,
-                ancestry=(*ancestry, module_key),
-                allow_parallel_imports=False,
+            indexed_flow = build_indexed_flow(
+                prompt_root=resolved_prompt_root,
+                entrypoint_path=entrypoint_path,
+                session=session,
+                ancestry=(*ancestry, flow_key),
+                entrypoint_module_source_kind=entrypoint_module_source_kind,
             )
         except DoctrineError as exc:
             raise exc.prepend_trace(
-                f"load import module `{'.'.join(module_parts)}`",
-                location=path_location(module_path),
-            ).ensure_location(path=module_path)
+                f"load flow `{entrypoint_path.parent.name}`",
+                location=path_location(entrypoint_path),
+            ).ensure_location(path=entrypoint_path)
     except Exception as exc:
-        with session._module_lock:
+        with session._flow_lock:
             if isinstance(exc, DoctrineError):
-                session._module_load_errors[module_key] = _clone_doctrine_error(exc)
+                session._flow_load_errors[flow_key] = _clone_doctrine_error(exc)
             else:
-                session._module_load_errors[module_key] = exc
+                session._flow_load_errors[flow_key] = exc
         raise
     else:
-        with session._module_lock:
-            session._module_cache[module_key] = indexed
-        return indexed
+        with session._flow_lock:
+            session._flow_cache[flow_key] = indexed_flow
+        return indexed_flow
     finally:
-        with session._module_lock:
-            ready = session._module_loading.pop(module_key, None)
+        with session._flow_lock:
+            ready = session._flow_loading.pop(flow_key, None)
         if ready is not None:
             ready.set()
 

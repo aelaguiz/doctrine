@@ -1,0 +1,2 @@
+workflow ProviderSummary: "Provider Summary"
+    "Keep provider-only helpers behind the export boundary."

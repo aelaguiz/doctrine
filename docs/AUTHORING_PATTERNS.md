@@ -457,9 +457,11 @@ Best anchors:
 Split by family, contract, shared role-home, and outputs.
 Import shared doctrine where it is used.
 Keep `emit_flow` entrypoints separate when the family needs a graph view.
-Use `import ... as ...` when a module prefix is repeated a lot.
-Use `from ... import ...` when one declaration is the only thing you need.
-Keep `import module` when you still want the module path to stay visible.
+Use `import ... as ...` when a cross-flow prefix is repeated a lot.
+Use `from ... import ...` when one exported declaration is the only thing you
+need from another flow.
+Keep `import flow` when you still want the imported path to stay visible.
+Inside one flow, delete same-flow imports and use bare refs.
 Use `self:path` when the current declaration root is the prefix you keep
 repeating.
 
@@ -476,7 +478,7 @@ that root is not live on the current surface.
 
 Best anchors:
 - [03_imports](../examples/03_imports/prompts/AGENTS.prompt)
-- [28_addressable_workflow_paths](../examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt)
+- [28_addressable_workflow_paths](../examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt)
 - [75_cross_root_standard_library_imports](../examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt)
 - [73_flow_visualizer_showcase](../examples/73_flow_visualizer_showcase/prompts/AGENTS.prompt)
 

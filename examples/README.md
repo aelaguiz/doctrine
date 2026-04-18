@@ -135,7 +135,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | --- | --- |
 | `01_hello_world` | Smallest concrete agents, `role`, and inline `workflow` shapes. |
 | `02_sections` | Titled workflow sections and section-key validation. |
-| `03_imports` | Absolute and relative imports plus typed imported refs. |
+| `03_imports` | Cross-flow imports, exported declarations, and typed imported refs. |
 | `04_inheritance` | Basic agent and workflow inheritance. |
 | `05_workflow_merge` | Explicit inherited workflow patching and ordering. |
 | `06_nested_workflows` | Nested workflow structure and the boundary between inline and named workflows. |
@@ -260,6 +260,12 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `125_multiline_escape_triple_quote` | Triple-quoted literals may embed a literal `"""` sequence by escaping the first quote as `\"""`. |
 | `126_hyphenated_code_language` | Code block `language:` values accept hyphens so informal fences like `prompt-fragment` survive through the renderer. |
 | `127_inline_anonymous_readable_blocks` | Anonymous inline `code:`, `markdown:`, and `html:` blocks render bare inside document sections without requiring an authored key. |
+| `129_flow_sibling_namespace` | Two sibling files in one flow may reference each other by bare name because the flow owns one flat namespace. |
+| `130_cyclic_producer_critic` | Producer and critic may live in sibling files and route to each other without fake module-cycle failures. |
+| `131_cross_flow_import` | `import` still marks the real boundary crossing when one flow needs declarations from another flow. |
+| `132_flow_sibling_collision` | Two sibling files that declare the same name fail loud during flow merge with the sibling-collision diagnostic. |
+| `133_intra_flow_import_retired` | Same-flow imports fail loud because sibling files already share one flow namespace. |
+| `134_flow_export_boundary` | Cross-flow imports may read exported declarations and fail loud on internal declarations that stay inside their home flow. |
 
 ## Useful Commands
 

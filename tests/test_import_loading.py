@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession, ProvidedPromptRoot
+from doctrine._compiler.indexing import unit_declarations, unit_loaded_imports
 from doctrine._compiler.support import resolve_prompt_root
 from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
@@ -63,7 +64,13 @@ class ImportLoadingTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def _write_cyclic_sibling_prompts(self, prompts: Path, *, import_from_root: bool) -> None:
+    def _write_cyclic_sibling_prompts(
+        self,
+        prompts: Path,
+        *,
+        import_from_root: bool,
+        include_sibling_imports: bool,
+    ) -> None:
         (prompts / "cyclic_siblings").mkdir(parents=True)
         if import_from_root:
             root_prompt = """\
@@ -83,70 +90,64 @@ class ImportLoadingTests(unittest.TestCase):
                 workflow: "Imported Steps"
                     "demo"
             """
+        alpha_source = (
+            "import cyclic_siblings.beta\n\n" if include_sibling_imports else ""
+        ) + textwrap.dedent(
+            """\
+            workflow Alpha: "Alpha"
+                "Alpha side"
+            """
+        )
+        beta_source = (
+            "import cyclic_siblings.alpha\n\n" if include_sibling_imports else ""
+        ) + textwrap.dedent(
+            """\
+            workflow Beta: "Beta"
+                "Beta side"
+            """
+        )
         (prompts / "AGENTS.prompt").write_text(textwrap.dedent(root_prompt), encoding="utf-8")
         (prompts / "cyclic_siblings" / "alpha.prompt").write_text(
-            textwrap.dedent(
-                """\
-                import cyclic_siblings.beta
-
-                workflow Alpha: "Alpha"
-                    "Alpha side"
-                """
-            ),
+            alpha_source,
             encoding="utf-8",
         )
         (prompts / "cyclic_siblings" / "beta.prompt").write_text(
-            textwrap.dedent(
-                """\
-                import cyclic_siblings.alpha
-
-                workflow Beta: "Beta"
-                    "Beta side"
-                """
-            ),
+            beta_source,
             encoding="utf-8",
         )
 
-    def test_sibling_import_cycle_fails_loud_instead_of_hanging(self) -> None:
+    def test_same_flow_sibling_imports_fail_loud(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             prompts = Path(temp_dir) / "prompts"
-            self._write_cyclic_sibling_prompts(prompts, import_from_root=True)
-
-            script = textwrap.dedent(
-                f"""\
-                from doctrine.compiler import CompilationSession
-                from doctrine.diagnostics import DoctrineError
-                from doctrine.parser import parse_file
-
-                try:
-                    prompt = parse_file({repr(str(prompts / "AGENTS.prompt"))})
-                    CompilationSession(prompt).compile_agent("Demo")
-                except DoctrineError as exc:
-                    print(exc)
-                    raise SystemExit(1)
-                raise SystemExit("expected compile failure")
-                """
+            self._write_cyclic_sibling_prompts(
+                prompts,
+                import_from_root=False,
+                include_sibling_imports=True,
             )
 
-            result = subprocess.run(
-                [sys.executable, "-c", script],
-                cwd=REPO_ROOT,
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompts / "AGENTS.prompt"))
 
-        self.assertEqual(result.returncode, 1)
-        combined_output = f"{result.stdout}{result.stderr}"
-        self.assertIn("E289 compile error: Cyclic import module", combined_output)
-        self.assertIn("cyclic_siblings.alpha", combined_output)
-        self.assertNotIn("Traceback", combined_output)
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E315")
+        self.assertEqual(error.diagnostic.location.path, (prompts / "cyclic_siblings" / "alpha.prompt").resolve())
+        self.assertEqual(error.diagnostic.location.line, 1)
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.path,
+            (prompts / "cyclic_siblings" / "beta.prompt").resolve(),
+        )
+        self.assertIn("Same-flow import retired", str(error))
+        self.assertIn("already share one flat namespace", str(error))
 
-    def test_concurrent_top_level_module_load_cycle_fails_loud_instead_of_deadlocking(self) -> None:
+    def test_concurrent_same_flow_module_loads_share_one_flow_cache(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             prompts = Path(temp_dir) / "prompts"
-            self._write_cyclic_sibling_prompts(prompts, import_from_root=False)
+            self._write_cyclic_sibling_prompts(
+                prompts,
+                import_from_root=False,
+                include_sibling_imports=False,
+            )
 
             script = textwrap.dedent(
                 f"""\
@@ -161,16 +162,16 @@ class ImportLoadingTests(unittest.TestCase):
 
                 def load(module_parts):
                     try:
-                        session.load_module(module_parts)
+                        loaded = session.load_module(module_parts)
                     except DoctrineError as exc:
                         results.put(("error", str(exc)))
                     except Exception as exc:
                         results.put(("unexpected", f"{{type(exc).__name__}}: {{exc}}"))
                     else:
-                        results.put(("ok", ".".join(module_parts)))
+                        results.put(("ok", ".".join(loaded.module_parts)))
 
-                # Two compile tasks can ask for different imported modules at the same time.
-                # This must raise the same cyclic-import error as the single-threaded path.
+                # Two compile tasks can ask for sibling modules at the same time.
+                # They should share one flow cache instead of deadlocking or racing.
                 for module_parts in (
                     ("cyclic_siblings", "alpha"),
                     ("cyclic_siblings", "beta"),
@@ -187,10 +188,10 @@ class ImportLoadingTests(unittest.TestCase):
                 for kind, payload in seen:
                     print(kind)
                     print(payload)
-                    if kind != "error":
+                    if kind != "ok":
                         raise SystemExit(f"unexpected concurrent load result: {{kind}}")
 
-                raise SystemExit(1)
+                raise SystemExit(0)
                 """
             )
 
@@ -203,9 +204,9 @@ class ImportLoadingTests(unittest.TestCase):
                 check=False,
             )
 
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0)
         combined_output = f"{result.stdout}{result.stderr}"
-        self.assertIn("E289 compile error: Cyclic import module", combined_output)
+        self.assertIn("ok", combined_output)
         self.assertIn("cyclic_siblings.alpha", combined_output)
         self.assertIn("cyclic_siblings.beta", combined_output)
         self.assertNotIn("timed out waiting for concurrent module loads", combined_output)
@@ -236,26 +237,30 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertEqual(loaded.prompt_root, prompts)
         self.assertEqual(loaded.package_root, prompts / "runtime_home")
         self.assertEqual(loaded.prompt_file.source_path, prompts / "runtime_home" / "AGENTS.prompt")
-        self.assertIn(("runtime_home",), session.root_unit.imported_units)
+        self.assertIn(
+            ("runtime_home",),
+            unit_loaded_imports(session.root_flow.entrypoint_unit).imported_units,
+        )
 
     def test_module_alias_and_symbol_imports_resolve_through_existing_name_ref_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
             prompts = root / "prompts"
-            (prompts / "shared").mkdir(parents=True, exist_ok=True)
-            (prompts / "shared" / "greeting.prompt").write_text(
+            (prompts / "shared" / "greeting").mkdir(parents=True, exist_ok=True)
+            (prompts / "shared" / "greeting" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    workflow Greeting: "Greeting"
+                    export workflow Greeting: "Greeting"
                         "Say hello."
                     """
                 ),
                 encoding="utf-8",
             )
-            (prompts / "shared" / "review.prompt").write_text(
+            (prompts / "shared" / "review").mkdir(parents=True, exist_ok=True)
+            (prompts / "shared" / "review" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    output DraftReviewComment: "Draft Review Comment"
+                    export output DraftReviewComment: "Draft Review Comment"
                         target: TurnResponse
                         shape: Comment
                         requirement: Required
@@ -288,8 +293,14 @@ class ImportLoadingTests(unittest.TestCase):
             compiled = session.compile_agent("Demo")
 
         rendered = render_markdown(compiled)
-        self.assertIn(("shared_steps",), session.root_unit.visible_imported_units)
-        self.assertIn("ImportedComment", session.root_unit.imported_symbols_by_name)
+        self.assertIn(
+            ("shared_steps",),
+            unit_loaded_imports(session.root_flow.entrypoint_unit).visible_imported_units,
+        )
+        self.assertIn(
+            "ImportedComment",
+            unit_loaded_imports(session.root_flow.entrypoint_unit).imported_symbols_by_name,
+        )
         self.assertIn("### Greeting", rendered)
         self.assertIn("### Draft Review Comment", rendered)
 
@@ -297,11 +308,11 @@ class ImportLoadingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
             prompts = root / "prompts"
-            (prompts / "shared").mkdir(parents=True, exist_ok=True)
-            (prompts / "shared" / "review.prompt").write_text(
+            (prompts / "shared" / "review").mkdir(parents=True, exist_ok=True)
+            (prompts / "shared" / "review" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    workflow ImportedFlow: "Imported Flow"
+                    export workflow ImportedFlow: "Imported Flow"
                         "Use the imported flow."
                     """
                 ),
@@ -566,8 +577,6 @@ class ImportLoadingTests(unittest.TestCase):
             (prompts / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    from refs.query_patterns import QueryPatterns
-
                     skill package ReferenceDocs: "Reference Docs"
                         emit:
                             "references/query-patterns.md": QueryPatterns
@@ -590,12 +599,13 @@ class ImportLoadingTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompts / "SKILL.prompt"))
             loaded = session.load_module(("refs", "query_patterns"))
 
-        imported_binding = session.root_unit.imported_symbols_by_name["QueryPatterns"]
         self.assertEqual(loaded.prompt_root, prompts)
         self.assertEqual(loaded.package_root, prompts)
         self.assertEqual(loaded.prompt_file.source_path, refs / "query_patterns.prompt")
-        self.assertEqual(imported_binding.target_unit.prompt_root, prompts)
-        self.assertEqual(imported_binding.target_unit.package_root, prompts)
+        self.assertEqual(
+            unit_loaded_imports(session.root_flow.entrypoint_unit).imported_symbols_by_name,
+            {},
+        )
 
     def test_skill_package_entrypoint_fails_loud_on_local_import_collision(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -643,6 +653,62 @@ class ImportLoadingTests(unittest.TestCase):
         self.assertIn("Ambiguous import module", error_text)
         self.assertIn("skill package source root", error_text)
         self.assertIn("entrypoint prompts root", error_text)
+
+    def test_two_sessions_in_one_process_keep_unit_state_isolated(self) -> None:
+        with tempfile.TemporaryDirectory() as a_dir, tempfile.TemporaryDirectory() as b_dir:
+            prompts_a = Path(a_dir).resolve() / "prompts"
+            prompts_b = Path(b_dir).resolve() / "prompts"
+            prompts_a.mkdir(parents=True)
+            prompts_b.mkdir(parents=True)
+            (prompts_a / "shared").mkdir()
+            (prompts_a / "shared" / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    export workflow Shared: "Shared"
+                        "Use the shared step."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts_a / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    import shared
+
+                    agent DemoA:
+                        role: "Session A home."
+                        workflow: "Run"
+                            use step: shared.Shared
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts_b / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    agent DemoB:
+                        role: "Session B home. No imports, no declarations."
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            session_a = CompilationSession(parse_file(prompts_a / "AGENTS.prompt"))
+            session_b = CompilationSession(parse_file(prompts_b / "AGENTS.prompt"))
+
+            entry_a = session_a.root_flow.entrypoint_unit
+            entry_b = session_b.root_flow.entrypoint_unit
+
+            self.assertIn("DemoA", unit_declarations(entry_a).agents_by_name)
+            self.assertNotIn("DemoB", unit_declarations(entry_a).agents_by_name)
+            self.assertIn("DemoB", unit_declarations(entry_b).agents_by_name)
+            self.assertNotIn("DemoA", unit_declarations(entry_b).agents_by_name)
+
+            self.assertIn(
+                ("shared",),
+                unit_loaded_imports(entry_a).imported_units,
+            )
+            self.assertEqual(unit_loaded_imports(entry_b).imported_units, {})
 
 
 if __name__ == "__main__":

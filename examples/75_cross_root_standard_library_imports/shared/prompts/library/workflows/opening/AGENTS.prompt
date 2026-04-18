@@ -1,0 +1,7 @@
+import library.context.topic
+
+
+export workflow OpeningStep: "Opening"
+    "Start from the shared topic."
+
+    use topic: library.context.topic.TopicContext

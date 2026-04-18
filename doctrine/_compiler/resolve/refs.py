@@ -10,7 +10,14 @@ from doctrine._compiler.constants import (
     _READABLE_DECL_REGISTRIES,
     _REVIEW_VERDICT_TEXT,
 )
-from doctrine._compiler.indexing import ImportedSymbolBinding, index_unit, skill_package_id
+from doctrine._compiler.indexing import (
+    ImportedSymbolBinding,
+    index_unit,
+    lookup_flow_registry_decl,
+    skill_package_id,
+    unit_declarations,
+    unit_loaded_imports,
+)
 from doctrine._compiler.naming import _dotted_ref_name, _humanize_key
 from doctrine._compiler.reference_diagnostics import reference_compile_error, reference_related_site
 from doctrine._compiler.resolved_types import (
@@ -33,9 +40,76 @@ class _RefLookupTarget:
 class ResolveRefsMixin:
     """Ref lookup helpers for ResolveMixin."""
 
+    def _flow_decl_match(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+        registry_name: str,
+    ) -> tuple[IndexedUnit, object] | None:
+        return lookup_flow_registry_decl(
+            self.session.flow_for_unit(unit),
+            registry_name=registry_name,
+            declaration_name=declaration_name,
+        )
+
+    def _resolve_one_or_ambiguous(
+        self,
+        matches: list[tuple["_RefLookupTarget", object]],
+        *,
+        ref: model.NameRef,
+        unit: IndexedUnit,
+        missing_label: str,
+    ) -> tuple[IndexedUnit, object] | None:
+        if len(matches) == 1:
+            lookup_target, decl = matches[0]
+            return lookup_target.unit, decl
+        if len(matches) > 1:
+            imported_target = next(
+                (
+                    lookup_target
+                    for lookup_target, _decl in matches
+                    if lookup_target.imported_symbol is not None
+                ),
+                None,
+            )
+            if imported_target is not None:
+                local_decl = next(
+                    (
+                        decl
+                        for lookup_target, decl in matches
+                        if lookup_target.imported_symbol is None
+                    ),
+                    None,
+                )
+                self._raise_imported_symbol_ambiguity(
+                    ref,
+                    unit=unit,
+                    binding=imported_target.imported_symbol,
+                    detail=(
+                        f"Reference `{ref.declaration_name}` is visible both as a local "
+                        f"{missing_label} and as an imported symbol."
+                    ),
+                    local_decl=local_decl,
+                )
+        return None
+
+    def _resolve_visible_input_decl(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.InputDecl] | None:
+        return self._flow_decl_match(
+            declaration_name,
+            unit=unit,
+            registry_name="inputs_by_name",
+        )
+
     def _visible_skill_package_lookup_units(self, *, unit: IndexedUnit) -> tuple[IndexedUnit, ...]:
         units: list[IndexedUnit] = []
         seen: set[tuple[Path | None, tuple[str, ...]]] = set()
+        loaded_imports = unit_loaded_imports(unit)
 
         def _add(target_unit: IndexedUnit) -> None:
             key = (target_unit.prompt_root, target_unit.module_parts)
@@ -44,10 +118,11 @@ class ResolveRefsMixin:
             seen.add(key)
             units.append(target_unit)
 
-        _add(unit)
-        for imported_unit in unit.visible_imported_units.values():
+        for local_unit in self.session.flow_for_unit(unit).units_by_path.values():
+            _add(local_unit)
+        for imported_unit in loaded_imports.visible_imported_units.values():
             _add(imported_unit)
-        for binding in unit.imported_symbols_by_name.values():
+        for binding in loaded_imports.imported_symbols_by_name.values():
             _add(binding.target_unit)
         return tuple(units)
 
@@ -76,7 +151,7 @@ class ResolveRefsMixin:
                         ancestry=(),
                         allow_parallel_imports=True,
                     )
-                    for declaration in package_unit.skill_packages_by_name.values():
+                    for declaration in unit_declarations(package_unit).skill_packages_by_name.values():
                         matches_by_id.setdefault(skill_package_id(declaration), []).append(
                             (package_unit, declaration)
                         )
@@ -95,10 +170,17 @@ class ResolveRefsMixin:
         source_span: model.SourceSpan | None,
     ) -> tuple[IndexedUnit, model.SkillPackageDecl]:
         matches: list[tuple[IndexedUnit, model.SkillPackageDecl]] = []
+        seen_matches: set[tuple[Path | None, tuple[str, ...], int]] = set()
         for lookup_unit in self._visible_skill_package_lookup_units(unit=unit):
-            decl = lookup_unit.skill_packages_by_id.get(package_id)
+            flow = self.session.flow_for_unit(lookup_unit)
+            decl = flow.skill_packages_by_id.get(package_id)
             if decl is not None:
-                matches.append((lookup_unit, decl))
+                owner_unit = flow.declaration_owner_units_by_id[id(decl)]
+                match_key = (owner_unit.prompt_root, owner_unit.module_parts, id(decl))
+                if match_key in seen_matches:
+                    continue
+                seen_matches.add(match_key)
+                matches.append((owner_unit, decl))
 
         if not matches:
             matches.extend(self._scanned_skill_package_matches(package_id))
@@ -137,9 +219,10 @@ class ResolveRefsMixin:
     def _resolve_visible_imported_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
-        target_unit = unit.visible_imported_units.get(ref.module_parts)
+        loaded_imports = unit_loaded_imports(unit)
+        target_unit = loaded_imports.visible_imported_units.get(ref.module_parts)
         if target_unit is None and ref.rebound_imported:
-            target_unit = unit.imported_units.get(ref.module_parts)
+            target_unit = loaded_imports.imported_units.get(ref.module_parts)
         if target_unit is None:
             raise reference_compile_error(
                 code="E280",
@@ -167,7 +250,9 @@ class ResolveRefsMixin:
             )
 
         targets = [_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name)]
-        imported_symbol = unit.imported_symbols_by_name.get(ref.declaration_name)
+        imported_symbol = unit_loaded_imports(unit).imported_symbols_by_name.get(
+            ref.declaration_name
+        )
         if imported_symbol is None:
             return tuple(targets)
 
@@ -207,7 +292,7 @@ class ResolveRefsMixin:
             )
         raise reference_compile_error(
             code="E308",
-            summary="Ambiguous imported symbol ownership",
+            summary="Ambiguous flow-local vs imported symbol",
             detail=detail,
             unit=unit,
             source_span=ref.source_span,
@@ -215,6 +300,44 @@ class ResolveRefsMixin:
             hints=(
                 "Rename the imported symbol with `as`, or rename the local declaration.",
                 "Use a module alias when you want the imported owner to stay explicit.",
+            ),
+        )
+
+    def _raise_missing_export_error(
+        self,
+        *,
+        ref: model.NameRef,
+        unit: IndexedUnit,
+        target_unit: IndexedUnit,
+        declaration,
+        missing_label: str,
+    ) -> None:
+        target_flow = self.session.flow_for_unit(target_unit)
+        owner_unit = target_flow.declaration_owner_units_by_id[id(declaration)]
+        flow_label = (
+            ".".join(target_flow.flow_parts)
+            if target_flow.flow_parts
+            else target_flow.entrypoint_path.stem
+        )
+        raise reference_compile_error(
+            code="E314",
+            summary="Imported declaration is not exported",
+            detail=(
+                f"Imported {missing_label} `{ref.declaration_name}` is not exported from "
+                f"flow `{flow_label}`."
+            ),
+            unit=unit,
+            source_span=ref.source_span,
+            related=(
+                reference_related_site(
+                    label="declaration",
+                    unit=owner_unit,
+                    source_span=getattr(declaration, "source_span", None),
+                ),
+            ),
+            hints=(
+                "Mark the declaration with `export` if it must cross the flow boundary.",
+                "Otherwise keep the declaration internal to its home flow.",
             ),
         )
 
@@ -252,8 +375,13 @@ class ResolveRefsMixin:
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> ResolvedRenderProfile:
         if not ref.module_parts:
-            local_profile = unit.render_profiles_by_name.get(ref.declaration_name)
-            if local_profile is not None:
+            local_match = lookup_flow_registry_decl(
+                self.session.flow_for_unit(unit),
+                registry_name="render_profiles_by_name",
+                declaration_name=ref.declaration_name,
+            )
+            if local_match is not None:
+                _local_unit, local_profile = local_match
                 return ResolvedRenderProfile(name=local_profile.name, rules=local_profile.rules)
             if ref.declaration_name in _BUILTIN_RENDER_PROFILE_NAMES:
                 return ResolvedRenderProfile(name=ref.declaration_name)
@@ -311,7 +439,9 @@ class ResolveRefsMixin:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         matching_targets: list[tuple[_RefLookupTarget, model.TableDecl]] = []
         for lookup_target in lookup_targets:
-            decl = lookup_target.unit.tables_by_name.get(lookup_target.declaration_name)
+            decl = unit_declarations(lookup_target.unit).tables_by_name.get(
+                lookup_target.declaration_name
+            )
             if decl is not None:
                 matching_targets.append((lookup_target, decl))
         if len(matching_targets) == 1:
@@ -698,47 +828,141 @@ class ResolveRefsMixin:
         registry_name: str,
         missing_label: str,
     ):
+        if not ref.module_parts:
+            matches: list[tuple[_RefLookupTarget, object]] = []
+            local_match = lookup_flow_registry_decl(
+                self.session.flow_for_unit(unit),
+                registry_name=registry_name,
+                declaration_name=ref.declaration_name,
+            )
+            if local_match is not None:
+                local_unit, local_decl = local_match
+                matches.append(
+                    (
+                        _RefLookupTarget(
+                            unit=local_unit,
+                            declaration_name=ref.declaration_name,
+                        ),
+                        local_decl,
+                    )
+                )
+
+            imported_symbol = unit_loaded_imports(unit).imported_symbols_by_name.get(
+                ref.declaration_name
+            )
+            if imported_symbol is not None:
+                imported_flow = self.session.flow_for_unit(imported_symbol.target_unit)
+                imported_match = lookup_flow_registry_decl(
+                    imported_flow,
+                    registry_name=registry_name,
+                    declaration_name=imported_symbol.target_name,
+                )
+                if imported_match is not None:
+                    imported_owner_unit, imported_decl = imported_match
+                    current_flow = self.session.flow_for_unit(unit)
+                    if (
+                        (
+                            imported_flow.flow_root != current_flow.flow_root
+                            or imported_flow.prompt_root != current_flow.prompt_root
+                        )
+                        and imported_symbol.target_name not in imported_flow.exported_names
+                    ):
+                        self._raise_missing_export_error(
+                            ref=ref,
+                            unit=unit,
+                            target_unit=imported_owner_unit,
+                            declaration=imported_decl,
+                            missing_label=missing_label,
+                        )
+                    same_owner = (
+                        local_match is not None
+                        and imported_owner_unit.prompt_root == local_match[0].prompt_root
+                        and imported_owner_unit.module_parts == local_match[0].module_parts
+                        and imported_symbol.target_name == ref.declaration_name
+                    )
+                    if not same_owner:
+                        matches.append(
+                            (
+                                _RefLookupTarget(
+                                    unit=imported_owner_unit,
+                                    declaration_name=imported_symbol.target_name,
+                                    imported_symbol=imported_symbol,
+                                ),
+                                imported_decl,
+                            )
+                        )
+
+            resolved = self._resolve_one_or_ambiguous(
+                matches, ref=ref, unit=unit, missing_label=missing_label
+            )
+            if resolved is not None:
+                return resolved
+            raise self._missing_local_decl_error(
+                ref,
+                unit=unit,
+                missing_label=missing_label,
+            )
+
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         matches: list[tuple[_RefLookupTarget, object]] = []
         for lookup_target in lookup_targets:
-            registry = getattr(lookup_target.unit, registry_name)
-            decl = registry.get(lookup_target.declaration_name)
-            if decl is not None:
-                matches.append((lookup_target, decl))
-        if len(matches) == 1:
-            lookup_target, decl = matches[0]
-            return lookup_target.unit, decl
-        if len(matches) > 1:
-            imported_target = next(
-                (
-                    lookup_target
-                    for lookup_target, _decl in matches
-                    if lookup_target.imported_symbol is not None
-                ),
-                None,
+            imported_flow = self.session.flow_for_unit(lookup_target.unit)
+            flow_match = lookup_flow_registry_decl(
+                imported_flow,
+                registry_name=registry_name,
+                declaration_name=lookup_target.declaration_name,
             )
-            if imported_target is not None:
-                local_decl = next(
+            if flow_match is not None:
+                owner_unit, decl = flow_match
+                current_flow = self.session.flow_for_unit(unit)
+                if (
+                    imported_flow.flow_root != current_flow.flow_root
+                    or imported_flow.prompt_root != current_flow.prompt_root
+                ) and lookup_target.declaration_name not in imported_flow.exported_names:
+                    self._raise_missing_export_error(
+                        ref=ref,
+                        unit=unit,
+                        target_unit=owner_unit,
+                        declaration=decl,
+                        missing_label=missing_label,
+                    )
+                matches.append(
                     (
-                        decl
-                        for lookup_target, decl in matches
-                        if lookup_target.imported_symbol is None
-                    ),
-                    None,
+                        _RefLookupTarget(
+                            unit=owner_unit,
+                            declaration_name=lookup_target.declaration_name,
+                            imported_symbol=lookup_target.imported_symbol,
+                        ),
+                        decl,
+                    )
                 )
-                self._raise_imported_symbol_ambiguity(
-                    ref,
-                    unit=unit,
-                    binding=imported_target.imported_symbol,
-                    detail=(
-                        f"Reference `{ref.declaration_name}` is visible both as a local "
-                        f"{missing_label} and as an imported symbol."
-                    ),
-                    local_decl=local_decl,
-                )
+        resolved = self._resolve_one_or_ambiguous(
+            matches, ref=ref, unit=unit, missing_label=missing_label
+        )
+        if resolved is not None:
+            return resolved
 
         if ref.module_parts:
             dotted_name = _dotted_ref_name(ref)
+            imported_target = lookup_targets[0]
+            imported_flow = self.session.flow_for_unit(imported_target.unit)
+            unexported_match = lookup_flow_registry_decl(
+                imported_flow,
+                registry_name=registry_name,
+                declaration_name=imported_target.declaration_name,
+            )
+            if (
+                unexported_match is not None
+                and imported_target.declaration_name not in imported_flow.exported_names
+            ):
+                _owner_unit, declaration = unexported_match
+                self._raise_missing_export_error(
+                    ref=ref,
+                    unit=unit,
+                    target_unit=imported_target.unit,
+                    declaration=declaration,
+                    missing_label=missing_label,
+                )
             raise reference_compile_error(
                 code="E281",
                 summary="Missing imported declaration",
@@ -788,9 +1012,12 @@ class ResolveRefsMixin:
         try:
             for lookup_target in self._decl_lookup_targets(ref, unit=unit):
                 matches.extend(
-                    self._find_readable_decl_matches(
+                    (
+                        (label, decl)
+                        for label, _owner_unit, decl in self._find_readable_decl_matches(
                         lookup_target.declaration_name,
                         unit=lookup_target.unit,
+                    )
                     )
                 )
         except CompileError:
@@ -824,17 +1051,23 @@ class ResolveRefsMixin:
         declaration_name: str,
         *,
         unit: IndexedUnit,
-    ) -> tuple[tuple[str, ReadableDecl], ...]:
-        matches: list[tuple[str, ReadableDecl]] = []
+    ) -> tuple[tuple[str, IndexedUnit, ReadableDecl], ...]:
+        flow = self.session.flow_for_unit(unit)
+        matches: list[tuple[str, IndexedUnit, ReadableDecl]] = []
         for label, registry_name in _READABLE_DECL_REGISTRIES:
+            flow_match = lookup_flow_registry_decl(
+                flow,
+                registry_name=registry_name,
+                declaration_name=declaration_name,
+            )
+            if flow_match is None:
+                continue
+            owner_unit, decl = flow_match
             if registry_name == "outputs_by_name":
-                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+                decl = self._resolve_output_decl_body(decl, unit=owner_unit)
             elif registry_name == "output_shapes_by_name":
-                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
-            else:
-                decl = getattr(unit, registry_name).get(declaration_name)
-            if decl is not None:
-                matches.append((label, decl))
+                decl = self._resolve_output_shape_decl_body(decl, unit=owner_unit)
+            matches.append((label, owner_unit, decl))
         return tuple(matches)
 
     def _find_addressable_root_matches(
@@ -842,17 +1075,23 @@ class ResolveRefsMixin:
         declaration_name: str,
         *,
         unit: IndexedUnit,
-    ) -> tuple[tuple[str, AddressableRootDecl], ...]:
-        matches: list[tuple[str, AddressableRootDecl]] = []
+    ) -> tuple[tuple[str, IndexedUnit, AddressableRootDecl], ...]:
+        flow = self.session.flow_for_unit(unit)
+        matches: list[tuple[str, IndexedUnit, AddressableRootDecl]] = []
         for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
+            flow_match = lookup_flow_registry_decl(
+                flow,
+                registry_name=registry_name,
+                declaration_name=declaration_name,
+            )
+            if flow_match is None:
+                continue
+            owner_unit, decl = flow_match
             if registry_name == "outputs_by_name":
-                decl = self._resolve_local_output_decl(declaration_name, unit=unit)
+                decl = self._resolve_output_decl_body(decl, unit=owner_unit)
             elif registry_name == "output_shapes_by_name":
-                decl = self._resolve_local_output_shape_decl(declaration_name, unit=unit)
-            else:
-                decl = getattr(unit, registry_name).get(declaration_name)
-            if decl is not None:
-                matches.append((label, decl))
+                decl = self._resolve_output_shape_decl_body(decl, unit=owner_unit)
+            matches.append((label, owner_unit, decl))
         return tuple(matches)
 
     def _display_readable_decl(self, decl: ReadableDecl) -> str:

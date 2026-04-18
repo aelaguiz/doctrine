@@ -1,0 +1,2 @@
+workflow InternalStep: "Internal Step"
+    "This workflow stays inside the provider flow."

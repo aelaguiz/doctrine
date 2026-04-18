@@ -14,7 +14,7 @@ agent_handoffs: {
       fill: "transparent"
       stroke: "transparent"
     }
-    agent_writer_home_briefwriter: {
+    agent_7c2c65e8_writer_home_briefwriter: {
       label: "BriefWriter\nAgent\nDraft the first brief and hand\nit to the editor."
       shape: rectangle
       style: {
@@ -23,7 +23,7 @@ agent_handoffs: {
       }
     }
 
-    agent_editor_home_briefeditor: {
+    agent_f0134537_editor_home_briefeditor: {
       label: "BriefEditor\nAgent\nPolish the brief and stop."
       shape: rectangle
       style: {
@@ -34,7 +34,7 @@ agent_handoffs: {
   }
 }
 
-agent_handoffs.primary_lane.agent_writer_home_briefwriter -> agent_handoffs.primary_lane.agent_editor_home_briefeditor: {
+agent_handoffs.primary_lane.agent_7c2c65e8_writer_home_briefwriter -> agent_handoffs.primary_lane.agent_f0134537_editor_home_briefeditor: {
   label: "Hand the brief to\nBriefEditor."
   style: {
     stroke: "#B54708"

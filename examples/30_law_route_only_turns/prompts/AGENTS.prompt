@@ -1,7 +1,6 @@
 # This file is the narrow route-only setup example.
 # It introduces `current none`, stop lines, and explicit reroute before the
 # richer route-only handoff examples later in the ladder.
-import shared.owners
 
 # Declare an input the workflow can read on this turn. The nested fields explain where it comes from and what shape it has.
 input CurrentHandoff: "Current Handoff"
@@ -75,7 +74,7 @@ workflow ImportedRouteOnlyTriage: "Imported Route-Only Triage"
         active when CurrentHandoff.missing
         current none
         stop "Current handoff is missing."
-        route "Route the same issue back to {{shared.owners.ImportedRoutingOwner:name}}." -> shared.owners.ImportedRoutingOwner
+        route "Route the same issue back to {{ImportedRoutingOwner:name}}." -> ImportedRoutingOwner
 
 
 agent ImportedRouteOnlyTriageDemo:

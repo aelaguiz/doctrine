@@ -128,9 +128,9 @@ Stability rules:
 | `E285` | Invalid compile config | The nearest Doctrine compile config is structurally invalid, such as a non-table `[tool.doctrine.compile]`, a bad `additional_prompt_roots` entry, or a bad provider prompt root. |
 | `E286` | Duplicate active prompts root | A configured or provider `prompts/` root resolves to the same directory more than once, including duplication of the entrypoint-local root. |
 | `E287` | Ambiguous import module | An absolute import matches the same dotted module path in more than one active `prompts/` root, or in both a skill-package source root and an active `prompts/` root. |
-| `E288` | Duplicate declaration name | One module defines the same declaration name more than once. |
-| `E289` | Cyclic import module | Import resolution forms a module cycle. |
-| `E290` | Relative import walks above prompts root | A relative import escapes above the current `prompts/` root. |
+| `E288` | Duplicate declaration name | One prompt file defines the same declaration name more than once. Use `E316` when the collision crosses sibling files inside one flow. |
+| `E289` | Cyclic import module | Import resolution forms a true cross-flow cycle after Doctrine resolves real flow boundaries. |
+| `E290` | Relative import walks above prompts root | Legacy relative-import guard. Relative import syntax is retired from the shipped grammar. |
 | `E291` | Prompt source path is required for compilation | The compiler was asked to compile a prompt object without a source path. |
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
@@ -145,11 +145,13 @@ Stability rules:
 | `E303` | Invalid schema declaration | A schema artifact or schema group uses an invalid declaration shape, such as a wrong-kind artifact ref, an unknown group member, or an empty group. |
 | `E304` | Invalid skill package bundle | A `skill package` bundle uses an invalid `emit:` path, points an `emit:` entry at the wrong declaration kind, collides with another emitted path, points at an unreadable bundled file, or lowers a nested agent prompt with the wrong concrete-agent shape. |
 | `E305` | Invalid document inheritance patch | A document inheritance patch uses the wrong override shape, such as a kind mismatch or a patch without an inherited document parent. |
-| `E306` | Duplicate module alias | One prompt file binds the same visible import-module name more than once, such as `import shared.review as review` plus another visible `review`. |
-| `E307` | Duplicate imported symbol | One prompt file binds the same visible imported symbol more than once, such as `from shared.review import Comment` plus another visible `Comment`. |
-| `E308` | Ambiguous imported symbol ownership | A bare visible name is both a local declaration and an imported symbol, so Doctrine refuses to guess which owner the ref should use. |
+| `E307` | Duplicate imported name | One prompt file binds the same visible imported name more than once, whether that name came from a module import, alias, or imported symbol. |
+| `E308` | Ambiguous flow-local vs imported symbol | A bare visible name is both a flow-local declaration and an imported symbol, so Doctrine refuses to guess which owner the ref should use. |
 | `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
 | `E312` | `self:` needs a declaration-root addressable context | `self:` was used on a surface that does not carry a live declaration-root addressable context. Use an explicit `Root:path` ref there. |
+| `E314` | Imported declaration is not exported | A cross-flow import reached the target flow, but the requested declaration stays internal because it is not marked `export`. |
+| `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. |
+| `E316` | Sibling declaration collision | Two sibling prompt files in the same flow declared the same name, so Doctrine refused to guess which sibling owns it. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |

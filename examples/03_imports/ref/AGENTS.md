@@ -18,7 +18,7 @@ Say hello politely and keep the tone warm.
 
 ### Absolute Briefing
 
-This file composes sibling imports through dotted package paths.
+This flow composes other flows through dotted import paths.
 
 #### Opening
 
@@ -28,13 +28,13 @@ State the topic.
 
 End with one clear next step.
 
-### Relative Chain
+### Shared Chain
 
-This file chains a sibling-relative import with a parent-relative import.
+This flow chains one imported step into shared follow-through.
 
 #### Leaf Step
 
-This module reaches back to its parent package before following the path forward again.
+This flow reuses shared context through one imported step.
 
 ##### Shared Context
 
@@ -44,13 +44,13 @@ Start with the shared context.
 
 Finish with a shared wrap-up.
 
-### Deep Relative Chain
+### Deep Chain
 
-This file uses both a sibling-relative import and a multi-level parent-relative import.
+This flow composes a deep dotted import path without relative syntax.
 
 #### Deep Detail
 
-This file walks back up the package tree with `...` before following the path forward again.
+This flow reaches shared topic context through another imported flow.
 
 ##### Root Topic
 

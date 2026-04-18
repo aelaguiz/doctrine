@@ -387,7 +387,7 @@ def _run_compile_fail(
 
         if case.agent is not None:
             active_session.compile_agent(case.agent)
-        elif active_session.root_unit.skill_packages_by_name:
+        elif active_session.root_flow.skill_packages_by_name:
             active_session.compile_skill_package()
         else:
             raise VerificationError(

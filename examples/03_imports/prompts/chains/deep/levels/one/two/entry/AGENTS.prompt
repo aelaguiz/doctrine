@@ -1,0 +1,9 @@
+import chains.deep.levels.one.detail
+import chains.deep.base.final_note
+
+
+export workflow DeepChain: "Deep Chain"
+    "This flow composes a deep dotted import path without relative syntax."
+
+    use deep_detail: chains.deep.levels.one.detail.DeepDetail
+    use final_note: chains.deep.base.final_note.FinalNote

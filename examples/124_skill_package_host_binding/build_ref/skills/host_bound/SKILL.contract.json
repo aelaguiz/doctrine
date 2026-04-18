@@ -31,7 +31,7 @@
     },
     "references/query-patterns.md": {
       "kind": "document",
-      "source": "refs.query_patterns.QueryPatterns",
+      "source": "skills.host_bound.refs.query_patterns.QueryPatterns",
       "referenced_host_paths": [
         "section_map.title"
       ]

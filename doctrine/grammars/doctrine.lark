@@ -13,32 +13,37 @@ start: prompt_file
 prompt_file: _NL* declaration+ _NL*
 
 ?declaration: import_decl
-            | render_profile_decl
-            | analysis_decl
-            | decision_decl
-            | schema_decl
-            | table_decl
-            | document_decl
-            | workflow_decl
-            | route_only_decl
-            | grounding_decl
-            | abstract_review_decl
-            | review_family_decl
-            | review_decl
-            | skills_decl
-            | inputs_decl
-            | input_source_decl
-            | input_decl
-            | outputs_decl
-            | output_target_decl
-            | output_shape_decl
-            | output_schema_decl
-            | output_decl
-            | skill_package_decl
-            | skill_decl
-            | enum_decl
-            | abstract_agent
-            | agent
+            | export_decl
+            | exportable_declaration
+
+?exportable_declaration: render_profile_decl
+                       | analysis_decl
+                       | decision_decl
+                       | schema_decl
+                       | table_decl
+                       | document_decl
+                       | workflow_decl
+                       | route_only_decl
+                       | grounding_decl
+                       | abstract_review_decl
+                       | review_family_decl
+                       | review_decl
+                       | skills_decl
+                       | inputs_decl
+                       | input_source_decl
+                       | input_decl
+                       | outputs_decl
+                       | output_target_decl
+                       | output_shape_decl
+                       | output_schema_decl
+                       | output_decl
+                       | skill_package_decl
+                       | skill_decl
+                       | enum_decl
+                       | abstract_agent
+                       | agent
+
+export_decl: "export" exportable_declaration
 
 import_decl: module_import_decl
            | from_import_decl
@@ -1011,9 +1016,8 @@ expr_set: "{" expr ("," expr)* "}"
 
 path_ref: PATH_REF
 name_ref: dotted_name
-import_path: absolute_import_path | relative_import_path
+import_path: absolute_import_path
 absolute_import_path: dotted_name
-relative_import_path: DOTS dotted_name
 dotted_name: CNAME ("." CNAME)*
 
 block_lines: prose_line (_NL prose_line)* _NL?
@@ -1045,7 +1049,6 @@ LAW_WILDCARD: ".*"
 CODE_LANGUAGE_ID: /[A-Za-z_][A-Za-z0-9_-]*/
 MULTILINE_STRING.2: /"""(?:\\.|""?(?!")|[^"\\])*"""/s
 
-DOTS: /\.+/
 
 // `_NL` owns newlines, indentation whitespace, and standalone comment lines so
 // the stock Indenter can derive _INDENT/_DEDENT without a side preprocessor.

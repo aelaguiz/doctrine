@@ -293,7 +293,7 @@ agent BriefWriter:
             encoding="utf-8",
         )
         (prompts / "editor_home" / "AGENTS.prompt").write_text(
-            """agent BriefEditor:
+            """export agent BriefEditor:
     role: "Polish the brief and stop."
     workflow: "Polish"
         "Polish the brief and stop."
@@ -521,10 +521,7 @@ def _check_emit_skill_emits_document_companions_from_emit_block() -> None:
         (prompts / "refs").mkdir(parents=True)
         skill_prompt = prompts / "SKILL.prompt"
         skill_prompt.write_text(
-            """from refs.query_patterns import QueryPatterns
-from refs.receipts_template import ReceiptsTemplate
-
-skill package EmittedDocs: "Emitted Docs"
+            """skill package EmittedDocs: "Emitted Docs"
     metadata:
         name: "emitted-docs"
     emit:
@@ -647,9 +644,7 @@ def _check_emit_skill_emits_contract_json_for_host_bound_packages() -> None:
         (prompts / "agents").mkdir(parents=True)
         skill_prompt = prompts / "SKILL.prompt"
         skill_prompt.write_text(
-            """from refs.query_patterns import QueryPatterns
-
-skill package HostBound: "Host Bound"
+            """skill package HostBound: "Host Bound"
     metadata:
         name: "host-bound"
     emit:

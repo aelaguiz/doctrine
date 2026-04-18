@@ -1,0 +1,15 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "same-flow imports fail loud because sibling files already share one namespace"
+status = "active"
+kind = "compile_fail"
+agent = "SameFlowImportRetiredDemo"
+exception_type = "CompileError"
+error_code = "E315"
+location_path = "prompts/alpha.prompt"
+location_line = 1
+related = [
+  { label = "same-flow member", path = "prompts/beta.prompt" },
+]

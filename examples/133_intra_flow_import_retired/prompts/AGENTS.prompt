@@ -1,0 +1,2 @@
+agent SameFlowImportRetiredDemo:
+    role: "Show that same-flow imports are retired."

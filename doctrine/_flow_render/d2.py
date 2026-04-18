@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph, FlowInputNode, FlowOutputNode
 from doctrine._flow_render.layout import (
+    agent_key,
     agent_node_paths,
+    artifact_key,
+    edge_source_key,
+    edge_target_key,
     edge_style,
     graph_participants,
-    node_id,
+    node_path_key,
     node_label_lines,
     node_palette,
     node_paths,
@@ -24,34 +28,34 @@ def render_flow_d2(graph: FlowGraph) -> str:
 
     input_consumers, output_producers = graph_participants(graph)
     shared_input_keys = {
-        (node.module_parts, node.name)
+        artifact_key(node)
         for node in graph.inputs
-        if len(input_consumers.get((node.module_parts, node.name), ())) > 1
+        if len(input_consumers.get(artifact_key(node), ())) > 1
     }
     shared_output_keys = {
-        (node.module_parts, node.name)
+        artifact_key(node)
         for node in graph.outputs
-        if len(output_producers.get((node.module_parts, node.name), ())) > 1
+        if len(output_producers.get(artifact_key(node), ())) > 1
         or node.trust_surface
         or node.notes
     }
 
     sectioned_nodes = {
         "shared_inputs": [
-            node for node in graph.inputs if (node.module_parts, node.name) in shared_input_keys
+            node for node in graph.inputs if artifact_key(node) in shared_input_keys
         ],
         "local_inputs": [
-            node for node in graph.inputs if (node.module_parts, node.name) not in shared_input_keys
+            node for node in graph.inputs if artifact_key(node) not in shared_input_keys
         ],
         "shared_outputs_and_carriers": [
-            node for node in graph.outputs if (node.module_parts, node.name) in shared_output_keys
+            node for node in graph.outputs if artifact_key(node) in shared_output_keys
         ],
         "local_outputs": [
-            node for node in graph.outputs if (node.module_parts, node.name) not in shared_output_keys
+            node for node in graph.outputs if artifact_key(node) not in shared_output_keys
         ],
     }
     lane_plan = plan_agent_lanes(graph)
-    path_map: dict[tuple[str, tuple[str, ...], str], str] = {}
+    path_map: dict[tuple[object, ...], str] = {}
     for section_id, nodes in sectioned_nodes.items():
         path_map.update(node_paths(section_id, nodes))
     path_map.update(agent_node_paths(graph, lane_plan))
@@ -136,10 +140,10 @@ def _render_node(
 
 def _render_edge(
     edge: FlowEdge,
-    path_map: dict[tuple[str, tuple[str, ...], str], str],
+    path_map: dict[tuple[object, ...], str],
 ) -> list[str]:
-    source_id = path_map[(edge.source_kind, edge.source_module_parts, edge.source_name)]
-    target_id = path_map[(edge.target_kind, edge.target_module_parts, edge.target_name)]
+    source_id = path_map[edge_source_key(edge)]
+    target_id = path_map[edge_target_key(edge)]
     stroke, dash = edge_style(edge.kind)
     lines = [
         f"{source_id} -> {target_id}: {{",
@@ -162,9 +166,9 @@ def _render_section(
     section_id: str,
     section_label: str,
     nodes: list[FlowAgentNode | FlowInputNode | FlowOutputNode],
-    path_map: dict[tuple[str, tuple[str, ...], str], str],
-    input_consumers: dict[tuple[tuple[str, ...], str], tuple[str, ...]],
-    output_producers: dict[tuple[tuple[str, ...], str], tuple[str, ...]],
+    path_map: dict[tuple[object, ...], str],
+    input_consumers: dict[tuple[object, ...], tuple[str, ...]],
+    output_producers: dict[tuple[object, ...], tuple[str, ...]],
     *,
     direction: str,
 ) -> list[str]:
@@ -188,11 +192,11 @@ def _render_section(
         participant_names: tuple[str, ...] = ()
         if isinstance(node, FlowInputNode):
             kind = "input"
-            participant_names = input_consumers.get((node.module_parts, node.name), ())
+            participant_names = input_consumers.get(artifact_key(node), ())
         elif isinstance(node, FlowOutputNode):
             kind = "output"
-            participant_names = output_producers.get((node.module_parts, node.name), ())
-        node_key = (kind, node.module_parts, node.name)
+            participant_names = output_producers.get(artifact_key(node), ())
+        node_key = node_path_key(kind, node)
         nested_id = path_map[node_key].split(".", 1)[1]
         child_lines = _render_node(
             nested_id,
@@ -212,7 +216,7 @@ def _render_section(
 def _render_agent_section(
     graph: FlowGraph,
     lane_plan,
-    path_map: dict[tuple[str, tuple[str, ...], str], str],
+    path_map: dict[tuple[object, ...], str],
 ) -> list[str]:
     section_direction = (
         "right"
@@ -235,7 +239,7 @@ def _render_agent_section(
     )
 
     agents_by_key = {
-        (node.module_parts, node.name): node
+        agent_key(node): node
         for node in graph.agents
     }
 
@@ -285,7 +289,7 @@ def _render_agent_cluster(
     cluster_id: str,
     agent_keys,
     agents_by_key: dict,
-    path_map: dict[tuple[str, tuple[str, ...], str], str],
+    path_map: dict[tuple[object, ...], str],
     *,
     direction: str,
 ) -> list[str]:
@@ -300,7 +304,7 @@ def _render_agent_cluster(
     ]
     for agent_key in agent_keys:
         node = agents_by_key[agent_key]
-        nested_id = path_map[("agent", node.module_parts, node.name)].rsplit(".", 1)[1]
+        nested_id = path_map[node_path_key("agent", node)].rsplit(".", 1)[1]
         child_lines = _render_node(nested_id, node)
         lines.extend(f"    {line}" for line in child_lines)
         lines.append("")

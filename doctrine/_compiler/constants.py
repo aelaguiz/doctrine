@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import re
 
+from doctrine._compiler.declaration_kinds import (
+    ADDRESSABLE_ROOT_DECLARATION_KINDS,
+    READABLE_DECLARATION_KINDS,
+)
 from doctrine._compiler.resolved_types import ConfigSpec, ResolvedOutputTargetSpec
 from doctrine._compiler.types import ResolvedRenderProfile
 
@@ -68,27 +72,11 @@ def _resolve_render_profile_mode(
     return None
 
 
-_READABLE_DECL_REGISTRIES = (
-    ("agent declaration", "agents_by_name"),
-    ("analysis declaration", "analyses_by_name"),
-    ("decision declaration", "decisions_by_name"),
-    ("schema declaration", "schemas_by_name"),
-    ("table declaration", "tables_by_name"),
-    ("document declaration", "documents_by_name"),
-    ("input declaration", "inputs_by_name"),
-    ("input source declaration", "input_sources_by_name"),
-    ("output declaration", "outputs_by_name"),
-    ("output target declaration", "output_targets_by_name"),
-    ("output shape declaration", "output_shapes_by_name"),
-    ("output schema declaration", "output_schemas_by_name"),
-    ("skill declaration", "skills_by_name"),
-    ("enum declaration", "enums_by_name"),
+_READABLE_DECL_REGISTRIES = tuple(
+    (kind.label, kind.registry_attr) for kind in READABLE_DECLARATION_KINDS
 )
-
-_ADDRESSABLE_ROOT_REGISTRIES = (
-    *_READABLE_DECL_REGISTRIES,
-    ("workflow declaration", "workflows_by_name"),
-    ("skills block", "skills_blocks_by_name"),
+_ADDRESSABLE_ROOT_REGISTRIES = tuple(
+    (kind.label, kind.registry_attr) for kind in ADDRESSABLE_ROOT_DECLARATION_KINDS
 )
 _SCHEMA_FAMILY_TITLES = {
     "sections": "Required Sections",

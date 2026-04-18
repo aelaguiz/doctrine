@@ -2,7 +2,6 @@
 
 from shared.review import HandoffOutput as SharedHandoffOutput
 
-
 output LessonsLeadOutput[SharedHandoffOutput]: "Lessons Lead Output"
     inherit target
     inherit shape

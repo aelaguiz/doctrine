@@ -112,14 +112,14 @@ class OutputInheritanceTests(unittest.TestCase):
             """,
             agent_name="Demo",
             extra_files={
-                "prompts/shared/base.prompt": """
-                output target IssueComment: "Issue Note"
+                "prompts/shared/base/AGENTS.prompt": """
+                export output target IssueComment: "Issue Note"
                     note: "Target Note"
 
-                output shape LessonsIssueNoteText: "Lessons Issue Note Text"
+                export output shape LessonsIssueNoteText: "Lessons Issue Note Text"
                     kind: Comment
 
-                output BaseHandoff: "Base Handoff"
+                export output BaseHandoff: "Base Handoff"
                     target: IssueComment
                     shape: LessonsIssueNoteText
                     requirement: Required
@@ -216,32 +216,32 @@ class OutputInheritanceTests(unittest.TestCase):
             """,
             agent_name="Demo",
             extra_files={
-                "prompts/shared/base.prompt": """
-                render_profile CompactComment:
+                "prompts/shared/base/AGENTS.prompt": """
+                export render_profile CompactComment:
                     properties -> sentence
 
-                output target IssueComment: "Issue Note"
+                export output target IssueComment: "Issue Note"
                     note: "Target Note"
 
-                output shape LessonsDocumentShape: "Lessons Document Shape"
+                export output shape LessonsDocumentShape: "Lessons Document Shape"
                     kind: MarkdownDocument
 
-                schema HandoffSchema: "Handoff Schema"
+                export schema HandoffSchema: "Handoff Schema"
                     sections:
                         summary: "Summary"
 
-                document HandoffStructure: "Handoff Structure"
+                export document HandoffStructure: "Handoff Structure"
                     section summary: "Summary"
                         "Summarize the current state."
 
-                output BaseSchemaHandoff: "Base Schema Handoff"
+                export output BaseSchemaHandoff: "Base Schema Handoff"
                     target: IssueComment
                     shape: LessonsDocumentShape
                     render_profile: CompactComment
                     schema: HandoffSchema
                     requirement: Required
 
-                output BaseStructureHandoff: "Base Structure Handoff"
+                export output BaseStructureHandoff: "Base Structure Handoff"
                     target: IssueComment
                     shape: LessonsDocumentShape
                     render_profile: CompactComment

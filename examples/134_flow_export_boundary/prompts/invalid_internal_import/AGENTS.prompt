@@ -1,0 +1,7 @@
+import provider
+
+
+agent InvalidInternalImportDemo:
+    role: "Show that internal provider workflows stay private."
+    workflow: "Your Job"
+        use hidden_step: provider.InternalStep

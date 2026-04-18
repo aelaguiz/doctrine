@@ -4,7 +4,7 @@ document ImportsAndRefs: "Imports And Refs"
 Use `import` to pull in a whole module by alias. Use `from module import Name` to pull in one symbol. Use addressable refs (and `self:`) to point inside a named declaration. Use grouped `inherit { ... }` to cherry-pick which parent fields a child keeps."""
 
     section module_imports: "Module Imports"
-        """`import module.path` brings in the module. Its declarations are available under the dotted path.
+        """`import module.path` brings in another flow or runtime package. Its exported declarations are available under the dotted path.
 
 `import module.path as Alias` renames the module for this file."""
         code:
@@ -19,7 +19,7 @@ import chains.deep.levels.one.two.entry as deep_chain
             text: """agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
     role: "You are the hello world greeter."
 """
-        "See `examples/04_inheritance/` for an abstract agent imported from one module and `examples/03_imports/` for the full `import ... as` and `from ... import` surface."
+        "See `examples/04_inheritance/` for an abstract agent imported from another flow and `examples/03_imports/` for the full `import ... as` and `from ... import` surface."
 
     section symbol_imports: "Symbol Imports"
         """`from module.path import Name` binds one symbol directly into the current file.
@@ -27,10 +27,9 @@ import chains.deep.levels.one.two.entry as deep_chain
 `from module.path import Name as Alias` renames the symbol on the way in."""
         code:
             language: prompt-fragment
-            text: """from simple.greeting import Greeting as GreetingStep
-from simple.object import Object
-from chains.absolute.briefing import AbsoluteBriefing
-from chains.relative.entry import RelativeChain as RelativeChainStep
+            text: """from shared.review import DraftReviewComment
+from shared.review import DraftReviewComment as ImportedComment
+from shared.contracts import ReviewContract
 """
         "Imported symbols compose with normal language features. They can be used as parents, `use` entries, workflow refs, IO refs, or anywhere a named declaration is legal."
         code:
@@ -41,11 +40,9 @@ from chains.relative.entry import RelativeChain as RelativeChainStep
     workflow: "Imported Steps"
         "Follow the imported instructions below."
 
-        use greeting: GreetingStep
-        use object: Object
-        use polite_greeting: polite.PoliteGreeting
-        use absolute_briefing: AbsoluteBriefing
-        use relative_chain: RelativeChainStep
+        review_contract: ReviewContract
+        comment_output: DraftReviewComment
+        imported_comment: ImportedComment
 """
         "See `examples/03_imports/prompts/AGENTS.prompt` for the full shipped surface."
 
@@ -54,7 +51,7 @@ from chains.relative.entry import RelativeChain as RelativeChainStep
         sequence roots:
             "The absolute prompts root for the current build target."
             "Any `additional_prompt_roots` declared in `pyproject.toml` under `[tool.doctrine.compile]`."
-            "For `SKILL.prompt` skill packages, the local package source root that holds the entrypoint."
+            "For `SKILL.prompt` skill packages, the local package source root when a cross-flow import targets a nested flow under that package, such as a bundled runtime home."
 
         "An `additional_prompt_roots` entry reads like this:"
         code:
@@ -72,7 +69,7 @@ import library.io.shared_inputs
 
 Collision detection is strict. If the same dotted path resolves in more than one root, Doctrine fails loud instead of guessing. The `invalid_ambiguous/` sub-case inside `examples/75_cross_root_standard_library_imports/` proves this.
 
-Inside a `SKILL.prompt` package, local modules are searched from the package source root first. Package-local collisions with a repo-wide module at the same dotted path fail loud too."""
+Inside a `SKILL.prompt` package, sibling files in the same flow do not import each other. They use bare refs. Cross-flow imports from that package may still search the package source root for nested flow entrypoints, and package-local collisions with a repo-wide module at the same dotted path still fail loud."""
 
     section addressable_refs: "Addressable Refs"
         """A ref points at a named declaration. The short form uses the declaration name. The long form walks into the declaration with a colon and a dotted path.
@@ -109,7 +106,7 @@ Path refs can reach into any named declaration that carries keyed children: docu
         self:skills.can_run.grounding
         "Run {{self:shared.gates.build.check_build_honesty}} with {{self:skills.can_run.grounding}}."
 """
-        "`self:` is a `PATH_REF` prefix. It works both as a bare ref line and inside interpolation expressions. See `examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt` for the self-addressed and nested descent surfaces."
+        "`self:` is a `PATH_REF` prefix. It works both as a bare ref line and inside interpolation expressions. See `examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt` for the self-addressed and nested descent surfaces."
 
     section grouped_inherit: "Grouped Inherit"
         "A child declaration can list which parent fields to keep with `inherit { ... }`. The braces carry a comma-separated list of keys."
@@ -213,7 +210,7 @@ Runtime agent packages and `SKILL.prompt` skill packages are different surfaces.
             "Do not use `self:` to reach outside the current declaration. It is rooted at the declaration, not the file."
             "Do not write `inherit { ... }` for fields the parent does not declare. The compiler checks every key."
             "Do not import a runtime agent package as a plain module. The directory form is the shipped shape; it owns the whole runtime home."
-            "Do not reach for a relative import when an absolute one is clearer. Absolute imports read the same from anywhere in the repo."
+            "Do not write relative imports. They are retired. Inside one flow use bare refs. Across flows use absolute imports."
 
     section related: "Related References"
         bullets refs:

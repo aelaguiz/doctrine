@@ -8,6 +8,7 @@ from pathlib import Path
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import AddressableNode
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
@@ -64,24 +65,24 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertIn("import shared.missing", str(error))
         self.assertIn("Create the missing prompt file, or fix the import path.", str(error))
 
-    def test_duplicate_module_alias_reports_related_location(self) -> None:
+    def test_duplicate_imported_module_name_reports_related_location(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             self._write_prompt(
                 root,
                 """\
-                workflow Greeting: "Greeting"
+                export workflow Greeting: "Greeting"
                     "Say hello."
                 """,
-                rel_path="prompts/simple/greeting.prompt",
+                rel_path="prompts/simple/greeting/AGENTS.prompt",
             )
             self._write_prompt(
                 root,
                 """\
-                workflow Object: "Object"
+                export workflow Object: "Object"
                     "Say world."
                 """,
-                rel_path="prompts/simple/object.prompt",
+                rel_path="prompts/simple/object/AGENTS.prompt",
             )
             prompt_path = self._write_prompt(
                 root,
@@ -98,13 +99,13 @@ class CompileDiagnosticTests(unittest.TestCase):
                 CompilationSession(parse_file(prompt_path))
 
         error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E306")
+        self.assertEqual(error.diagnostic.code, "E307")
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         self.assertEqual(error.diagnostic.location.line, 2)
         self.assertEqual(len(error.diagnostic.related), 1)
         self.assertEqual(error.diagnostic.related[0].location.line, 1)
-        self.assertIn("Duplicate module alias", str(error))
-        self.assertIn("Visible import module `shared`", str(error))
+        self.assertIn("Duplicate imported name", str(error))
+        self.assertIn("Imported name `shared`", str(error))
 
     def test_duplicate_imported_symbol_reports_related_location(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -112,18 +113,18 @@ class CompileDiagnosticTests(unittest.TestCase):
             self._write_prompt(
                 root,
                 """\
-                workflow Greeting: "Greeting"
+                export workflow Greeting: "Greeting"
                     "Say hello."
                 """,
-                rel_path="prompts/simple/greeting.prompt",
+                rel_path="prompts/simple/greeting/AGENTS.prompt",
             )
             self._write_prompt(
                 root,
                 """\
-                workflow PoliteGreeting: "Polite Greeting"
+                export workflow PoliteGreeting: "Polite Greeting"
                     "Say hello politely."
                 """,
-                rel_path="prompts/simple/nested/polite.prompt",
+                rel_path="prompts/simple/nested/polite/AGENTS.prompt",
             )
             prompt_path = self._write_prompt(
                 root,
@@ -145,8 +146,8 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(error.diagnostic.location.line, 2)
         self.assertEqual(len(error.diagnostic.related), 1)
         self.assertEqual(error.diagnostic.related[0].location.line, 1)
-        self.assertIn("Duplicate imported symbol", str(error))
-        self.assertIn("Imported symbol `Greeting`", str(error))
+        self.assertIn("Duplicate imported name", str(error))
+        self.assertIn("Imported name `Greeting`", str(error))
 
     def test_imported_symbol_ownership_conflict_reports_related_location(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -154,10 +155,10 @@ class CompileDiagnosticTests(unittest.TestCase):
             self._write_prompt(
                 root,
                 """\
-                workflow Greeting: "Greeting"
+                export workflow Greeting: "Greeting"
                     "Say hello."
                 """,
-                rel_path="prompts/shared/greeting.prompt",
+                rel_path="prompts/shared/greeting/AGENTS.prompt",
             )
             prompt_path = self._write_prompt(
                 root,
@@ -184,8 +185,47 @@ class CompileDiagnosticTests(unittest.TestCase):
         self.assertEqual(len(error.diagnostic.related), 2)
         self.assertEqual(error.diagnostic.related[0].location.line, 3)
         self.assertEqual(error.diagnostic.related[1].location.line, 1)
-        self.assertIn("Ambiguous imported symbol ownership", str(error))
+        self.assertIn("Ambiguous flow-local vs imported symbol", str(error))
         self.assertIn("visible both as a local workflow declaration", str(error))
+
+    def test_imported_declaration_must_be_exported_to_cross_flow_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            self._write_prompt(
+                root,
+                """\
+                workflow Greeting: "Greeting"
+                    "Keep this workflow internal."
+                """,
+                rel_path="prompts/shared/greeting/AGENTS.prompt",
+            )
+            prompt_path = self._write_prompt(
+                root,
+                """\
+                import shared.greeting
+
+                agent Demo:
+                    role: "Keep cross-flow reads on exported declarations."
+                    workflow: "Imported Steps"
+                        use greeting: shared.greeting.Greeting
+                """,
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
+
+        error = ctx.exception
+        self.assertEqual(error.diagnostic.code, "E314")
+        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
+        self.assertEqual(error.diagnostic.location.line, 6)
+        self.assertEqual(len(error.diagnostic.related), 1)
+        self.assertEqual(
+            error.diagnostic.related[0].location.path,
+            (root / "prompts" / "shared" / "greeting" / "AGENTS.prompt").resolve(),
+        )
+        self.assertEqual(error.diagnostic.related[0].location.line, 1)
+        self.assertIn("Imported declaration is not exported", str(error))
+        self.assertIn("Mark the declaration with `export`", str(error))
 
     def test_duplicate_declaration_name_reports_related_location(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1941,7 +1981,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_unknown_review_contract_gate_points_at_gate_ref_line(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/45_review_contract_gate_export_and_exact_failures/prompts/INVALID_UNKNOWN_CONTRACT_GATE.prompt",
+            "examples/45_review_contract_gate_export_and_exact_failures/prompts/invalid_unknown_contract_gate/AGENTS.prompt",
             agent="InvalidUnknownContractGateDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -1959,7 +1999,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_review_contract_with_workflow_law_points_at_law_line(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/45_review_contract_gate_export_and_exact_failures/prompts/INVALID_CONTRACT_TARGET_WITH_LAW.prompt",
+            "examples/45_review_contract_gate_export_and_exact_failures/prompts/invalid_contract_target_with_law/AGENTS.prompt",
             agent="InvalidContractTargetWithLawDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -1974,7 +2014,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_duplicate_review_subject_map_entry_reports_related_line(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/INVALID_DUPLICATE_SUBJECT_MAP_ENTRY.prompt",
+            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/invalid_duplicate_subject_map_entry/AGENTS.prompt",
             agent="MultiSubjectReviewDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -2803,12 +2843,12 @@ class CompileDiagnosticTests(unittest.TestCase):
             imported_path = self._write_prompt(
                 root,
                 """\
-                input source InboxSource: "Inbox Source"
+                export input source InboxSource: "Inbox Source"
                     required: "Required"
                         path: "Path"
                         path: "Path Again"
                 """,
-                rel_path="prompts/shared/input_source.prompt",
+                rel_path="prompts/shared/input_source/AGENTS.prompt",
             )
             source = """\
                 import shared.input_source
@@ -2935,7 +2975,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             prompt_path = self._write_prompt(root, source)
             session = CompilationSession(parse_file(prompt_path))
             context = CompilationContext(session)
-            input_decl = session.root_unit.inputs_by_name["BrokenInput"]
+            input_decl = unit_declarations(session.root_flow.entrypoint_unit).inputs_by_name[
+                "BrokenInput"
+            ]
             source_item = next(
                 item
                 for item in input_decl.items
@@ -2953,7 +2995,7 @@ class CompileDiagnosticTests(unittest.TestCase):
                 context._display_record_scalar_title(
                     broken_item,
                     node=AddressableNode(
-                        unit=session.root_unit,
+                        unit=session.root_flow.entrypoint_unit,
                         root_decl=broken_input_decl,
                         target=broken_item,
                     ),
@@ -2988,7 +3030,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             prompt_path = self._write_prompt(root, source)
             session = CompilationSession(parse_file(prompt_path))
             context = CompilationContext(session)
-            output_decl = session.root_unit.outputs_by_name["BrokenOutput"]
+            output_decl = unit_declarations(session.root_flow.entrypoint_unit).outputs_by_name[
+                "BrokenOutput"
+            ]
             target_item = next(
                 item
                 for item in output_decl.items
@@ -3006,7 +3050,7 @@ class CompileDiagnosticTests(unittest.TestCase):
                 context._display_record_scalar_title(
                     broken_item,
                     node=AddressableNode(
-                        unit=session.root_unit,
+                        unit=session.root_flow.entrypoint_unit,
                         root_decl=broken_output_decl,
                         target=broken_item,
                     ),
@@ -3376,7 +3420,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompt_path))
 
             with self.assertRaises(CompileError) as ctx:
-                session.extract_target_flow_graph_from_units(((session.root_unit, "Missing"),))
+                session.extract_target_flow_graph_from_units(
+                    ((session.root_flow.entrypoint_unit, "Missing"),)
+                )
 
         error = ctx.exception
         self.assertEqual(error.diagnostic.code, "E201")
@@ -3397,7 +3443,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompt_path))
 
             with self.assertRaises(CompileError) as ctx:
-                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+                session.extract_target_flow_graph_from_units(
+                    ((session.root_flow.entrypoint_unit, "Demo"),)
+                )
 
         error = ctx.exception
         self.assertEqual(error.diagnostic.code, "E202")
@@ -3424,7 +3472,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompt_path))
 
             with self.assertRaises(CompileError) as ctx:
-                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+                session.extract_target_flow_graph_from_units(
+                    ((session.root_flow.entrypoint_unit, "Demo"),)
+                )
 
         error = ctx.exception
         self.assertEqual(error.diagnostic.code, "E283")
@@ -3456,7 +3506,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompt_path))
 
             with self.assertRaises(CompileError) as ctx:
-                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+                session.extract_target_flow_graph_from_units(
+                    ((session.root_flow.entrypoint_unit, "Demo"),)
+                )
 
         error = ctx.exception
         self.assertEqual(error.diagnostic.code, "E231")
@@ -3493,7 +3545,9 @@ class CompileDiagnosticTests(unittest.TestCase):
             session = CompilationSession(parse_file(prompt_path))
 
             with self.assertRaises(CompileError) as ctx:
-                session.extract_target_flow_graph_from_units(((session.root_unit, "Demo"),))
+                session.extract_target_flow_graph_from_units(
+                    ((session.root_flow.entrypoint_unit, "Demo"),)
+                )
 
         error = ctx.exception
         self.assertEqual(error.diagnostic.code, "E299")
@@ -7331,7 +7385,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_review_outcome_multiple_currents_report_related_line(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/49_review_capstone/prompts/INVALID_CURRENT_NONE_AND_CURRENT_ARTIFACT.prompt",
+            "examples/49_review_capstone/prompts/invalid_current_none_and_current_artifact/AGENTS.prompt",
             agent="InvalidCurrentNoneAndCurrentArtifactDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -7355,7 +7409,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_review_subject_disambiguation_points_at_outcome_section(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/INVALID_SUBJECT_SET_WITHOUT_DISAMBIGUATION.prompt",
+            "examples/47_review_multi_subject_mode_and_trigger_carry/prompts/invalid_subject_set_without_disambiguation/AGENTS.prompt",
             agent="InvalidSubjectSetWithoutDisambiguationDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -7476,7 +7530,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_review_current_none_mismatch_points_at_current_none_line(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/46_review_current_truth_and_trust_surface/prompts/INVALID_CURRENT_NONE_REQUIRES_GUARDED_CARRIER.prompt",
+            "examples/46_review_current_truth_and_trust_surface/prompts/invalid_current_none_requires_guarded_carrier/AGENTS.prompt",
             agent="InvalidCurrentNoneRequiresGuardedCarrierDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()
@@ -7496,7 +7550,7 @@ class CompileDiagnosticTests(unittest.TestCase):
 
     def test_review_optional_blocked_gate_binding_points_at_field_binding(self) -> None:
         prompt_path, error = self._compile_repo_prompt_error(
-            "examples/49_review_capstone/prompts/INVALID_UNGUARDED_BLOCKED_GATE.prompt",
+            "examples/49_review_capstone/prompts/invalid_unguarded_blocked_gate/AGENTS.prompt",
             agent="InvalidUnguardedBlockedGateDemo",
         )
         prompt_lines = prompt_path.read_text(encoding="utf-8").splitlines()

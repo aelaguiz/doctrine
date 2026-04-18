@@ -1,5 +1,0 @@
-import cyclic_siblings.alpha
-
-
-workflow Beta: "Beta"
-    "This module closes the sibling import cycle."

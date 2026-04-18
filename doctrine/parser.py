@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass as _dataclass
 from pathlib import Path
 
 from lark import Lark, Transformer, v_args
@@ -27,6 +28,11 @@ from doctrine._parser.transformer import (
 from doctrine._parser.workflows import WorkflowTransformerMixin
 
 
+@_dataclass(slots=True, frozen=True)
+class _ExportedDecl:
+    declaration: model.Declaration
+
+
 class ToAst(
     SchemaDocumentTransformerMixin,
     DeclarationTransformerMixin,
@@ -42,9 +48,6 @@ class ToAst(
     Transformer,
 ):
     def CNAME(self, token):
-        return str(token)
-
-    def DOTS(self, token):
         return str(token)
 
     def PATH_REF(self, token):
@@ -68,12 +71,20 @@ class ToAst(
 
     def prompt_file(self, items):
         declarations = []
+        exported_names = []
         for item in items:
             if isinstance(item, list):
                 declarations.extend(item)
-            else:
-                declarations.append(item)
-        return model.PromptFile(declarations=tuple(declarations))
+                continue
+            if isinstance(item, _ExportedDecl):
+                declarations.append(item.declaration)
+                exported_names.append(item.declaration.name)
+                continue
+            declarations.append(item)
+        return model.PromptFile(
+            declarations=tuple(declarations),
+            exported_names=tuple(exported_names),
+        )
 
     @v_args(inline=True)
     def inheritance(self, parent_ref):
@@ -94,6 +105,10 @@ class ToAst(
     @v_args(inline=True)
     def import_decl(self, declaration):
         return declaration
+
+    @v_args(inline=True)
+    def export_decl(self, declaration):
+        return _ExportedDecl(declaration=declaration)
 
     def imported_symbol_binding(self, items):
         name = items[0]
@@ -147,10 +162,6 @@ class ToAst(
     @v_args(inline=True)
     def absolute_import_path(self, module_parts):
         return model.ImportPath(level=0, module_parts=tuple(module_parts))
-
-    @v_args(inline=True)
-    def relative_import_path(self, dots, module_parts):
-        return model.ImportPath(level=len(dots), module_parts=tuple(module_parts))
 
     def dotted_name(self, items):
         return tuple(items)

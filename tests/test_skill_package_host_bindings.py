@@ -61,8 +61,6 @@ class SkillPackageHostBindingTests(unittest.TestCase):
             (package_root / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    from refs.query_patterns import QueryPatterns
-
                     skill package DemoPackage: "Demo Package"
                         metadata:
                             name: "demo-package"
@@ -202,9 +200,9 @@ class SkillPackageHostBindingTests(unittest.TestCase):
     def test_agent_compile_fails_when_visible_package_ids_are_ambiguous(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
-            packages_root = root / "prompts" / "packages"
-            packages_root.mkdir(parents=True)
-            (packages_root / "one.prompt").write_text(
+            one_root = root / "prompts" / "skills" / "one"
+            one_root.mkdir(parents=True)
+            (one_root / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
                     skill package OnePackage: "One Package"
@@ -215,7 +213,9 @@ class SkillPackageHostBindingTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            (packages_root / "two.prompt").write_text(
+            two_root = root / "prompts" / "skills" / "two"
+            two_root.mkdir(parents=True)
+            (two_root / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
                     skill package TwoPackage: "Two Package"
@@ -229,9 +229,6 @@ class SkillPackageHostBindingTests(unittest.TestCase):
             (root / "prompts" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import packages.one
-                    import packages.two
-
                     skill DemoSkill: "Demo Skill"
                         purpose: "Run the demo package."
                         package: "shared-package"
@@ -360,8 +357,6 @@ class SkillPackageHostBindingTests(unittest.TestCase):
             (prompts / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    from refs.query_patterns import QueryPatterns
-
                     skill package DemoPackage: "Demo Package"
                         metadata:
                             name: "demo-package"

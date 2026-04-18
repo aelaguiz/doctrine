@@ -89,8 +89,10 @@ you need the old context.
 - `AGENTS.prompt` and `SOUL.prompt` stay the agent-runtime entrypoints.
   `SKILL.prompt` is the skill-package entrypoint.
 - Absolute imports may also span explicitly configured shared `prompts/`
-  roots through `[tool.doctrine.compile].additional_prompt_roots`, while
-  relative imports stay rooted in the importing module's own `prompts/` tree.
+  roots through `[tool.doctrine.compile].additional_prompt_roots`.
+- Same-flow imports are retired. Sibling `.prompt` files already share one
+  flat namespace under their flow root, so only real cross-flow boundaries use
+  `import`.
 - Inside `SKILL.prompt` packages, prompt files may also import from the local
   package source root. If a local module path collides with a repo-wide one,
   Doctrine fails loud.

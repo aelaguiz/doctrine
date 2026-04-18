@@ -35,7 +35,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             context = CompilationContext(session)
             unit, decl = context._resolve_output_schema_decl(
                 model.NameRef(module_parts=(), declaration_name=schema_name),
-                unit=session.root_unit,
+                unit=session.root_flow.entrypoint_unit,
             )
             return decl, context._lower_output_schema_decl(decl, unit=unit)
 
@@ -406,8 +406,8 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             """,
             schema_name="ChildPayload",
             extra_files={
-                "prompts/shared/base.prompt": """
-                output schema BasePayload: "Base Payload"
+                "prompts/shared/base/AGENTS.prompt": """
+                export output schema BasePayload: "Base Payload"
                     def SharedNote: "Shared Note"
                         type: object
 

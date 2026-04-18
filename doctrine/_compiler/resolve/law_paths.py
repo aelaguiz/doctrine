@@ -232,53 +232,78 @@ class ResolveLawPathsMixin:
                 lookup_unit = lookup_target.unit
                 target_name = lookup_target.declaration_name
                 if "input" in allowed_kinds:
-                    input_decl = lookup_unit.inputs_by_name.get(target_name)
-                    if input_decl is not None:
+                    input_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="inputs_by_name",
+                    )
+                    if input_match is not None:
+                        owner_unit, input_decl = input_match
                         matches.append(
                             ResolvedLawPath(
-                                unit=lookup_unit,
+                                unit=owner_unit,
                                 decl=input_decl,
                                 remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
                 if "output" in allowed_kinds:
-                    output_decl = self._resolve_local_output_decl(target_name, unit=lookup_unit)
-                    if output_decl is not None:
+                    output_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="outputs_by_name",
+                    )
+                    if output_match is not None:
+                        owner_unit, output_decl = output_match
                         matches.append(
                             ResolvedLawPath(
-                                unit=lookup_unit,
-                                decl=output_decl,
+                                unit=owner_unit,
+                                decl=self._resolve_output_decl_body(output_decl, unit=owner_unit),
                                 remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
                 if "enum" in allowed_kinds:
-                    enum_decl = lookup_unit.enums_by_name.get(target_name)
-                    if enum_decl is not None:
+                    enum_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="enums_by_name",
+                    )
+                    if enum_match is not None:
+                        owner_unit, enum_decl = enum_match
                         matches.append(
                             ResolvedLawPath(
-                                unit=lookup_unit,
+                                unit=owner_unit,
                                 decl=enum_decl,
                                 remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
                 if "grounding" in allowed_kinds:
-                    grounding_decl = lookup_unit.groundings_by_name.get(target_name)
-                    if grounding_decl is not None:
+                    grounding_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="groundings_by_name",
+                    )
+                    if grounding_match is not None:
+                        owner_unit, grounding_decl = grounding_match
                         matches.append(
                             ResolvedLawPath(
-                                unit=lookup_unit,
+                                unit=owner_unit,
                                 decl=grounding_decl,
                                 remainder=remainder,
                                 wildcard=path.wildcard,
                             )
                         )
                 if "schema_family" in allowed_kinds:
-                    schema_decl = lookup_unit.schemas_by_name.get(target_name)
-                    if schema_decl is not None and remainder:
-                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                    schema_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="schemas_by_name",
+                    )
+                    if schema_match is not None and remainder:
+                        owner_unit, schema_decl = schema_match
+                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=owner_unit)
                         family_items_by_key = {
                             "sections": resolved_schema.sections,
                             "gates": resolved_schema.gates,
@@ -289,7 +314,7 @@ class ResolveLawPathsMixin:
                         if family_items is not None:
                             matches.append(
                                 ResolvedLawPath(
-                                    unit=lookup_unit,
+                                    unit=owner_unit,
                                     decl=SchemaFamilyTarget(
                                         family_key=remainder[0],
                                         title=_SCHEMA_FAMILY_TITLES[remainder[0]],
@@ -300,9 +325,18 @@ class ResolveLawPathsMixin:
                                 )
                             )
                 if "schema_group" in allowed_kinds:
-                    schema_decl = lookup_unit.schemas_by_name.get(target_name)
-                    if schema_decl is not None and len(remainder) >= 2 and remainder[0] == "groups":
-                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=lookup_unit)
+                    schema_match = self._flow_decl_match(
+                        target_name,
+                        unit=lookup_unit,
+                        registry_name="schemas_by_name",
+                    )
+                    if (
+                        schema_match is not None
+                        and len(remainder) >= 2
+                        and remainder[0] == "groups"
+                    ):
+                        owner_unit, schema_decl = schema_match
+                        resolved_schema = self._resolve_schema_decl(schema_decl, unit=owner_unit)
                         group = next(
                             (item for item in resolved_schema.groups if item.key == remainder[1]),
                             None,
@@ -310,7 +344,7 @@ class ResolveLawPathsMixin:
                         if group is not None:
                             matches.append(
                                 ResolvedLawPath(
-                                    unit=lookup_unit,
+                                    unit=owner_unit,
                                     decl=group,
                                     remainder=remainder[2:],
                                     wildcard=path.wildcard,

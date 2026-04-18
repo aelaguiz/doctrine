@@ -1,0 +1,9 @@
+import chains.relative.leaf
+import chains.shared.wrap_up
+
+
+export workflow SharedChain: "Shared Chain"
+    "This flow chains one imported step into shared follow-through."
+
+    use leaf_step: chains.relative.leaf.LeafStep
+    use shared_wrap_up: chains.shared.wrap_up.SharedWrapUp

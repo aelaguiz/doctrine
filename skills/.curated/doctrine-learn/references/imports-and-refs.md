@@ -6,7 +6,7 @@ Use `import` to pull in a whole module by alias. Use `from module import Name` t
 
 ## Module Imports
 
-`import module.path` brings in the module. Its declarations are available under the dotted path.
+`import module.path` brings in another flow or runtime package. Its exported declarations are available under the dotted path.
 
 `import module.path as Alias` renames the module for this file.
 
@@ -23,7 +23,7 @@ agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
     role: "You are the hello world greeter."
 ```
 
-See `examples/04_inheritance/` for an abstract agent imported from one module and `examples/03_imports/` for the full `import ... as` and `from ... import` surface.
+See `examples/04_inheritance/` for an abstract agent imported from another flow and `examples/03_imports/` for the full `import ... as` and `from ... import` surface.
 
 ## Symbol Imports
 
@@ -32,10 +32,9 @@ See `examples/04_inheritance/` for an abstract agent imported from one module an
 `from module.path import Name as Alias` renames the symbol on the way in.
 
 ```prompt-fragment
-from simple.greeting import Greeting as GreetingStep
-from simple.object import Object
-from chains.absolute.briefing import AbsoluteBriefing
-from chains.relative.entry import RelativeChain as RelativeChainStep
+from shared.review import DraftReviewComment
+from shared.review import DraftReviewComment as ImportedComment
+from shared.contracts import ReviewContract
 ```
 
 Imported symbols compose with normal language features. They can be used as parents, `use` entries, workflow refs, IO refs, or anywhere a named declaration is legal.
@@ -47,11 +46,9 @@ agent ImportsDemo:
     workflow: "Imported Steps"
         "Follow the imported instructions below."
 
-        use greeting: GreetingStep
-        use object: Object
-        use polite_greeting: polite.PoliteGreeting
-        use absolute_briefing: AbsoluteBriefing
-        use relative_chain: RelativeChainStep
+        review_contract: ReviewContract
+        comment_output: DraftReviewComment
+        imported_comment: ImportedComment
 ```
 
 See `examples/03_imports/prompts/AGENTS.prompt` for the full shipped surface.
@@ -62,7 +59,7 @@ Doctrine resolves imports against an ordered list of prompt roots:
 
 1. The absolute prompts root for the current build target.
 2. Any `additional_prompt_roots` declared in `pyproject.toml` under `[tool.doctrine.compile]`.
-3. For `SKILL.prompt` skill packages, the local package source root that holds the entrypoint.
+3. For `SKILL.prompt` skill packages, the local package source root when a cross-flow import targets a nested flow under that package, such as a bundled runtime home.
 
 An `additional_prompt_roots` entry reads like this:
 
@@ -82,7 +79,7 @@ See `examples/75_cross_root_standard_library_imports/` for the real multi-root l
 
 Collision detection is strict. If the same dotted path resolves in more than one root, Doctrine fails loud instead of guessing. The `invalid_ambiguous/` sub-case inside `examples/75_cross_root_standard_library_imports/` proves this.
 
-Inside a `SKILL.prompt` package, local modules are searched from the package source root first. Package-local collisions with a repo-wide module at the same dotted path fail loud too.
+Inside a `SKILL.prompt` package, sibling files in the same flow do not import each other. They use bare refs. Cross-flow imports from that package may still search the package source root for nested flow entrypoints, and package-local collisions with a repo-wide module at the same dotted path still fail loud.
 
 ## Addressable Refs
 
@@ -124,7 +121,7 @@ workflow WorkflowRoot: "Workflow Root"
         "Run {{self:shared.gates.build.check_build_honesty}} with {{self:skills.can_run.grounding}}."
 ```
 
-`self:` is a `PATH_REF` prefix. It works both as a bare ref line and inside interpolation expressions. See `examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt` for the self-addressed and nested descent surfaces.
+`self:` is a `PATH_REF` prefix. It works both as a bare ref line and inside interpolation expressions. See `examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt` for the self-addressed and nested descent surfaces.
 
 ## Grouped Inherit
 
@@ -239,7 +236,7 @@ Runtime agent packages and `SKILL.prompt` skill packages are different surfaces.
 - Do not use `self:` to reach outside the current declaration. It is rooted at the declaration, not the file.
 - Do not write `inherit { ... }` for fields the parent does not declare. The compiler checks every key.
 - Do not import a runtime agent package as a plain module. The directory form is the shipped shape; it owns the whole runtime home.
-- Do not reach for a relative import when an absolute one is clearer. Absolute imports read the same from anywhere in the repo.
+- Do not write relative imports. They are retired. Inside one flow use bare refs. Across flows use absolute imports.
 
 ## Related References
 

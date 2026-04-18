@@ -1,0 +1,7 @@
+import chains.shared.context
+
+
+export workflow LeafStep: "Leaf Step"
+    "This flow reuses shared context through one imported step."
+
+    use shared_context: chains.shared.context.SharedContext

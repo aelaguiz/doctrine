@@ -1,0 +1,13 @@
+import shared
+
+
+agent CrossFlowImportDemo:
+    role: "Show when `import` is still needed."
+
+    your_job: LocalTurn
+
+
+workflow LocalTurn: "Your Job"
+    "Cross a real flow boundary with `import`."
+
+    use shared_turn: shared.SharedTurn

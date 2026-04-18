@@ -1,0 +1,20 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "sibling files share one flat flow namespace"
+status = "active"
+kind = "render_contract"
+agent = "SiblingNamespaceDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Show that one flow shares one flat namespace.",
+  "",
+  "## Your Job",
+  "",
+  "This workflow lives in one sibling file.",
+  "",
+  "### Shared Note",
+  "",
+  "This workflow lives in another sibling file.",
+]

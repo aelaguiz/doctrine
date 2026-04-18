@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import hashlib
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 
 from doctrine._compiler.types import FlowAgentNode, FlowEdge, FlowGraph, FlowInputNode, FlowOutputNode
 
-AgentKey = tuple[tuple[str, ...], str]
+AgentKey = tuple[Path | None, Path | None, tuple[str, ...], str]
+ArtifactKey = tuple[Path | None, Path | None, tuple[str, ...], str]
+NodePathKey = tuple[str, Path | None, Path | None, tuple[str, ...], str]
 ROUTE_EDGE_KINDS = {"authored_route", "law_route"}
 
 
@@ -37,32 +41,129 @@ def edge_style(kind: str) -> tuple[str, int | None]:
     return ("#D92D20", None)
 
 
-def node_id(kind: str, module_parts: tuple[str, ...], name: str) -> str:
+def _identity_hash(prompt_root: Path | None, flow_root: Path | None) -> str:
+    if prompt_root is None and flow_root is None:
+        return ""
+    # Hash the flow's position relative to its prompt root so identifiers stay
+    # reproducible across machines. Absolute paths would bake the local
+    # filesystem into the emitted diagram.
+    if prompt_root is not None and flow_root is not None:
+        try:
+            identity = flow_root.relative_to(prompt_root).as_posix()
+        except ValueError:
+            identity = flow_root.as_posix()
+    elif flow_root is not None:
+        identity = flow_root.as_posix()
+    else:
+        assert prompt_root is not None
+        identity = prompt_root.as_posix()
+    return hashlib.sha1(identity.encode("utf-8")).hexdigest()[:8] + "_"
+
+
+def agent_key(node: FlowAgentNode) -> AgentKey:
+    return (node.prompt_root, node.flow_root, node.module_parts, node.name)
+
+
+def artifact_key(node: FlowInputNode | FlowOutputNode) -> ArtifactKey:
+    return (node.prompt_root, node.flow_root, node.module_parts, node.name)
+
+
+def edge_source_key(edge: FlowEdge) -> NodePathKey:
+    return (
+        edge.source_kind,
+        edge.source_prompt_root,
+        edge.source_flow_root,
+        edge.source_module_parts,
+        edge.source_name,
+    )
+
+
+def edge_target_key(edge: FlowEdge) -> NodePathKey:
+    return (
+        edge.target_kind,
+        edge.target_prompt_root,
+        edge.target_flow_root,
+        edge.target_module_parts,
+        edge.target_name,
+    )
+
+
+def node_path_key(
+    kind: str,
+    node: FlowAgentNode | FlowInputNode | FlowOutputNode,
+) -> NodePathKey:
+    return (
+        kind,
+        node.prompt_root,
+        node.flow_root,
+        node.module_parts,
+        node.name,
+    )
+
+
+def node_id(
+    kind: str,
+    module_parts: tuple[str, ...],
+    name: str,
+    *,
+    prompt_root: Path | None = None,
+    flow_root: Path | None = None,
+) -> str:
     parts = "_".join((*module_parts, name)).replace(".", "_").lower()
-    return f"{kind}_{parts}"
+    return f"{kind}_{_identity_hash(prompt_root, flow_root)}{parts}"
 
 
 def graph_participants(
     graph: FlowGraph,
 ) -> tuple[
-    dict[tuple[tuple[str, ...], str], tuple[str, ...]],
-    dict[tuple[tuple[str, ...], str], tuple[str, ...]],
+    dict[ArtifactKey, tuple[str, ...]],
+    dict[ArtifactKey, tuple[str, ...]],
 ]:
     agent_titles = {
-        (agent.module_parts, agent.name): agent.title or agent.name
+        agent_key(agent): agent.title or agent.name
         for agent in graph.agents
     }
-    input_consumers: dict[tuple[tuple[str, ...], str], set[str]] = defaultdict(set)
-    output_producers: dict[tuple[tuple[str, ...], str], set[str]] = defaultdict(set)
+    input_consumers: dict[ArtifactKey, set[str]] = defaultdict(set)
+    output_producers: dict[ArtifactKey, set[str]] = defaultdict(set)
 
     for edge in graph.edges:
         if edge.kind == "consume" and edge.source_kind == "input" and edge.target_kind == "agent":
-            input_consumers[(edge.source_module_parts, edge.source_name)].add(
-                agent_titles.get((edge.target_module_parts, edge.target_name), edge.target_name)
+            input_consumers[
+                (
+                    edge.source_prompt_root,
+                    edge.source_flow_root,
+                    edge.source_module_parts,
+                    edge.source_name,
+                )
+            ].add(
+                agent_titles.get(
+                    (
+                        edge.target_prompt_root,
+                        edge.target_flow_root,
+                        edge.target_module_parts,
+                        edge.target_name,
+                    ),
+                    edge.target_name,
+                )
             )
         if edge.kind == "produce" and edge.source_kind == "agent" and edge.target_kind == "output":
-            output_producers[(edge.target_module_parts, edge.target_name)].add(
-                agent_titles.get((edge.source_module_parts, edge.source_name), edge.source_name)
+            output_producers[
+                (
+                    edge.target_prompt_root,
+                    edge.target_flow_root,
+                    edge.target_module_parts,
+                    edge.target_name,
+                )
+            ].add(
+                agent_titles.get(
+                    (
+                        edge.source_prompt_root,
+                        edge.source_flow_root,
+                        edge.source_module_parts,
+                        edge.source_name,
+                    ),
+                    edge.source_name,
+                )
             )
 
     return (
@@ -74,12 +175,12 @@ def graph_participants(
 def node_paths(
     section_id: str,
     nodes: list[FlowInputNode | FlowOutputNode],
-) -> dict[tuple[str, tuple[str, ...], str], str]:
-    paths: dict[tuple[str, tuple[str, ...], str], str] = {}
+) -> dict[NodePathKey, str]:
+    paths: dict[NodePathKey, str] = {}
     for node in nodes:
         kind = "input" if isinstance(node, FlowInputNode) else "output"
-        paths[(kind, node.module_parts, node.name)] = (
-            f"{section_id}.{node_id(kind, node.module_parts, node.name)}"
+        paths[node_path_key(kind, node)] = (
+            f"{section_id}.{node_id(kind, node.module_parts, node.name, prompt_root=node.prompt_root, flow_root=node.flow_root)}"
         )
     return paths
 
@@ -87,24 +188,24 @@ def node_paths(
 def agent_node_paths(
     graph: FlowGraph,
     lane_plan: FlowLanePlan,
-) -> dict[tuple[str, tuple[str, ...], str], str]:
-    paths: dict[tuple[str, tuple[str, ...], str], str] = {}
+) -> dict[NodePathKey, str]:
+    paths: dict[NodePathKey, str] = {}
     for node in graph.agents:
-        node_key = (node.module_parts, node.name)
+        node_key = agent_key(node)
         if node_key in lane_plan.primary_lane:
             container = "primary_lane"
         elif node_key in lane_plan.route_starts:
             container = "route_starts"
         else:
             container = "secondary_lanes"
-        paths[("agent", node.module_parts, node.name)] = (
-            f"agent_handoffs.{container}.{node_id('agent', node.module_parts, node.name)}"
+        paths[node_path_key("agent", node)] = (
+            f"agent_handoffs.{container}.{node_id('agent', node.module_parts, node.name, prompt_root=node.prompt_root, flow_root=node.flow_root)}"
         )
     return paths
 
 
 def plan_agent_lanes(graph: FlowGraph) -> FlowLanePlan:
-    ordered_agents = tuple((node.module_parts, node.name) for node in graph.agents)
+    ordered_agents = tuple(agent_key(node) for node in graph.agents)
     route_edges = [
         edge
         for edge in graph.edges
@@ -125,8 +226,18 @@ def plan_agent_lanes(graph: FlowGraph) -> FlowLanePlan:
     first_route_source: AgentKey | None = None
 
     for edge in route_edges:
-        source = (edge.source_module_parts, edge.source_name)
-        target = (edge.target_module_parts, edge.target_name)
+        source = (
+            edge.source_prompt_root,
+            edge.source_flow_root,
+            edge.source_module_parts,
+            edge.source_name,
+        )
+        target = (
+            edge.target_prompt_root,
+            edge.target_flow_root,
+            edge.target_module_parts,
+            edge.target_name,
+        )
         if first_route_source is None:
             first_route_source = source
         route_participants.add(source)
@@ -156,7 +267,12 @@ def plan_agent_lanes(graph: FlowGraph) -> FlowLanePlan:
         seen_on_primary_lane.add(current)
         next_agent: AgentKey | None = None
         for edge in route_outgoing.get(current, ()):
-            target = (edge.target_module_parts, edge.target_name)
+            target = (
+                edge.target_prompt_root,
+                edge.target_flow_root,
+                edge.target_module_parts,
+                edge.target_name,
+            )
             if target in seen_on_primary_lane:
                 continue
             next_agent = target

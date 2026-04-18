@@ -14,7 +14,7 @@ Load this when the author is new to Doctrine or is unsure which construct fits t
     section shape: "Shape Of A Doctrine File"
         "A typical `.prompt` file reads top to bottom in this rough order:"
         sequence order:
-            "**Imports.** `import module`, `import module as alias`, `from module import Name`, and relative `import .sibling`. Imports bring typed declarations from other modules into scope."
+            "**Imports.** `import module`, `import module as alias`, and `from module import Name`. Imports cross real flow boundaries. Sibling files in one flow use bare refs instead."
             "**Named types and reusable declarations.** `workflow`, `review`, `review_family`, `document`, `table`, `schema`, `analysis`, `decision`, `enum`, `render_profile`, `input`, `output`, `output shape`, `output schema`, `input source`, `output target`, `skill`, `skills`, `skill package`. These are the reusable vocabulary the agent will point at."
             "**Agents (or one `skill package`).** `abstract agent` for shared role scaffolds, then `agent` for concrete runtime owners. A `SKILL.prompt` file owns exactly one top-level `skill package` instead."
             "**Outputs and output schemas.** Reusable `output`, `output shape`, `output schema`, and `output target` declarations give turns typed answers. The agent picks one with `final_output:`."
@@ -53,7 +53,7 @@ Load this when the author is new to Doctrine or is unsure which construct fits t
             "**`document`** — a reusable Markdown structure with `section`, `sequence`, `bullets`, `checklist`, `definitions`, `properties`, `table`, `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, `guard`, and `rule` blocks. Each non-rule readable block kind has a bare form (no key, no heading) and a named form (CNAME plus heading). Attached through `structure:` on markdown-bearing inputs and outputs. First example: `examples/56_document_structure_attachments` and `examples/58_readable_document_blocks`. Bare-form parity: `examples/128_readable_block_parity`."
             "**`render_profile`** — reusable Markdown presentation policy. Attached with `render_profile:` on `analysis`, `schema`, `document`, and markdown-bearing outputs. First example: `examples/64_render_profiles_and_properties`."
             "**`enum`** — a closed vocabulary with typed members, titles, and optional `wire:` values. Used by law, review, and schema guards. First example: `examples/29_enums`."
-            "**Imports** — module and symbol imports. First example: `examples/03_imports`. Cross-root imports: `examples/75_cross_root_standard_library_imports`."
+            "**Imports** — cross-flow module and symbol imports plus same-flow bare refs. First example: `examples/03_imports`. Cross-root imports: `examples/75_cross_root_standard_library_imports`."
 
     section reuse_pattern: "Named-Type Reuse Pattern"
         """Doctrine prefers declared named types over inline literals. The declaration owns the reusable contract. The use site owns the local key and local specifics.

@@ -83,9 +83,10 @@ The package source root is the directory that contains `SKILL.prompt`.
 Doctrine treats that directory as the package tree it owns:
 
 - `SKILL.prompt` compiles to `SKILL.md`.
-- Prompt files inside the package may import each other from that package root
-  with absolute imports such as `from refs.query_patterns import
-  QueryPatterns`, or with relative imports.
+- Prompt files inside one package flow already share one flat namespace.
+  Use bare same-flow refs there.
+- Use absolute imports only when you cross into another flow, such as a nested
+  runtime home under `agents/.../`.
 - Package-local import collisions fail loud. Doctrine will not guess between a
   package-local module and a repo-wide prompt module with the same dotted
   path.
@@ -152,9 +153,6 @@ prompt-authored `document` declarations instead of copying raw `.md` files.
 Example:
 
 ```prompt
-from refs.query_patterns import QueryPatterns
-from refs.receipts_template import ReceiptsTemplate
-
 skill package ResearchReviewKit: "Research Review Kit"
     metadata:
         name: "research-review-kit"
@@ -199,9 +197,10 @@ Important rules:
 
 The two first-party skills in this repo use this pattern end to end as
 working exemplars. `skills/agent-linter/prompts/SKILL.prompt` and
-`skills/doctrine-learn/prompts/SKILL.prompt` each import many `.prompt`
-modules under `prompts/refs/` and emit the whole reference bundle through
-one `emit:` block. The checked-in install trees under
+`skills/doctrine-learn/prompts/SKILL.prompt` each keep many sibling `.prompt`
+reference files under `prompts/refs/`, use bare same-flow refs in the package
+entrypoint, and emit the whole reference bundle through one `emit:` block. The
+checked-in install trees under
 `skills/.curated/<name>/references/` are verifier-owned proof; the authored
 truth lives in `prompts/refs/*.prompt`.
 
@@ -230,8 +229,6 @@ The authoring model stays small:
 Example package:
 
 ```prompt
-from refs.query_patterns import QueryPatterns
-
 skill package SectionPipelineSkill: "Section Pipeline Skill"
     metadata:
         name: "section-pipeline-skill"

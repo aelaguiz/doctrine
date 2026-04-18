@@ -1,0 +1,20 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "cross-flow import stays the honest boundary tool"
+status = "active"
+kind = "render_contract"
+agent = "CrossFlowImportDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Show when `import` is still needed.",
+  "",
+  "## Your Job",
+  "",
+  "Cross a real flow boundary with `import`.",
+  "",
+  "### Shared Turn",
+  "",
+  "This workflow comes from another flow.",
+]

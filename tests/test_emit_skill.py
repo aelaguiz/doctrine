@@ -291,9 +291,6 @@ class EmitSkillTests(unittest.TestCase):
             (prompts / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    from refs.query_patterns import QueryPatterns
-                    from refs.qa_guide import QaGuide
-
                     skill package EmittedDocs: "Emitted Docs"
                         metadata:
                             name: "emitted-docs"
@@ -495,8 +492,6 @@ class EmitSkillTests(unittest.TestCase):
             (prompts / "SKILL.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    from refs.query_patterns import QueryPatterns
-
                     skill package ReservedDocPath: "Reserved Doc Path"
                         metadata:
                             name: "reserved-doc-path"

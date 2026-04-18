@@ -1,6 +1,3 @@
-import agents.cold_reviewer
-import agents.escalation_router
-
 skill package BundledAgentsPackage: "Bundled Agents Package"
     metadata:
         name: "bundled-agents-package"

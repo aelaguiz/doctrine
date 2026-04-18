@@ -1,0 +1,2 @@
+export workflow Greeting: "Greeting"
+    "Say hello."

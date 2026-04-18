@@ -9,12 +9,10 @@
 # `{{Ref:field.path}}` resolves one scalar field from the declaration contract.
 # The author still owns punctuation, filenames, and backticks around placeholders.
 
-import shared.contracts
-
 
 workflow ImmediateLocalRead: "Immediate Local Read"
     read_now: "Read Now"
-        "Read the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, track.meta.json at `{{shared.contracts.TrackMetadata:source.path}}`, any current CONCEPTS.md at `{{CurrentConcepts:source.path}}`, and nearby section context only as support evidence to re-earn."
+        "Read the current issue, the current Issue Plan And Route, the latest issue comment that names the current files, track.meta.json at `{{TrackMetadata:source.path}}`, any current CONCEPTS.md at `{{CurrentConcepts:source.path}}`, and nearby section context only as support evidence to re-earn."
 
     handoff_shape: "Handoff Shape"
         "When you stop, leave one {{FinalHandoffComment}} through {{FinalHandoffComment:target.title}}."
@@ -41,8 +39,8 @@ agent WorkflowStringInterpolationDemo:
     read_first: ImmediateLocalRead
 
     inputs: "Inputs"
-        shared.contracts.CurrentIssuePlan
-        shared.contracts.TrackMetadata
+        CurrentIssuePlan
+        TrackMetadata
         CurrentConcepts
 
     outputs: "Outputs"

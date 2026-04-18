@@ -561,19 +561,27 @@ class ResolveSchemasMixin:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         matches: list[tuple[IndexedUnit, ContractArtifact, object | None]] = []
         for lookup_target in lookup_targets:
-            if (decl := lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)) is not None:
+            if (input_match := self._resolve_visible_input_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )) is not None:
+                input_unit, decl = input_match
                 matches.append(
                     (
-                        lookup_target.unit,
-                        ContractArtifact(kind="input", unit=lookup_target.unit, decl=decl),
+                        input_unit,
+                        ContractArtifact(kind="input", unit=input_unit, decl=decl),
                         lookup_target.imported_symbol,
                     )
                 )
-            if (decl := self._resolve_local_output_decl(lookup_target.declaration_name, unit=lookup_target.unit)) is not None:
+            if (output_match := self._resolve_visible_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )) is not None:
+                output_unit, decl = output_match
                 matches.append(
                     (
-                        lookup_target.unit,
-                        ContractArtifact(kind="output", unit=lookup_target.unit, decl=decl),
+                        output_unit,
+                        ContractArtifact(kind="output", unit=output_unit, decl=decl),
                         lookup_target.imported_symbol,
                     )
                 )

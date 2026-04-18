@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 3.0
+Current Doctrine language version: 4.0
 
 ## The Version Lines
 
@@ -146,10 +146,12 @@ Every public release uses one release class.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.
-- The high-value authoring wave is also `additive`. It ships `E306`,
-  `E307`, `E308`, `E309`, and `E312`. `E310` stays reserved for the deferred
-  grouped-override investigation, and `E311` stays reserved for a future
-  dedicated IO-wrapper shorthand diagnostic.
+- The flow-root namespace cut is `breaking`. It retires relative imports and
+  same-flow imports, makes `export` the cross-flow visibility gate, retires
+  `E306`, adds `E314`, `E315`, and `E316`, and advances the language line from
+  `3.0` to `4.0`. `E310` stays reserved for the deferred grouped-override
+  investigation, and `E311` stays reserved for a future dedicated IO-wrapper
+  shorthand diagnostic.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

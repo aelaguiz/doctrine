@@ -1,0 +1,2 @@
+agent SiblingCollisionDemo:
+    role: "Show that sibling declaration collisions fail loud."

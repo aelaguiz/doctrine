@@ -343,8 +343,6 @@ class OutputRenderingTests(unittest.TestCase):
         with self.assertRaises(CompileError) as caught:
             self._compile_agent(
                 """
-                import rally.base_agent
-
                 output schema SharedTurnSchema: "Shared Turn Schema"
                     field kind: "Kind"
                         type: string
@@ -362,7 +360,7 @@ class OutputRenderingTests(unittest.TestCase):
                     requirement: Required
 
                 input PreviousTurnResult: "Previous Turn Result"
-                    source: rally.base_agent.RallyPreviousTurnOutput
+                    source: RallyPreviousTurnOutput
                     requirement: Advisory
 
                 agent Demo:
@@ -393,8 +391,6 @@ class OutputRenderingTests(unittest.TestCase):
     def test_explicit_structured_previous_turn_input_supports_field_paths(self) -> None:
         agent = self._compile_agent(
             """
-            import rally.base_agent
-
             output schema SharedTurnSchema: "Shared Turn Schema"
                 field kind: "Kind"
                     type: string
@@ -412,7 +408,7 @@ class OutputRenderingTests(unittest.TestCase):
                 requirement: Required
 
             input PreviousTurnResult: "Previous Turn Result"
-                source: rally.base_agent.RallyPreviousTurnOutput
+                source: RallyPreviousTurnOutput
                     output: SharedTurnResult
                 requirement: Advisory
 
@@ -446,12 +442,9 @@ class OutputRenderingTests(unittest.TestCase):
     def test_imported_previous_turn_output_binding_selector_renders_derived_contract(self) -> None:
         agent = self._compile_runtime_agent(
             """
-            import rally.base_agent
-            import shared.outputs
-
             input PreviousRoutingHandoff: "Previous Routing Handoff"
-                source: rally.base_agent.RallyPreviousTurnOutput
-                    output: shared.outputs.ProjectLeadOutputs:coordination_handoff
+                source: RallyPreviousTurnOutput
+                    output: ProjectLeadOutputs:coordination_handoff
                 requirement: Advisory
 
             agent WorkerB:
@@ -462,8 +455,8 @@ class OutputRenderingTests(unittest.TestCase):
                         active when PreviousRoutingHandoff.kind == "handoff"
                 inputs: "Inputs"
                     PreviousRoutingHandoff
-                outputs: shared.outputs.ProjectLeadOutputs
-                final_output: shared.outputs.SharedTurnResult
+                outputs: ProjectLeadOutputs
+                final_output: SharedTurnResult
 
             agent WorkerA:
                 role: "Hand work to Worker B."
@@ -472,8 +465,8 @@ class OutputRenderingTests(unittest.TestCase):
                         current none
                         active when true
                         route "Send to Worker B." -> WorkerB
-                outputs: shared.outputs.ProjectLeadOutputs
-                final_output: shared.outputs.SharedTurnResult
+                outputs: ProjectLeadOutputs
+                final_output: SharedTurnResult
             """,
             agent_name="WorkerB",
             extra_files={
@@ -508,7 +501,7 @@ class OutputRenderingTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn(
-            "- Previous Output: shared.outputs.ProjectLeadOutputs:coordination_handoff",
+            "- Previous Output: ProjectLeadOutputs:coordination_handoff",
             rendered,
         )
         self.assertIn("- Derived Contract: Structured JSON", rendered)
@@ -518,15 +511,13 @@ class OutputRenderingTests(unittest.TestCase):
         with self.assertRaises(CompileError) as caught:
             self._compile_agent(
                 """
-                import rally.base_agent
-
                 output ReadableReply: "Readable Reply"
                     target: TurnResponse
                     shape: Comment
                     requirement: Required
 
                 input PreviousReadableReply: "Previous Readable Reply"
-                    source: rally.base_agent.RallyPreviousTurnOutput
+                    source: RallyPreviousTurnOutput
                         output: ReadableReply
                     requirement: Advisory
 

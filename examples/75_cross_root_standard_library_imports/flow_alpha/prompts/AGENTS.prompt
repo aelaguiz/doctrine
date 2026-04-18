@@ -1,8 +1,7 @@
-import local.shared_turn
 import library.io.shared_inputs
 
 
 agent CrossRootAlpha:
     role: "You are the alpha cross-root agent."
-    workflow: local.shared_turn.AlphaTurn
+    workflow: AlphaTurn
     inputs: library.io.shared_inputs.SharedLibraryInputs

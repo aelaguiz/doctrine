@@ -1,43 +1,36 @@
-# This example keeps the same handoff-truth idea but uses the `03_imports`
-# pattern so the source reads by concern instead of as one long file.
-# - `contracts.inputs` holds the turn inputs
-# - `contracts.outputs` holds the produced contracts
-# - `roles.*` holds the role-local job text
+# This example keeps the same handoff-truth idea but splits one flow by
+# concern so the source reads clearly.
+# - `contracts/inputs.prompt` holds the turn inputs
+# - `contracts/outputs.prompt` holds the produced contracts
+# - `roles/*.prompt` holds the role-local job text
 #
 # This still does not add a new primitive.
 # It is the same example, just split into files that are easier to scan.
-import contracts.inputs
-import contracts.outputs
-import roles.project_lead
-import roles.acceptance_critic
-import roles.section_author
-
-
 agent ProjectLead:
     role: "Core job: take the issue back when the route is unclear or the current brief is missing."
 
-    your_job: roles.project_lead.ProjectLeadJob
+    your_job: ProjectLeadJob
 
 
 agent AcceptanceCritic:
     role: "Core job: review the exact current dossier and validation record named in the handoff."
 
-    your_job: roles.acceptance_critic.AcceptanceCriticJob
+    your_job: AcceptanceCriticJob
 
 
 agent SectionAuthor:
     role: "Core job: turn the current brief into the current dossier, leave one honest handoff, and route the same issue truthfully."
 
-    your_job: roles.section_author.SectionAuthorJob
+    your_job: SectionAuthorJob
 
     inputs: "Inputs"
-        contracts.inputs.CurrentIssuePlan
-        contracts.inputs.SectionBrief
-        contracts.inputs.PriorReviewNotes
+        CurrentIssuePlan
+        SectionBrief
+        PriorReviewNotes
 
     outputs: "Outputs"
-        contracts.outputs.SectionDossierOutput
-        contracts.outputs.SectionAuthorHandoff
+        SectionDossierOutput
+        SectionAuthorHandoff
 
     handoff_routing: "Handoff Routing"
         next_owner_if_ready: "Next Owner If Ready"

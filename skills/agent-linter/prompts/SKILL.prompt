@@ -1,11 +1,3 @@
-from refs.install import Install
-from refs.error_handling import IncompleteAuditHandling
-from refs.product_boundary import ProductBoundary
-from refs.report_contract import ReportContract
-from refs.audit_method import AuditMethod
-from refs.examples import ExamplesAndOutput
-from refs.finding_catalog import FindingCatalog
-
 skill package DoctrineAgentLinter: "Doctrine Agent Linter"
     metadata:
         name: "agent-linter"

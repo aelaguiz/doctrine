@@ -45,11 +45,11 @@ build_target = "example_87_workflow_route_output_binding"
 name = "unguarded route reads fail loudly when workflow law may stay unrouted"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
+prompt = "prompts/invalid_unguarded_route_read/AGENTS.prompt"
 agent = "InvalidWorkflowRouteBindingDemo"
 exception_type = "CompileError"
 error_code = "E299"
-location_path = "prompts/INVALID_UNGUARDED_ROUTE_READ.prompt"
+location_path = "prompts/invalid_unguarded_route_read/AGENTS.prompt"
 
 [[cases]]
 name = "guarded scalar route reads can bind next_owner on maybe-routed workflows"

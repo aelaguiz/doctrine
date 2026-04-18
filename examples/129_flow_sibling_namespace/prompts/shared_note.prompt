@@ -1,0 +1,2 @@
+workflow SharedNote: "Shared Note"
+    "This workflow lives in another sibling file."

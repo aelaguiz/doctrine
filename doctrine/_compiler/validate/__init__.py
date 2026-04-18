@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.output_schema_validation import (
     OutputSchemaValidationError,
     validate_lowered_output_schema,
@@ -50,28 +51,29 @@ class ValidateMixin(
         *,
         unit: IndexedUnit,
     ) -> str | None:
+        declarations = unit_declarations(unit)
         registry_order = (
-            ("render_profile declaration", unit.render_profiles_by_name),
-            ("analysis declaration", unit.analyses_by_name),
-            ("decision declaration", unit.decisions_by_name),
-            ("schema declaration", unit.schemas_by_name),
-            ("table declaration", unit.tables_by_name),
-            ("document declaration", unit.documents_by_name),
-            ("workflow declaration", unit.workflows_by_name),
-            ("route_only declaration", unit.route_onlys_by_name),
-            ("grounding declaration", unit.groundings_by_name),
-            ("review declaration", unit.reviews_by_name),
-            ("skills declaration", unit.skills_blocks_by_name),
-            ("inputs block", unit.inputs_blocks_by_name),
-            ("input declaration", unit.inputs_by_name),
-            ("input source declaration", unit.input_sources_by_name),
-            ("outputs block", unit.outputs_blocks_by_name),
-            ("output target declaration", unit.output_targets_by_name),
-            ("output shape declaration", unit.output_shapes_by_name),
-            ("output schema declaration", unit.output_schemas_by_name),
-            ("skill declaration", unit.skills_by_name),
-            ("agent declaration", unit.agents_by_name),
-            ("enum declaration", unit.enums_by_name),
+            ("render_profile declaration", declarations.render_profiles_by_name),
+            ("analysis declaration", declarations.analyses_by_name),
+            ("decision declaration", declarations.decisions_by_name),
+            ("schema declaration", declarations.schemas_by_name),
+            ("table declaration", declarations.tables_by_name),
+            ("document declaration", declarations.documents_by_name),
+            ("workflow declaration", declarations.workflows_by_name),
+            ("route_only declaration", declarations.route_onlys_by_name),
+            ("grounding declaration", declarations.groundings_by_name),
+            ("review declaration", declarations.reviews_by_name),
+            ("skills declaration", declarations.skills_blocks_by_name),
+            ("inputs block", declarations.inputs_blocks_by_name),
+            ("input declaration", declarations.inputs_by_name),
+            ("input source declaration", declarations.input_sources_by_name),
+            ("outputs block", declarations.outputs_blocks_by_name),
+            ("output target declaration", declarations.output_targets_by_name),
+            ("output shape declaration", declarations.output_shapes_by_name),
+            ("output schema declaration", declarations.output_schemas_by_name),
+            ("skill declaration", declarations.skills_by_name),
+            ("agent declaration", declarations.agents_by_name),
+            ("enum declaration", declarations.enums_by_name),
         )
         for label, registry in registry_order:
             if declaration_name in registry:

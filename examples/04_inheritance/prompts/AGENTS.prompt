@@ -1,11 +1,7 @@
-import shared.greeters
-import shared.workflows
-
-
 # This abstract agent lives in the root file so the compile-fail contract can
-# still prove that abstract agents do not render, even when the parent is
-# imported from another module.
-abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:
+# still prove that abstract agents do not render, even when the parent lives
+# in a sibling prompt file.
+abstract agent ImportedBaseGreeter[PoliteGreeter]:
     role: "You are the imported base greeter."
 
     workflow: "Shared Instructions"
@@ -14,10 +10,10 @@ abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:
         inherit object
 
 
-# These concrete agents inherit from abstract parents defined in imported
-# modules. The inheritance model is unchanged; the parent can now be a dotted
-# declaration ref instead of only a local name.
-agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
+# These concrete agents inherit from abstract parents defined in sibling
+# prompt files. The inheritance model is unchanged; the flow now owns the
+# shared namespace directly.
+agent HelloWorldGreeter[PoliteGreeter]:
     role: "You are the hello world greeter."
 
     workflow: "Hello World Instructions"
@@ -27,8 +23,8 @@ agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
 
 
 # This is also a concrete leaf agent, and it keeps the shared doctrine from the
-# imported parent while replacing the final inherited step.
-agent InheritanceDemo[shared.greeters.PoliteGreeter]:
+# sibling parent while replacing the final inherited step.
+agent InheritanceDemo[PoliteGreeter]:
     role: "You are the inheritance demonstration agent."
 
     workflow: "Inherited Steps"
@@ -42,8 +38,8 @@ agent InheritanceDemo[shared.greeters.PoliteGreeter]:
             "Say inherited world."
 
 
-# Imported parents work for named workflow declarations too.
-workflow ImportedWorkflowInstructions[shared.workflows.BaseGreeting]: "Imported Workflow Instructions"
+# Sibling parents work for named workflow declarations too.
+workflow ImportedWorkflowInstructions[BaseGreeting]: "Imported Workflow Instructions"
     "This workflow inherits its structure from an imported parent."
 
     inherit greeting

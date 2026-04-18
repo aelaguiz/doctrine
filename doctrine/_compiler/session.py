@@ -7,8 +7,15 @@ from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
-from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey, index_unit, load_module
+from doctrine._compiler.indexing import (
+    FlowLoadKey,
+    IndexedFlow,
+    IndexedUnit,
+    build_indexed_flow,
+    load_flow,
+    load_module,
+    resolve_flow_entrypoint,
+)
 from doctrine._compiler.types import (
     CompiledAgent,
     CompiledField,
@@ -19,6 +26,7 @@ from doctrine._compiler.types import (
 )
 from doctrine._compiler.resolved_types import (
     ActiveSkillBindAgentContext,
+    FlowAgentKey,
     PreviousTurnAgentContext,
     SkillPackageHostCompileContext,
 )
@@ -113,33 +121,43 @@ class CompilationSession:
             compile_config.provided_prompt_roots,
         )
         self.skill_package_host_context = skill_package_host_context
-        self.skill_package_scan_cache: dict[str, tuple[tuple[IndexedUnit, model.SkillPackageDecl], ...]] | None = None
-        self._module_cache: dict[ModuleLoadKey, IndexedUnit] = {}
-        self._module_load_errors: dict[ModuleLoadKey, Exception] = {}
-        self._module_loading: dict[ModuleLoadKey, threading.Event] = {}
-        self._module_waits: dict[ModuleLoadKey, ModuleLoadKey] = {}
-        self._module_lock = threading.Lock()
-        root_package_root = _entrypoint_package_root(prompt_file)
+        self.skill_package_scan_cache: dict[str, tuple[tuple["IndexedUnit", model.SkillPackageDecl], ...]] | None = None
+        self._flow_cache: dict[FlowLoadKey, IndexedFlow] = {}
+        self._flow_load_errors: dict[FlowLoadKey, Exception] = {}
+        self._flow_loading: dict[FlowLoadKey, threading.Event] = {}
+        self._flow_waits: dict[FlowLoadKey, FlowLoadKey] = {}
+        self._flow_lock = threading.Lock()
         # Shared prompt graph data lives on the session; compile contexts stay task-local.
-        self.root_unit = index_unit(
-            self,
-            prompt_file,
+        root_entrypoint = resolve_flow_entrypoint(
+            prompt_file.source_path,
             prompt_root=self.prompt_root,
-            module_parts=(),
-            module_source_kind="entrypoint",
-            package_root=root_package_root,
-            ancestry=(),
-            allow_parallel_imports=True,
         )
-    def _new_module_ready_event(self) -> threading.Event:
+        prompt_file_overrides = (
+            {}
+            if prompt_file.source_path is None
+            else {prompt_file.source_path.resolve(): prompt_file}
+        )
+        self.root_flow = build_indexed_flow(
+            prompt_root=self.prompt_root,
+            entrypoint_path=root_entrypoint,
+            session=self,
+            prompt_file_overrides=prompt_file_overrides,
+        )
+        self._flow_cache[
+            (
+                self.root_flow.prompt_root.resolve(),
+                self.root_flow.flow_root.resolve(),
+            )
+        ] = self.root_flow
+
+    def _new_flow_ready_event(self) -> threading.Event:
         return threading.Event()
 
     def compile_agent(
         self,
         agent_name: str,
         *,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
     ) -> CompiledAgent:
         from doctrine._compiler.context import CompilationContext
 
@@ -153,16 +171,15 @@ class CompilationSession:
             # when the inner diagnostic did not already prove one.
             raise exc.prepend_trace(
                 f"compile agent `{agent_name}`",
-                location=path_location(self.root_unit.prompt_file.source_path),
-            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
 
     def compile_agent_from_unit(
         self,
         unit: IndexedUnit,
         agent_name: str,
         *,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
     ) -> CompiledAgent:
         from doctrine._compiler.context import CompilationContext
 
@@ -183,8 +200,7 @@ class CompilationSession:
         self,
         agent_names: tuple[str, ...],
         *,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
     ) -> tuple[CompiledAgent, ...]:
         if len(agent_names) <= 1:
             return tuple(
@@ -210,8 +226,7 @@ class CompilationSession:
         self,
         agent_roots: tuple[tuple[IndexedUnit, str], ...],
         *,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
     ) -> tuple[CompiledAgent, ...]:
         if len(agent_roots) <= 1:
             return tuple(
@@ -223,20 +238,23 @@ class CompilationSession:
                 for unit, agent_name in agent_roots
             )
 
+        keys = []
+        for unit, agent_name in agent_roots:
+            flow = self.flow_for_unit(unit)
+            keys.append(
+                (flow.prompt_root.resolve(), flow.flow_root.resolve(), agent_name)
+            )
         with ThreadPoolExecutor(max_workers=default_worker_count(len(agent_roots))) as executor:
             futures = {
-                (unit.prompt_root, unit.module_parts, agent_name): executor.submit(
+                key: executor.submit(
                     self.compile_agent_from_unit,
                     unit,
                     agent_name,
                     previous_turn_contexts=previous_turn_contexts,
                 )
-                for unit, agent_name in agent_roots
+                for key, (unit, agent_name) in zip(keys, agent_roots)
             }
-            return tuple(
-                futures[(unit.prompt_root, unit.module_parts, agent_name)].result()
-                for unit, agent_name in agent_roots
-            )
+            return tuple(futures[key].result() for key in keys)
 
     def compile_skill_package(
         self,
@@ -254,8 +272,8 @@ class CompilationSession:
             )
             raise exc.prepend_trace(
                 label,
-                location=path_location(self.root_unit.prompt_file.source_path),
-            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
 
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str
@@ -269,8 +287,8 @@ class CompilationSession:
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"compile {declaration_kind} declaration `{declaration_name}`",
-                location=path_location(self.root_unit.prompt_file.source_path),
-            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
 
     def _compile_agent_field_task(
         self,
@@ -282,9 +300,8 @@ class CompilationSession:
         review_output_contexts: frozenset[tuple["OutputDeclKey", "ReviewSemanticContext"]],
         route_output_contexts: frozenset[tuple["OutputDeclKey", "RouteSemanticContext"]],
         final_output: CompiledFinalOutputSpec | None,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
-        active_agent_key: tuple[tuple[str, ...], str] | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
+        active_agent_key: FlowAgentKey | None = None,
         active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None,
         active_previous_turn_input_specs: dict[tuple[tuple[str, ...], str], object]
         | None = None,
@@ -316,8 +333,8 @@ class CompilationSession:
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 "extract flow graph",
-                location=path_location(self.root_unit.prompt_file.source_path),
-            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
 
     def extract_target_flow_graph_from_units(
         self,
@@ -332,19 +349,46 @@ class CompilationSession:
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 "extract flow graph",
-                location=path_location(self.root_unit.prompt_file.source_path),
-            ).ensure_location(path=self.root_unit.prompt_file.source_path)
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
 
     def load_module(self, module_parts: tuple[str, ...]) -> IndexedUnit:
         if not module_parts:
-            return self.root_unit
+            return self.root_flow.entrypoint_unit
         return load_module(
             self,
             module_parts,
             prompt_root=None,
-            package_import_root=self.root_unit.package_root,
+            package_import_root=self.root_flow.entrypoint_unit.package_root,
             ancestry=(),
         )
+
+    def flow_for_unit(self, unit: IndexedUnit) -> IndexedFlow:
+        source_path = unit.prompt_file.source_path
+        if source_path is None:
+            return self.root_flow
+        entrypoint_path = resolve_flow_entrypoint(
+            source_path,
+            prompt_root=unit.prompt_root,
+        )
+        flow_key = (unit.prompt_root.resolve(), entrypoint_path.parent.resolve())
+        cached = self._flow_cache.get(flow_key)
+        if cached is not None:
+            return cached
+        return load_flow(
+            self,
+            source_path=source_path,
+            prompt_root=unit.prompt_root,
+            ancestry=(),
+            entrypoint_module_source_kind=unit.module_source_kind,
+        )
+
+    def flow_by_key(
+        self,
+        prompt_root: Path,
+        flow_root: Path,
+    ) -> IndexedFlow | None:
+        return self._flow_cache.get((prompt_root.resolve(), flow_root.resolve()))
 
     def provided_prompt_root_for(
         self,
@@ -429,20 +473,6 @@ def extract_target_flow_graph(
         project_config=project_config,
         provided_prompt_roots=provided_prompt_roots,
     ).extract_target_flow_graph(agent_names)
-
-
-def _entrypoint_package_root(prompt_file: model.PromptFile) -> Path | None:
-    source_path = prompt_file.source_path
-    if source_path is None:
-        return None
-    if not any(
-        isinstance(declaration, model.SkillPackageDecl)
-        for declaration in prompt_file.declarations
-    ):
-        return None
-    return source_path.parent
-
-
 def _import_root_labels(
     prompt_root: Path,
     additional_prompt_roots: tuple[Path, ...],

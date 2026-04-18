@@ -7,21 +7,19 @@
 # `{{AgentRef}}` and `{{AgentRef:name}}` render the raw agent declaration name.
 # Bare agent refs in titled workflow sections also render as raw-name bullets.
 
-import shared.roles
-
 
 workflow HandoffMentions: "Handoff Mentions"
     owner_names_in_prose: "Owner Names In Prose"
         "If the route is unclear, return the same issue to {{ProjectLead}}."
-        "If the work is ready for review, hand it to {{shared.roles.AcceptanceCritic:name}}."
+        "If the work is ready for review, hand it to {{AcceptanceCritic:name}}."
 
     owner_names_as_block_mentions: "Owner Names As Block Mentions"
         ProjectLead
-        shared.roles.AcceptanceCritic
+        AcceptanceCritic
 
     actual_transition: "Actual Transition"
         "Naming an owner is not a route by itself."
-        route "If the work is ready for review" -> shared.roles.AcceptanceCritic
+        route "If the work is ready for review" -> AcceptanceCritic
 
 
 agent ProjectLead:
