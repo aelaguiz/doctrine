@@ -21,6 +21,31 @@ Public release entries must replace every placeholder before `make release-tag`
 or `make release-draft` runs. The helper rejects placeholder compatibility
 payload text and breaking releases with no real upgrade steps.
 
+## v4.0.1 - 2026-04-18
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v4.0.1
+Language version: unchanged (still 4.0)
+Affected surfaces: the emitted `AGENTS.flow.d2` and `AGENTS.flow.svg` node-id hashes produced by `emit_flow`, the `doctrine._compiler` indexing internals, and the flow-namespace test fixtures under `tests/`.
+Who must act: downstream consumers that pin the exact byte content of emitted flow diagrams across machines and CI.
+Who does not need to act: authors writing `.prompt` files, runtime consumers of emitted Markdown or contract JSON, and users of the stable `doctrine` Python import path.
+Upgrade steps: (1) install `doctrine-agents==4.0.1` from your package index; (2) re-emit any checked-in `AGENTS.flow.d2` / `AGENTS.flow.svg` build references so their node-id hashes match the new reproducible identity.
+Verification: `uv run --locked python -m unittest tests.test_release_flow tests.test_package_release && make verify-package && make verify-examples && make verify-diagnostics`
+Support-surface version changes: package metadata 4.0.0 -> 4.0.1; Doctrine language version unchanged at 4.0; distribution name `doctrine-agents` unchanged.
+
+### Changed
+- Made `emit_flow` node-id hashes reproducible across machines by hashing
+  each flow's path relative to its prompt root instead of the absolute
+  filesystem path. Re-emitted the three shipped example build references
+  whose hashes were baked against a local absolute path.
+
+### Fixed
+- Collapsed the three `WeakKeyDictionary` module globals in
+  `doctrine/_compiler/indexing.py` onto `IndexedUnit` so unit state lives
+  on the unit itself, eliminating hidden cross-session state with no
+  author-visible behavior change.
+
 ## v4.0.0 - 2026-04-18
 
 Release kind: Breaking
