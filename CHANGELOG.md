@@ -8,6 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+Release kind: Non-breaking
+Release channel: stable
+Language version: 4.0 -> 4.1
+Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), the numbered example corpus (`135_review_carrier_structured` and `137_role_home_shared_rules_split`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes, `examples/README.md` index).
+Who must act: no one. Every existing valid program compiles and emits unchanged.
+Who does not need to act: authors using split-mode review carriers, authors with existing role homes, and runtime consumers of emitted Markdown or contract JSON.
+Upgrade steps: optional. Authors of review-driven agents may collapse identical comment and final outputs by declaring one carrier output plus `final_output.review_fields:`. Authors of role homes may split always-on ledger and protocol prose into a `shared_rules:` slot.
+Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
+Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
+
+### Added
+- Carrier-mode review-driven agents may now declare `final_output.review_fields:`
+  as an explicit opt-in to structural binding validation on the single
+  carrier output. The compiler runs the same field-binding and
+  semantic-output-binding checks that split mode runs. `E500` still fires
+  for binding a field that does not exist on the carrier and for authoring
+  `review_fields:` on a non-review agent.
+- Example `135_review_carrier_structured` proves the carrier-mode opt-in
+  and includes a compile-fail fixture for an unknown bound field.
+- Example `137_role_home_shared_rules_split` and a new
+  `LANGUAGE_DESIGN_NOTES.md` section recommend the stdlib pattern of
+  splitting always-on `shared_rules:` from role-specific
+  `how_to_take_a_turn:` on an abstract role home.
+
+### Changed
+- `E500` semantics: was "final_output review_fields may not be repeated on
+  the review carrier"; now "`final_output.review_fields` is used in an
+  invalid place". The carrier arm now validates bindings instead of
+  rejecting the shape.
+- Removed the example `106` compile-fail fixture that asserted the old
+  E500 behavior. That constraint is no longer part of the language.
+
 Use this section for work that is not public yet.
 
 When you cut a public release:

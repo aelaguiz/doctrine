@@ -1,0 +1,64 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "producer inherits shared_rules and the default turn sequence"
+status = "active"
+kind = "render_contract"
+agent = "SplitProducer"
+approx_ref = "ref/split_producer/AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "Default producer inheriting both shared rules and the default turn sequence.",
+  "",
+  "## Shared Rules",
+  "",
+  "### Ledger Protocol",
+  "",
+  "Keep the ledger current at the start and end of every turn.",
+  "Name the current files so the next owner can read them first.",
+  "",
+  "### Turn Result Contract",
+  "",
+  "Every turn should end with one clear handoff and stop.",
+  "Do not hand off weak or half-done work.",
+  "",
+  "## How To Take A Turn",
+  "",
+  "### Turn Sequence",
+  "",
+  "Read the active issue and the current files.",
+  "Do only this lane's job.",
+  "Leave one clear handoff and stop.",
+]
+
+[[cases]]
+name = "copywriter overrides the turn sequence while still inheriting shared_rules"
+status = "active"
+kind = "render_contract"
+agent = "SplitCopywriter"
+approx_ref = "ref/split_copywriter/AGENTS.md"
+assertion = "exact_lines"
+expected_lines = [
+  "Copywriter inheriting shared rules while overriding the turn sequence.",
+  "",
+  "## Shared Rules",
+  "",
+  "### Ledger Protocol",
+  "",
+  "Keep the ledger current at the start and end of every turn.",
+  "Name the current files so the next owner can read them first.",
+  "",
+  "### Turn Result Contract",
+  "",
+  "Every turn should end with one clear handoff and stop.",
+  "Do not hand off weak or half-done work.",
+  "",
+  "## How To Take A Turn",
+  "",
+  "### Turn Sequence",
+  "",
+  "Read the approved plan and the lesson manifest before rewriting copy.",
+  "Keep locked terms intact.",
+  "Record grounding for every reader-facing change before you stop.",
+]

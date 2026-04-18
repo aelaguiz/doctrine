@@ -84,6 +84,28 @@ with `override`. This keeps output composition loud at authoring time and
 avoids implicit merge rules. Route fields, attachments, readable blocks, and
 trust surfaces all take part in the same composition.
 
+## Splitting Shared Rules From Role-Specific Turn Sequence
+
+A role-home slot like `how_to_take_a_turn:` often mixes two kinds of prose.
+One kind is always-on ledger and protocol rules that every concrete role
+should keep, such as "keep the ledger current" or "end with one clear
+handoff." The other kind is the role-specific turn sequence that one lane
+writes differently from the next. When a concrete role overrides the slot,
+the shared rules are lost.
+
+The recommended pattern is to split the slot in two named fields on the
+abstract role home:
+
+- `shared_rules:` carries the always-on generic rules. Concrete agents
+  almost always `inherit` it.
+- `how_to_take_a_turn:` carries the role-specific sequence. Concrete
+  agents are free to `override` it without losing the shared rules.
+
+This keeps the generic rules in one source of truth and keeps override
+cost bounded to the role-specific sequence. See
+[../examples/137_role_home_shared_rules_split/](../examples/137_role_home_shared_rules_split/)
+for a minimal example.
+
 ## Skill Package Host Binding Design
 
 `host_contract:` lets a `skill package` declare the typed slots it needs

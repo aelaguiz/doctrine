@@ -266,6 +266,8 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `132_flow_sibling_collision` | Two sibling files that declare the same name fail loud during flow merge with the sibling-collision diagnostic. |
 | `133_intra_flow_import_retired` | Same-flow imports fail loud because sibling files already share one flow namespace. |
 | `134_flow_export_boundary` | Cross-flow imports may read exported declarations and fail loud on internal declarations that stay inside their home flow. |
+| `135_review_carrier_structured` | Carrier-mode review-driven agents may declare `final_output.review_fields:` to opt into structural binding validation on the single carrier output. |
+| `137_role_home_shared_rules_split` | A role home may split always-on generic rules into their own `shared_rules:` slot so concrete roles can override `how_to_take_a_turn:` without losing the generic rules. |
 
 ## Useful Commands
 

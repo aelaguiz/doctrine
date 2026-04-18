@@ -220,7 +220,7 @@ Stability rules:
 | `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness, including branches that resolve `current none`. |
 | `E498` | compile | Required carried review field is omitted when semantic value exists | A carried semantic field can be live on a branch without the bound output field also being live. |
 | `E499` | compile | Required conditional review output section is missing after its guard resolves true | A review-bound conditional output field or section does not stay aligned with the resolved review semantics. |
-| `E500` | compile | `final_output.review_fields` is used in an invalid place | Split-final review bindings were used on a non-review agent or on the review carrier itself. |
+| `E500` | compile | `final_output.review_fields` is used in an invalid place | Review-field bindings were used on a non-review agent. Carrier-mode review-driven agents may opt into `review_fields:` as explicit structural validation; bindings that reference a field missing from the carrier fail loud through the normal unknown-field check (`E299`). |
 
 ### Emit codes
 

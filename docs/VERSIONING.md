@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 4.0
+Current Doctrine language version: 4.1
 
 ## The Version Lines
 
@@ -152,6 +152,14 @@ Every public release uses one release class.
   `3.0` to `4.0`. `E310` stays reserved for the deferred grouped-override
   investigation, and `E311` stays reserved for a future dedicated IO-wrapper
   shorthand diagnostic.
+- Relaxing `E500` so carrier-mode review-driven agents may opt into
+  structural binding validation with `final_output.review_fields:` is an
+  `additive` language move. Existing programs keep compiling and emitting
+  unchanged because the relaxation only activates when the author writes
+  `review_fields:` on the carrier. Ships with a stdlib authoring pattern that
+  splits `shared_rules:` from `how_to_take_a_turn:` in role homes so
+  concrete roles can override the turn sequence without losing generic
+  rules. Advances the language line from `4.0` to `4.1`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

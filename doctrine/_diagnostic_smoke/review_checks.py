@@ -34,7 +34,6 @@ def run_review_checks() -> None:
     _check_review_next_owner_alignment_has_specific_code()
     _check_review_failure_detail_guard_has_specific_code()
     _check_final_output_review_fields_require_review_agent()
-    _check_final_output_review_fields_reject_review_carrier()
     _check_review_semantic_addressability_renders()
     _check_review_exact_contract_gate_modes_do_not_blow_up()
 
@@ -271,27 +270,6 @@ def _check_final_output_review_fields_require_review_agent() -> None:
         return
     raise SmokeFailure(
         "expected compile failure when final_output.review_fields appear on a non-review agent, but compilation succeeded"
-    )
-
-
-def _check_final_output_review_fields_reject_review_carrier() -> None:
-    prompt_path = _repo_example_prompt_path(
-        "106_review_split_final_output_output_schema_partial",
-        "prompts",
-        "invalid_final_output_review_fields_on_carrier",
-        "AGENTS.prompt",
-    )
-    prompt = parse_file(prompt_path)
-    try:
-        compile_prompt(prompt, "InvalidFinalOutputReviewFieldsOnCarrierDemo")
-    except Exception as exc:
-        _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-        _expect(getattr(exc, "code", None) == "E500", f"expected E500, got {getattr(exc, 'code', None)}")
-        _expect("review_fields" in str(exc), str(exc))
-        _expect("split final responses" in str(exc), str(exc))
-        return
-    raise SmokeFailure(
-        "expected compile failure when final_output.review_fields appear on the review carrier, but compilation succeeded"
     )
 
 

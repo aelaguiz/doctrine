@@ -1,0 +1,54 @@
+# Split always-on shared rules from role-specific turn sequence.
+#
+# The `how_to_take_a_turn` slot often holds both: a generic ledger and
+# protocol rules that every role should follow, and a role-specific
+# sequence of steps. When a concrete role overrides the slot, the shared
+# rules are lost.
+#
+# The pattern here is to split the slot in two. A `shared_rules:` slot
+# carries the always-on generic rules and is almost always inherited.
+# A `how_to_take_a_turn:` slot carries the role-specific sequence and is
+# free to be overridden.
+
+
+workflow SplitSharedRules: "Shared Rules"
+    ledger_protocol: "Ledger Protocol"
+        "Keep the ledger current at the start and end of every turn."
+        "Name the current files so the next owner can read them first."
+
+    turn_result_contract: "Turn Result Contract"
+        "Every turn should end with one clear handoff and stop."
+        "Do not hand off weak or half-done work."
+
+
+workflow SplitDefaultTurnSequence: "How To Take A Turn"
+    turn_sequence: "Turn Sequence"
+        "Read the active issue and the current files."
+        "Do only this lane's job."
+        "Leave one clear handoff and stop."
+
+
+workflow CopyTurnSequence[SplitDefaultTurnSequence]: "How To Take A Turn"
+    override turn_sequence:
+        "Read the approved plan and the lesson manifest before rewriting copy."
+        "Keep locked terms intact."
+        "Record grounding for every reader-facing change before you stop."
+
+
+abstract agent SplitRoleHome:
+    shared_rules: SplitSharedRules
+    how_to_take_a_turn: SplitDefaultTurnSequence
+
+
+agent SplitProducer[SplitRoleHome]: "Split Producer"
+    role: "Default producer inheriting both shared rules and the default turn sequence."
+
+    inherit shared_rules
+    inherit how_to_take_a_turn
+
+
+agent SplitCopywriter[SplitRoleHome]: "Split Copywriter"
+    role: "Copywriter inheriting shared rules while overriding the turn sequence."
+
+    inherit shared_rules
+    override how_to_take_a_turn: CopyTurnSequence
