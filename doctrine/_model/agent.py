@@ -84,6 +84,19 @@ class FinalOutputField:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class AgentSelectorBinding:
+    selector_name: str
+    enum_member_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SelectorsField:
+    bindings: tuple[AgentSelectorBinding, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 Field: _TypeAlias = (
     RoleScalar
     | RoleBlock
@@ -98,6 +111,7 @@ Field: _TypeAlias = (
     | SkillsField
     | ReviewField
     | FinalOutputField
+    | SelectorsField
 )
 
 

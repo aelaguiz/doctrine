@@ -1,0 +1,3 @@
+export enum WriterRole: "Writer Role (Flow B)"
+    producer: "Producer"
+    critic: "Critic"

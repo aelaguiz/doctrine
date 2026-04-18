@@ -163,8 +163,16 @@ Every public release uses one release class.
   `next_owner:` output bodies so a shared review-carrier output can bind to
   each critic's resolved route without forking prose per layer (new compile
   code `E317`; baseline structural interpolation check still fires when both
-  `via` and literal interpolation are absent). Advances the language line
-  from `4.0` to `4.1`.
+  `via` and literal interpolation are absent). Adds `selector:` on
+  `output shape` with `case EnumType.member:` dispatch inside shape bodies
+  plus an agent-side `selectors:` binding so one shared output shape can
+  carry role-specific field notes that the compiler inlines per agent (new
+  compile codes `E318` and `E319`). Advances the language line from `4.0` to
+  `4.1`. An audit pass tightened the shipped `E317` / `E318` / `E319`
+  catalog to cover misplaced `case` and `via` clauses, cross-flow enum
+  identity, inherited selector-backed shapes, and duplicate or unknown
+  selector bindings. Language 4.1 itself is unchanged; only the diagnostic
+  surface got sharper.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

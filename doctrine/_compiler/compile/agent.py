@@ -292,6 +292,10 @@ class CompileAgentMixin:
                     hints=("Add a `role:` field before the rest of the authored workflow surface.",),
                 )
 
+            selectors_field = next(
+                (field for field in agent.fields if isinstance(field, model.SelectorsField)),
+                None,
+            )
             final_output = (
                 self._compile_final_output_spec(
                     agent_name=agent.name,
@@ -306,6 +310,7 @@ class CompileAgentMixin:
                         if primary_review_output_context is not None
                         else None
                     ),
+                    selectors_field=selectors_field,
                 )
                 if final_output_field is not None
                 else None
@@ -737,6 +742,8 @@ class CompileAgentMixin:
         if isinstance(field, model.DecisionField):
             decision_unit, decision_decl = self._resolve_decision_ref(field.value, unit=unit)
             return self._compile_decision_decl(decision_decl, unit=decision_unit)
+        if isinstance(field, model.SelectorsField):
+            return None
         if isinstance(field, model.SkillsField):
             return self._compile_skills_field(field, unit=unit)
         if isinstance(field, model.ReviewField):

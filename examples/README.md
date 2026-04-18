@@ -269,6 +269,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `135_review_carrier_structured` | Carrier-mode review-driven agents may declare `final_output.review_fields:` to opt into structural binding validation on the single carrier output. |
 | `136_review_shared_route_binding` | `via review.on_reject.route` lets a shared review-carrier output bind each critic's `next_owner:` to the resolved review route without forking layer-specific prose per critic. |
 | `137_role_home_shared_rules_split` | A role home may split always-on generic rules into their own `shared_rules:` slot so concrete roles can override `how_to_take_a_turn:` without losing the generic rules. |
+| `138_output_shape_case_selector` | One shared `output shape` with a `selector:` block and `case EnumType.member:` dispatch carries role-specific field notes that the compiler inlines per agent using each agent's `selectors:` binding. |
 
 ## Useful Commands
 

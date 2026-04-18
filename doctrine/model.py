@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine._model.agent import (
     Agent,
+    AgentSelectorBinding,
     AnalysisField,
     AuthoredSlotAbstract,
     AuthoredSlotField,
@@ -13,6 +14,7 @@ from doctrine._model.agent import (
     InputsField,
     OutputsField,
     ReviewField,
+    SelectorsField,
     SkillsField,
 )
 from doctrine._model.analysis import (
@@ -104,8 +106,10 @@ from doctrine._model.io import (
     OutputSchemaSetting,
     OutputSchemaAnyOf,
     OutputSchemaVariant,
+    OutputRecordCase,
     OutputShapeDecl,
     OutputShapeAuthoredItem,
+    OutputShapeSelectorConfig,
     OutputStructureConfig,
     OutputTargetDecl,
     OutputsDecl,

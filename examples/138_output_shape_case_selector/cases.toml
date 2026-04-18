@@ -1,0 +1,272 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "output shape selector + case dispatches per-agent prose"
+status = "active"
+kind = "render_contract"
+agent = "WriterProducer"
+assertion = "exact_lines"
+expected_lines = [
+  "Draft the next writer turn.",
+  "",
+  "## Final Output",
+  "",
+  "### Writer Turn Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Writer Turn JSON |",
+  "| Schema | Writer Turn Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Generated Schema | `schemas/writer_turn_response.schema.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `headline` | string | Yes | No |  |",
+  "| `body` | string | Yes | No |  |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  '  "headline": "Draft ready for review",',
+  '  "body": "Short draft covering the first milestone."',
+  "}",
+  "```",
+  "",
+  "- Kind: Json Object",
+  "",
+  "#### Field Notes",
+  "",
+  "Always ground the headline in today's work.",
+  "Write one fresh draft. Do not critique prior drafts.",
+]
+
+[[cases]]
+name = "output shape selector + case dispatch switches prose for a second agent"
+status = "active"
+kind = "render_contract"
+agent = "WriterCritic"
+assertion = "exact_lines"
+expected_lines = [
+  "Critique the latest writer draft.",
+  "",
+  "## Final Output",
+  "",
+  "### Writer Turn Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Writer Turn JSON |",
+  "| Schema | Writer Turn Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Generated Schema | `schemas/writer_turn_response.schema.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `headline` | string | Yes | No |  |",
+  "| `body` | string | Yes | No |  |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  '  "headline": "Draft ready for review",',
+  '  "body": "Short draft covering the first milestone."',
+  "}",
+  "```",
+  "",
+  "- Kind: Json Object",
+  "",
+  "#### Field Notes",
+  "",
+  "Always ground the headline in today's work.",
+  "Critique the latest draft. Name the one biggest gap.",
+]
+
+[[cases]]
+name = "output shape cases must cover every selector enum member"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_non_exhaustive_cases/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E318"
+location_line = 23
+
+[[cases]]
+name = "output shape case without selector is rejected"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_case_without_selector/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E318"
+location_line = 19
+
+[[cases]]
+name = "agent using selector-dispatched output shape must bind the selector"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_selector_binding/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E319"
+location_line = 43
+related = [
+  { label = "output shape `WriterTurnJson` selector", line = 24 },
+]
+
+[[cases]]
+name = "case block outside an output shape fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_case_in_plain_output/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E318"
+location_line = 25
+
+[[cases]]
+name = "duplicate selector binding on an agent fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_duplicate_selector_binding/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E319"
+location_line = 38
+
+[[cases]]
+name = "unknown selector binding on an agent fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_selector_binding/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E319"
+location_line = 38
+
+[[cases]]
+name = "cross-flow enum identity matches when the selector and binding resolve to the same decl"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/cross_flow_enum_identity/AGENTS.prompt"
+agent = "WriterDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Draft the writer turn bound to flow A's selector enum.",
+  "",
+  "## Final Output",
+  "",
+  "### Writer Turn Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Writer Turn JSON |",
+  "| Schema | Writer Turn Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Generated Schema | `schemas/writer_turn_response.schema.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `headline` | string | Yes | No |  |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  '  "headline": "Draft ready for review"',
+  "}",
+  "```",
+  "",
+  "- Kind: Json Object",
+  "",
+  "#### Field Notes",
+  "",
+  "Producer guidance from flow A.",
+]
+
+[[cases]]
+name = "cross-flow enum identity rejects a binding to a same-named enum from a different flow"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/cross_flow_enum_identity/invalid_mismatched_flow_binding/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E319"
+location_line = 36
+
+[[cases]]
+name = "inherited selector shape dispatches the producer case in the child flow"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/inherited_selector_shape/AGENTS.prompt"
+agent = "WriterProducer"
+assertion = "exact_lines"
+expected_lines = [
+  "Draft the next writer turn with the inherited selector shape.",
+  "",
+  "## Final Output",
+  "",
+  "### Writer Turn Response",
+  "",
+  "> **Final answer contract**",
+  "> End the turn with one final assistant message that follows this schema.",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Message type | Final assistant message |",
+  "| Format | Structured JSON |",
+  "| Shape | Child Writer Turn JSON |",
+  "| Schema | Writer Turn Schema |",
+  "| Profile | OpenAIStructuredOutput |",
+  "| Generated Schema | `schemas/writer_turn_response.schema.json` |",
+  "| Requirement | Required |",
+  "",
+  "#### Payload Fields",
+  "",
+  "| Field | Type | Required On Wire | Null Allowed | Meaning |",
+  "| --- | --- | --- | --- | --- |",
+  "| `headline` | string | Yes | No |  |",
+  "",
+  "#### Example",
+  "",
+  "```json",
+  "{",
+  '  "headline": "Draft ready for review"',
+  "}",
+  "```",
+  "",
+  "- Kind: Json Object",
+  "",
+  "#### Field Notes",
+  "",
+  "Always ground the headline in today's work.",
+  "Write one fresh draft.",
+]

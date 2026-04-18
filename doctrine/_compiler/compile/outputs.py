@@ -154,6 +154,7 @@ class CompileOutputsMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
     ) -> CompiledSection:
+        self._validate_output_declaration_structure(decl, unit=unit)
         self._validate_output_guard_sections(
             decl,
             unit=unit,

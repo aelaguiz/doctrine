@@ -22,6 +22,7 @@ from doctrine._compiler.validate.contracts import ValidateContractsMixin
 from doctrine._compiler.validate.display import ValidateDisplayMixin
 from doctrine._compiler.validate.law_paths import ValidateLawPathsMixin
 from doctrine._compiler.validate.outputs import ValidateOutputsMixin
+from doctrine._compiler.validate.output_structure import ValidateOutputStructureMixin
 from doctrine._compiler.validate.readables import ValidateReadablesMixin
 from doctrine._compiler.validate.reviews import ValidateReviewsMixin
 from doctrine._compiler.validate.route_semantics import ValidateRouteSemanticsMixin
@@ -35,6 +36,7 @@ class ValidateMixin(
     ValidateReadablesMixin,
     ValidateRoutesMixin,
     ValidateOutputsMixin,
+    ValidateOutputStructureMixin,
     ValidateRouteSemanticsMixin,
     ValidateContractsMixin,
     ValidateDisplayMixin,

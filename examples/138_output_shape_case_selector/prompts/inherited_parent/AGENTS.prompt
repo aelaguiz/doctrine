@@ -1,0 +1,26 @@
+export enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+
+
+export output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+export output shape ParentWriterTurnJson: "Parent Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    selector:
+        mode role as WriterRole
+
+    field_notes: "Field Notes"
+        "Always ground the headline in today's work."
+        case WriterRole.producer:
+            "Write one fresh draft."
+        case WriterRole.critic:
+            "Critique the latest draft."

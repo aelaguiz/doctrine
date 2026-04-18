@@ -500,11 +500,17 @@ class ResolveOutputsMixin:
                 ),
             )
 
+        inherited_selector = (
+            output_shape_decl.selector
+            if output_shape_decl.selector is not None
+            else inherited_parent_output_shape.selector
+        )
         return model.OutputShapeDecl(
             name=output_shape_decl.name,
             title=output_shape_decl.title,
             items=tuple(resolved_items),
             parent_ref=None,
+            selector=inherited_selector,
             source_span=output_shape_decl.source_span,
         )
 
@@ -1088,6 +1094,16 @@ class ResolveOutputsMixin:
         parent_unit: IndexedUnit,
         rebound_imported: bool,
     ) -> model.OutputShapeDecl:
+        selector = output_shape_decl.selector
+        if selector is not None:
+            selector = replace(
+                selector,
+                enum_ref=self._rebind_inherited_output_name_ref(
+                    selector.enum_ref,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
+            )
         return replace(
             output_shape_decl,
             items=tuple(
@@ -1099,6 +1115,7 @@ class ResolveOutputsMixin:
                 for item in output_shape_decl.items
             ),
             parent_ref=None,
+            selector=selector,
         )
 
     def _rebind_inherited_output_item(
@@ -1219,7 +1236,47 @@ class ResolveOutputsMixin:
                 parent_unit=parent_unit,
                 rebound_imported=rebound_imported,
             )
+        if isinstance(item, model.ReviewRouteVia):
+            return item
+        if isinstance(item, model.OutputRecordCase):
+            return model.OutputRecordCase(
+                enum_member_ref=self._rebind_inherited_enum_member_ref(
+                    item.enum_member_ref,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
+                items=tuple(
+                    self._rebind_inherited_output_item(
+                        child,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
+                    for child in item.items
+                ),
+                source_span=item.source_span,
+            )
         return item
+
+    def _rebind_inherited_enum_member_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        parent_unit: IndexedUnit,
+        rebound_imported: bool,
+    ) -> model.NameRef:
+        if len(ref.module_parts) != 1:
+            return ref
+        enum_name = ref.module_parts[0]
+        enum_ref = model.NameRef(module_parts=(), declaration_name=enum_name)
+        if not self._inherited_output_ref_has_parent_decl(
+            enum_ref, parent_unit=parent_unit
+        ):
+            return ref
+        return model.NameRef(
+            module_parts=(*parent_unit.module_parts, enum_name),
+            declaration_name=ref.declaration_name,
+            rebound_imported=rebound_imported,
+        )
 
     def _rebind_inherited_output_scalar_value(
         self,

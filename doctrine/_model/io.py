@@ -74,12 +74,19 @@ class ReviewRouteVia:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class OutputRecordCase:
+    enum_member_ref: NameRef
+    items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 RecordItem: _TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
 AnyRecordItem: _TypeAlias = (
-    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia | OutputRecordCase
 )
 OutputRecordItem: _TypeAlias = (
-    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia | OutputRecordCase
 )
 
 
@@ -242,11 +249,19 @@ OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOve
 
 
 @_dataclass(slots=True, frozen=True)
+class OutputShapeSelectorConfig:
+    field_name: str
+    enum_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class OutputShapeDecl:
     name: str
     title: str
     items: tuple[OutputShapeAuthoredItem, ...]
     parent_ref: NameRef | None = None
+    selector: OutputShapeSelectorConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Release kind: Non-breaking
 Release channel: stable
 Language version: 4.0 -> 4.1
-Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), output record bodies may now bind `next_owner:` to the resolved review route with a `via review.on_*.route` clause (new compile code `E317`), the numbered example corpus (`135_review_carrier_structured`, `136_review_shared_route_binding`, and `137_role_home_shared_rules_split`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes and the new `E317` row, `examples/README.md` index).
+Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), output record bodies may now bind `next_owner:` to the resolved review route with a `via review.on_*.route` clause (new compile code `E317`), output shapes may now declare `selector:` with `case EnumType.member:` dispatch inside their bodies and agents bind the selector with `selectors:` (new compile codes `E318` and `E319`), the numbered example corpus (`135_review_carrier_structured`, `136_review_shared_route_binding`, `137_role_home_shared_rules_split`, and `138_output_shape_case_selector`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes and the new `E317`, `E318`, `E319` rows, `examples/README.md` index).
 Who must act: no one. Every existing valid program compiles and emits unchanged.
 Who does not need to act: authors using split-mode review carriers, authors with existing role homes, and runtime consumers of emitted Markdown or contract JSON.
 Upgrade steps: optional. Authors of review-driven agents may collapse identical comment and final outputs by declaring one carrier output plus `final_output.review_fields:`. Authors of role homes may split always-on ledger and protocol prose into a `shared_rules:` slot.
@@ -23,8 +23,9 @@ Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata 
   as an explicit opt-in to structural binding validation on the single
   carrier output. The compiler runs the same field-binding and
   semantic-output-binding checks that split mode runs. `E500` still fires
-  for binding a field that does not exist on the carrier and for authoring
-  `review_fields:` on a non-review agent.
+  for authoring `review_fields:` on a non-review agent; unknown-field
+  bindings on the carrier surface as `E299` via the shared binding
+  validator.
 - Example `135_review_carrier_structured` proves the carrier-mode opt-in
   and includes a compile-fail fixture for an unknown bound field.
 - Example `137_role_home_shared_rules_split` and a new
@@ -44,6 +45,21 @@ Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata 
   pattern with two critic agents that share one output declaration,
   plus compile-fail fixtures for `E317` (section mismatch) and `E496`
   (missing `via` and missing literal interpolation still fails loud).
+- Output shapes may declare a `selector:` block with
+  `mode <field_name> as <Enum>` and bodies may then use
+  `case EnumType.member:` blocks to inline role-specific lines.
+  Concrete agents bind the selector with a new `selectors:` field
+  (`selector_name: EnumType.member`). The compiler resolves dispatch at
+  compile time so each agent's emitted shape support only shows lines
+  that apply to its bound member. New compile codes `E318` (shape-side:
+  malformed selector, wrong enum in a case, overlapping cases, or
+  non-exhaustive cases) and `E319` (agent-side: missing or mismatched
+  selector binding).
+- Example `138_output_shape_case_selector` proves the pattern with
+  three agents (`WriterProducer`, `WriterCritic`, `WriterComposer`)
+  that share one output declaration but emit role-specific field notes,
+  plus compile-fail fixtures for `E318` (non-exhaustive cases and
+  `case` without `selector:`) and `E319` (missing agent binding).
 
 ### Changed
 - `E500` semantics: was "final_output review_fields may not be repeated on
@@ -52,6 +68,25 @@ Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata 
   rejecting the shape.
 - Removed the example `106` compile-fail fixture that asserted the old
   E500 behavior. That constraint is no longer part of the language.
+
+### Fixed
+- Output shape selector identity now compares the resolved
+  `(owner_module_parts, enum_name)` pair instead of the enum basename. A
+  selector on `mod_a.WriterRole` no longer accepts a binding or case on a
+  same-named `mod_b.WriterRole` from a different imported flow.
+- Inherited output shapes now rebind `selector:` and every
+  `case EnumType.member:` ref through the parent's module parts, so a
+  child flow that `inherit`s a selector-backed shape compiles without
+  spurious `E318` or cross-flow identity errors.
+- `case` blocks that appear outside an output shape body and
+  `via review.<section>.route` clauses that appear outside a `next_owner:`
+  field body now fail loud (`E318` and `E317`) instead of being silently
+  dropped at render.
+- Duplicate and unknown selector bindings on an agent now fail loud with
+  `E319` instead of silently matching the first entry.
+- `examples/136_review_shared_route_binding` and
+  `examples/138_output_shape_case_selector` manifests cover every new
+  failure mode and the cross-flow and inherited-shape happy paths.
 
 Use this section for work that is not public yet.
 

@@ -135,6 +135,41 @@ See
 [../examples/136_review_shared_route_binding/](../examples/136_review_shared_route_binding/)
 for a two-critic shared-carrier example.
 
+## Selector + Case Dispatch On Output Shapes
+
+A shared output shape such as a team's JSON turn contract often needs one
+body with role-specific lines: the producer reads slightly different field
+notes than the critic, and the critic reads slightly different notes than
+the composer. Without dispatch, authors either fall back to a
+lowest-common-denominator body, or they fork the shape into N near-identical
+per-role shapes that drift over time.
+
+The `selector:` block on `output shape` together with `case EnumType.member:`
+dispatch inside shape bodies lets one shared shape carry role-specific lines
+in place. The shape declares one selector field and its enum, bodies include
+`case EnumType.member:` blocks alongside shared prose, and each concrete
+agent binds the selector with a `selectors:` field. The compiler resolves
+the dispatch at compile time: each agent's emitted shape support only shows
+the lines that apply to its bound member, plus the shared prose that lives
+outside any case block.
+
+Dispatch happens at compile time on purpose. The agent's selector binding
+is author-time intent, not runtime state, so there is no reason for the
+runtime to carry conditional branches through the emitted Markdown.
+`E318` covers shape-side mistakes: a `case ...:` with no `selector:`, a
+`case` placed outside an output shape body, a selector that does not
+resolve to a closed enum, a case that selects a member of the wrong enum
+(including a same-named enum from a different imported flow), overlapping
+cases, or cases that are not exhaustive. `E319` covers agent-side
+mistakes: a final_output pointing at a selector-dispatched shape without
+the matching `selectors:` binding, the same selector bound twice, a
+binding whose key the shape does not declare, or a binding whose enum
+identity does not match the selector's resolved enum.
+
+See
+[../examples/138_output_shape_case_selector/](../examples/138_output_shape_case_selector/)
+for a three-role producer / critic / composer example.
+
 ## Skill Package Host Binding Design
 
 `host_contract:` lets a `skill package` declare the typed slots it needs

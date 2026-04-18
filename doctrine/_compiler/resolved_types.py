@@ -598,6 +598,14 @@ class RouteSemanticContext:
 
 
 @dataclass(slots=True, frozen=True)
+class OutputSelectorDispatchContext:
+    field_name: str
+    enum_module_parts: tuple[str, ...]
+    enum_name: str
+    bound_member_value: str
+
+
+@dataclass(slots=True, frozen=True)
 class RouteChoiceMember:
     member_key: str
     member_title: str

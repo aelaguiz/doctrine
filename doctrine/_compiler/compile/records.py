@@ -34,6 +34,8 @@ class CompileRecordsMixin:
     ) -> str | None:
         if isinstance(item, model.ReviewRouteVia):
             return None
+        if isinstance(item, model.OutputRecordCase):
+            return None
         if isinstance(item, model.RecordSection):
             summary = self._flatten_output_record_items(
                 item.items,
@@ -168,6 +170,9 @@ class CompileRecordsMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
         if isinstance(item, model.ReviewRouteVia):
+            return ()
+
+        if isinstance(item, model.OutputRecordCase):
             return ()
 
         if isinstance(item, (str, model.EmphasizedLine)):

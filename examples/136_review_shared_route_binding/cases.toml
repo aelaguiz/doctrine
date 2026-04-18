@@ -274,3 +274,14 @@ exception_type = "CompileError"
 error_code = "E496"
 location_path = "prompts/invalid_missing_via_and_interpolation/AGENTS.prompt"
 location_line = 78
+
+[[cases]]
+name = "via review.<section>.route outside a next_owner field fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_via_outside_next_owner/AGENTS.prompt"
+agent = "InvalidViaOutsideNextOwnerDemo"
+exception_type = "CompileError"
+error_code = "E317"
+location_path = "prompts/invalid_via_outside_next_owner/AGENTS.prompt"
+location_line = 64

@@ -367,6 +367,32 @@ class IoTransformerMixin:
     def output_shape_override_schema_item(self, ref):
         return model.OutputOverrideRecordScalar(key="schema", value=ref)
 
+    @v_args(meta=True)
+    def output_shape_selector_block(self, meta, items):
+        if len(items) != 1:
+            raise TransformParseFailure(
+                "Output shape selector blocks must declare exactly one selector.",
+                location=_meta_line_column(meta),
+            )
+        return items[0]
+
+    @v_args(meta=True, inline=True)
+    def output_shape_selector_stmt(self, meta, field_name, enum_ref):
+        return _with_source_span(
+            model.OutputShapeSelectorConfig(field_name=field_name, enum_ref=enum_ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_record_case_stmt(self, meta, enum_member_ref, body):
+        return _with_source_span(
+            model.OutputRecordCase(
+                enum_member_ref=enum_member_ref,
+                items=tuple(body),
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def output_schema_stmt(self, meta, ref):
         line, column = _meta_line_column(meta)
@@ -631,12 +657,25 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             items = body
+        selector: model.OutputShapeSelectorConfig | None = None
+        non_selector_items: list[object] = []
+        for item in items:
+            if isinstance(item, model.OutputShapeSelectorConfig):
+                if selector is not None:
+                    raise TransformParseFailure(
+                        f"Output shape `{name}` declares more than one `selector:` block.",
+                        location=_meta_line_column(meta),
+                    )
+                selector = item
+                continue
+            non_selector_items.append(item)
         return _with_source_span(
             model.OutputShapeDecl(
                 name=name,
                 title=title,
-                items=tuple(items),
+                items=tuple(non_selector_items),
                 parent_ref=parent_ref,
+                selector=selector,
             ),
             meta,
         )

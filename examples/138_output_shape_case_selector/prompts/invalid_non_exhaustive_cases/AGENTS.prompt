@@ -1,0 +1,42 @@
+# Output shape cases must cover every selector enum member.
+# This fixture keeps only one case and expects E318.
+
+
+enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    selector:
+        mode role as WriterRole
+
+    field_notes: "Field Notes"
+        case WriterRole.producer:
+            "Only producer guidance."
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+
+agent WriterDemo:
+    role: "Draft the writer turn."
+    selectors:
+        role: WriterRole.producer
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

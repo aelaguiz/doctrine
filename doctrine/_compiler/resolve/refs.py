@@ -1034,6 +1034,17 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> model.EnumDecl | None:
+        resolved = self._try_resolve_enum_decl_with_unit(ref, unit=unit)
+        if resolved is None:
+            return None
+        return resolved[1]
+
+    def _try_resolve_enum_decl_with_unit(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.EnumDecl] | None:
         try:
             lookup_unit, decl = self._resolve_decl_ref(
                 ref,
@@ -1043,8 +1054,7 @@ class ResolveRefsMixin:
             )
         except CompileError:
             return None
-        _ = lookup_unit
-        return decl
+        return lookup_unit, decl
 
     def _find_readable_decl_matches(
         self,

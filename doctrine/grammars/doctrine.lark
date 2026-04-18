@@ -98,10 +98,14 @@ inheritance: "[" name_ref "]"
             | skills_field
             | review_field
             | final_output_field
+            | agent_selectors_field
             | agent_slot_abstract
             | agent_slot_inherit
             | agent_slot_override
             | agent_slot_field
+
+agent_selectors_field: "selectors" ":" _NL _INDENT agent_selector_stmt+ _DEDENT
+agent_selector_stmt: CNAME ":" name_ref _NL
 
 role_field: "role" ":" string _NL role_body?
 role_body: _INDENT block_lines _DEDENT
@@ -726,11 +730,14 @@ output_override_render_profile_stmt: "override" "render_profile" ":" name_ref _N
 output_shape_body: output_shape_body_line+
 output_shape_body_line: output_shape_schema_item
                       | output_shape_override_schema_item
+                      | output_shape_selector_block
                       | output_record_item
                       | output_inherit
                       | output_override_item
 output_shape_schema_item: "schema" ":" name_ref _NL?
 output_shape_override_schema_item: "override" "schema" ":" name_ref _NL?
+output_shape_selector_block: "selector" ":" _NL _INDENT output_shape_selector_stmt+ _DEDENT
+output_shape_selector_stmt: "mode" CNAME "as" name_ref _NL
 
 output_schema_body: output_schema_body_line+
 ?output_schema_body_line: output_schema_field
@@ -829,7 +836,10 @@ output_schema_example_array_item: "-" output_schema_example_scalar _NL?
                    | output_readable_block
                    | output_record_keyed_item
                    | output_record_ref_item
+                   | output_record_case_stmt
                    | review_route_via_stmt
+
+output_record_case_stmt: "case" name_ref ":" _NL _INDENT output_record_body _DEDENT
 
 review_route_via_stmt: "via" "review" "." review_outcome_section "." review_route_resolution _NL
 review_outcome_section: "on_accept" -> review_outcome_accept
