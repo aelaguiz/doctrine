@@ -520,14 +520,10 @@ class ValidateOutputsMixin:
     def _expr_ref_matches_input_binding(self, ref: model.ExprRef) -> bool:
         if self._active_agent_key is None:
             return False
-        agent_unit = (
-            self._load_module(self._active_agent_key[0])
-            if self._active_agent_key[0]
-            else self.root_unit
-        )
-        agent = agent_unit.agents_by_name.get(self._active_agent_key[1])
-        if agent is None:
+        resolved_agent = self._resolve_flow_agent_key(self._active_agent_key)
+        if resolved_agent is None:
             return False
+        agent_unit, agent = resolved_agent
         agent_contract = self._resolve_agent_contract(agent, unit=agent_unit)
         for split_at in range(len(ref.parts), 0, -1):
             binding = agent_contract.input_bindings_by_path.get(ref.parts[:split_at])

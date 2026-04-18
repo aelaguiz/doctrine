@@ -232,9 +232,12 @@ def _runtime_flow_roots_for_target(
 ) -> tuple[RuntimeEmitRoot, ...]:
     if target.entrypoint.name == "SOUL.prompt":
         return tuple(
-            RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
-            for agent_name in session.root_unit.agents_by_name
-            if not session.root_unit.agents_by_name[agent_name].abstract
+            RuntimeEmitRoot(
+                unit=session.root_flow.declaration_owner_units_by_id[id(agent)],
+                agent_name=agent_name,
+            )
+            for agent_name, agent in session.root_flow.agents_by_name.items()
+            if not agent.abstract
         )
     return collect_runtime_emit_roots(session)
 

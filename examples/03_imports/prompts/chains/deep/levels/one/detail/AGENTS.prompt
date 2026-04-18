@@ -1,0 +1,7 @@
+import chains.deep.base.topic
+
+
+export workflow DeepDetail: "Deep Detail"
+    "This flow reaches shared topic context through another imported flow."
+
+    use root_topic: chains.deep.base.topic.RootTopic

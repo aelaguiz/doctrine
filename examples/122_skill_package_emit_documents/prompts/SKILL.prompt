@@ -1,7 +1,3 @@
-from refs.query_patterns import QueryPatterns
-from refs.receipts_template import ReceiptsTemplate
-from refs.runtime_and_commands import RuntimeAndCommands
-
 skill package ResearchReviewKit: "Research Review Kit"
     metadata:
         name: "research-review-kit"

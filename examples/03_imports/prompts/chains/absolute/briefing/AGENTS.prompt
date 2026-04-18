@@ -1,0 +1,9 @@
+import chains.absolute.opening
+import chains.absolute.closing
+
+
+export workflow AbsoluteBriefing: "Absolute Briefing"
+    "This flow composes other flows through dotted import paths."
+
+    use opening: chains.absolute.opening.Opening
+    use closing: chains.absolute.closing.Closing

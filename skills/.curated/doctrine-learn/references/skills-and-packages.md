@@ -146,9 +146,6 @@ See `examples/100_skill_package_bundled_agents/` and the larger compendium at `e
 Use `emit:` when a companion `.md` should come from a Doctrine-authored `document` instead of a hand-written file.
 
 ```prompt
-from refs.query_patterns import QueryPatterns
-from refs.receipts_template import ReceiptsTemplate
-
 skill package ResearchReviewKit: "Research Review Kit"
     metadata:
         name: "research-review-kit"
@@ -185,6 +182,7 @@ Rules:
 - Each entry is `"relative/path.md": DocumentRef`.
 - Each path must end in `.md` and stay under the package source root.
 - Each ref must point at a `document` declaration.
+- Sibling prompt files under one package flow already share a namespace, so `emit:` examples use bare same-flow refs.
 - `emit:` paths may not collide with `SKILL.md`, bundled files, or compiled bundled-agent Markdown.
 
 See `examples/122_skill_package_emit_documents/` for the minimal emit surface and `examples/123_skill_package_emit_documents_mixed_bundle/` for emit mixed with ordinary bundled files.
@@ -203,8 +201,6 @@ The authoring model has four moves:
 Package side:
 
 ```prompt
-from refs.query_patterns import QueryPatterns
-
 skill package HostBoundSkillPackage: "Host Bound Skill"
     metadata:
         name: "host-bound-skill"

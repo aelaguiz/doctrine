@@ -169,7 +169,7 @@ class ResolveAddressablesMixin:
         review_semantics: ReviewSemanticContext | None = None,
     ) -> tuple[IndexedUnit, ReadableDecl]:
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
-        match_sets: list[tuple[object, tuple[tuple[str, ReadableDecl], ...]]] = []
+        match_sets: list[tuple[object, tuple[tuple[str, IndexedUnit, ReadableDecl], ...]]] = []
         workflow_target = None
         for lookup_target in self._decl_lookup_targets(ref, unit=unit):
             matches = self._find_readable_decl_matches(
@@ -181,16 +181,19 @@ class ResolveAddressablesMixin:
                 continue
             if (
                 workflow_target is None
-                and lookup_target.unit.workflows_by_name.get(lookup_target.declaration_name)
+                and self._flow_decl_match(
+                    lookup_target.declaration_name,
+                    unit=lookup_target.unit,
+                    registry_name="workflows_by_name",
+                )
                 is not None
             ):
                 workflow_target = lookup_target
 
         if len(match_sets) == 1:
-            lookup_target, matches = match_sets[0]
-            target_unit = lookup_target.unit
+            _lookup_target, matches = match_sets[0]
             if len(matches) == 1:
-                decl = matches[0][1]
+                _label, target_unit, decl = matches[0]
                 if isinstance(decl, model.Agent) and decl.abstract:
                     raise reference_compile_error(
                         code="E272",
@@ -205,7 +208,7 @@ class ResolveAddressablesMixin:
                     )
                 return target_unit, decl
 
-            labels = ", ".join(label for label, _decl in matches)
+            labels = ", ".join(label for label, _owner_unit, _decl in matches)
             raise reference_compile_error(
                 code="E270",
                 summary="Ambiguous declaration reference",
@@ -229,7 +232,7 @@ class ResolveAddressablesMixin:
             if imported_target is not None:
                 local_decl = next(
                     (
-                        matches[0][1]
+                        matches[0][2]
                         for lookup_target, matches in match_sets
                         if lookup_target.imported_symbol is None and matches
                     ),
@@ -269,7 +272,7 @@ class ResolveAddressablesMixin:
                 unit=fallback_unit,
             )
             if len(fallback_matches) == 1:
-                decl = fallback_matches[0][1]
+                _label, owner_unit, decl = fallback_matches[0]
                 if isinstance(decl, model.Agent) and decl.abstract:
                     raise reference_compile_error(
                         code="E272",
@@ -284,9 +287,9 @@ class ResolveAddressablesMixin:
                             "Mention a concrete agent instead of an abstract base agent.",
                         ),
                     )
-                return fallback_unit, decl
+                return owner_unit, decl
             if len(fallback_matches) > 1:
-                labels = ", ".join(label for label, _decl in fallback_matches)
+                labels = ", ".join(label for label, _owner_unit, _decl in fallback_matches)
                 raise reference_compile_error(
                     code="E270",
                     summary="Ambiguous declaration reference",
@@ -297,7 +300,14 @@ class ResolveAddressablesMixin:
                     unit=unit,
                     source_span=ref.source_span,
                 )
-            if fallback_unit.workflows_by_name.get(ref.declaration_name) is not None:
+            if (
+                self._flow_decl_match(
+                    ref.declaration_name,
+                    unit=fallback_unit,
+                    registry_name="workflows_by_name",
+                )
+                is not None
+            ):
                 raise reference_compile_error(
                     code="E271",
                     summary="Workflow ref is not allowed here",
@@ -433,7 +443,7 @@ class ResolveAddressablesMixin:
             output_unit, _output_decl = self._resolve_review_semantic_output_decl(review_semantics)
             return output_unit, semantic_root
         dotted_name = _dotted_ref_name(ref) if ref.module_parts else ref.declaration_name
-        match_sets: list[tuple[object, tuple[tuple[str, AddressableRootDecl], ...]]] = []
+        match_sets: list[tuple[object, tuple[tuple[str, IndexedUnit, AddressableRootDecl], ...]]] = []
         for lookup_target in self._decl_lookup_targets(ref, unit=unit):
             matches = self._find_addressable_root_matches(
                 lookup_target.declaration_name,
@@ -443,10 +453,9 @@ class ResolveAddressablesMixin:
                 match_sets.append((lookup_target, matches))
 
         if len(match_sets) == 1:
-            lookup_target, matches = match_sets[0]
-            target_unit = lookup_target.unit
+            _lookup_target, matches = match_sets[0]
             if len(matches) == 1:
-                decl = matches[0][1]
+                _label, target_unit, decl = matches[0]
                 if isinstance(decl, model.Agent) and decl.abstract:
                     raise reference_compile_error(
                         code="E272",
@@ -461,7 +470,7 @@ class ResolveAddressablesMixin:
                     )
                 return target_unit, decl
 
-            labels = ", ".join(label for label, _decl in matches)
+            labels = ", ".join(label for label, _owner_unit, _decl in matches)
             raise reference_compile_error(
                 code="E270",
                 summary="Ambiguous declaration reference",
@@ -485,7 +494,7 @@ class ResolveAddressablesMixin:
             if imported_target is not None:
                 local_decl = next(
                     (
-                        matches[0][1]
+                        matches[0][2]
                         for lookup_target, matches in match_sets
                         if lookup_target.imported_symbol is None and matches
                     ),
@@ -513,7 +522,7 @@ class ResolveAddressablesMixin:
                 unit=fallback_unit,
             )
             if len(fallback_matches) == 1:
-                decl = fallback_matches[0][1]
+                _label, owner_unit, decl = fallback_matches[0]
                 if isinstance(decl, model.Agent) and decl.abstract:
                     raise reference_compile_error(
                         code="E272",
@@ -528,9 +537,9 @@ class ResolveAddressablesMixin:
                             "Mention a concrete agent instead of an abstract base agent.",
                         ),
                     )
-                return fallback_unit, decl
+                return owner_unit, decl
             if len(fallback_matches) > 1:
-                labels = ", ".join(label for label, _decl in fallback_matches)
+                labels = ", ".join(label for label, _owner_unit, _decl in fallback_matches)
                 raise reference_compile_error(
                     code="E270",
                     summary="Ambiguous declaration reference",

@@ -1,5 +1,3 @@
-from refs.query_patterns import QueryPatterns
-
 skill package HostBoundSkillPackage: "Host Bound Skill"
     metadata:
         name: "host-bound-skill"

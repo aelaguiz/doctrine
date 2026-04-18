@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from doctrine import model
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_schema_diagnostics import (
     output_schema_compile_error,
@@ -151,7 +152,7 @@ class ResolveOutputSchemasMixin:
         *,
         unit: IndexedUnit,
     ) -> model.OutputSchemaDecl | None:
-        decl = unit.output_schemas_by_name.get(declaration_name)
+        decl = unit_declarations(unit).output_schemas_by_name.get(declaration_name)
         if decl is None:
             return None
         return self._resolve_output_schema_decl_body(decl, unit=unit)

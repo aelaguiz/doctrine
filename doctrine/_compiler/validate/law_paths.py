@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CanonicalLawPath,
@@ -293,7 +294,7 @@ class ValidateLawPathsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[ResolvedSchemaArtifact, ...]:
-        for schema_decl in unit.schemas_by_name.values():
+        for schema_decl in unit_declarations(unit).schemas_by_name.values():
             resolved_schema = self._resolve_schema_decl(schema_decl, unit=unit)
             if group not in resolved_schema.groups:
                 continue
@@ -435,7 +436,7 @@ class ValidateLawPathsMixin:
         except CompileError:
             return False
         for lookup_target in lookup_targets:
-            registry = getattr(lookup_target.unit, registry_name)
+            registry = getattr(unit_declarations(lookup_target.unit), registry_name)
             if registry.get(lookup_target.declaration_name) is not None:
                 return True
         return False

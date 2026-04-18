@@ -1,0 +1,2 @@
+workflow SharedStep: "Shared Step"
+    "Second sibling declaration."

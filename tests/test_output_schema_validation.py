@@ -124,7 +124,7 @@ class OutputSchemaValidationTests(unittest.TestCase):
 
         unit, decl = context._resolve_output_schema_decl(
             model.NameRef(module_parts=(), declaration_name="RecursivePayload"),
-            unit=context.root_unit,
+            unit=context.root_entrypoint_unit,
         )
         lowered = context._lower_output_schema_decl(decl, unit=unit)
 

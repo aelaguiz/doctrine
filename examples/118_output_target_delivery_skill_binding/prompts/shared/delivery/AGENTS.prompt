@@ -1,0 +1,11 @@
+skill LedgerNoteDelivery: "ledger-note-delivery"
+    purpose: "Append markdown notes to the shared ledger."
+
+    use_when: "Use When"
+        "Use this when an output targets the shared ledger append path."
+
+
+export output target LedgerNoteAppend: "Ledger Note Append"
+    delivery_skill: LedgerNoteDelivery
+    required: "Required"
+        ledger_id: "Ledger ID"

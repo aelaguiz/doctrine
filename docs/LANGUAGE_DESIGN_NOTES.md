@@ -30,6 +30,15 @@ For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 - Keep public docs and examples generic rather than importing product-specific
   jargon from other repos.
 
+## Flow Boundary Design
+
+A flow root owns the namespace for every `.prompt` file under that directory.
+Sibling files do not import each other. They use bare names because they
+already compile as one merged flow. `import` is only for a real boundary:
+another flow root, a runtime package, or a skill package. Cross-flow imports
+can only see declarations marked `export`. If sibling files reuse the same
+name, Doctrine fails loud instead of guessing which owner you meant.
+
 ## Named Table Design
 
 First-class `table` declarations follow Doctrine's normal named-type pattern.

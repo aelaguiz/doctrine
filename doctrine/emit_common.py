@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.indexing import unit_declarations, unit_loaded_imports
 from doctrine._compiler.support import path_location
 from doctrine.diagnostics import EmitError
 from doctrine.project_config import (
@@ -290,55 +291,92 @@ def _load_compile_project_config_for_entrypoint(
 def collect_runtime_emit_roots(
     session: "CompilationSession",
 ) -> tuple[RuntimeEmitRoot, ...]:
+    root_flow = session.root_flow
     roots = [
-        RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
-        for agent_name in _unit_concrete_agent_names(session.root_unit)
+        RuntimeEmitRoot(
+            unit=root_flow.declaration_owner_units_by_id[id(agent)],
+            agent_name=agent_name,
+        )
+        for agent_name, agent in root_flow.agents_by_name.items()
+        if not agent.abstract
     ]
-    seen_units: set[tuple[Path, tuple[str, ...]]] = set()
-    seen_runtime_packages: set[tuple[Path, tuple[str, ...]]] = set()
+    seen_flows: set[tuple[Path, Path]] = set()
+    seen_runtime_packages: set[tuple[Path, Path]] = set()
+    visited_units_by_flow: dict[tuple[Path, Path], set[Path | tuple[str, ...]]] = {}
 
-    def walk(unit: "IndexedUnit") -> None:
-        unit_key = (unit.prompt_root, unit.module_parts)
-        if unit_key in seen_units:
+    def walk(flow) -> None:
+        flow_key = (flow.prompt_root, flow.flow_root)
+        if flow_key in seen_flows:
             return
-        seen_units.add(unit_key)
-        for imported_unit in unit.imported_units.values():
-            imported_key = (imported_unit.prompt_root, imported_unit.module_parts)
-            if (
-                imported_unit.module_source_kind == "runtime_package"
-                and imported_key not in seen_runtime_packages
-            ):
-                # Pre-order import traversal keeps runtime roots in first-seen
-                # graph order without asking the build handle to repeat imports.
-                concrete_agents = _unit_concrete_agent_names(imported_unit)
-                if len(concrete_agents) != 1:
-                    dotted_name = ".".join(imported_unit.module_parts)
-                    raise compile_error(
-                        code="E299",
-                        summary="Runtime package import must define one concrete agent",
-                        detail=(
-                            "Runtime package import must define exactly one concrete agent: "
-                            f"{dotted_name or '<entrypoint>'}"
-                        ),
-                        path=imported_unit.prompt_file.source_path,
-                    )
-                roots.append(
-                    RuntimeEmitRoot(
-                        unit=imported_unit,
-                        agent_name=concrete_agents[0],
-                    )
-                )
-                seen_runtime_packages.add(imported_key)
-            walk(imported_unit)
+        seen_flows.add(flow_key)
+        visited_units = visited_units_by_flow.setdefault(flow_key, set())
 
-    walk(session.root_unit)
+        def append_runtime_root(imported_flow) -> None:
+            imported_key = (imported_flow.prompt_root, imported_flow.flow_root)
+            if imported_key in seen_runtime_packages:
+                return
+            concrete_agents = tuple(
+                agent.name
+                for agent in imported_flow.agents_by_name.values()
+                if not agent.abstract
+            )
+            if not concrete_agents:
+                return
+            if len(concrete_agents) != 1:
+                dotted_name = ".".join(imported_flow.flow_parts)
+                raise compile_error(
+                    code="E299",
+                    summary="Runtime package import must define one concrete agent",
+                    detail=(
+                        "Runtime package import must define exactly one concrete agent: "
+                        f"{dotted_name or '<entrypoint>'}"
+                    ),
+                    path=imported_flow.entrypoint_path,
+                )
+            owner_unit = imported_flow.declaration_owner_units_by_id[
+                id(imported_flow.agents_by_name[concrete_agents[0]])
+            ]
+            roots.append(
+                RuntimeEmitRoot(
+                    unit=owner_unit,
+                    agent_name=concrete_agents[0],
+                )
+            )
+            seen_runtime_packages.add(imported_key)
+
+        def walk_unit(unit) -> None:
+            unit_key: Path | tuple[str, ...]
+            source_path = unit.prompt_file.source_path
+            if source_path is None:
+                unit_key = unit.module_parts
+            else:
+                unit_key = source_path.resolve()
+            if unit_key in visited_units:
+                return
+            visited_units.add(unit_key)
+            for imported_unit in unit_loaded_imports(unit).imported_units.values():
+                imported_flow = session.flow_for_unit(imported_unit)
+                imported_flow_key = (imported_flow.prompt_root, imported_flow.flow_root)
+                if imported_flow_key == flow_key:
+                    walk_unit(imported_unit)
+                    continue
+                if imported_flow.entrypoint_unit.module_source_kind == "runtime_package":
+                    # Pre-order import traversal keeps runtime roots in first-seen
+                    # graph order without asking the build handle to repeat imports.
+                    append_runtime_root(imported_flow)
+                walk(imported_flow)
+
+        for unit in flow.units_by_path.values():
+            walk_unit(unit)
+
+    walk(root_flow)
     return tuple(roots)
 
 
 def _unit_concrete_agent_names(unit: "IndexedUnit") -> tuple[str, ...]:
     return tuple(
         agent.name
-        for agent in unit.agents_by_name.values()
+        for agent in unit_declarations(unit).agents_by_name.values()
         if not agent.abstract
     )
 

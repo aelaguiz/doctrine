@@ -9,7 +9,8 @@ from pathlib import Path
 from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.resolved_types import PreviousTurnAgentContext
+from doctrine._compiler.indexing import unit_declarations
+from doctrine._compiler.resolved_types import FlowAgentKey, PreviousTurnAgentContext
 from doctrine._compiler.package_layout import (
     BundledPackageFile,
     bundle_ordinary_package_files,
@@ -522,7 +523,7 @@ def _build_previous_turn_contexts(
     session: CompilationSession,
     *,
     agent_roots: tuple[tuple["IndexedUnit", str], ...],
-) -> dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]:
+) -> dict[FlowAgentKey, PreviousTurnAgentContext]:
     from doctrine._compiler.context import CompilationContext
 
     context = CompilationContext(session)
@@ -534,21 +535,40 @@ def _build_previous_turn_contexts(
         return {}
 
     graph = session.extract_target_flow_graph_from_units(agent_roots)
-    predecessor_map: dict[tuple[tuple[str, ...], str], set[tuple[tuple[str, ...], str]]] = {}
+    predecessor_map: dict[FlowAgentKey, set[FlowAgentKey]] = {}
     for unit, agent_name in agent_roots:
-        predecessor_map.setdefault((unit.module_parts, agent_name), set())
+        predecessor_map.setdefault(context._flow_agent_key(unit, agent_name), set())
     for edge in graph.edges:
         if edge.source_kind != "agent" or edge.target_kind != "agent":
             continue
-        predecessor_map.setdefault(
-            (edge.target_module_parts, edge.target_name),
-            set(),
-        ).add((edge.source_module_parts, edge.source_name))
+        target_key = (
+            edge.target_prompt_root,
+            edge.target_flow_root,
+            edge.target_name,
+        )
+        source_key = (
+            edge.source_prompt_root,
+            edge.source_flow_root,
+            edge.source_name,
+        )
+        if None in (*target_key[:2], *source_key[:2]):
+            raise compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail="Flow graph is missing flow-root identity while building previous-turn contexts.",
+                path=session.root_flow.entrypoint_path,
+            )
+        predecessor_map.setdefault(target_key, set()).add(source_key)
 
-    previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext] = {}
+    previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] = {}
     for unit, agent_name in agent_roots:
-        agent_key = (unit.module_parts, agent_name)
-        predecessor_keys = tuple(sorted(predecessor_map.get(agent_key, set())))
+        agent_key = context._flow_agent_key(unit, agent_name)
+        predecessor_keys = tuple(
+            sorted(
+                predecessor_map.get(agent_key, set()),
+                key=lambda key: (str(key[0]), str(key[1]), key[2]),
+            )
+        )
         predecessor_final_output_keys = tuple(
             sorted(
                 {
@@ -574,7 +594,7 @@ def _build_previous_turn_contexts(
 
 
 def _agent_uses_previous_turn_input(context, unit, agent_name: str) -> bool:
-    agent = unit.agents_by_name.get(agent_name)
+    agent = unit_declarations(unit).agents_by_name.get(agent_name)
     if agent is None:
         return False
     agent_contract = context._resolve_agent_contract(agent, unit=unit)
@@ -594,20 +614,19 @@ def _agent_uses_previous_turn_input(context, unit, agent_name: str) -> bool:
 
 def _resolve_agent_final_output_key(
     context,
-    agent_key: tuple[tuple[str, ...], str],
+    agent_key: FlowAgentKey,
 ):
-    module_parts, agent_name = agent_key
-    unit = context._load_module(module_parts) if module_parts else context.root_unit
-    agent = unit.agents_by_name.get(agent_name)
-    if agent is None:
+    resolved_agent = context._resolve_flow_agent_key(agent_key)
+    if resolved_agent is None:
         return None
+    unit, agent = resolved_agent
     for field in agent.fields:
         if not isinstance(field, model.FinalOutputField):
             continue
         output_unit, output_decl = context._resolve_final_output_decl(
             field.value,
             unit=unit,
-            owner_label=f"agent {agent_name} final_output",
+            owner_label=f"agent {agent.name} final_output",
             source_span=field.source_span,
         )
         return (output_unit.module_parts, output_decl.name)
@@ -639,9 +658,12 @@ def _runtime_emit_roots_for_target(
 ) -> tuple[RuntimeEmitRoot, ...]:
     if target.entrypoint.name == "SOUL.prompt":
         return tuple(
-            RuntimeEmitRoot(unit=session.root_unit, agent_name=agent_name)
-            for agent_name in session.root_unit.agents_by_name
-            if not session.root_unit.agents_by_name[agent_name].abstract
+            RuntimeEmitRoot(
+                unit=session.root_flow.declaration_owner_units_by_id[id(agent)],
+                agent_name=agent_name,
+            )
+            for agent_name, agent in session.root_flow.agents_by_name.items()
+            if not agent.abstract
         )
     return collect_runtime_emit_roots(session)
 
@@ -733,7 +755,7 @@ def _compile_runtime_package_soul(
     session = CompilationSession(prompt_file, project_config=target.project_config)
     concrete_agents = tuple(
         agent_name
-        for agent_name, agent in session.root_unit.agents_by_name.items()
+        for agent_name, agent in session.root_flow.agents_by_name.items()
         if not agent.abstract
     )
     # Keep the package companion explicit: one concrete agent, same identity.

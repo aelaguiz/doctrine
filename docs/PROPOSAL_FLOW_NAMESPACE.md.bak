@@ -1,0 +1,703 @@
+# Proposal: Flow Namespace (Directories Are Flows, Siblings Share Scope)
+
+Status: Proposal. Not shipped. Not yet accepted.
+
+Author tooling does not rely on anything in this file. This document plans a
+breaking language change and its full rollout.
+
+## One-line summary
+
+A flow is a directory. All `.prompt` files in that directory share one flat
+namespace. `import` only crosses flow or package boundaries. Sibling files
+never import each other.
+
+## Why this change exists
+
+### The pain today
+
+Doctrine lets you split a flow across multiple files only when the flow graph
+has no cycles. Any producer/critic shape, any back-and-forth reviewer, any
+retry loop forces mutual imports between the sibling files, which triggers
+`E289 Cyclic import module` at load time.
+
+The root cause is that `import` does two different jobs today and they fight:
+
+1. **Inter-flow boundary crossing.** Pull a skill, a shared schema, or a
+   reusable package into this flow.
+2. **Intra-flow file organization.** Put Producer in one file and Critic in
+   another because one giant file is unreadable.
+
+The second job is not really a module job. It is a filesystem layout choice.
+Treating it as a module system created E289 as a false positive, forced every
+cyclic flow into one file, and dragged flow-graph resolution into the
+lexical-scope layer.
+
+### The reframe
+
+Look at Go (or Rust crates, or OCaml modules):
+
+- A package is a directory of files.
+- All files in a package share one flat namespace. Bare names resolve across
+  files without any import.
+- `import` only crosses package boundaries.
+- Cyclic package imports stay illegal, and that rule means something real:
+  a true package cycle is a boundary bug.
+
+Apply this to Doctrine:
+
+- A flow is a directory of `.prompt` files.
+- All files in a flow share one namespace.
+- `import` only crosses flow, package, or skill boundaries.
+- Flow-level cycles stay illegal. A real flow-level cycle is a real problem.
+
+Everything else falls out for free. Producer/critic splits trivially. File
+layout becomes a readability choice, not a semantic one. E289 becomes
+meaningful again.
+
+## Design
+
+### What a flow is
+
+A flow is the set of `.prompt` files that compile together into one emit
+target.
+
+A flow root is a directory that contains an `AGENTS.prompt` file. The flow
+root's `AGENTS.prompt` is the entrypoint. Every `.prompt` file under that
+directory is a member of the flow, unless it is inside a nested flow root
+(another directory with its own `AGENTS.prompt`), which starts a new flow.
+
+**Examples:**
+
+Single flow, flat layout:
+
+```
+my_flow/
+├── AGENTS.prompt
+├── producer.prompt
+└── critic.prompt
+```
+
+Single flow, nested layout (readability folders are fine, they do not start
+new flows):
+
+```
+my_flow/
+├── AGENTS.prompt
+├── roles/
+│   ├── producer.prompt
+│   └── critic.prompt
+└── contracts/
+    └── shared.prompt
+```
+
+Two flows, nested (the inner `AGENTS.prompt` marks a new flow root):
+
+```
+outer_flow/
+├── AGENTS.prompt              # outer flow root
+├── outer_agent.prompt
+└── inner_flow/
+    ├── AGENTS.prompt          # inner flow root (separate flow)
+    └── inner_agent.prompt
+```
+
+### Namespace rules
+
+Within one flow, every declaration is visible to every other file in the flow
+by bare name. No import is needed. A route target, a workflow reference, an
+output reference, or any other `NameRef` resolves against the union of all
+declarations in the flow.
+
+Across flows, `import` is the only way to reach another flow's declarations.
+
+This is the Go model. Files lose their private scope. Privacy moves up one
+level: **flows** can mark declarations as internal or exported when they
+package themselves for cross-flow use.
+
+### Collision rules
+
+If two sibling files in the same flow declare the same name, the compiler
+fails loud with a dedicated error code pointing at both declaration sites.
+No silent shadowing.
+
+If a bare name could resolve to both a flow-internal declaration and an
+imported symbol, the compiler fails loud with `E308` (the existing ambiguity
+error, retargeted at this scenario).
+
+### Imports, what survives
+
+`import` survives only for cross-flow, cross-package, and cross-skill
+references:
+
+- `import other_flow` — pull a sibling flow as a namespace.
+- `import other_flow as alias` — pull with a shorter name.
+- `from other_flow import Thing` — pull one symbol.
+- `import package_id` — pull a skill package.
+- `from package_id import Thing` — pull one skill package export.
+
+**Retired:**
+
+- `import .sibling` (relative within-flow) — siblings auto-share.
+- `import ..parent` (relative to parent flow) — parent flow is another flow;
+  use absolute cross-flow import.
+- Any import whose target resolves to a file in the same flow as the importer.
+
+### Flow root detection
+
+The compiler resolves a flow root by walking up from any `.prompt` file until
+it finds the nearest ancestor directory with `AGENTS.prompt`. The flow
+consists of every `.prompt` file in that directory's tree, minus any nested
+flows (identified the same way).
+
+Skill packages (`SKILL.prompt`) mark their own boundary already. The inside
+of a skill package is a flow whose root is the `SKILL.prompt` directory.
+
+Runtime packages (directory-backed with `AGENTS.prompt` and one concrete
+agent) also mark a flow root. Their `AGENTS.prompt` is the flow's
+entrypoint, and the flow is the set of files inside that directory tree.
+
+### Export model
+
+This is the one new piece of surface. Not all flow-internal declarations
+should be reachable from other flows. A reusable schema needs to be
+exported; a role-local workflow does not.
+
+Two options are open:
+
+- **Option A: opt-in.** Declarations are flow-internal by default. Add an
+  `export` keyword to make a declaration visible across flow boundaries.
+- **Option B: opt-out.** Declarations are exported by default. Add an
+  `internal` keyword to hide one.
+
+Leaning toward **Option A (opt-in export)**. It matches the "small useful
+context" principle: a flow's public surface should be intentional. An
+imported flow that accidentally exposes ten schemas is a mess; a flow that
+exports two of them is a clean contract.
+
+If Option A is chosen, the initial rollout can ship with everything
+exported by default (to keep the migration tight), and add `export`/internal
+distinction in a follow-up minor version.
+
+### What happens to relative imports
+
+All relative import syntax (`import .x`, `import ..y`) is retired. If the
+target is in the same flow, no import is needed. If the target is in
+another flow, use an absolute import path rooted at a prompts-root.
+
+## Grammar changes
+
+File: `doctrine/grammars/doctrine.lark`
+
+Grammar surface stays almost the same. `import_decl` still parses the same
+shapes; the compiler rejects intra-flow targets.
+
+Net new grammar:
+
+- `export_marker`: optional `export` keyword before any top-level
+  declaration. Opt-in export model.
+
+Net retired grammar:
+
+- `relative_import_path` and `DOTS` productions. Keep the parser accepting
+  them for one release with a deprecation error, then strip them.
+
+## Compiler changes
+
+Every file citation below is relative to `/Users/aelaguiz/workspace/doctrine/`.
+
+### `doctrine/_compiler/indexing.py`
+
+This is the center of the change. Today `index_unit` builds one
+`IndexedUnit` per `.prompt` file. The new pipeline produces one
+`IndexedFlow` per flow root, where each flow is a merged view of all its
+member files.
+
+Concrete work:
+
+- **New type `IndexedFlow`**: replaces `IndexedUnit` as the thing that
+  declarations live on. Every `_by_name` registry (lines 78-113 today on
+  `IndexedUnit`) moves up to the flow. `IndexedUnit` becomes a thin
+  per-file parse container that feeds the flow.
+- **Flow discovery pass.** New helper `discover_flow_members(flow_root)`
+  that walks the directory tree from `flow_root`, collects every
+  `.prompt` file, and stops at nested flow roots. Runs once per flow.
+- **Flow indexing.** Replace the recursive-descent `_load_module`
+  (lines 920-1049) with a two-phase approach:
+  1. Discover and parse every file in the current flow in isolation.
+     Build per-file parse units.
+  2. Merge declarations into a flow-level registry. Detect sibling
+     collisions via the existing `_register_decl` logic (lines 137-151).
+  3. Resolve cross-flow imports last, after all reachable flows are
+     indexed.
+- **E289 narrowing.** The cycle check at lines 942-949 and 978-984 moves
+  to the cross-flow layer. A cycle at the flow level is still an error
+  (two flows that mutually import each other), but cycles through file
+  layout inside one flow cannot happen.
+- **Module load key change.** `ModuleLoadKey` (line 59) becomes
+  `FlowLoadKey: TypeAlias = tuple[Path, tuple[str, ...]]` where the tuple
+  is `(prompt_root, flow_parts)` — the flow root's identity, not a
+  per-file module path.
+- **Session cache.** `_module_cache`, `_module_loading`,
+  `_module_waits` (session.py lines 117-121) rename and re-key to
+  flow-level.
+
+### `doctrine/_compiler/resolve/refs.py`
+
+Today's bare-name resolution (`_decl_lookup_targets`, lines 153-186) looks
+at the current file's local declarations plus `imported_symbols_by_name`.
+
+Under the new design:
+
+- Bare names resolve against the flow's merged registry. The "current
+  file" is no longer the scope; the flow is.
+- Qualified refs (`some_flow.Thing`) still go through
+  `_resolve_visible_imported_unit` (lines 137-151), which now returns an
+  `IndexedFlow` instead of an `IndexedUnit`.
+- The ambiguity detection for E308 continues to compare
+  flow-internal-declared vs. cross-flow-imported. Fewer false positives
+  because within-flow shadowing is no longer a thing.
+
+### `doctrine/_compiler/flow.py`
+
+`extract_target_flow_graph_from_units` (lines 66-103) already walks the
+flow graph from root agents. The change:
+
+- Root agents are resolved against the entrypoint flow's merged registry.
+- Cross-module jumps now cross flow boundaries explicitly via imports,
+  not per-file module edges.
+- `FlowGraph` nodes keyed by `(flow_parts, agent_name)` instead of
+  `(module_parts, agent_name)`.
+
+### `doctrine/_compiler/session.py`
+
+- `CompilationSession` initialization (lines 41-133) builds the
+  entrypoint flow instead of the entrypoint unit.
+- `self.root_unit` becomes `self.root_flow`. Callers that read
+  `root_unit.agents_by_name` move to `root_flow.agents_by_name`.
+
+### `doctrine/_model/core.py`
+
+- Keep `ImportDecl`, `ImportPath` (lines 39-50). Rules about what
+  resolves change in the compiler, not in the AST.
+- Add an optional `export` marker to declaration AST nodes, or a
+  flow-level exports table. Prefer the flow-level exports table; it keeps
+  the AST the same and isolates the export concept to the flow index.
+
+### `doctrine/emit_common.py`, `doctrine/emit_flow.py`, `doctrine/emit_docs.py`, `doctrine/emit_skill.py`
+
+- `collect_runtime_emit_roots` (emit_common.py lines 290-335) already
+  walks imported units looking for runtime packages. Retarget to walk
+  imported flows.
+- Emit target resolution via `pyproject.toml` stays the same; entrypoint
+  points at an `AGENTS.prompt`, which now resolves to a flow, not a
+  module.
+- `emit_docs` continues to emit one `AGENTS.md` per concrete agent,
+  sourced from the flow's merged registry.
+
+### `doctrine/verify_corpus.py`
+
+- No public-surface change. Internally it uses the session, which now
+  builds flows instead of units.
+
+## Error taxonomy changes
+
+File: `docs/COMPILER_ERRORS.md` lines 123-150.
+
+### Retired
+
+- **E289 Cyclic import module** — narrowed, not deleted. It now only
+  fires for true cross-flow mutual imports, which remain illegal. The
+  intra-flow false-positive case goes away.
+- **E290 Relative import walks above prompts root** — retired with
+  relative imports.
+- **E306 Duplicate module alias** — retired. Sibling aliases no longer
+  exist.
+- **E307 Duplicate imported symbol** — narrows to cross-flow duplicates
+  only.
+
+### Retargeted
+
+- **E280 Missing import module** — now "missing flow" or "missing
+  package." Message changes.
+- **E287 Ambiguous import module** — survives but retargeted to
+  cross-flow ambiguity, not file-vs-directory.
+- **E308 Ambiguous imported symbol ownership** — survives. New trigger:
+  a flow-internal declaration and a cross-flow imported symbol share a
+  bare name.
+
+### New codes (proposed numbers)
+
+- **E31x Duplicate declaration across flow siblings** — two `.prompt`
+  files in the same flow both declare a symbol with the same name.
+  Points at both declaration sites.
+- **E31x Intra-flow import retired** — authored `import` whose target
+  resolves to a file in the same flow as the importer. Actionable
+  message: "delete this import; the target is already visible as a
+  sibling." (Useful during migration; can soft-deprecate later.)
+- **E31x Flow root not found** — a `.prompt` file has no ancestor
+  `AGENTS.prompt` and is not a flow root itself.
+
+Exact numbers pick the next unused codes in COMPILER_ERRORS.md.
+
+## Examples changes
+
+Current corpus: examples numbered 01 through 128. Next available slot is
+129.
+
+### Rewrites (delete imports, merge/verify refs)
+
+These examples currently use sibling imports within one flow. Imports get
+deleted; the file layout stays the same.
+
+- `examples/03_imports/` — heavy rewrite. Currently the canonical import
+  tutorial. Either retarget it to teach cross-flow imports only, or
+  split into two examples (one flow-internal, one cross-flow). Delete
+  the `cyclic_siblings/` test case. Retire the relative-imports tests.
+- `examples/04_inheritance/` — drop 2 imports.
+- `examples/14_handoff_truth/` — drop 5 imports (roles + contracts).
+  This becomes the clean flat-layout reference.
+- `examples/15_workflow_body_refs/` — drop 1 import.
+- `examples/16_workflow_string_interpolation/` — drop 2 imports.
+- `examples/17_agent_mentions/` — drop 2 imports.
+- `examples/30_law_route_only_turns/` — drop 1 import.
+- `examples/86_imported_review_comment_local_routes/` — drop 1 import,
+  verify the routed-owner binding behavior survives. Central to the
+  "imported output binds local routes" story.
+- `examples/109_imported_review_handoff_output_inheritance/` — drop 1
+  import.
+
+### Cross-flow examples (kept, possibly adjusted)
+
+- `examples/115_runtime_agent_packages/` — the `writer_home` /
+  `editor_home` imports cross flow boundaries. They survive. This
+  example is now the exemplar of cross-flow imports, which is exactly
+  right.
+- `examples/100_skill_package_bundled_agents/` and the skill-package
+  emit examples (`122`, `123`, `124`, etc.) — imports inside a SKILL
+  package are intra-skill-flow and go away; cross-skill references
+  stay. Audit each.
+
+### New examples to add
+
+Numbered from 129 onward:
+
+- **`129_flow_sibling_namespace`** — the flat-layout case. Two sibling
+  files reference each other by bare name. The minimal "siblings share
+  scope" proof.
+- **`130_cyclic_producer_critic`** — the motivating case. Producer and
+  Critic in separate files, each routing to the other. Demonstrates the
+  problem this proposal solves.
+- **`131_cross_flow_import`** — two flows, one imports the other. The
+  clean counterpart showing when `import` is needed.
+- **`132_flow_sibling_collision`** — two sibling files declare the same
+  name. Expected error: the new sibling-collision code. Pins the
+  fail-loud behavior.
+- **`133_intra_flow_import_retired`** — authored `import .x` in the
+  same flow. Expected error: the new "intra-flow import retired" code.
+  Survives one release as a soft-deprecation; delete after the soft
+  window.
+- **`134_flow_export_boundary`** (optional, if Option A ships) — a flow
+  marks one declaration `export`, another stays internal. Cross-flow
+  import succeeds for exported, fails for internal.
+
+## Test changes
+
+Test suite under `tests/` uses unittest. Main runners: `make
+verify-examples` and `uv run --locked python -m unittest ...`.
+
+### Delete
+
+- `tests/test_import_loading.py` — two cyclic-sibling tests:
+  - `test_sibling_import_cycle_fails_loud_instead_of_hanging`
+  - `test_concurrent_top_level_module_load_cycle_fails_loud_instead_of_deadlocking`
+  Both test scenarios that cannot exist in the new design.
+
+### Rewrite
+
+- `tests/test_import_loading.py`:
+  - `test_module_alias_and_symbol_imports_resolve_through_existing_name_ref_paths`
+    — convert to cross-flow import case.
+  - `test_from_import_does_not_make_the_module_path_visible` — convert
+    to cross-flow import case.
+  - `test_file_and_directory_module_collision_fails_loud` — retarget:
+    cross-flow collision.
+  - `test_ambiguous_module_across_configured_and_provider_roots_fails_loud`
+    — retarget to cross-flow.
+  - `test_skill_package_entrypoint_fails_loud_on_local_import_collision`
+    — retarget.
+- `tests/test_compile_diagnostics.py`:
+  - `test_missing_import_points_at_import_line` — retarget to cross-flow
+    import.
+  - `test_duplicate_module_alias_reports_related_location` — delete or
+    retarget (E306 retires).
+  - `test_duplicate_imported_symbol_reports_related_location` — retarget
+    to cross-flow E307.
+  - `test_imported_symbol_ownership_conflict_reports_related_location`
+    — retarget; the fixture changes but the assertion logic survives.
+- `tests/test_review_imported_outputs.py`:
+  - `test_imported_review_comment_output_can_bind_local_routed_agents`
+    — rewrite fixture as two flows.
+  - `test_imported_review_comment_output_can_feed_split_final_output_trust_surface`
+    — same.
+- `tests/test_diagnostics_formatting.py`:
+  - `test_diagnostic_to_dict_keeps_related_locations_json_safe` —
+    update reference error-code constants.
+
+### Keep
+
+- `tests/test_import_loading.py` — seven tests covering
+  prompt-root resolution, runtime packages, provider roots, and
+  skill-package entrypoints. All survive; they test cross-boundary
+  behavior that stays legal.
+- `tests/test_release_flow.py` — release logic, unaffected.
+- Most of `tests/test_compile_diagnostics.py` (173 of 178) — unrelated
+  to imports.
+
+### Audit
+
+- `tests/test_emit_flow.py`, `tests/test_emit_docs.py`,
+  `tests/test_emit_skill.py`, `tests/test_parser_source_spans.py`,
+  `tests/test_verify_corpus.py`, `tests/test_compiler_boundary.py`,
+  `tests/test_project_config.py` — check every multi-file fixture for
+  inadvertent sibling collisions under the new rules. Expected: 10-30
+  fixture updates across these files.
+
+### New
+
+Add `tests/test_flow_namespace.py` (new file) covering:
+
+- Sibling reference by bare name succeeds.
+- Producer/critic mutual routing across sibling files succeeds.
+- Two siblings declaring the same name fails with the new error code
+  and points at both sites.
+- Flow root discovery: nested `AGENTS.prompt` creates a new flow.
+- Cross-flow import of an exported declaration succeeds.
+- Cross-flow import of an internal declaration fails (if Option A
+  ships).
+- Authored `import .sibling` in the same flow fails with the
+  "intra-flow import retired" error.
+- Cross-flow cycle (two flows mutually importing) still raises E289.
+- Ambiguity: flow-internal name collides with cross-flow-imported name
+  → E308.
+
+Estimate: 15-25 new tests.
+
+## Docs changes
+
+### Rewrites
+
+- **`docs/LANGUAGE_REFERENCE.md` lines 1057-1115 (Imports section).**
+  Rewrite. Describe flows, sibling sharing, and cross-flow imports.
+  Remove relative imports.
+- **`docs/LANGUAGE_DESIGN_NOTES.md` core principles and shipped
+  boundaries.** Add a "Flows and file layout" section that names the
+  flow as the namespace unit.
+- **`docs/COMPILER_ERRORS.md` lines 123-150.** Rewrite E280-E290 and
+  E306-E308 entries. Add new codes.
+- **`docs/VERSIONING.md`.** Bump language version entry from 3.0 to
+  4.0. Fill in the "Required Breaking-Change Payload" block (lines
+  183-227) for this release.
+
+### Moderate updates
+
+- **`docs/EMIT_GUIDE.md` lines 109-131 and 169-193** (Cross-root compile
+  config, Runtime packages). Update to match the new import semantics
+  and the flow-as-directory model.
+- **`examples/README.md`** — update the `03_imports` description, the
+  learning-path narrative (line 59 and surrounding), and add new
+  corpus entries for 129-133.
+
+### Minor updates
+
+- **`README.md`** at repo root — one-line mention of flows if the
+  feature summary calls them out.
+- **`PRINCIPLES.md`** — optional clarifying line on how flow
+  boundaries reinforce "clear boundaries so deeper material can load
+  only when needed."
+- **`AGENTS.md`** — add a shipped-truth note under "Authoring Rules"
+  pointing at the new flow concept. Update the "Docs Map" to list this
+  proposal or its successor reference doc.
+- **`docs/README.md`** — one-line addition to the index.
+- **`docs/FAIL_LOUD_GAPS.md`** — add any gaps the new model reveals
+  (e.g., "large flows should warn above N files").
+- **`docs/AGENT_IO_DESIGN_NOTES.md`**, **`docs/WORKFLOW_LAW.md`**,
+  **`docs/REVIEW_SPEC.md`**, **`docs/AUTHORING_PATTERNS.md`**,
+  **`docs/THIN_HARNESS_FAT_SKILLS.md`** — scan for import-related
+  examples and adjust.
+
+### Required release plumbing
+
+- **`CHANGELOG.md`** — new release entry. Breaking. Language version
+  3.0 → 4.0. Full breaking-change payload (affected surfaces, who
+  must act, upgrade steps, verification).
+
+## Migration for authors
+
+A project currently authored for Doctrine 3.0 can migrate to 4.0 with
+these steps:
+
+1. **Identify flows.** Each directory containing `AGENTS.prompt` is a
+   flow root. Flat projects with one `AGENTS.prompt` are one flow.
+2. **Delete intra-flow imports.** For each `.prompt` file in a flow,
+   remove any `import .x`, `import ..y`, or absolute imports whose
+   target resolves to a sibling file in the same flow. The compiler's
+   new "intra-flow import retired" error is your guide. It points at
+   every such line and says to delete it.
+3. **Rename collisions.** If two sibling files happen to declare the
+   same name, the new collision error will fire. Rename one.
+4. **Keep cross-flow imports.** Imports that cross flow boundaries
+   (one flow importing another, one flow importing a skill package)
+   stay unchanged.
+5. **Run `make verify-examples` or the project-local verify command.**
+   All errors should cite the actionable new codes. No silent
+   behavior change.
+
+The migration is purely deletion-driven for most projects. No renames,
+no new syntax needed unless the project hits a collision.
+
+## Versioning and release
+
+Per `docs/VERSIONING.md`:
+
+- **Language version:** 3.0 → 4.0. Breaking.
+- **Release version:** next major. If the project is on v2.x, this is
+  v3.0.0.
+- **Release kind:** Breaking.
+- **Breaking-change payload required** in CHANGELOG.md and in
+  `docs/VERSIONING.md`'s active entry.
+
+This cannot ship as a patch or minor. It retires shipped import syntax
+and changes the mental model.
+
+## Rollout sequencing
+
+A reasonable order for the implementation arc:
+
+1. **Phase 1 — compiler plumbing, feature-flagged.**
+   - Add `IndexedFlow`, flow-discovery pass, two-phase resolution.
+   - Leave `IndexedUnit` in place; run the new pipeline only when a
+     new project-config flag opts in.
+   - Ship tests for the new behavior.
+2. **Phase 2 — examples migration, feature-flag on.**
+   - Convert the corpus to the new model.
+   - `make verify-examples` passes under the flag.
+3. **Phase 3 — flip the default.**
+   - The flag defaults to the new pipeline. Old pipeline is still
+     reachable for one release.
+   - All examples now run under the new default.
+4. **Phase 4 — cut the major release.**
+   - Delete the old pipeline.
+   - Finalize docs and CHANGELOG.
+   - Tag v?.0.0 with language version 4.0.
+
+Phases 1-3 can land in a couple of non-breaking internal releases if
+that helps. Phase 4 is the one breaking cut.
+
+An alternative path: do phase 1 + 2 + 3 in one PR sequence, then tag.
+Feasible here because Doctrine self-tests against the corpus, so there
+is high confidence before cutting.
+
+## Open decisions
+
+Pin these before writing code.
+
+1. **Export model.** Option A (opt-in `export`) vs. Option B (opt-out
+   `internal`) vs. ship flat (everything exported) and layer exports
+   later. Recommendation: ship flat, layer exports in a follow-up minor.
+2. **Relative-import retirement.** Delete immediately vs. soft-deprecate
+   with a loud error for one release. Recommendation: soft-deprecate.
+   The error tells authors what to do; one release is a short window.
+3. **Does `AGENTS.prompt` remain the flow-root marker, or should we
+   introduce a dedicated file like `FLOW.prompt`?** Recommendation:
+   keep `AGENTS.prompt`. The semantic is "this directory is a flow,
+   the `AGENTS.prompt` is its entrypoint." No new file needed.
+4. **Should `examples/03_imports` be renamed to reflect its new
+   purpose?** If it teaches cross-flow imports only, names like
+   `03_cross_flow_imports` or `03_flow_boundaries` fit better.
+   Recommendation: rename, but only in the same PR that rewrites it.
+5. **Runtime packages vs. flows.** Are they the same concept now (a
+   directory with `AGENTS.prompt` = a flow, whether imported as
+   runtime package or not)? Recommendation: yes, unify. Runtime
+   package is a flow that gets imported across a boundary and
+   emitted under its own tree.
+6. **Flow-level render profile and emit config.** Today render
+   profiles are per-module. Under the new model they are per-flow.
+   Check no author-facing syntax change is needed.
+7. **Parallel imports.** Today `allow_parallel_imports` is a param
+   into `index_unit` but serialized in practice (indexing.py line
+   822). The new pipeline can be trivially parallel at the file level
+   within a flow (phase 1 is parse-only; no resolution happens until
+   phase 2). Free perf win. Worth noting.
+
+## Risk assessment
+
+Where this could go wrong.
+
+- **Fixture churn in tests is bigger than the direct-count suggests.**
+  173 tests in `test_compile_diagnostics.py` are not directly import
+  tests, but their fixtures may create multi-file layouts that
+  inadvertently trigger new sibling visibility. Budget fixture-audit
+  time generously.
+- **Emit output drift.** If any emitted Markdown surface includes
+  module-path metadata (unlikely but possible), the switch to
+  flow-keyed identity could shift the output. `make verify-examples`
+  would catch this; plan to regenerate all `ref/` and `build_ref/`
+  snapshots in the rewrite PR.
+- **Flow discovery on the filesystem is new and load-bearing.**
+  Today loading is driven by import statements. Under the new model,
+  flow discovery walks the filesystem. Hidden files, symlinks, and
+  editor backups (`.~prompt`, `.DS_Store`) need explicit filter
+  rules. Budget a small hardening pass.
+- **Skill packages as flows.** Skill packages already have their own
+  boundary (`SKILL.prompt`). The unification "skill package is a flow
+  rooted at `SKILL.prompt`" is clean, but has surface area to audit
+  — host contracts, package IDs, emit bundles, reference scanning
+  via `_scanned_skill_package_matches` (refs.py lines 54-87).
+
+## Appendix: relevant current code locations
+
+Compiler:
+
+- `doctrine/_compiler/indexing.py` — module loading, E289 detection
+  (lines 942-984), declaration registration (lines 137-151),
+  `load_imports` (lines 786-917), module-key scheme (line 59),
+  concurrency (lines 917-1049).
+- `doctrine/_compiler/resolve/refs.py` — name resolution
+  (`_decl_lookup_targets` lines 153-186,
+  `_resolve_visible_imported_unit` lines 137-151), ambiguity
+  (lines 188-219), skill-package scan (lines 54-87).
+- `doctrine/_compiler/flow.py` — flow-graph extraction (lines 66-103),
+  cross-module walk (lines 705-722).
+- `doctrine/_compiler/session.py` — session cache (lines 117-121),
+  `root_unit` wiring (lines 41-133).
+- `doctrine/_model/core.py` — `ImportDecl`, `ImportPath` (lines 39-50).
+
+Emit:
+
+- `doctrine/emit_common.py` — runtime-package walk (lines 290-335),
+  `EmitTarget` shape (lines 32-37).
+- `doctrine/emit_flow.py`, `doctrine/emit_docs.py`,
+  `doctrine/emit_skill.py` — target-level emit entry points.
+- `doctrine/verify_corpus.py` — manifest runner.
+
+Grammar:
+
+- `doctrine/grammars/doctrine.lark` — import productions (lines
+  43-48, 1014-1017).
+
+Error catalog:
+
+- `docs/COMPILER_ERRORS.md` — lines 123-150 (E280-E308 import
+  errors).
+
+Examples most affected:
+
+- `examples/03_imports/`, `examples/14_handoff_truth/`,
+  `examples/86_imported_review_comment_local_routes/`,
+  `examples/115_runtime_agent_packages/`.
+
+Tests most affected:
+
+- `tests/test_import_loading.py`, `tests/test_compile_diagnostics.py`,
+  `tests/test_review_imported_outputs.py`,
+  `tests/test_emit_flow.py`, `tests/test_emit_docs.py`.

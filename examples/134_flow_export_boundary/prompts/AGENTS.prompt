@@ -1,0 +1,13 @@
+import provider
+
+
+agent FlowExportBoundaryDemo:
+    role: "Read only the exported surface from another flow."
+
+    your_job: LocalTurn
+
+
+workflow LocalTurn: "Your Job"
+    "Only the exported workflow should cross the flow boundary."
+
+    use public_step: provider.PublicStep

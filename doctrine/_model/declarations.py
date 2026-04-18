@@ -62,4 +62,5 @@ Declaration: _TypeAlias = (
 @_dataclass(slots=True, frozen=True)
 class PromptFile:
     declarations: tuple[Declaration, ...]
+    exported_names: tuple[str, ...] = ()
     source_path: _Path | None = None

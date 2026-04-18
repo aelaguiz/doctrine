@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "producer and critic may route to each other from sibling files"
+status = "active"
+kind = "render_contract"
+agent = "Producer"
+assertion = "exact_lines"
+expected_lines = [
+  "Draft the next artifact and route it to Critic.",
+  "",
+  "## Workflow Core",
+  "",
+  "Draft the next artifact in this lane.",
+  "",
+  "### Shared Boundaries",
+  "",
+  "Keep the producer and critic cycle inside one flow.",
+  "",
+  "### Next Owner",
+  "",
+  "Send the draft for critique -> Critic",
+]
+
+[[cases]]
+name = "critic may route back to producer from a sibling file"
+status = "active"
+kind = "render_contract"
+agent = "Critic"
+assertion = "exact_lines"
+expected_lines = [
+  "Review the draft and route it back to Producer.",
+  "",
+  "## Workflow Core",
+  "",
+  "Review the current draft in this lane.",
+  "",
+  "### Shared Boundaries",
+  "",
+  "Keep the producer and critic cycle inside one flow.",
+  "",
+  "### Next Owner",
+  "",
+  "Send the notes back for another draft -> Producer",
+]

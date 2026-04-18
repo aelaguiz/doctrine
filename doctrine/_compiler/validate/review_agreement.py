@@ -339,19 +339,26 @@ class ValidateReviewAgreementMixin:
         except CompileError:
             return None
         for lookup_target in lookup_targets:
-            input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
-            output_decl = self._resolve_local_output_decl(
+            input_match = self._resolve_visible_input_decl(
                 lookup_target.declaration_name,
                 unit=lookup_target.unit,
             )
-            if input_decl is None and output_decl is None:
+            output_match = self._resolve_visible_output_decl(
+                lookup_target.declaration_name,
+                unit=lookup_target.unit,
+            )
+            if input_match is None and output_match is None:
                 continue
-            if input_decl is not None and output_decl is not None:
+            if input_match is not None and output_match is not None:
                 _ = owner_label
                 return None
-            decl = input_decl if input_decl is not None else output_decl
+            if input_match is not None:
+                target_unit, decl = input_match
+            else:
+                assert output_match is not None
+                target_unit, decl = output_match
             assert decl is not None
-            matches.append((lookup_target.unit, decl))
+            matches.append((target_unit, decl))
         if len(matches) != 1:
             return None
         target_unit, decl = matches[0]

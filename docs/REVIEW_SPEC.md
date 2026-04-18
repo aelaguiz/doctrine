@@ -420,8 +420,8 @@ block for runtime routing. Use the `review` block for carrier fields,
 `review_fields`, and `control_ready`.
 Imported reusable review comments keep that same behavior: the bound output
 field still lives on the imported `comment_output`, while bare owner refs that
-are missing from the imported module may still bind the concrete review's
-local routed agents.
+are missing from the imported flow may still bind the concrete review's local
+routed agents.
 
 ## Multi-Subject Review And Carried State
 

@@ -1,6 +1,5 @@
 import shared.delivery
 
-
 document LedgerNoteDocument: "Ledger Note"
     section summary: "Summary"
         "Say what changed."

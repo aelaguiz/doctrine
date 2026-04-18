@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VERDICT_TEXT
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.naming import (
     _dotted_ref_name,
@@ -51,12 +52,12 @@ class ResolveReviewsMixin:
         if review_semantics.output_module_parts:
             output_unit = self._load_module(review_semantics.output_module_parts)
         else:
-            output_unit = self.root_unit
-        output_decl = self._resolve_local_output_decl(
+            output_unit = self.root_entrypoint_unit
+        resolved_output = self._resolve_visible_output_decl(
             review_semantics.output_name,
             unit=output_unit,
         )
-        if output_decl is None:
+        if resolved_output is None:
             raise self._review_internal_error(
                 unit=output_unit,
                 source_span=None,
@@ -65,7 +66,7 @@ class ResolveReviewsMixin:
                     f"review semantics: {review_semantics.output_name}"
                 ),
             )
-        return output_unit, output_decl
+        return resolved_output
 
     def _resolve_review_semantic_root_decl(
         self,
@@ -121,12 +122,17 @@ class ResolveReviewsMixin:
             lookup_targets = self._decl_lookup_targets(ref, unit=unit)
             matches: list[tuple[object, IndexedUnit, model.InputDecl | model.OutputDecl]] = []
             for lookup_target in lookup_targets:
-                input_decl = lookup_target.unit.inputs_by_name.get(lookup_target.declaration_name)
-                output_decl = self._resolve_local_output_decl(
+                input_match = self._resolve_visible_input_decl(
                     lookup_target.declaration_name,
                     unit=lookup_target.unit,
                 )
-                if input_decl is not None and output_decl is not None:
+                output_match = self._resolve_visible_output_decl(
+                    lookup_target.declaration_name,
+                    unit=lookup_target.unit,
+                )
+                if input_match is not None and output_match is not None:
+                    input_unit, input_decl = input_match
+                    output_unit, output_decl = output_match
                     raise review_compile_error(
                         code="E299",
                         summary="Ambiguous review subject",
@@ -136,10 +142,29 @@ class ResolveReviewsMixin:
                         ),
                         unit=unit,
                         source_span=ref.source_span or subject.source_span,
+                        related=tuple(
+                            related
+                            for related in (
+                                review_related_site(
+                                    label="input declaration",
+                                    unit=input_unit,
+                                    source_span=input_decl.source_span,
+                                ),
+                                review_related_site(
+                                    label="output declaration",
+                                    unit=output_unit,
+                                    source_span=output_decl.source_span,
+                                ),
+                            )
+                            if related.location.line is not None
+                        ),
                     )
-                decl = input_decl if input_decl is not None else output_decl
-                if decl is not None:
-                    matches.append((lookup_target, lookup_target.unit, decl))
+                if input_match is not None:
+                    input_unit, input_decl = input_match
+                    matches.append((lookup_target, input_unit, input_decl))
+                if output_match is not None:
+                    output_unit, output_decl = output_match
+                    matches.append((lookup_target, output_unit, output_decl))
             if len(matches) > 1:
                 imported_target = next(
                     (
@@ -230,8 +255,9 @@ class ResolveReviewsMixin:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         matches: list[tuple[object, IndexedUnit, model.WorkflowDecl | model.SchemaDecl]] = []
         for lookup_target in lookup_targets:
-            workflow_decl = lookup_target.unit.workflows_by_name.get(lookup_target.declaration_name)
-            schema_decl = lookup_target.unit.schemas_by_name.get(lookup_target.declaration_name)
+            declarations = unit_declarations(lookup_target.unit)
+            workflow_decl = declarations.workflows_by_name.get(lookup_target.declaration_name)
+            schema_decl = declarations.schemas_by_name.get(lookup_target.declaration_name)
             if workflow_decl is not None and schema_decl is not None:
                 raise review_compile_error(
                     code="E299",

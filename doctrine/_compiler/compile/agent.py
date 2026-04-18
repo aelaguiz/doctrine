@@ -51,7 +51,7 @@ class CompileAgentMixin:
         self._enforce_legacy_role_workflow_order(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
-        agent_key = (unit.module_parts, agent.name)
+        agent_key = self._flow_agent_key(unit, agent.name)
         previous_turn_input_specs = tuple(
             spec
             for spec in (

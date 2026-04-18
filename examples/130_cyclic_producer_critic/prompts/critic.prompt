@@ -1,0 +1,13 @@
+agent Critic:
+    role: "Review the draft and route it back to Producer."
+
+    workflow_core: CriticCore
+
+
+workflow CriticCore: "Workflow Core"
+    "Review the current draft in this lane."
+
+    use shared_boundaries: SharedBoundaries
+
+    next_owner: "Next Owner"
+        route "Send the notes back for another draft" -> Producer

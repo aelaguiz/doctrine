@@ -35,7 +35,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             context = CompilationContext(session)
             unit, decl = context._resolve_output_schema_decl(
                 model.NameRef(module_parts=(), declaration_name=schema_name),
-                unit=session.root_unit,
+                unit=session.root_flow.entrypoint_unit,
             )
             return decl, context._lower_output_schema_decl(decl, unit=unit)
 

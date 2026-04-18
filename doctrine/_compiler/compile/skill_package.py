@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from pathlib import Path
 
-from doctrine._compiler.indexing import skill_package_id
+from doctrine._compiler.indexing import skill_package_id, unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.package_layout import (
     PackageOutputRegistry,
@@ -197,7 +197,10 @@ class CompileSkillPackageMixin:
     ) -> tuple[IndexedUnit, model.DocumentDecl]:
         lookup_targets = self._decl_lookup_targets(entry.ref, unit=unit)
         if not any(
-            lookup_target.unit.documents_by_name.get(lookup_target.declaration_name) is not None
+            unit_declarations(lookup_target.unit).documents_by_name.get(
+                lookup_target.declaration_name
+            )
+            is not None
             for lookup_target in lookup_targets
         ):
             dotted_name = (
@@ -251,15 +254,27 @@ class CompileSkillPackageMixin:
     ) -> CompiledSkillPackageFile:
         from doctrine._compiler.session import CompilationSession
 
-        prompt_file = parse_file(prompt_path)
+        entrypoint_path = source_root / "SKILL.prompt"
         nested_session = CompilationSession(
-            prompt_file,
+            parse_file(entrypoint_path),
             project_config=self.session.project_config,
             skill_package_host_context=self._active_skill_package_host_context(),
         )
+        prompt_unit = nested_session.root_flow.units_by_path.get(prompt_path.resolve())
+        if prompt_unit is None:
+            raise package_compile_error(
+                code="E901",
+                summary="Internal compiler error",
+                detail=(
+                    "Internal compiler error: nested skill package prompt is not part of the "
+                    f"indexed flow: {prompt_path.relative_to(source_root).as_posix()}"
+                ),
+                path=prompt_path,
+                hints=("This is a compiler bug, not a prompt authoring error.",),
+            )
         concrete_agents = tuple(
             agent
-            for agent in nested_session.root_unit.agents_by_name.values()
+            for agent in unit_declarations(prompt_unit).agents_by_name.values()
             if not agent.abstract
         )
         if len(concrete_agents) != 1:
@@ -287,7 +302,10 @@ class CompileSkillPackageMixin:
             kind="agent",
             source=prompt_path.relative_to(source_root).as_posix(),
         ):
-            compiled_agent = nested_session.compile_agent(concrete_agents[0].name)
+            compiled_agent = nested_session.compile_agent_from_unit(
+                prompt_unit,
+                concrete_agents[0].name,
+            )
         return CompiledSkillPackageFile(
             path=output_path,
             content=render_markdown(compiled_agent).encode("utf-8"),

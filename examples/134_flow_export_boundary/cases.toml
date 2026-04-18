@@ -1,0 +1,33 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "cross-flow imports may read exported declarations"
+status = "active"
+kind = "render_contract"
+agent = "FlowExportBoundaryDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Read only the exported surface from another flow.",
+  "",
+  "## Your Job",
+  "",
+  "Only the exported workflow should cross the flow boundary.",
+  "",
+  "### Public Step",
+  "",
+  "This workflow is exported from the provider flow.",
+]
+
+[[cases]]
+name = "cross-flow imports fail loud on internal declarations"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_internal_import/AGENTS.prompt"
+agent = "InvalidInternalImportDemo"
+exception_type = "CompileError"
+error_code = "E314"
+location_line = 7
+related = [
+  { label = "declaration", path = "prompts/provider/private.prompt", line = 1 },
+]

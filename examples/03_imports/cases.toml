@@ -29,7 +29,7 @@ expected_lines = [
   "",
   "### Absolute Briefing",
   "",
-  "This file composes sibling imports through dotted package paths.",
+  "This flow composes other flows through dotted import paths.",
   "",
   "#### Opening",
   "",
@@ -39,13 +39,13 @@ expected_lines = [
   "",
   "End with one clear next step.",
   "",
-  "### Relative Chain",
+  "### Shared Chain",
   "",
-  "This file chains a sibling-relative import with a parent-relative import.",
+  "This flow chains one imported step into shared follow-through.",
   "",
   "#### Leaf Step",
   "",
-  "This module reaches back to its parent package before following the path forward again.",
+  "This flow reuses shared context through one imported step.",
   "",
   "##### Shared Context",
   "",
@@ -55,13 +55,13 @@ expected_lines = [
   "",
   "Finish with a shared wrap-up.",
   "",
-  "### Deep Relative Chain",
+  "### Deep Chain",
   "",
-  "This file uses both a sibling-relative import and a multi-level parent-relative import.",
+  "This flow composes a deep dotted import path without relative syntax.",
   "",
   "#### Deep Detail",
   "",
-  "This file walks back up the package tree with `...` before following the path forward again.",
+  "This flow reaches shared topic context through another imported flow.",
   "",
   "##### Root Topic",
   "",
@@ -76,7 +76,7 @@ expected_lines = [
 name = "missing imported module fails in compile stage"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_MISSING_MODULE.prompt"
+prompt = "prompts/invalid_missing_module/AGENTS.prompt"
 agent = "MissingModuleDemo"
 exception_type = "CompileError"
 error_code = "E280"
@@ -86,7 +86,7 @@ location_line = 2
 name = "unresolved qualified symbol fails in compile stage"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_UNRESOLVED_SYMBOL.prompt"
+prompt = "prompts/invalid_unresolved_symbol/AGENTS.prompt"
 agent = "UnresolvedImportedSymbolDemo"
 exception_type = "CompileError"
 error_code = "E281"
@@ -96,46 +96,46 @@ location_line = 10
 name = "duplicate declaration name in one imported module fails in compile stage"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_DUPLICATE_DECLARATION.prompt"
+prompt = "prompts/invalid_duplicate_declaration/AGENTS.prompt"
 agent = "DuplicateDeclarationDemo"
 exception_type = "CompileError"
 error_code = "E288"
-location_path = "prompts/invalid_duplicates/duplicate_names.prompt"
+location_path = "prompts/invalid_duplicates/duplicate_names/AGENTS.prompt"
 location_line = 5
 related = [
-    { label = "first declaration", path = "prompts/invalid_duplicates/duplicate_names.prompt", line = 1 },
+    { label = "first declaration", path = "prompts/invalid_duplicates/duplicate_names/AGENTS.prompt", line = 1 },
 ]
 
 [[cases]]
 name = "imported parse failure shows the imported module trace"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_IMPORTED_PARSE.prompt"
+prompt = "prompts/invalid_imported_parse/AGENTS.prompt"
 agent = "ImportedParseFailureDemo"
 exception_type = "ParseError"
 error_code = "E101"
-location_path = "prompts/broken/syntax.prompt"
+location_path = "prompts/broken/syntax/AGENTS.prompt"
 location_line = 2
 
 [[cases]]
 name = "sibling import cycles fail loud instead of hanging import resolution"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_SIBLING_IMPORT_CYCLE.prompt"
+prompt = "prompts/invalid_sibling_import_cycle/AGENTS.prompt"
 agent = "SiblingImportCycleDemo"
 exception_type = "CompileError"
 error_code = "E289"
-location_path = "prompts/cyclic_siblings/beta.prompt"
+location_path = "prompts/cyclic_siblings/beta/AGENTS.prompt"
 location_line = 1
 
 [[cases]]
-name = "duplicate visible import module name fails loud"
+name = "duplicate imported name fails loud on module aliases"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_DUPLICATE_MODULE_ALIAS.prompt"
+prompt = "prompts/invalid_duplicate_module_alias/AGENTS.prompt"
 agent = "DuplicateModuleAliasDemo"
 exception_type = "CompileError"
-error_code = "E306"
+error_code = "E307"
 location_line = 2
 related = [
     { label = "first import", line = 1 },
@@ -145,7 +145,7 @@ related = [
 name = "duplicate imported symbol name fails loud"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_DUPLICATE_IMPORTED_SYMBOL.prompt"
+prompt = "prompts/invalid_duplicate_imported_symbol/AGENTS.prompt"
 agent = "DuplicateImportedSymbolDemo"
 exception_type = "CompileError"
 error_code = "E307"
@@ -158,7 +158,7 @@ related = [
 name = "local and imported symbol ownership conflict fails loud at use site"
 status = "active"
 kind = "compile_fail"
-prompt = "prompts/INVALID_AMBIGUOUS_IMPORTED_SYMBOL.prompt"
+prompt = "prompts/invalid_ambiguous_imported_symbol/AGENTS.prompt"
 agent = "AmbiguousImportedSymbolDemo"
 exception_type = "CompileError"
 error_code = "E308"
@@ -166,4 +166,32 @@ location_line = 12
 related = [
     { label = "local declaration", line = 4 },
     { label = "import line", line = 1 },
+]
+
+[[cases]]
+name = "same-flow imports fail loud because sibling files already share one namespace"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_same_flow_import/AGENTS.prompt"
+agent = "SameFlowImportDemo"
+exception_type = "CompileError"
+error_code = "E315"
+location_path = "prompts/invalid_same_flow_import/alpha.prompt"
+location_line = 1
+related = [
+    { label = "same-flow member", path = "prompts/invalid_same_flow_import/beta.prompt" },
+]
+
+[[cases]]
+name = "sibling declaration collisions fail loud during flow merge"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_sibling_collision/AGENTS.prompt"
+agent = "SiblingCollisionDemo"
+exception_type = "CompileError"
+error_code = "E316"
+location_path = "prompts/invalid_sibling_collision/beta.prompt"
+location_line = 1
+related = [
+    { label = "first declaration", path = "prompts/invalid_sibling_collision/alpha.prompt", line = 1 },
 ]

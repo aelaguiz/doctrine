@@ -384,8 +384,6 @@ version = "0.0.0"
         # both outputs, or shipped flow docs can drift from rendered markdown.
         graph = self._extract_graph(
             """
-            import shared.review
-
             input DraftSpec: "Draft Spec"
                 source: File
                     path: "unit_root/DRAFT_SPEC.md"
@@ -423,7 +421,7 @@ version = "0.0.0"
             review DraftReview: "Draft Review"
                 subject: DraftSpec
                 contract: DraftReviewContract
-                comment_output: shared.review.DraftReviewComment
+                comment_output: DraftReviewComment
 
                 fields:
                     verdict: verdict
@@ -438,11 +436,11 @@ version = "0.0.0"
                     accept "The shared draft review contract passes." when contract.passes
 
                 on_accept: "If Accepted"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
                     route "Accepted draft returns to ReviewLead." -> ReviewLead
 
                 on_reject: "If Rejected"
-                    current artifact DraftSpec via shared.review.DraftReviewComment.current_artifact
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
                     route "Rejected draft returns to DraftAuthor." -> DraftAuthor
 
             agent ImportedDraftReviewSplitDemo:
@@ -451,7 +449,7 @@ version = "0.0.0"
                 inputs: "Inputs"
                     DraftSpec
                 outputs: "Outputs"
-                    shared.review.DraftReviewComment
+                    DraftReviewComment
                     DraftReviewDecision
                 final_output: DraftReviewDecision
             """,
@@ -522,13 +520,13 @@ version = "0.0.0"
             self.assertEqual(len(emitted), 1)
             d2_text = emitted[0].read_text(encoding="utf-8")
 
-        self.assertIn("output_shared_review_draftreviewcomment:", d2_text)
+        self.assertIn("shared_review_draftreviewcomment:", d2_text)
         self.assertIn("Draft Review Comment\\nShared Output / Carrier", d2_text)
         self.assertIn(
             "ImportedDraftReviewDemo,\\nImportedDraftReviewSplitDemo\\nTrust: Current Artifact",
             d2_text,
         )
-        self.assertIn("output_draftreviewdecision:", d2_text)
+        self.assertIn("draftreviewdecision:", d2_text)
         self.assertIn("Draft Review Decision\\nCarrier Output", d2_text)
         self.assertIn(
             "Produced by:\\nImportedDraftReviewSplitDemo\\nTrust: Current Artifact",
@@ -752,7 +750,7 @@ version = "0.0.0"
             (provider_prompts / "framework" / "stdlib" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    agent ProviderAgent:
+                    export agent ProviderAgent:
                         role: "Own the provider runtime package."
                     """
                 ),
@@ -815,7 +813,7 @@ version = "0.0.0"
             (provider_prompts / "framework" / "stdlib" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    agent ProviderAgent:
+                    export agent ProviderAgent:
                         role: "Own the provider runtime package."
                     """
                 ),

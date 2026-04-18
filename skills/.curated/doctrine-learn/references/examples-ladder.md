@@ -2,7 +2,7 @@
 
 Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `124_skill_package_host_binding`. It is
+from `01_hello_world` through `134_flow_export_boundary`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -26,8 +26,8 @@ Start here to see the smallest shape of a Doctrine agent and a workflow.
   an inline `workflow`. Read this first.
 - `examples/02_sections` — titled workflow sections and section-key
   validation.
-- `examples/03_imports` — absolute and relative imports and typed
-  imported refs.
+- `examples/03_imports` — cross-flow imports, symbol imports, and
+  fail-loud same-flow boundaries.
 
 After this rung, you know how a Doctrine file is shaped and how modules
 find each other.

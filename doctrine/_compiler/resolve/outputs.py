@@ -8,6 +8,7 @@ from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
 )
+from doctrine._compiler.indexing import unit_declarations, unit_loaded_imports
 from doctrine._compiler.constants import _BUILTIN_INPUT_SOURCES, _BUILTIN_OUTPUT_TARGETS
 from doctrine._compiler.final_output_diagnostics import (
     final_output_compile_error,
@@ -24,6 +25,7 @@ from doctrine._compiler.resolved_types import (
     ContractBinding,
     FinalOutputRouteBinding,
     FinalOutputJsonShapeSummary,
+    FlowAgentKey,
     IndexedUnit,
     OutputDeclKey,
     PreviousTurnAgentContext,
@@ -152,10 +154,30 @@ class ResolveOutputsMixin:
         *,
         unit: IndexedUnit,
     ) -> model.OutputDecl | None:
-        decl = unit.outputs_by_name.get(declaration_name)
-        if decl is None:
+        resolved = self._resolve_visible_output_decl(
+            declaration_name,
+            unit=unit,
+        )
+        if resolved is None:
             return None
-        return self._resolve_output_decl_body(decl, unit=unit)
+        _owner_unit, decl = resolved
+        return decl
+
+    def _resolve_visible_output_decl(
+        self,
+        declaration_name: str,
+        *,
+        unit: IndexedUnit,
+    ) -> tuple[IndexedUnit, model.OutputDecl] | None:
+        flow_match = self._flow_decl_match(
+            declaration_name,
+            unit=unit,
+            registry_name="outputs_by_name",
+        )
+        if flow_match is None:
+            return None
+        owner_unit, decl = flow_match
+        return owner_unit, self._resolve_output_decl_body(decl, unit=owner_unit)
 
     def _resolve_output_shape_decl(
         self, ref: model.NameRef, *, unit: IndexedUnit
@@ -174,7 +196,7 @@ class ResolveOutputsMixin:
         *,
         unit: IndexedUnit,
     ) -> model.OutputShapeDecl | None:
-        decl = unit.output_shapes_by_name.get(declaration_name)
+        decl = unit_declarations(unit).output_shapes_by_name.get(declaration_name)
         if decl is None:
             return None
         return self._resolve_output_shape_decl_body(decl, unit=unit)
@@ -338,7 +360,8 @@ class ResolveOutputsMixin:
                 parent_output_shape,
                 parent_unit=parent_unit,
                 rebound_imported=(
-                    parent_unit.module_parts not in unit.visible_imported_units
+                    parent_unit.module_parts
+                    not in unit_loaded_imports(unit).visible_imported_units
                 ),
             )
         )
@@ -532,7 +555,8 @@ class ResolveOutputsMixin:
                 parent_output,
                 parent_unit=parent_unit,
                 rebound_imported=(
-                    parent_unit.module_parts not in unit.visible_imported_units
+                    parent_unit.module_parts
+                    not in unit_loaded_imports(unit).visible_imported_units
                 ),
             )
         )
@@ -1534,22 +1558,23 @@ class ResolveOutputsMixin:
         source_span: model.SourceSpan | None = None,
     ) -> tuple[IndexedUnit, model.OutputDecl]:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
-        output_matches: list[tuple[object, model.OutputDecl]] = []
+        output_matches: list[tuple[object, IndexedUnit, model.OutputDecl]] = []
         for lookup_target in lookup_targets:
-            local_decl = self._resolve_local_output_decl(
+            visible_output = self._resolve_visible_output_decl(
                 lookup_target.declaration_name,
                 unit=lookup_target.unit,
             )
-            if local_decl is not None:
-                output_matches.append((lookup_target, local_decl))
+            if visible_output is not None:
+                output_unit, output_decl = visible_output
+                output_matches.append((lookup_target, output_unit, output_decl))
         if len(output_matches) == 1:
-            lookup_target, local_decl = output_matches[0]
-            return lookup_target.unit, local_decl
+            _lookup_target, output_unit, output_decl = output_matches[0]
+            return output_unit, output_decl
         if len(output_matches) > 1:
             imported_target = next(
                 (
                     lookup_target
-                    for lookup_target, _decl in output_matches
+                    for lookup_target, _output_unit, _decl in output_matches
                     if lookup_target.imported_symbol is not None
                 ),
                 None,
@@ -1558,7 +1583,7 @@ class ResolveOutputsMixin:
                 local_decl = next(
                     (
                         decl
-                        for lookup_target, decl in output_matches
+                        for lookup_target, _output_unit, decl in output_matches
                         if lookup_target.imported_symbol is None
                     ),
                     None,
@@ -2084,7 +2109,7 @@ class ResolveOutputsMixin:
             builtin = _BUILTIN_INPUT_SOURCES.get(ref.declaration_name)
             if builtin is not None:
                 return builtin
-            local_decl = unit.input_sources_by_name.get(ref.declaration_name)
+            local_decl = unit_declarations(unit).input_sources_by_name.get(ref.declaration_name)
             if local_decl is not None:
                 return self._config_spec_from_decl(
                     local_decl,
@@ -2117,7 +2142,7 @@ class ResolveOutputsMixin:
     def _previous_turn_agent_context(
         self,
         *,
-        agent_key: tuple[tuple[str, ...], str] | None,
+        agent_key: FlowAgentKey | None,
     ) -> PreviousTurnAgentContext | None:
         if agent_key is None:
             return None
@@ -2128,7 +2153,7 @@ class ResolveOutputsMixin:
         input_decl: model.InputDecl,
         *,
         unit: IndexedUnit,
-        agent_key: tuple[tuple[str, ...], str] | None,
+        agent_key: FlowAgentKey | None,
     ) -> ResolvedPreviousTurnInputSpec | None:
         scalar_items, _section_items, _extras = self._split_record_items(
             input_decl.items,
@@ -2266,9 +2291,13 @@ class ResolveOutputsMixin:
                     source_span=self._first_source_span(source_item, input_decl),
                 )
             output_key = previous_turn_context.exact_final_output_key
-            output_unit = self._load_module(output_key[0]) if output_key[0] else self.root_unit
+            output_unit = (
+                self._load_module(output_key[0])
+                if output_key[0]
+                else self.root_entrypoint_unit
+            )
             output_decl = self._resolve_output_decl_body(
-                output_unit.outputs_by_name[output_key[1]],
+                unit_declarations(output_unit).outputs_by_name[output_key[1]],
                 unit=output_unit,
             )
             binding_path = None
@@ -2432,19 +2461,19 @@ class ResolveOutputsMixin:
                 source_span=source_span,
             )
         for predecessor_key in previous_turn_context.predecessor_agent_keys:
-            predecessor_unit = self._load_module(predecessor_key[0]) if predecessor_key[0] else self.root_unit
-            predecessor_agent = predecessor_unit.agents_by_name.get(predecessor_key[1])
-            if predecessor_agent is None:
+            resolved_predecessor = self._resolve_flow_agent_key(predecessor_key)
+            if resolved_predecessor is None:
                 raise authored_compile_error(
                     code="E299",
                     summary="Compile failure",
                     detail=(
                         f"Missing predecessor agent during previous-turn validation in {owner_label}: "
-                        f"{_dotted_decl_name(predecessor_key[0], predecessor_key[1])}"
+                        f"{predecessor_key[2]}"
                     ),
                     unit=unit,
                     source_span=source_span,
                 )
+            predecessor_unit, predecessor_agent = resolved_predecessor
             predecessor_contract = self._resolve_agent_contract(predecessor_agent, unit=predecessor_unit)
             predecessor_final_output_key: OutputDeclKey | None = None
             for field in predecessor_agent.fields:
@@ -2617,7 +2646,7 @@ class ResolveOutputsMixin:
             builtin = _BUILTIN_OUTPUT_TARGETS.get(ref.declaration_name)
             if builtin is not None:
                 return builtin
-            local_decl = unit.output_targets_by_name.get(ref.declaration_name)
+            local_decl = unit_declarations(unit).output_targets_by_name.get(ref.declaration_name)
             if local_decl is not None:
                 return self._output_target_spec_from_decl(
                     local_decl,

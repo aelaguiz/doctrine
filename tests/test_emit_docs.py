@@ -451,8 +451,6 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import rally.base_agent
-
                     output schema SharedTurnSchema: "Shared Turn Schema"
                         field kind: "Kind"
                             type: string
@@ -470,7 +468,7 @@ class EmitDocsTests(unittest.TestCase):
                         requirement: Required
 
                     input PreviousTurnResult: "Previous Turn Result"
-                        source: rally.base_agent.RallyPreviousTurnOutput
+                        source: RallyPreviousTurnOutput
                         requirement: Advisory
 
                     agent WorkerB:
@@ -575,8 +573,6 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import rally.base_agent
-
                     workflow RouteGuide: "Route Guide"
                         sequence choose_route:
                             "Pick the next owner."
@@ -608,7 +604,7 @@ class EmitDocsTests(unittest.TestCase):
                         requirement: Required
 
                     input PreviousTurnResult: "Previous Turn Result"
-                        source: rally.base_agent.RallyPreviousTurnOutput
+                        source: RallyPreviousTurnOutput
                         requirement: Advisory
 
                     agent WorkerB:
@@ -727,12 +723,9 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import rally.base_agent
-                    import shared.outputs
-
                     input PreviousRoutingHandoff: "Previous Routing Handoff"
-                        source: rally.base_agent.RallyPreviousTurnOutput
-                            output: shared.outputs.ProjectLeadOutputs:coordination_handoff
+                        source: RallyPreviousTurnOutput
+                            output: ProjectLeadOutputs:coordination_handoff
                         requirement: Advisory
 
                     agent WorkerB:
@@ -743,8 +736,8 @@ class EmitDocsTests(unittest.TestCase):
                                 active when PreviousRoutingHandoff.kind == "handoff"
                         inputs: "Inputs"
                             PreviousRoutingHandoff
-                        outputs: shared.outputs.ProjectLeadOutputs
-                        final_output: shared.outputs.SharedTurnResult
+                        outputs: ProjectLeadOutputs
+                        final_output: SharedTurnResult
 
                     agent WorkerA:
                         role: "Hand work to Worker B."
@@ -753,8 +746,8 @@ class EmitDocsTests(unittest.TestCase):
                                 current none
                                 active when true
                                 route "Send to Worker B." -> WorkerB
-                        outputs: shared.outputs.ProjectLeadOutputs
-                        final_output: shared.outputs.SharedTurnResult
+                        outputs: ProjectLeadOutputs
+                        final_output: SharedTurnResult
                     """
                 ),
                 encoding="utf-8",
@@ -785,7 +778,7 @@ class EmitDocsTests(unittest.TestCase):
             self.assertEqual(previous_input["selector_kind"], "output_binding")
             self.assertEqual(
                 previous_input["selector_text"],
-                "shared.outputs.ProjectLeadOutputs:coordination_handoff",
+                "ProjectLeadOutputs:coordination_handoff",
             )
             self.assertEqual(
                 previous_input["resolved_declaration_key"],
@@ -888,9 +881,6 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import rally.base_agent
-                    import shared.review
-
                     input DraftPoem: "Draft Poem"
                         source: File
                             path: "unit_root/DRAFT_POEM.md"
@@ -899,8 +889,8 @@ class EmitDocsTests(unittest.TestCase):
                         needs_revision: "Needs Revision"
 
                     input PreviousPoemReview: "Previous Poem Review"
-                        source: rally.base_agent.RallyPreviousTurnOutput
-                            output: shared.review.PoemReviewFinalResponse
+                        source: RallyPreviousTurnOutput
+                            output: PoemReviewFinalResponse
                         requirement: Advisory
 
                     workflow PoemReviewContract: "Poem Review Contract"
@@ -930,7 +920,7 @@ class EmitDocsTests(unittest.TestCase):
                     review PoemReview: "Poem Review"
                         subject: DraftPoem
                         contract: PoemReviewContract
-                        comment_output: shared.review.PoemReviewFinalResponse
+                        comment_output: PoemReviewFinalResponse
 
                         fields:
                             verdict: verdict
@@ -946,11 +936,11 @@ class EmitDocsTests(unittest.TestCase):
                             accept "The poem review passes." when contract.passes
 
                         on_accept: "If Accepted"
-                            current artifact DraftPoem via shared.review.PoemReviewFinalResponse.current_artifact
+                            current artifact DraftPoem via PoemReviewFinalResponse.current_artifact
                             route "Accepted poem goes to Publisher." -> Publisher
 
                         on_reject: "If Rejected"
-                            current artifact DraftPoem via shared.review.PoemReviewFinalResponse.current_artifact
+                            current artifact DraftPoem via PoemReviewFinalResponse.current_artifact
                             route "Rejected poem returns to Muse." -> Muse
 
                     agent Reviewer:
@@ -959,8 +949,8 @@ class EmitDocsTests(unittest.TestCase):
                         inputs: "Inputs"
                             DraftPoem
                         outputs: "Outputs"
-                            shared.review.PoemReviewFinalResponse
-                        final_output: shared.review.PoemReviewFinalResponse
+                            PoemReviewFinalResponse
+                        final_output: PoemReviewFinalResponse
                     """
                 ),
                 encoding="utf-8",
@@ -992,7 +982,7 @@ class EmitDocsTests(unittest.TestCase):
             self.assertEqual(previous_input["selector_kind"], "output_decl")
             self.assertEqual(
                 previous_input["selector_text"],
-                "shared.review.PoemReviewFinalResponse",
+                "PoemReviewFinalResponse",
             )
             self.assertEqual(
                 previous_input["resolved_declaration_key"],
@@ -1021,8 +1011,6 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import rally.base_agent
-
                     output schema SharedTurnSchema: "Shared Turn Schema"
                         field kind: "Kind"
                             type: string
@@ -1045,7 +1033,7 @@ class EmitDocsTests(unittest.TestCase):
                         requirement: Required
 
                     input PreviousReadableReply: "Previous Readable Reply"
-                        source: rally.base_agent.RallyPreviousTurnOutput
+                        source: RallyPreviousTurnOutput
                             output: CoordinationHandoff
                         requirement: Advisory
 
@@ -1631,7 +1619,7 @@ class EmitDocsTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            (prompts / "shared" / "flow.prompt").write_text(
+            (prompts / "shared" / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
                     import agents.alpha
@@ -1645,7 +1633,7 @@ class EmitDocsTests(unittest.TestCase):
             (prompts / "AGENTS.prompt").write_text(
                 textwrap.dedent(
                     """\
-                    import shared.flow
+                    import shared
                     import agents.beta
                     import agents.alpha
 

@@ -7,7 +7,7 @@ shared_inputs: {
     fill: "#F5F8FF"
     stroke: "#2F6FEB"
   }
-  input_audienceguide: {
+  input_4989b1d6_audienceguide: {
     label: "Audience Guide\nShared Input\nSource: File\nPath: project_root/_authoring/\nAUDIENCE_GUIDE.md\nShape: Markdown Document\nRequirement: Required\nUsed by: Project Lead,\nResearch Specialist, Writing\nSpecialist"
     shape: rectangle
     style: {
@@ -16,7 +16,7 @@ shared_inputs: {
     }
   }
 
-  input_projectbrief: {
+  input_4989b1d6_projectbrief: {
     label: "Project Brief\nShared Input\nSource: File\nPath: project_root/_authoring/\nPROJECT_BRIEF.md\nShape: Markdown Document\nRequirement: Required\nUsed by: Project Lead,\nResearch Specialist, Writing\nSpecialist"
     shape: rectangle
     style: {
@@ -40,7 +40,7 @@ agent_handoffs: {
       fill: "transparent"
       stroke: "transparent"
     }
-    agent_projectlead: {
+    agent_4989b1d6_projectlead: {
       label: "Project Lead\nAgent\nPlan the work, leave the\nexecution plan, and route the\nissue into research."
       shape: rectangle
       style: {
@@ -49,7 +49,7 @@ agent_handoffs: {
       }
     }
 
-    agent_researchspecialist: {
+    agent_4989b1d6_researchspecialist: {
       label: "Research Specialist\nAgent\nTurn the shared brief into a\nreusable research packet."
       shape: rectangle
       style: {
@@ -58,7 +58,7 @@ agent_handoffs: {
       }
     }
 
-    agent_writingspecialist: {
+    agent_4989b1d6_writingspecialist: {
       label: "Writing Specialist\nAgent\nTurn the research packet into\na launch-ready draft and\nreturn it to the lead."
       shape: rectangle
       style: {
@@ -76,7 +76,7 @@ shared_outputs_and_carriers: {
     fill: "#F3FFF8"
     stroke: "#067647"
   }
-  output_sharedhandoff: {
+  output_4989b1d6_sharedhandoff: {
     label: "Shared Handoff\nShared Output / Carrier\nTarget: Turn Response\nShape: Comment\nRequirement: Required\nProduced by: Project Lead,\nResearch Specialist, Writing\nSpecialist\nTrust: Current Artifact, Use\nNow, Next Owner"
     shape: rectangle
     style: {
@@ -93,7 +93,7 @@ local_outputs: {
     fill: "#F8FAFC"
     stroke: "#94A3B8"
   }
-  output_executionplan: {
+  output_4989b1d6_executionplan: {
     label: "Execution Plan\nOutput\nTarget: File\nPath: project_root/_authoring/\nEXECUTION_PLAN.md\nShape: Markdown Document\nRequirement: Required\nProduced by: Project Lead"
     shape: rectangle
     style: {
@@ -102,7 +102,7 @@ local_outputs: {
     }
   }
 
-  output_researchpacket: {
+  output_4989b1d6_researchpacket: {
     label: "Research Packet\nOutput\nTarget: File\nPath: project_root/_authoring/\nRESEARCH_PACKET.md\nShape: Markdown Document\nRequirement: Required\nProduced by: Research\nSpecialist"
     shape: rectangle
     style: {
@@ -111,7 +111,7 @@ local_outputs: {
     }
   }
 
-  output_launchdraft: {
+  output_4989b1d6_launchdraft: {
     label: "Launch Draft\nOutput\nTarget: File\nPath: project_root/_authoring/\nLAUNCH_DRAFT.md\nShape: Markdown Document\nRequirement: Required\nProduced by: Writing\nSpecialist"
     shape: rectangle
     style: {
@@ -121,7 +121,7 @@ local_outputs: {
   }
 }
 
-shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_projectlead: {
+shared_inputs.input_4989b1d6_audienceguide -> agent_handoffs.primary_lane.agent_4989b1d6_projectlead: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -129,7 +129,7 @@ shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_projectle
   }
 }
 
-shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_projectlead: {
+shared_inputs.input_4989b1d6_projectbrief -> agent_handoffs.primary_lane.agent_4989b1d6_projectlead: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -137,7 +137,7 @@ shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_projectlea
   }
 }
 
-agent_handoffs.primary_lane.agent_projectlead -> local_outputs.output_executionplan: {
+agent_handoffs.primary_lane.agent_4989b1d6_projectlead -> local_outputs.output_4989b1d6_executionplan: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -145,7 +145,7 @@ agent_handoffs.primary_lane.agent_projectlead -> local_outputs.output_executionp
   }
 }
 
-agent_handoffs.primary_lane.agent_projectlead -> shared_outputs_and_carriers.output_sharedhandoff: {
+agent_handoffs.primary_lane.agent_4989b1d6_projectlead -> shared_outputs_and_carriers.output_4989b1d6_sharedhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -153,14 +153,14 @@ agent_handoffs.primary_lane.agent_projectlead -> shared_outputs_and_carriers.out
   }
 }
 
-agent_handoffs.primary_lane.agent_projectlead -> agent_handoffs.primary_lane.agent_researchspecialist: {
+agent_handoffs.primary_lane.agent_4989b1d6_projectlead -> agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist: {
   label: "Start research with\nResearchSpecialist."
   style: {
     stroke: "#B54708"
   }
 }
 
-shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_researchspecialist: {
+shared_inputs.input_4989b1d6_audienceguide -> agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -168,7 +168,7 @@ shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_researchs
   }
 }
 
-shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_researchspecialist: {
+shared_inputs.input_4989b1d6_projectbrief -> agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -176,7 +176,7 @@ shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_researchsp
   }
 }
 
-agent_handoffs.primary_lane.agent_researchspecialist -> local_outputs.output_researchpacket: {
+agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist -> local_outputs.output_4989b1d6_researchpacket: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -184,7 +184,7 @@ agent_handoffs.primary_lane.agent_researchspecialist -> local_outputs.output_res
   }
 }
 
-agent_handoffs.primary_lane.agent_researchspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
+agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist -> shared_outputs_and_carriers.output_4989b1d6_sharedhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -192,14 +192,14 @@ agent_handoffs.primary_lane.agent_researchspecialist -> shared_outputs_and_carri
   }
 }
 
-agent_handoffs.primary_lane.agent_researchspecialist -> agent_handoffs.primary_lane.agent_writingspecialist: {
+agent_handoffs.primary_lane.agent_4989b1d6_researchspecialist -> agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist: {
   label: "Hand the research packet to\nWritingSpecialist."
   style: {
     stroke: "#B54708"
   }
 }
 
-shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_writingspecialist: {
+shared_inputs.input_4989b1d6_audienceguide -> agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -207,7 +207,7 @@ shared_inputs.input_audienceguide -> agent_handoffs.primary_lane.agent_writingsp
   }
 }
 
-shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_writingspecialist: {
+shared_inputs.input_4989b1d6_projectbrief -> agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist: {
   label: "consumes"
   style: {
     stroke: "#5B708B"
@@ -215,7 +215,7 @@ shared_inputs.input_projectbrief -> agent_handoffs.primary_lane.agent_writingspe
   }
 }
 
-agent_handoffs.primary_lane.agent_writingspecialist -> local_outputs.output_launchdraft: {
+agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist -> local_outputs.output_4989b1d6_launchdraft: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -223,7 +223,7 @@ agent_handoffs.primary_lane.agent_writingspecialist -> local_outputs.output_laun
   }
 }
 
-agent_handoffs.primary_lane.agent_writingspecialist -> shared_outputs_and_carriers.output_sharedhandoff: {
+agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist -> shared_outputs_and_carriers.output_4989b1d6_sharedhandoff: {
   label: "produces"
   style: {
     stroke: "#067647"
@@ -231,7 +231,7 @@ agent_handoffs.primary_lane.agent_writingspecialist -> shared_outputs_and_carrie
   }
 }
 
-agent_handoffs.primary_lane.agent_writingspecialist -> agent_handoffs.primary_lane.agent_projectlead: {
+agent_handoffs.primary_lane.agent_4989b1d6_writingspecialist -> agent_handoffs.primary_lane.agent_4989b1d6_projectlead: {
   label: "Return the draft to\nProjectLead."
   style: {
     stroke: "#B54708"

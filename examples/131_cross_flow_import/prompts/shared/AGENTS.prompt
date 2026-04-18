@@ -1,0 +1,2 @@
+export workflow SharedTurn: "Shared Turn"
+    "This workflow comes from another flow."

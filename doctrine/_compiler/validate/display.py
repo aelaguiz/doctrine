@@ -6,6 +6,7 @@ from doctrine._compiler.authored_diagnostics import (
     authored_related_site,
 )
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.naming import _humanize_key, _name_ref_from_dotted_name
 from doctrine._compiler.resolved_types import (
     ConfigSpec,
@@ -41,7 +42,7 @@ class ValidateDisplayMixin:
             return None
         if value.module_parts:
             return self._resolve_output_shape_decl(value, unit=unit)
-        local_decl = unit.output_shapes_by_name.get(value.declaration_name)
+        local_decl = unit_declarations(unit).output_shapes_by_name.get(value.declaration_name)
         if local_decl is not None:
             return unit, self._resolve_output_shape_decl_body(local_decl, unit=unit)
         if value.declaration_name in _BUILTIN_OUTPUT_SHAPE_NAMES:

@@ -1,0 +1,4 @@
+agent SiblingNamespaceDemo:
+    role: "Show that one flow shares one flat namespace."
+
+    your_job: SiblingTurn

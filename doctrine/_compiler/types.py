@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TypeAlias
 
 import doctrine._model as model
@@ -372,6 +373,8 @@ class FlowAgentNode:
     module_parts: tuple[str, ...]
     name: str
     title: str
+    prompt_root: Path | None = None
+    flow_root: Path | None = None
     detail_lines: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
 
@@ -381,6 +384,8 @@ class FlowInputNode:
     module_parts: tuple[str, ...]
     name: str
     title: str
+    prompt_root: Path | None = None
+    flow_root: Path | None = None
     source_title: str | None = None
     shape_title: str | None = None
     requirement_title: str | None = None
@@ -393,6 +398,8 @@ class FlowOutputNode:
     module_parts: tuple[str, ...]
     name: str
     title: str
+    prompt_root: Path | None = None
+    flow_root: Path | None = None
     target_title: str | None = None
     primary_path: str | None = None
     shape_title: str | None = None
@@ -412,6 +419,10 @@ class FlowEdge:
     target_module_parts: tuple[str, ...]
     target_name: str
     label: str
+    source_prompt_root: Path | None = None
+    source_flow_root: Path | None = None
+    target_prompt_root: Path | None = None
+    target_flow_root: Path | None = None
 
 
 @dataclass(slots=True, frozen=True)

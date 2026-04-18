@@ -1,0 +1,15 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "sibling declaration collisions fail loud during flow merge"
+status = "active"
+kind = "compile_fail"
+agent = "SiblingCollisionDemo"
+exception_type = "CompileError"
+error_code = "E316"
+location_path = "prompts/beta.prompt"
+location_line = 1
+related = [
+  { label = "first declaration", path = "prompts/alpha.prompt", line = 1 },
+]

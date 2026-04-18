@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -144,7 +145,7 @@ agent BriefWriter:
             encoding="utf-8",
         )
         (prompts / "editor_home" / "AGENTS.prompt").write_text(
-            """agent BriefEditor:
+            """export agent BriefEditor:
     role: "Polish the brief and stop."
     workflow: "Polish"
         "Polish the brief and stop."
@@ -221,18 +222,30 @@ version = "0.0.0"
         _expect("Produced by:" in rendered, rendered)
         _expect('primary_lane: {\n    label: ""\n    direction: down' in rendered, rendered)
         _expect(
-            "agent_handoffs.primary_lane.agent_projectlead -> agent_handoffs.primary_lane.agent_researchspecialist"
-            in rendered,
+            re.search(
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_projectlead -> "
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_researchspecialist",
+                rendered,
+            )
+            is not None,
             rendered,
         )
         _expect(
-            "agent_handoffs.primary_lane.agent_researchspecialist -> agent_handoffs.primary_lane.agent_writingspecialist"
-            in rendered,
+            re.search(
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_researchspecialist -> "
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_writingspecialist",
+                rendered,
+            )
+            is not None,
             rendered,
         )
         _expect(
-            "agent_handoffs.primary_lane.agent_writingspecialist -> agent_handoffs.primary_lane.agent_projectlead"
-            in rendered,
+            re.search(
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_writingspecialist -> "
+                r"agent_handoffs\.primary_lane\.agent_[a-f0-9]+_showcase_projectlead",
+                rendered,
+            )
+            is not None,
             rendered,
         )
         _expect("Start research with" in rendered, rendered)

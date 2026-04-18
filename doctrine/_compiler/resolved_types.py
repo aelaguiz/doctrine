@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field
+from pathlib import Path
 from typing import TypeAlias
 
 import doctrine._model as model
-from doctrine._compiler.indexing import IndexedUnit, ModuleLoadKey
+from doctrine._compiler.indexing import IndexedUnit
 from doctrine._compiler.types import (
     CompiledAgent,
     CompiledBodyItem,
@@ -64,8 +65,8 @@ class AgentFieldCompileSpec:
     slot_body: ResolvedWorkflowBody | None = None
 
 
-FlowAgentKey = tuple[tuple[str, ...], str]
-FlowArtifactKey = tuple[tuple[str, ...], str]
+FlowAgentKey = tuple[Path, Path, str]
+FlowArtifactKey = tuple[Path, Path, str]
 ReadableDecl: TypeAlias = (
     model.Agent
     | model.AnalysisDecl

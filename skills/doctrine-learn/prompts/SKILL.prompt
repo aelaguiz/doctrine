@@ -1,16 +1,3 @@
-from refs.principles import Principles
-from refs.language_overview import LanguageOverview
-from refs.examples_ladder import ExamplesLadder
-from refs.authoring_patterns import AuthoringPatterns
-from refs.verify_and_ship import VerifyAndShip
-from refs.imports_and_refs import ImportsAndRefs
-from refs.emit_targets import EmitTargets
-from refs.reviews import Reviews
-from refs.agents_and_workflows import AgentsAndWorkflows
-from refs.documents_and_tables import DocumentsAndTables
-from refs.skills_and_packages import SkillsAndPackages
-from refs.outputs_and_schemas import OutputsAndSchemas
-
 skill package DoctrineLearn: "Doctrine Learn"
     metadata:
         name: "doctrine-learn"

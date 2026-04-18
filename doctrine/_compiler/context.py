@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (
     CompileError,
     CompiledAgent,
     CompiledSection,
     CompiledSkillPackage,
+    FlowAgentKey,
+    FlowArtifactKey,
     IndexedUnit,
     OutputDeclKey,
     ActiveSkillBindAgentContext,
@@ -59,13 +63,12 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self,
         session: CompilationSession,
         *,
-        previous_turn_contexts: dict[tuple[tuple[str, ...], str], PreviousTurnAgentContext]
-        | None = None,
+        previous_turn_contexts: dict[FlowAgentKey, PreviousTurnAgentContext] | None = None,
     ):
         self.session = session
         self.prompt_root = session.prompt_root
         self._previous_turn_contexts = previous_turn_contexts or {}
-        self._active_agent_key: tuple[tuple[str, ...], str] | None = None
+        self._active_agent_key: FlowAgentKey | None = None
         self._active_previous_turn_input_specs: dict[
             tuple[tuple[str, ...], str],
             "ResolvedPreviousTurnInputSpec",
@@ -145,17 +148,56 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         ] = {}
         self._active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None
         # Mutable resolution stacks and caches remain local to one compile task.
-        self.root_unit = session.root_unit
+        self.root_flow = session.root_flow
+        self.root_entrypoint_unit = session.root_flow.entrypoint_unit
+
+    def _flow_identity(self, unit: IndexedUnit) -> tuple[Path, Path]:
+        flow = self.session.flow_for_unit(unit)
+        return (flow.prompt_root.resolve(), flow.flow_root.resolve())
+
+    def _flow_parts_for_unit(self, unit: IndexedUnit) -> tuple[str, ...]:
+        return self.session.flow_for_unit(unit).flow_parts
+
+    def _flow_agent_key(self, unit: IndexedUnit, agent_name: str) -> FlowAgentKey:
+        prompt_root, flow_root = self._flow_identity(unit)
+        return (prompt_root, flow_root, agent_name)
+
+    def _flow_artifact_key(self, unit: IndexedUnit, declaration_name: str) -> FlowArtifactKey:
+        prompt_root, flow_root = self._flow_identity(unit)
+        return (prompt_root, flow_root, declaration_name)
+
+    def _resolve_flow_agent_key(
+        self,
+        agent_key: FlowAgentKey,
+    ) -> tuple[IndexedUnit, model.Agent] | None:
+        prompt_root, flow_root, agent_name = agent_key
+        flow = self.session.flow_by_key(prompt_root, flow_root)
+        if flow is None:
+            return None
+        agent = flow.agents_by_name.get(agent_name)
+        if agent is None:
+            return None
+        owner_unit = flow.declaration_owner_units_by_id[id(agent)]
+        return owner_unit, agent
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
-        return self.compile_agent_from_unit(self.root_unit, agent_name)
+        agent = self.root_flow.agents_by_name.get(agent_name)
+        if agent is None:
+            raise _context_compile_error(
+                path=self.root_flow.entrypoint_path,
+                code="E201",
+                summary="Missing target agent",
+                detail=f"Target agent `{agent_name}` does not exist in the root flow.",
+            )
+        owner_unit = self.root_flow.declaration_owner_units_by_id[id(agent)]
+        return self.compile_agent_from_unit(owner_unit, agent_name)
 
     def compile_agent_from_unit(
         self,
         unit: IndexedUnit,
         agent_name: str,
     ) -> CompiledAgent:
-        agent = unit.agents_by_name.get(agent_name)
+        agent = unit_declarations(unit).agents_by_name.get(agent_name)
         if agent is None:
             raise _context_compile_error(
                 path=unit.prompt_file.source_path,
@@ -178,72 +220,78 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         package_name: str | None = None,
     ) -> CompiledSkillPackage:
         if package_name is None:
-            packages = tuple(self.root_unit.skill_packages_by_name.values())
+            packages = tuple(self.root_flow.skill_packages_by_name.values())
             if not packages:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail="Missing target skill package.",
                 )
             if len(packages) != 1:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
-                    detail="Prompt file defines multiple skill packages; choose one explicitly.",
+                    path=self.root_flow.entrypoint_path,
+                    detail="Root flow defines multiple skill packages; choose one explicitly.",
                 )
             declaration = packages[0]
         else:
-            declaration = self.root_unit.skill_packages_by_name.get(package_name)
+            declaration = self.root_flow.skill_packages_by_name.get(package_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target skill package: {package_name}",
                 )
-        return self._compile_skill_package_decl(declaration, unit=self.root_unit)
+        owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+        return self._compile_skill_package_decl(declaration, unit=owner_unit)
 
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str
     ) -> CompiledSection:
         if declaration_kind == "analysis":
-            declaration = self.root_unit.analyses_by_name.get(declaration_name)
+            declaration = self.root_flow.analyses_by_name.get(declaration_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target analysis declaration: {declaration_name}",
                 )
-            return self._compile_analysis_decl(declaration, unit=self.root_unit)
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+            return self._compile_analysis_decl(declaration, unit=owner_unit)
         if declaration_kind == "decision":
-            declaration = self.root_unit.decisions_by_name.get(declaration_name)
+            declaration = self.root_flow.decisions_by_name.get(declaration_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target decision declaration: {declaration_name}",
                 )
-            return self._compile_decision_decl(declaration, unit=self.root_unit)
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+            return self._compile_decision_decl(declaration, unit=owner_unit)
         if declaration_kind == "schema":
-            declaration = self.root_unit.schemas_by_name.get(declaration_name)
+            declaration = self.root_flow.schemas_by_name.get(declaration_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target schema declaration: {declaration_name}",
                 )
-            return self._compile_schema_decl(declaration, unit=self.root_unit)
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+            return self._compile_schema_decl(declaration, unit=owner_unit)
         if declaration_kind == "table":
-            declaration = self.root_unit.tables_by_name.get(declaration_name)
+            declaration = self.root_flow.tables_by_name.get(declaration_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target table declaration: {declaration_name}",
                 )
-            return self._compile_table_decl(declaration, unit=self.root_unit)
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+            return self._compile_table_decl(declaration, unit=owner_unit)
         if declaration_kind == "document":
-            declaration = self.root_unit.documents_by_name.get(declaration_name)
+            declaration = self.root_flow.documents_by_name.get(declaration_name)
             if declaration is None:
                 raise _context_compile_error(
-                    path=self.root_unit.prompt_file.source_path,
+                    path=self.root_flow.entrypoint_path,
                     detail=f"Missing target document declaration: {declaration_name}",
                 )
-            return self._compile_document_decl(declaration, unit=self.root_unit)
+            owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+            return self._compile_document_decl(declaration, unit=owner_unit)
         raise _context_compile_error(
-            path=self.root_unit.prompt_file.source_path,
+            path=self.root_flow.entrypoint_path,
             detail=f"Unsupported readable declaration kind: {declaration_kind}",
         )
 

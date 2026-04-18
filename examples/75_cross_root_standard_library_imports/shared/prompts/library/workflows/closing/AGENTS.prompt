@@ -1,0 +1,2 @@
+export workflow ClosingStep: "Closing"
+    "End with the shared wrap-up."

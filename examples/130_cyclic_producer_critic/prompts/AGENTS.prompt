@@ -1,0 +1,2 @@
+workflow SharedBoundaries: "Shared Boundaries"
+    "Keep the producer and critic cycle inside one flow."

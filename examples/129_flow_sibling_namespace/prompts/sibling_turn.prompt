@@ -1,0 +1,4 @@
+workflow SiblingTurn: "Your Job"
+    "This workflow lives in one sibling file."
+
+    use shared_note: SharedNote

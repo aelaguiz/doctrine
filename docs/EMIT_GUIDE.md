@@ -120,9 +120,10 @@ Important rules:
 
 - `additional_prompt_roots` entries resolve relative to the authoritative
   `pyproject.toml`.
-- Absolute imports may search the entrypoint-local `prompts/` root plus the
+- Cross-flow imports may search the entrypoint-local `prompts/` root plus the
   configured additional roots.
-- Relative imports stay inside the importing module's own `prompts/` root.
+- Same-flow imports are retired. Sibling `.prompt` files under one flow root
+  already share one flat namespace, so use bare refs inside the flow.
 - Emit output layout does not widen with import search. Doctrine still places
   emitted files relative to the entrypoint's own local `prompts/` root.
 - In configured target mode, emit passes the already-resolved target

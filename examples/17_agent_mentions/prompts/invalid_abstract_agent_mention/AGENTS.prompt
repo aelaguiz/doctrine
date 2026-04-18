@@ -1,0 +1,11 @@
+import shared.roles
+
+workflow InvalidAbstractAgentMention: "Invalid Abstract Agent Mention"
+    owner_names: "Owner Names"
+        "Do not materialize {{shared.roles.AbstractEscalationOwner}} as a current owner."
+
+
+agent InvalidAbstractAgentMentionDemo:
+    role: "This prompt exists only to prove that abstract agent mentions fail loud."
+
+    read_first: InvalidAbstractAgentMention

@@ -1,4 +1,4 @@
-agent BriefEditor:
+export agent BriefEditor:
     role: "Polish the brief and stop."
     workflow: "Polish"
         "Polish the brief and stop."

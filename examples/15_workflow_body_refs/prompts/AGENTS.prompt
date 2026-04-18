@@ -7,18 +7,16 @@
 # The workflow section keeps read order and usage guidance readable.
 # The declaration itself still owns the full contract truth.
 # Bare refs in workflow sections render as bullets using the declaration title.
-# Imported dotted refs work here too.
+# Cross-flow dotted refs still work here too.
 # Workflow reuse still belongs to `use`, not to bare workflow refs.
-
-import shared.contracts
 
 
 workflow ImmediateLocalRead: "Immediate Local Read"
     read_now: "Read Now"
         "Start with the current routing truth."
-        shared.contracts.CurrentIssuePlan
+        CurrentIssuePlan
         LatestNamedFilesComment
-        shared.contracts.TrackMetadata
+        TrackMetadata
         "If current concepts exist for this section, read them before nearby context."
         CurrentConcepts
 
@@ -56,9 +54,9 @@ agent WorkflowSectionRefsDemo:
     read_first: ImmediateLocalRead
 
     inputs: "Inputs"
-        shared.contracts.CurrentIssuePlan
+        CurrentIssuePlan
         LatestNamedFilesComment
-        shared.contracts.TrackMetadata
+        TrackMetadata
         CurrentConcepts
 
     outputs: "Outputs"

@@ -1,0 +1,13 @@
+agent Producer:
+    role: "Draft the next artifact and route it to Critic."
+
+    workflow_core: ProducerCore
+
+
+workflow ProducerCore: "Workflow Core"
+    "Draft the next artifact in this lane."
+
+    use shared_boundaries: SharedBoundaries
+
+    next_owner: "Next Owner"
+        route "Send the draft for critique" -> Critic

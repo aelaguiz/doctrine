@@ -1,14 +1,14 @@
-# This example pressure-tests the full shipped import surface.
-# - `import package.module as alias` keeps module-scoped refs explicit
-# - `from package.module import Name` binds one symbol directly
-# - `from package.module import Name as Alias` binds one renamed symbol
-# - relative imports still follow the same root rules in the imported files
+# This example shows the flow-era import surface.
+# - `import package.flow as alias` keeps one imported flow explicit
+# - `from package.flow import Name` binds one exported declaration directly
+# - `from package.flow import Name as Alias` binds one renamed declaration
+# - nested flow roots keep imported layouts readable without relative imports
 # - imported declarations still compose through keyed `use` entries
 from simple.greeting import Greeting as GreetingStep
 from simple.object import Object
 import simple.nested.polite as polite
 from chains.absolute.briefing import AbsoluteBriefing
-from chains.relative.entry import RelativeChain as RelativeChainStep
+from chains.relative.entry import SharedChain as SharedChainStep
 import chains.deep.levels.one.two.entry as deep_chain
 
 
@@ -22,5 +22,5 @@ agent ImportsDemo:
         use object: Object
         use polite_greeting: polite.PoliteGreeting
         use absolute_briefing: AbsoluteBriefing
-        use relative_chain: RelativeChainStep
-        use deep_relative_chain: deep_chain.DeepRelativeChain
+        use shared_chain: SharedChainStep
+        use deep_chain: deep_chain.DeepChain

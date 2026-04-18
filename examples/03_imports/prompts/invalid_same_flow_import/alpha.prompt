@@ -1,0 +1,5 @@
+import invalid_same_flow_import.beta
+
+
+workflow Alpha: "Alpha"
+    "Keep the alpha step local to the flow."

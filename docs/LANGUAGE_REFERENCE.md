@@ -15,7 +15,8 @@ For the numbered teaching corpus, use [../examples/README.md](../examples/README
 
 ## Mental Model
 
-- A prompt file is the source of truth.
+- A flow root owns one namespace.
+- Individual prompt files inside that flow only split the authored source.
 - Concrete agents are the runtime entrypoints.
 - Skill packages are filesystem emit roots.
 - Abstract declarations exist for reuse and inheritance, not direct emission.
@@ -630,8 +631,6 @@ Find the right repo surface for the current job.
 Doctrine also ships a first-class package surface for real skill bundles.
 
 ```prompt
-from refs.query_patterns import QueryPatterns
-
 skill package GreetingSkill: "Greeting Skill"
     metadata:
         name: "greeting-skill"
@@ -659,9 +658,10 @@ Important rules:
 - If `metadata.name` is omitted, the emitted frontmatter falls back to the
   package declaration key.
 - The directory that contains `SKILL.prompt` is the package source root.
-- Prompt files inside that package may import each other from the package
-  source root with absolute imports such as `from refs.query_patterns import
-  QueryPatterns`, or with relative imports.
+- Prompt files inside that package flow already share one flat namespace.
+  Use bare same-flow refs there.
+- Use absolute imports from the package source root only when you cross into a
+  different nested flow, such as a bundled runtime home under `agents/.../`.
 - `SKILL.prompt` compiles to `SKILL.md`.
 - host-bound skill packages also emit `SKILL.contract.json` beside
   `SKILL.md`.
@@ -1056,21 +1056,23 @@ For the full I/O model, see [AGENT_IO_DESIGN_NOTES.md](AGENT_IO_DESIGN_NOTES.md)
 
 ## Imports
 
-Imports compose typed declarations across prompt modules.
+Imports compose typed declarations across real flow boundaries.
 
 ```prompt
 import shared.contracts as shared_contracts
 from shared.review import DraftReviewComment
 from shared.review import DraftReviewComment as ImportedComment
-import .local.sibling
-import ..common.roles
 ```
 
 Important rules:
 
-- Each prompt file still owns its nearest local `prompts/` tree.
-- Inside one `prompts/` root, an import may resolve to either
-  `<module>.prompt` or `<module>/AGENTS.prompt`.
+- `AGENTS.prompt`, `SOUL.prompt`, and `SKILL.prompt` are the flow entrypoints.
+- One flow entrypoint plus its sibling `.prompt` files owns one flat
+  namespace.
+- Same-flow imports are retired. Sibling files already share that namespace
+  and fail loud with `E315` if they try to import each other.
+- A cross-flow import may resolve to either `<module>.prompt` or
+  `<module>/AGENTS.prompt`.
 - If both shapes exist for the same dotted path, Doctrine fails loudly
   instead of guessing which one owns the module.
 - Absolute imports search the active roots for the compile. Active roots
@@ -1082,17 +1084,17 @@ Important rules:
   `prompts`.
 - Each provider root must also point at an existing directory literally named
   `prompts`. Provider roots come from the Python API, not from host TOML.
-- A file-backed `<module>.prompt` import is a compile-time module only.
+- Cross-flow imports only see declarations marked `export`. Non-exported
+  declarations stay private to their home flow and fail loud with `E314`.
+- A file-backed `<module>.prompt` import is a compile-time boundary with one
+  prompt file as its full flow surface.
 - A directory-backed `<module>/AGENTS.prompt` import is a runtime package
   root for `emit_docs` and the shared runtime frontier that `emit_flow`
   uses.
 - A sibling `SOUL.prompt` beside a runtime package `AGENTS.prompt` is optional
   runtime emit input. It is not a second import target.
-- Absolute and relative imports both keep typed declaration identity.
-- Relative imports stay rooted in the importing module's own `prompts/` tree.
-  They do not hop across configured or provider roots.
-- `SKILL.prompt` uses the same import rules, including bundled package modules
-  such as `agents.cold_reviewer`.
+- `SKILL.prompt` uses the same boundary rules. Same-flow package files use
+  bare refs. Cross-flow package imports stay absolute.
 - `import module as alias` keeps the imported module explicit through normal
   declaration refs such as `shared_contracts.ReviewContract`.
 - `from module import Name` binds the imported declaration on its bare visible
@@ -1110,8 +1112,8 @@ Important rules:
   one owner by precedence.
 - Duplicate dotted modules across active roots fail loudly instead of using
   root precedence heuristics.
-- Missing modules, missing declarations, duplicate declarations, and module
-  cycles still fail loudly.
+- Missing modules, missing declarations, missing exports, sibling declaration
+  collisions, and true cross-flow cycles still fail loudly.
 
 ## Readable Refs, Addressable Paths, And Interpolation
 
