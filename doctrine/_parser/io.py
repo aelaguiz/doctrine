@@ -531,6 +531,22 @@ class IoTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True, inline=True)
+    def review_route_via_stmt(self, meta, section, resolution):
+        return _with_source_span(
+            model.ReviewRouteVia(section=section, resolution=resolution),
+            meta,
+        )
+
+    def review_outcome_accept(self, _items):
+        return "on_accept"
+
+    def review_outcome_reject(self, _items):
+        return "on_reject"
+
+    def review_route_resolution_route(self, _items):
+        return "route"
+
     @v_args(meta=True)
     def trust_surface_block(self, meta, items):
         return _positioned_trust_surface(meta, tuple(items))

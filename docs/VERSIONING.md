@@ -159,7 +159,12 @@ Every public release uses one release class.
   `review_fields:` on the carrier. Ships with a stdlib authoring pattern that
   splits `shared_rules:` from `how_to_take_a_turn:` in role homes so
   concrete roles can override the turn sequence without losing generic
-  rules. Advances the language line from `4.0` to `4.1`.
+  rules. Also ships a `via review.on_<section>.route` clause inside
+  `next_owner:` output bodies so a shared review-carrier output can bind to
+  each critic's resolved route without forking prose per layer (new compile
+  code `E317`; baseline structural interpolation check still fires when both
+  `via` and literal interpolation are absent). Advances the language line
+  from `4.0` to `4.1`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

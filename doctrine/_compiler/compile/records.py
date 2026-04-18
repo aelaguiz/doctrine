@@ -32,6 +32,8 @@ class CompileRecordsMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str | None:
+        if isinstance(item, model.ReviewRouteVia):
+            return None
         if isinstance(item, model.RecordSection):
             summary = self._flatten_output_record_items(
                 item.items,
@@ -165,6 +167,9 @@ class CompileRecordsMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
+        if isinstance(item, model.ReviewRouteVia):
+            return ()
+
         if isinstance(item, (str, model.EmphasizedLine)):
             return (
                 self._interpolate_authored_prose_line(

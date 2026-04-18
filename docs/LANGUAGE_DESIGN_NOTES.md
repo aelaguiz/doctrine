@@ -106,6 +106,35 @@ cost bounded to the role-specific sequence. See
 [../examples/137_role_home_shared_rules_split/](../examples/137_role_home_shared_rules_split/)
 for a minimal example.
 
+## Binding Review Outcomes Via `review.on_*.route`
+
+When several critic agents share one output declaration for their review
+carrier, each critic's own review routes `on_reject` (and often
+`on_accept`) to a different producer. Doctrine's baseline structural
+check for the `next_owner:` field wants a literal `{{TargetAgent}}`
+interpolation that names the routed agent. On a shared carrier that
+constraint forks the prose per critic, which defeats the point of one
+shared output.
+
+The `via review.on_<section>.route` clause solves this. Inside a
+`next_owner:` field body it says "this field is bound to whichever
+agent the named review section resolves for its route." The clause
+emits nothing at render time, so the surrounding prose can stay
+layer-neutral ("Name the producer when the review routes back for
+rework."). One output declaration now cleanly backs any number of
+critics whose routes differ.
+
+The shape is a three-part dotted path on purpose. Today the only
+supported resolution after the section is `.route`. Future language
+moves can add peers like `.current_artifact` without re-parsing the
+grammar. `E317` fires when the named section does not match the
+branch that resolves the route, or when two `via` clauses appear in
+one override body.
+
+See
+[../examples/136_review_shared_route_binding/](../examples/136_review_shared_route_binding/)
+for a two-critic shared-carrier example.
+
 ## Skill Package Host Binding Design
 
 `host_contract:` lets a `skill package` declare the typed slots it needs

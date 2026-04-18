@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
-from typing import TypeAlias as _TypeAlias
+from typing import Literal as _Literal, TypeAlias as _TypeAlias
 
 from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
@@ -67,9 +67,20 @@ class RecordRef:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class ReviewRouteVia:
+    section: _Literal["on_accept", "on_reject"]
+    resolution: _Literal["route"]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 RecordItem: _TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
-AnyRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
-OutputRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
+AnyRecordItem: _TypeAlias = (
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia
+)
+OutputRecordItem: _TypeAlias = (
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia
+)
 
 
 @_dataclass(slots=True, frozen=True)

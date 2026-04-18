@@ -1161,6 +1161,8 @@ class CompileOutputsMixin:
     ) -> str | None:
         lines: list[model.ProseLine] = []
         for item in items:
+            if isinstance(item, model.ReviewRouteVia):
+                continue
             if not isinstance(item, (str, model.EmphasizedLine)):
                 return None
             lines.append(item)

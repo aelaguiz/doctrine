@@ -115,6 +115,7 @@ from doctrine._model.io import (
     RecordScalar,
     RecordScalarValue,
     RecordSection,
+    ReviewRouteVia,
     SkillDecl,
     SkillPackageDecl,
     SkillPackageEmitEntry,

@@ -829,6 +829,12 @@ output_schema_example_array_item: "-" output_schema_example_scalar _NL?
                    | output_readable_block
                    | output_record_keyed_item
                    | output_record_ref_item
+                   | review_route_via_stmt
+
+review_route_via_stmt: "via" "review" "." review_outcome_section "." review_route_resolution _NL
+review_outcome_section: "on_accept" -> review_outcome_accept
+                      | "on_reject" -> review_outcome_reject
+review_route_resolution: "route" -> review_route_resolution_route
 
 output_override_guarded_section: "override" CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
 output_override_guarded_scalar_item: "override" CNAME ":" string "when" expr _NL output_record_item_body?

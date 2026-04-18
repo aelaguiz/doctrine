@@ -152,6 +152,7 @@ Stability rules:
 | `E314` | Imported declaration is not exported | A cross-flow import reached the target flow, but the requested declaration stays internal because it is not marked `export`. |
 | `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. |
 | `E316` | Sibling declaration collision | Two sibling prompt files in the same flow declared the same name, so Doctrine refused to guess which sibling owns it. |
+| `E317` | Review route-source `via` clause does not match the resolved outcome section | A `via review.<section>.route` clause inside an `override next_owner:` body either names the wrong `on_*` section for the branch that resolves the route or appears more than once in the same body. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |

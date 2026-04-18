@@ -1,0 +1,193 @@
+output schema SharedReviewSchema: "Shared Review Schema"
+    field verdict: "Verdict"
+        type: string
+        note: "Review verdict."
+
+    field reviewed_artifact: "Reviewed Artifact"
+        type: string
+        note: "Reviewed artifact name."
+
+    field current_artifact: "Current Artifact"
+        type: string
+        nullable
+        note: "Current artifact after review."
+
+    field next_owner: "Next Owner"
+        type: string
+        nullable
+        note: "Next owner after review when one exists."
+
+    example:
+        verdict: "changes_requested"
+        reviewed_artifact: "Outline Draft"
+        current_artifact: "Outline Draft"
+        next_owner: "OutlineProducer"
+
+
+output shape SharedReviewJson: "Shared Review JSON"
+    kind: JsonObject
+    schema: SharedReviewSchema
+
+    field_notes: "Field Notes"
+        "Keep `next_owner` aligned with the routed review branch."
+
+
+input OutlineDraft: "Outline Draft"
+    source: File
+        path: "unit_root/OUTLINE.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input PolishDraft: "Polish Draft"
+    source: File
+        path: "unit_root/POLISH.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+schema OutlineContract: "Outline Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the outline."
+
+    gates:
+        outline_ready: "Outline Ready"
+            "Confirm the outline covers every required section."
+
+
+schema PolishContract: "Polish Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the polish."
+
+    gates:
+        polish_ready: "Polish Ready"
+            "Confirm the polish has no rough edges."
+
+
+agent OutlineProducer:
+    role: "Own outline follow-up."
+    workflow: "Rework Outline"
+        "Revise the outline when a critic requests changes."
+
+
+agent PolishProducer:
+    role: "Own polish follow-up."
+    workflow: "Rework Polish"
+        "Revise the polish when a critic requests changes."
+
+
+output SharedReviewCarrier: "Shared Review Carrier"
+    target: TurnResponse
+    shape: SharedReviewJson
+    requirement: Required
+
+    verdict: "Verdict"
+        "State whether the artifact passed review or asked for changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "State what the next owner should read first."
+
+    current_artifact: "Current Artifact" when present(current_artifact):
+        "Name the artifact that remains current after review."
+
+    next_owner: "Next Owner" when present(next_owner):
+        via review.on_reject.route
+        "Name the producer when the review routes back for rework."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List exact failing gates in authored order."
+
+    trust_surface:
+        current_artifact
+
+    standalone_read: "Standalone Read"
+        "This review should stand on its own."
+
+
+review OutlineCriticReview: "Outline Critic Review"
+    subject: OutlineDraft
+    contract: OutlineContract
+    comment_output: SharedReviewCarrier
+
+    fields:
+        verdict
+        reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner
+
+    contract_checks: "Contract Checks"
+        accept "The outline review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact OutlineDraft via SharedReviewCarrier.current_artifact
+
+    on_reject: "If Rejected"
+        current artifact OutlineDraft via SharedReviewCarrier.current_artifact
+        route "Outline changes route back to the outline producer." -> OutlineProducer
+
+
+review PolishCriticReview: "Polish Critic Review"
+    subject: PolishDraft
+    contract: PolishContract
+    comment_output: SharedReviewCarrier
+
+    fields:
+        verdict
+        reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        current_artifact
+        failing_gates: failure_detail.failing_gates
+        next_owner
+
+    contract_checks: "Contract Checks"
+        accept "The polish review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current artifact PolishDraft via SharedReviewCarrier.current_artifact
+
+    on_reject: "If Rejected"
+        current artifact PolishDraft via SharedReviewCarrier.current_artifact
+        route "Polish changes route back to the polish producer." -> PolishProducer
+
+
+agent OutlineCritic:
+    role: "Review outline drafts with the shared review carrier."
+    review: OutlineCriticReview
+    inputs: "Inputs"
+        OutlineDraft
+    outputs: "Outputs"
+        SharedReviewCarrier
+    final_output:
+        output: SharedReviewCarrier
+        review_fields:
+            verdict
+            current_artifact
+            next_owner
+
+
+agent PolishCritic:
+    role: "Review polish drafts with the shared review carrier."
+    review: PolishCriticReview
+    inputs: "Inputs"
+        PolishDraft
+    outputs: "Outputs"
+        SharedReviewCarrier
+    final_output:
+        output: SharedReviewCarrier
+        review_fields:
+            verdict
+            current_artifact
+            next_owner

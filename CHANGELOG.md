@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Release kind: Non-breaking
 Release channel: stable
 Language version: 4.0 -> 4.1
-Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), the numbered example corpus (`135_review_carrier_structured` and `137_role_home_shared_rules_split`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes, `examples/README.md` index).
+Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), output record bodies may now bind `next_owner:` to the resolved review route with a `via review.on_*.route` clause (new compile code `E317`), the numbered example corpus (`135_review_carrier_structured`, `136_review_shared_route_binding`, and `137_role_home_shared_rules_split`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes and the new `E317` row, `examples/README.md` index).
 Who must act: no one. Every existing valid program compiles and emits unchanged.
 Who does not need to act: authors using split-mode review carriers, authors with existing role homes, and runtime consumers of emitted Markdown or contract JSON.
 Upgrade steps: optional. Authors of review-driven agents may collapse identical comment and final outputs by declaring one carrier output plus `final_output.review_fields:`. Authors of role homes may split always-on ledger and protocol prose into a `shared_rules:` slot.
@@ -31,6 +31,19 @@ Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata 
   `LANGUAGE_DESIGN_NOTES.md` section recommend the stdlib pattern of
   splitting always-on `shared_rules:` from role-specific
   `how_to_take_a_turn:` on an abstract role home.
+- Output record bodies may include a `via review.on_accept.route` or
+  `via review.on_reject.route` clause inside a `next_owner:` field body.
+  The clause is a compile-time structural assertion: it proves the field
+  is bound to the resolved review route without requiring a literal
+  `{{TargetAgent}}` interpolation. The prose on the shared carrier stays
+  layer-neutral, so one shape can back multiple critics whose
+  `on_reject` routes differ. A new compile code `E317` fires when the
+  named section does not match the branch that resolved the route, or
+  when more than one `via` clause appears in one override body.
+- Example `136_review_shared_route_binding` proves the shared-carrier
+  pattern with two critic agents that share one output declaration,
+  plus compile-fail fixtures for `E317` (section mismatch) and `E496`
+  (missing `via` and missing literal interpolation still fails loud).
 
 ### Changed
 - `E500` semantics: was "final_output review_fields may not be repeated on
