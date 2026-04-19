@@ -8,15 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-Release kind: Non-breaking
+Release kind: Breaking
 Release channel: stable
-Language version: 4.0 -> 4.1
-Affected surfaces: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), output record bodies may now bind `next_owner:` to the resolved review route with a `via review.on_*.route` clause (new compile code `E317`), output shapes may now declare `selector:` with `case EnumType.member:` dispatch inside their bodies and agents bind the selector with `selectors:` (new compile codes `E318` and `E319`), the numbered example corpus (`135_review_carrier_structured`, `136_review_shared_route_binding`, `137_role_home_shared_rules_split`, and `138_output_shape_case_selector`), docs (`LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md` `E500` notes and the new `E317`, `E318`, `E319` rows, `examples/README.md` index).
-Who must act: no one. Every existing valid program compiles and emits unchanged.
-Who does not need to act: authors using split-mode review carriers, authors with existing role homes, and runtime consumers of emitted Markdown or contract JSON.
-Upgrade steps: optional. Authors of review-driven agents may collapse identical comment and final outputs by declaring one carrier output plus `final_output.review_fields:`. Authors of role homes may split always-on ledger and protocol prose into a `shared_rules:` slot.
+Language version: 4.0 -> 5.0
+Affected surfaces:
+- 4.0 -> 4.1 additive moves: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), `via review.on_*.route` binding inside `next_owner:` output bodies (new compile code `E317`), `selector:` on `output shape` with `case EnumType.member:` dispatch plus agent-side `selectors:` binding (new compile codes `E318` and `E319`), and the numbered example corpus additions (`135_review_carrier_structured`, `136_review_shared_route_binding`, `137_role_home_shared_rules_split`, `138_output_shape_case_selector`).
+- 4.1 -> 5.0 breaking cut: the `output schema` field `type:` slot (the inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form are deleted), readable `row_schema` and `item_schema` entry bodies, readable table column bodies, and record-scalar bodies (all four surfaces now accept `type: <EnumName>` to name a declared `enum`), a new compile code `E320` for `type:` names that are neither a builtin primitive nor a resolvable `enum`, the renderer (now emits one `Valid values: ...` line per typed field under a unified helper), the JSON-schema lowering path (now appends `One of ...` after a field description when both a description and a closed vocabulary are present), six shipped examples that migrated from the deleted forms (`79/AGENTS.prompt`, `79/optional_no_example/AGENTS.prompt`, `79/invalid_invalid_example/AGENTS.prompt`, `85/AGENTS.prompt`, `90/AGENTS.prompt`, `121/AGENTS.prompt`), the new example `139_enum_typed_field_bodies`, and docs (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `AGENT_IO_DESIGN_NOTES.md`, `VERSIONING.md`, `COMPILER_ERRORS.md`, `examples/README.md`).
+Who must act: authors whose `.prompt` files use the inline `type: enum` plus `values:` form or the legacy `type: string` plus `enum:` form on any `output schema` field, and downstream tooling that parsed those syntactic forms.
+Who does not need to act: authors who already typed `output schema` fields with a declared `enum`, authors who only use builtin primitive `type:` values, authors using split-mode review carriers or existing role homes, and runtime consumers of emitted Markdown or emitted JSON schemas (the wire shape is preserved; only the rendered `Valid values:` line is new).
+Upgrade steps: (1) install the matching release from your package index; (2) for every `output schema` field that used `type: enum` plus `values:`, lift the member list into a new top-level `enum X: "..."` decl and rewrite the field body as `type: X`; (3) for every legacy `type: string` plus `enum:` field, do the same; (4) on any readable `row_schema` / `item_schema` entry, table column, or record scalar that previously listed a vocabulary as prose, declare the `enum` once and rewrite the body as `type: X`; (5) re-run `make verify-examples` and `make verify-diagnostics` and confirm `E320` fires only on truly unknown names.
 Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
-Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
+Support-surface version changes: Doctrine language 4.0 -> 5.0; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
 
 ### Added
 - Carrier-mode review-driven agents may now declare `final_output.review_fields:`
@@ -87,6 +89,33 @@ Support-surface version changes: Doctrine language 4.0 -> 4.1; package metadata 
 - `examples/136_review_shared_route_binding` and
   `examples/138_output_shape_case_selector` manifests cover every new
   failure mode and the cross-flow and inherited-shape happy paths.
+
+### Breaking (language 4.1 -> 5.0)
+- One canonical form for closed field vocabularies. On every field-shaped
+  surface — `output schema` fields, readable `row_schema` and `item_schema`
+  entries, readable table columns, and record scalars — declare `enum X:
+  "..."` once and type the field body with `type: X`. The renderer emits
+  one `Valid values: ...` line per typed field in declared order under a
+  unified helper. The JSON-schema lowering path emits the same members as
+  `enum`.
+- Deleted the inline `type: enum` plus `values:` form that `output schema`
+  fields once accepted.
+- Deleted the legacy `type: string` plus `enum:` form that `output schema`
+  fields once accepted.
+- Tightened the field `type:` slot: names that are neither a builtin
+  primitive nor a resolvable `enum` now fail loud with a new compile code
+  `E320`. The message names the hit and suggests either declaring the
+  enum or using a builtin primitive.
+- Extended the typed `type:` slot to `row_schema`, `item_schema`, table
+  columns, and record scalars. Glossary and label nodes (`properties`
+  items and `definitions` items) stay prose-only by design.
+- Example `139_enum_typed_field_bodies` ships the canonical form on a
+  `row_schema` entry with `render_contract` and `compile_fail` cases.
+- Migrated six shipped example prompts (`79/AGENTS.prompt`,
+  `79/optional_no_example/AGENTS.prompt`,
+  `79/invalid_invalid_example/AGENTS.prompt`, `85/AGENTS.prompt`,
+  `90/AGENTS.prompt`, `121/AGENTS.prompt`) off the deleted forms onto the
+  canonical `enum X` plus `type: X` form.
 
 Use this section for work that is not public yet.
 

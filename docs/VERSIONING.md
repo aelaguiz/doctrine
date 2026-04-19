@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 4.1
+Current Doctrine language version: 5.0
 
 ## The Version Lines
 
@@ -140,9 +140,10 @@ Every public release uses one release class.
   conditional emitted `SKILL.contract.json` sidecars for host-bound packages is
   an `additive` release when older inline skills and older skill packages
   still keep working unchanged.
-- Adding `type: enum` plus `values:` for local `output schema` enums is an
-  `additive` release when legacy `type: string` plus `enum:` still works and
-  emitted schema files keep the same string-enum wire shape.
+- Adding `type: enum` plus `values:` for local `output schema` enums was an
+  `additive` release when legacy `type: string` plus `enum:` still worked and
+  emitted schema files kept the same string-enum wire shape. Both forms are
+  deleted in the 4.1 → 5.0 breaking cut below.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.
@@ -173,6 +174,18 @@ Every public release uses one release class.
   identity, inherited selector-backed shapes, and duplicate or unknown
   selector bindings. Language 4.1 itself is unchanged; only the diagnostic
   surface got sharper.
+- Unifying field vocabularies on one canonical form is `breaking`. The 4.1 →
+  5.0 cut deletes the inline `type: enum` plus `values:` form and the legacy
+  `type: string` plus `enum:` form that `output schema` fields once accepted.
+  The canonical form is to declare `enum X: "..."` once and type the field
+  with `type: X`. Four field-shaped surfaces now accept `type: <EnumName>`
+  with identical rendering: output-schema fields, readable `row_schema` and
+  `item_schema` entries, readable table columns, and record scalars. The
+  renderer emits a `Valid values: ...` line in declared order; the
+  JSON-schema path emits the same members as `enum`. Typing against an
+  unknown name fails loud with `E320`. Advances the language line from
+  `4.0` / `4.1` to `5.0`. Glossary and label nodes (`properties` items,
+  `definitions` items) stay prose-only by design.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

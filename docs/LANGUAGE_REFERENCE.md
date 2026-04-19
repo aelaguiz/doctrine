@@ -853,6 +853,15 @@ Important rules:
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.
 - Output shapes can be named with `output shape`.
+- An `output shape` may declare a `selector:` block naming one or more keys
+  with `key as EnumType`. Each key must resolve to a closed enum.
+- Inside a shape with a `selector:`, body items may use `case EnumType.member:`
+  blocks for per-case content. Cases must cover every enum member exactly once
+  and must not overlap. `case` outside a shape body, or without a `selector:`,
+  is fail-loud (`E318`).
+- An agent that points `final_output` at a shape with a `selector:` must bind
+  every selector key under a `selectors:` block. Duplicates, unknown keys, and
+  bindings to a same-named enum from a different flow are fail-loud (`E319`).
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` remains the owner-aware attachment point for
   `output schema` when the shape kind is `JsonObject`.
@@ -868,10 +877,14 @@ Important rules:
 - `required` and `optional` are retired on this surface. Doctrine still
   parses them there only so it can raise targeted upgrade errors.
 - Doctrine does not ship `?` shorthand for `output schema` fields.
-- For a local closed string vocabulary inside `output schema`, prefer
-  `type: enum` plus `values:`.
-- In the first cut, legacy `type: string` plus `enum:` still compiles.
-  Both forms lower to the same emitted string-enum wire shape.
+- For a closed vocabulary on any field-shaped surface — output-schema
+  fields, `row_schema` / `item_schema` entries, table columns, and record
+  scalars — declare `enum X: "..."` once and type the field with `type: X`.
+  The renderer emits a `Valid values: <k1>, <k2>, ...` line in declared
+  order under the typed field; the JSON-schema lowering path emits the
+  same members as `enum`. Typing against an unknown name fails loud with
+  `E320`. See `examples/139_enum_typed_field_bodies/` for the canonical
+  form on a `row_schema` entry.
 - A structured final output may declare a first-class routed owner with
   `route field`.
 - A `route field` owns the route choice keys, labels, and named target agents
@@ -922,15 +935,21 @@ Important rules:
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 
-Preferred local inline enum form:
+Canonical form for a closed field vocabulary:
 
 ```prompt
+enum Status: "Status"
+    ok: "OK"
+    action_required: "Action Required"
+
 field status: "Status"
-    type: enum
-    values:
-        ok
-        action_required
+    type: Status
 ```
+
+The same `type: <EnumName>` form types a `row_schema` or `item_schema`
+entry, a readable table column, or a record scalar. Every typed field
+renders the same `Valid values: ok, action_required.` line in declared
+order. Typing against an unknown name fails loud with `E320`.
 
 Nullable field example:
 
@@ -1086,6 +1105,14 @@ Important rules:
   `prompts`. Provider roots come from the Python API, not from host TOML.
 - Cross-flow imports only see declarations marked `export`. Non-exported
   declarations stay private to their home flow and fail loud with `E314`.
+- The `export` keyword is a leading modifier on a declaration line, for
+  example `export workflow Foo: "Foo"` or `export agent Bar:`. A declaration
+  without `export` is private to its home flow regardless of its visibility
+  name.
+- Sibling `.prompt` files inside one flow share one namespace and reach each
+  other by bare name. Using `from <same-flow> import Name` is fail-loud
+  (`E315`). Two sibling declarations with the same name collide fail-loud
+  (`E316`).
 - A file-backed `<module>.prompt` import is a compile-time boundary with one
   prompt file as its full flow surface.
 - A directory-backed `<module>/AGENTS.prompt` import is a runtime package
@@ -1219,6 +1246,67 @@ Important rules:
   surface.
 - `wire:` is optional and remains the host-facing or serialized value.
 - The one-line member form remains legal shorthand for `title == wire`.
+
+### Typed Field Bodies
+
+When a field's value comes from a small fixed vocabulary, declare the enum
+once and type the field with that name. The language ships exactly one
+canonical form:
+
+```prompt
+enum StepRole: "Step Role"
+    introduce: "Introduce"
+    practice: "Practice"
+    test: "Test"
+    capstone: "Capstone"
+```
+
+Every field-shaped surface then carries `type: <EnumName>` in the field
+body:
+
+```prompt
+# output-schema field
+output schema ReviewSchema: "Review Schema"
+    field status: "Status"
+        type: StepRole
+
+# row_schema entry on a readable table
+table step_arc: "Step Arc" required
+    row_schema:
+        step_role: "Step Role"
+            type: StepRole
+            "Name the step's role in the arc."
+
+# item_schema entry on a readable list
+sequence read_order: "Read Order"
+    item_schema:
+        step_role: "Step Role"
+            type: StepRole
+
+# readable table column
+columns:
+    step_role: "Step Role"
+        type: StepRole
+        "Coach guidance level for the step."
+
+# record scalar on a structured comment output
+output StepNote: "Step Note"
+    target: TurnResponse
+    shape: Comment
+    message as step_role: "Step Role"
+        type: StepRole
+```
+
+The renderer emits the same `Valid values: introduce, practice, test, capstone.`
+line in declared order under each typed field. The JSON-schema lowering
+path emits the same member keys as `enum`. Typing against an unknown
+name fails loud with `E320`.
+
+Glossary and label nodes (`properties` and `definitions` items) stay
+prose-only by design.
+
+See `examples/139_enum_typed_field_bodies/` for the canonical form on a
+`row_schema` entry, backed by `render_contract` and `compile_fail` cases.
 
 The shipped expression surface supports:
 

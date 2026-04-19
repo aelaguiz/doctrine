@@ -170,6 +170,48 @@ See
 [../examples/138_output_shape_case_selector/](../examples/138_output_shape_case_selector/)
 for a three-role producer / critic / composer example.
 
+## One Canonical Form For Typed Field Bodies
+
+When a field's value comes from a small fixed vocabulary, the language
+ships exactly one canonical form: declare the enum once, then type the
+field with that name.
+
+```prompt
+enum StepRole: "Step Role"
+    introduce: "Introduce"
+    practice: "Practice"
+    test: "Test"
+    capstone: "Capstone"
+
+table step_arc: "Step Arc"
+    row_schema:
+        step_role: "Step Role"
+            type: StepRole
+            "Name the step's role in the arc."
+```
+
+Four surfaces accept the same `type: <EnumName>` form: output-schema
+fields, readable `row_schema` / `item_schema` entries, readable table
+columns, and record scalars. Every typed field renders the same
+`Valid values: ...` line in declared order. Typing against an unknown
+name fails loud with `E320`.
+
+Two prior forms that once appeared on output-schema fields are retired
+in 5.0. The inline `type: enum` with `values:` block and the legacy
+`type: string` with a sibling `enum:` block no longer parse; authors
+rewrite to the canonical form. The migration is mechanical: lift the
+member list to a new `enum X: "..."` decl, then write `type: X` on the
+field.
+
+Glossary and label nodes (`properties` items and `definitions` items)
+stay prose-only by design. They are name/description pairs, not
+field-shaped slots.
+
+See [../examples/139_enum_typed_field_bodies/](../examples/139_enum_typed_field_bodies/)
+for the canonical form on a `row_schema` entry, with `render_contract`
+and `compile_fail` cases that make the `Valid values:` rendering and the
+`E320` fail-loud behavior manifest-enforced.
+
 ## Skill Package Host Binding Design
 
 `host_contract:` lets a `skill package` declare the typed slots it needs

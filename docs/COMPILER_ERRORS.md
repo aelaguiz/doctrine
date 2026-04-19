@@ -97,9 +97,7 @@ Stability rules:
 | `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
 | `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
-| `E227` | Output schema inline enum is missing `values:` | An `output schema` entry uses `type: enum` but does not define a `values:` block. |
-| `E228` | Output schema `values:` requires `type: enum` | An `output schema` entry uses `values:` without the new `type: enum` form. |
-| `E229` | Output schema inline enum form is mixed or invalid | An `output schema` entry mixes `type: enum` with legacy `enum:` or uses legacy `enum:` with the wrong type. |
+| `E227`-`E229` | Retired in language 5.0 | Covered the deleted inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form for `output schema` fields. Both forms are removed in 5.0; the canonical form is `enum X: "..."` plus `type: X`. Unknown `type:` names now fail loud under `E320`. Codes stay reserved to avoid accidental reuse. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
 | `E236` | Output schema `required` is retired | `required` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to delete it. Output-schema object properties still stay present on the wire today. |
 | `E237` | Output schema `optional` is retired | `optional` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to use `nullable` when the value may be `null`. |
