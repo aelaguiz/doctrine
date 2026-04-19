@@ -9,6 +9,12 @@ from doctrine._compiler.output_schema_diagnostics import (
     output_schema_compile_error,
     output_schema_related_site,
 )
+from doctrine._compiler.resolve.field_types import (
+    BuiltinTypeRef,
+    EnumTypeRef,
+    FieldTypeRef,
+    resolve_field_type_ref,
+)
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 from doctrine._compiler.support_files import _dotted_decl_name
 
@@ -39,6 +45,7 @@ _OUTPUT_SCHEMA_JSON_KEY_MAP = {
 @dataclass(slots=True)
 class _OutputSchemaNodeParts:
     type_name: str | None = None
+    type_ref: FieldTypeRef | None = None
     type_source_span: model.SourceSpan | None = None
     note: str | None = None
     format_name: str | None = None
@@ -1091,7 +1098,23 @@ class ResolveOutputSchemasMixin:
                 )
             return schema
 
-        resolved_type = parts.type_name
+        # Phase 2 shape: `parts.type_ref` is populated for any authored
+        # `type: <CNAME>` that is a builtin or an enum decl. Form A
+        # (`type: enum` + `values:`) leaves `type_ref = None` and mutates
+        # `parts.type_name` / `parts.enum_values` during normalization;
+        # Form B (`type: string` + `enum:`) sets `type_ref` to the string
+        # builtin and fills `parts.enum_values` separately. The
+        # `parts.enum_values` fallback path goes away in Phase 3.
+        enum_values_from_ref: tuple[model.OutputSchemaLiteralValue, ...] = ()
+        if isinstance(parts.type_ref, BuiltinTypeRef):
+            resolved_type = parts.type_ref.name
+        elif isinstance(parts.type_ref, EnumTypeRef):
+            resolved_type = "string"
+            enum_values_from_ref = tuple(
+                member.key for member in parts.type_ref.decl.members
+            )
+        else:
+            resolved_type = parts.type_name
         if resolved_type is None:
             if parts.items_value is not None:
                 resolved_type = "array"
@@ -1186,7 +1209,9 @@ class ResolveOutputSchemasMixin:
             schema["format"] = parts.format_name
         if parts.pattern is not None:
             schema["pattern"] = parts.pattern
-        if parts.enum_values:
+        if enum_values_from_ref:
+            schema["enum"] = list(enum_values_from_ref)
+        elif parts.enum_values:
             schema["enum"] = list(parts.enum_values)
         if parts.has_const:
             schema["const"] = parts.const_value
@@ -1358,6 +1383,17 @@ class ResolveOutputSchemasMixin:
                         )
                     parts.type_name = item.value
                     parts.type_source_span = item.source_span
+                    # `type: enum` is the Form A marker handled by
+                    # `_normalize_output_schema_inline_enum`; skip the shared
+                    # resolver there so Form A keeps compiling in this phase.
+                    # Form B (`type: string`) resolves cleanly to a builtin.
+                    if item.value != "enum":
+                        parts.type_ref = resolve_field_type_ref(
+                            item.value,
+                            span=item.source_span,
+                            unit=unit,
+                            lookup_enum=self._try_resolve_enum_decl,
+                        )
                     continue
                 if item.key == "note":
                     if not isinstance(item.value, str):

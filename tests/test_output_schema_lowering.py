@@ -477,6 +477,132 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 self.assertEqual(error.code, expected_code)
                 self.assertIn(expected_text, str(error))
 
+    def test_type_naming_local_enum_lowers_to_string_with_member_keys(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            enum RepoStatus: "Repo Status"
+                ok: "OK"
+                action_required: "Action Required"
+
+            output schema StatusPayload: "Status Payload"
+                field status: "Status"
+                    type: RepoStatus
+                    note: "Current outcome."
+            """,
+            schema_name="StatusPayload",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["status"],
+            {
+                "title": "Status",
+                "description": "Current outcome.",
+                "type": "string",
+                "enum": ["ok", "action_required"],
+            },
+        )
+
+    def test_type_naming_enum_in_def_and_field_produces_canonical_shape(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            enum StepRole: "Step Role"
+                introduce: "Introduce"
+                practice: "Practice"
+
+            output schema LessonPayload: "Lesson Payload"
+                field step_role: "Step Role"
+                    type: StepRole
+
+                def StepRoleDef: "Step Role Def"
+                    type: StepRole
+            """,
+            schema_name="LessonPayload",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["step_role"],
+            {
+                "title": "Step Role",
+                "type": "string",
+                "enum": ["introduce", "practice"],
+            },
+        )
+        self.assertEqual(
+            lowered["$defs"]["StepRoleDef"],
+            {
+                "title": "Step Role Def",
+                "type": "string",
+                "enum": ["introduce", "practice"],
+            },
+        )
+
+    def test_type_naming_unknown_cname_raises_e320(self) -> None:
+        error = self._lower_output_schema_error(
+            """
+            output schema BrokenPayload: "Broken Payload"
+                field status: "Status"
+                    type: NotADeclaredName
+            """,
+            schema_name="BrokenPayload",
+        )
+        self.assertEqual(error.code, "E320")
+        self.assertIn("NotADeclaredName", str(error))
+
+    def test_type_naming_non_enum_decl_raises_e320(self) -> None:
+        # A bare CNAME that happens to name an existing output-schema decl is
+        # not an enum; the helper must still raise E320 rather than silently
+        # writing {"type": "AnotherSchema"}.
+        error = self._lower_output_schema_error(
+            """
+            output schema AnotherSchema: "Another Schema"
+                field inner: "Inner"
+                    type: string
+
+            output schema BrokenPayload: "Broken Payload"
+                field status: "Status"
+                    type: AnotherSchema
+            """,
+            schema_name="BrokenPayload",
+        )
+        self.assertEqual(error.code, "E320")
+        self.assertIn("AnotherSchema", str(error))
+
+    def test_form_a_and_type_naming_enum_lower_to_equivalent_shapes(self) -> None:
+        # Form A (`type: enum` + `values:`) and the canonical enum-named form
+        # produce byte-identical `type` + `enum` properties for the same
+        # member keys; this locks Phase 2's preservation claim.
+        _, form_a_lowered = self._lower_output_schema(
+            """
+            output schema Payload: "Payload"
+                field status: "Status"
+                    type: enum
+                    values:
+                        ok
+                        action_required
+            """,
+            schema_name="Payload",
+        )
+        _, canonical_lowered = self._lower_output_schema(
+            """
+            enum RepoStatus: "Repo Status"
+                ok: "OK"
+                action_required: "Action Required"
+
+            output schema Payload: "Payload"
+                field status: "Status"
+                    type: RepoStatus
+            """,
+            schema_name="Payload",
+        )
+        self.assertEqual(
+            form_a_lowered["properties"]["status"]["type"],
+            canonical_lowered["properties"]["status"]["type"],
+        )
+        self.assertEqual(
+            form_a_lowered["properties"]["status"]["enum"],
+            canonical_lowered["properties"]["status"]["enum"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

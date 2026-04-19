@@ -151,11 +151,10 @@ def _check_final_output_invalid_lowered_schema_has_specific_code() -> None:
             compile_prompt(prompt, "RepoStatusAgent")
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E217", f"expected E217, got {getattr(exc, 'code', None)}")
-            _expect("Draft 2020-12" in str(exc), str(exc))
-            _expect("output schema RepoStatusSchema" in str(exc), str(exc))
+            _expect(getattr(exc, "code", None) == "E320", f"expected E320, got {getattr(exc, 'code', None)}")
+            _expect("definitely_not_a_real_json_schema_type" in str(exc), str(exc))
             return
-        raise SmokeFailure("expected compile failure for invalid lowered final_output schema, but compilation succeeded")
+        raise SmokeFailure("expected compile failure for unknown output-schema `type:` name, but compilation succeeded")
 
 
 def _check_final_output_excessive_nesting_has_specific_code() -> None:

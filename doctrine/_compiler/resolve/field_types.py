@@ -11,9 +11,8 @@ builtin-or-enum path.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Protocol, TypeAlias
 
 from doctrine import model
 from doctrine._compiler.indexing import IndexedUnit
@@ -41,7 +40,10 @@ class EnumTypeRef:
 FieldTypeRef: TypeAlias = BuiltinTypeRef | EnumTypeRef
 
 
-EnumLookup: TypeAlias = Callable[[model.NameRef, IndexedUnit], model.EnumDecl | None]
+class EnumLookup(Protocol):
+    def __call__(
+        self, ref: model.NameRef, *, unit: IndexedUnit
+    ) -> model.EnumDecl | None: ...
 
 
 def resolve_field_type_ref(
@@ -63,7 +65,7 @@ def resolve_field_type_ref(
         declaration_name=name,
         source_span=span,
     )
-    decl = lookup_enum(ref, unit)
+    decl = lookup_enum(ref, unit=unit)
     if decl is not None:
         return EnumTypeRef(ref=ref, decl=decl)
     raise _raise_e320(name=name, span=span, unit=unit)

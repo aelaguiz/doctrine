@@ -37,7 +37,7 @@ class FieldTypeRefTests(unittest.TestCase):
                     name,
                     span=SourceSpan(1, 1),
                     unit=_fake_unit(),
-                    lookup_enum=lambda _ref, _unit: None,
+                    lookup_enum=lambda _ref, *, unit: None,
                 )
                 self.assertIsInstance(ref, BuiltinTypeRef)
                 self.assertEqual(ref.name, name)
@@ -52,7 +52,7 @@ class FieldTypeRefTests(unittest.TestCase):
         enum_decl = _enum("StepRole", "introduce", "practice", "test", "capstone")
         captured_refs: list[model.NameRef] = []
 
-        def lookup(ref: model.NameRef, _unit: object) -> model.EnumDecl | None:
+        def lookup(ref: model.NameRef, *, unit: object) -> model.EnumDecl | None:
             captured_refs.append(ref)
             return enum_decl if ref.declaration_name == "StepRole" else None
 
@@ -76,7 +76,7 @@ class FieldTypeRefTests(unittest.TestCase):
         # helper cares only that a non-None EnumDecl came back.
         imported_decl = _enum("Imported", "a", "b")
 
-        def lookup(_ref: model.NameRef, _unit: object) -> model.EnumDecl | None:
+        def lookup(_ref: model.NameRef, *, unit: object) -> model.EnumDecl | None:
             return imported_decl
 
         result = resolve_field_type_ref(
@@ -98,7 +98,7 @@ class FieldTypeRefTests(unittest.TestCase):
                 "MyTable",
                 span=SourceSpan(5, 10),
                 unit=_fake_unit(),
-                lookup_enum=lambda _ref, _unit: None,
+                lookup_enum=lambda _ref, *, unit: None,
             )
 
         self.assertEqual(ctx.exception.diagnostic.code, "E320")
@@ -110,7 +110,7 @@ class FieldTypeRefTests(unittest.TestCase):
                 "Whatever",
                 span=SourceSpan(7, 3),
                 unit=_fake_unit(),
-                lookup_enum=lambda _ref, _unit: None,
+                lookup_enum=lambda _ref, *, unit: None,
             )
 
         self.assertEqual(ctx.exception.diagnostic.code, "E320")
@@ -122,7 +122,7 @@ class FieldTypeRefTests(unittest.TestCase):
                 "Oops",
                 span=span,
                 unit=_fake_unit(),
-                lookup_enum=lambda _ref, _unit: None,
+                lookup_enum=lambda _ref, *, unit: None,
             )
 
         location = ctx.exception.diagnostic.location

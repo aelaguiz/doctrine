@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
-from typing import Literal as _Literal, TypeAlias as _TypeAlias
+from typing import Literal as _Literal, TYPE_CHECKING, TypeAlias as _TypeAlias
 
 from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
+
+if TYPE_CHECKING:
+    from doctrine._compiler.resolve.field_types import FieldTypeRef
 
 
 @_dataclass(slots=True, frozen=True)
@@ -270,6 +273,7 @@ class OutputSchemaField:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -278,6 +282,7 @@ class OutputSchemaDef:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -294,6 +299,7 @@ class OutputSchemaRouteField:
     key: str
     title: str
     items: tuple["OutputSchemaRouteBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

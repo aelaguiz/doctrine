@@ -3886,13 +3886,15 @@ class CompileDiagnosticTests(unittest.TestCase):
                 CompilationSession(prompt).compile_agent("RepoStatusAgent")
 
         error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E217")
+        self.assertEqual(error.diagnostic.code, "E320")
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index('output schema RepoStatusSchema: "Repo Status Schema"') + 1,
+        rendered_lines = rendered.splitlines()
+        type_line_number = next(
+            index + 1
+            for index, line in enumerate(rendered_lines)
+            if "type: definitely_not_a_real_json_schema_type" in line
         )
-        self.assertIn("not valid Draft 2020-12 JSON Schema", str(error))
+        self.assertEqual(error.diagnostic.location.line, type_line_number)
         self.assertIn("definitely_not_a_real_json_schema_type", str(error))
 
     def test_final_output_openai_subset_failure_points_at_schema_line(self) -> None:
