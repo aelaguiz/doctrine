@@ -166,7 +166,7 @@ Falsification: if after landing, (a) any field-shaped surface in the shipped gra
 - **New consolidated example** `examples/139_enum_typed_field_bodies/` demonstrating the typed form on the primary motivating surface (readable `row_schema` typed column) with manifest-backed render_contract + compile-fail cases.
 - **Language bump 4.1 → 5.0** (major breaking) in `docs/VERSIONING.md` and `CHANGELOG.md` with explicit breaking-change notes and migration guidance.
 - **Shipped skills teach the new shape explicitly (confirmed in-scope).**
-  - `agent-linter`: new finding **AL930** (prose vocabularies must become enum-typed fields) plus an AL200 extension naming pipe-list vocabularies as a canonical duplicate-rule shape. Edit the `.prompt` source; regenerate curated/build outputs.
+  - `agent-linter`: new finding **AL950** (prose vocabularies must become enum-typed fields) plus an AL200 extension naming pipe-list vocabularies as a canonical duplicate-rule shape. Edit the `.prompt` source; regenerate curated/build outputs. Note: `AL930` and `AL940` are already live (`Skill Needs Host Contract` and `Role Prose Shadows Typed Skill Scope` respectively), so the new finding takes the next free slot `AL950`.
   - `doctrine-learn`: new authoring-pattern row (task-first chooser: "fixed vocabulary on a field → declare `enum` + `type: X`"); add example 139 to the examples ladder. Edit the `.prompt` source; regenerate curated/build outputs.
 - **All authoritative docs are updated (confirmed in-scope).** Every doc that carries shipped truth about field-shaped surfaces reflects the new fragment: `docs/LANGUAGE_REFERENCE.md`, `docs/LANGUAGE_DESIGN_NOTES.md`, `docs/COMPILER_ERRORS.md` (E320 entry), `docs/VERSIONING.md`, `CHANGELOG.md`, `examples/README.md` if it indexes typed patterns, and any `docs/README.md` index line that names the relevant surfaces. Drift between code, docs, and examples is a blocker for Definition of Done.
 
@@ -177,7 +177,7 @@ Falsification: if after landing, (a) any field-shaped surface in the shipped gra
 - Extending the affected IR classes to carry an optional resolved type ref (`type_ref: NameRef | None` or equivalent, mirroring `OutputShapeSelectorConfig.enum_ref` at `doctrine/_model/io.py:252`).
 - Touching emit paths (`emit_docs.py`, `emit_common.py`) so every field-shaped surface renders the shared "Valid values: …" description line from the unified IR.
 - **Migrating every shipped example that uses a deleted form** to the canonical form. Expected touches include (but are not limited to) `examples/79_final_output_output_schema/` and any other example that uses inline `values:` or legacy `enum:` blocks. Exact list is enumerated during `deep-dive`.
-- Touching the agent-linter prompt source (`skills/agent-linter/prompts/refs/finding_catalog.prompt`, `examples.prompt`) to add AL930 and extend AL200.
+- Touching the agent-linter prompt source (`skills/agent-linter/prompts/refs/finding_catalog.prompt`, `examples.prompt`) to add AL950 and extend AL200.
 - Touching the doctrine-learn prompt source (`skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` and the examples ladder) to add the authoring-pattern row and example 139 entry.
 
 **Adjacent surfaces in scope (same contract family).**
@@ -190,7 +190,7 @@ Falsification: if after landing, (a) any field-shaped surface in the shipped gra
 **Compatibility posture.**
 - **Clean cutover, breaking change.** Language 4.1 → 5.0 major bump. Existing programs that use deleted forms fail to compile under 5.0; authors migrate to the one canonical form. No timeboxed bridge, no runtime shim, no parser-side legacy branch.
 - The shipped example corpus is migrated in-pass. Downstream Doctrine repos (including `psflows`) are responsible for their own migration; AGENTS.md plain-language migration guidance ships with the CHANGELOG entry.
-- The agent-linter flags any remaining prose-vocabulary pattern via AL930; doctrine-learn teaches the canonical form in the authoring-pattern chooser.
+- The agent-linter flags any remaining prose-vocabulary pattern via AL950; doctrine-learn teaches the canonical form in the authoring-pattern chooser.
 
 ## 0.3 Out of scope
 
@@ -209,7 +209,7 @@ Falsification: if after landing, (a) any field-shaped surface in the shipped gra
 - `uv run --locked python -m doctrine.verify_corpus --manifest examples/139_.../cases.toml` passes for render_contract + compile_fail cases on the new example.
 - **Resolver unit tests per surface.** Each field-shaped surface named in Section 0.2 has a test that proves: (a) `type: <BuiltinName>` resolves; (b) `type: <EnumName>` resolves and carries the resolved enum ref; (c) `type: <UnknownName>` raises E320; (d) neither deleted form parses anywhere; (e) prose description still renders alongside the type slot.
 - **Behavior preservation for the canonical form (not for deleted forms).** For every migrated example that previously used a secondary enum form, the emitted JSON schema (for output schemas) contains the same enum values in the same order as before migration. A resolver-level assertion test proves this explicitly so the migration is not eyeballed.
-- Skill curated outputs regenerate cleanly: `skills/.curated/agent-linter/references/finding-catalog.md` carries AL930 and the AL200 extension, `skills/.curated/agent-linter/references/examples.md` carries the before/after pair, `skills/.curated/doctrine-learn/references/authoring-patterns.md` carries the new row, and the doctrine-learn examples ladder lists example 139.
+- Skill curated outputs regenerate cleanly: `skills/.curated/agent-linter/references/finding-catalog.md` carries AL950 and the AL200 extension, `skills/.curated/agent-linter/references/examples.md` carries the before/after pair, `skills/.curated/doctrine-learn/references/authoring-patterns.md` carries the new row, and the doctrine-learn examples ladder lists example 139.
 - Every authoritative doc named in Section 0.2 reflects the new shape. `docs/LANGUAGE_DESIGN_NOTES.md` records the one-canonical-form decision. `docs/COMPILER_ERRORS.md` has E320. `docs/VERSIONING.md` + `CHANGELOG.md` name the 4.1 → 5.0 breaking bump with explicit migration guidance.
 - **Downstream sanity check (local, uncommitted).** A scratch conversion of `psflows/lesson_plan`'s `step_role` prose into the canonical form compiles in isolation against this branch (excerpt-only per the psflows-read-only rule). This is the final proof the language now carries the motivating case.
 - **No file under `../psflows` is modified in this branch's diff.**
@@ -335,7 +335,7 @@ Every non-output-schema field-shaped surface uses an `_INDENT block_lines _DEDEN
 - **Language reference** — `docs/LANGUAGE_REFERENCE.md`. Every surface that gets a new structured body must get a new subsection.
 - **Language design notes** — `docs/LANGUAGE_DESIGN_NOTES.md`. The "prose-by-design" claim for readable bodies, if true, is probably documented here and must be updated in the same pass.
 - **Versioning** — `docs/VERSIONING.md`, `CHANGELOG.md`. Language 4.1 → 5.0 major breaking entry.
-- **Shipped skills** — `skills/agent-linter/prompts/refs/finding_catalog.prompt` (AL930 + AL200), `skills/agent-linter/prompts/refs/examples.prompt` (before/after pair), `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` (new row), plus the doctrine-learn examples ladder.
+- **Shipped skills** — `skills/agent-linter/prompts/refs/finding_catalog.prompt` (AL950 + AL200), `skills/agent-linter/prompts/refs/examples.prompt` (before/after pair), `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` (new row), plus the doctrine-learn examples ladder.
 - **Example corpus** — `examples/29_enums` (existing enum decl reference), `examples/79_final_output_output_schema` (existing `type: enum` + `values:` pattern), `examples/137`/`138` (recent carrier/shape patterns for precedent). New `examples/139_...` lands one end-to-end manifest-backed case.
 
 ### Diagnostic codes inventory
@@ -360,7 +360,7 @@ Every non-output-schema field-shaped surface uses an `_INDENT block_lines _DEDEN
 
 ### Capability-first check
 
-- This is a compile-time language change, not an agent/LLM behavior change. Capability-first ladder does not apply. The "prompt-fixed vs. grounded" distinction is relevant only to the *downstream* psflows refactor (out of scope here) and to the agent-linter finding AL930 (which will teach authors to prefer the structured form).
+- This is a compile-time language change, not an agent/LLM behavior change. Capability-first ladder does not apply. The "prompt-fixed vs. grounded" distinction is relevant only to the *downstream* psflows refactor (out of scope here) and to the agent-linter finding AL950 (which will teach authors to prefer the structured form).
 
 ## 3.3 Decision gaps that must be resolved before implementation
 
@@ -695,8 +695,8 @@ N/A.
 | Docs | `CHANGELOG.md` | Version history | Add 5.0 entry: (a) deleted `type: enum` + `values:` form, (b) deleted `type: string` + `enum:` form, (c) tightened `type:` to fail loud with E320, (d) added structured `type:` to row_schema / item_schema / table column / record scalar, (e) migration: declare `enum X: "..."` then write `type: X` | Required | — | `make verify-package` |
 | Docs | `docs/AGENT_IO_DESIGN_NOTES.md` | References Form A ("type: enum") | Update to canonical form | Consistency | — | doc-diff |
 | Docs | `docs/README.md` | Index lines | Verify no stale references; update if typed field bodies are indexed | Consistency | — | doc-diff |
-| Skill source | `skills/agent-linter/prompts/refs/finding_catalog.prompt` | Finding table + sections | Add AL930 "Inlined Vocabulary Should Be An Enum-Typed Field" row + full section; extend AL200 section to name pipe-list vocabularies as a canonical duplicate-rule shape | User-confirmed scope | — | regenerate curated; diff `skills/.curated/agent-linter/references/finding-catalog.md` |
-| Skill source | `skills/agent-linter/prompts/refs/examples.prompt` | Example pairs | Add AL930 before/after pair (prose pipe-list in role vs. enum decl + typed field) | Same | — | regenerate; diff `skills/.curated/agent-linter/references/examples.md` |
+| Skill source | `skills/agent-linter/prompts/refs/finding_catalog.prompt` | Finding table + sections | Add AL950 "Inlined Vocabulary Should Be An Enum-Typed Field" row + full section; extend AL200 section to name pipe-list vocabularies as a canonical duplicate-rule shape | User-confirmed scope | — | regenerate curated; diff `skills/.curated/agent-linter/references/finding-catalog.md` |
+| Skill source | `skills/agent-linter/prompts/refs/examples.prompt` | Example pairs | Add AL950 before/after pair (prose pipe-list in role vs. enum decl + typed field) | Same | — | regenerate; diff `skills/.curated/agent-linter/references/examples.md` |
 | Skill source | `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` | Task-first chooser | Add row: "I need a field's value to come from a fixed vocabulary → declare `enum X` and set the field's `type: X`. Do not list values as prose. See `examples/139_enum_typed_field_bodies`." | User-confirmed scope | — | regenerate; diff `skills/.curated/doctrine-learn/references/authoring-patterns.md` |
 | Skill source | `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` | Form A guidance | Rewrite "type: enum" + "values:" passages to canonical form | Consistency | — | regenerate curated |
 | Skill source | `skills/doctrine-learn/prompts/refs/` (examples ladder) | Ladder entry | Add example 139 entry (exact filename verified during phase-plan) | User-confirmed scope | — | regenerate |
@@ -1006,14 +1006,16 @@ Verification:
   - `CHANGELOG.md` and `docs/VERSIONING.md` carry the 5.0 entry with the five-bullet summary.
 * Rollback: revert the doc edits. Phases 1–6 artifacts remain.
 
-## Phase 8 — Shipped skills: agent-linter AL930 + AL200 extension, doctrine-learn authoring-pattern + ladder
+## Phase 8 — Shipped skills: agent-linter AL950 + AL200 extension, doctrine-learn authoring-pattern + ladder
 
+* Status: COMPLETE 2026-04-19. `skills/agent-linter/prompts/refs/finding_catalog.prompt` now carries the AL950 table row and full `al950` section ("Inlined Vocabulary Should Be An Enum-Typed Field"), plus an extended AL200 row and section naming pipe-list vocabularies as a canonical duplicate-rule shape. `AL950` is added to `hybrid_checks`. `skills/agent-linter/prompts/refs/examples.prompt` carries a new `Example 8.5: Good Inlined-Vocabulary Finding` before/after pair. `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` carries a new task-first chooser row naming the canonical form and cross-referencing `examples/139_enum_typed_field_bodies`. `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` drops Form A/B, teaches the canonical `enum X` + `type: X` form, and retires the legacy bullets. `skills/doctrine-learn/prompts/refs/examples_ladder.prompt` lists example 139 on the sixth rung. Curated outputs regenerated via `uv run --locked python -m doctrine.emit_skill`. `make verify-examples` and `make verify-diagnostics` green.
 * Goal: the two shipped skills that teach Doctrine authoring now teach the canonical form explicitly. `agent-linter` flags the anti-pattern (pipe-list prose vocabulary) with a new finding code; `doctrine-learn` surfaces the canonical form in its task-first chooser and lists example 139 in its examples ladder.
-* Work: edit `skills/agent-linter/prompts/refs/finding_catalog.prompt` to add the AL930 entry "Inlined Vocabulary Should Be An Enum-Typed Field" (table row plus full section with *what it means*, *why it matters*, *default fix*, *good/bad* pair), and extend the AL200 section to name pipe-list vocabularies as a canonical duplicate-rule shape. Edit `skills/agent-linter/prompts/refs/examples.prompt` to add the AL930 before/after pair (prose pipe-list in role vs. enum decl + typed field). Edit `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` to add the task-first chooser row ("I need a field's value to come from a fixed vocabulary → declare `enum X` and set the field's `type: X`. Do not list values as prose. See `examples/139_enum_typed_field_bodies`."). Rewrite any Form A / Form B guidance in `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` to the canonical form. Add an example-139 entry to the doctrine-learn examples ladder (exact ladder filename verified during implement — candidate filenames include `examples_ladder.prompt` or similar under `skills/doctrine-learn/prompts/refs/`). Regenerate curated and build outputs per the emit pipeline in `pyproject.toml` (current scripts under `skills/<name>/pyproject` convention). Confirm the generated `.md` files in `skills/.curated/agent-linter/references/finding-catalog.md`, `skills/.curated/agent-linter/references/examples.md`, `skills/.curated/doctrine-learn/references/authoring-patterns.md` (and the ladder curated output) carry the new content.
+* Plan-integrity note (2026-04-19): `AL930` and `AL940` are already live (`Skill Needs Host Contract` and `Role Prose Shadows Typed Skill Scope` in `skills/agent-linter/prompts/refs/finding_catalog.prompt`). The new finding takes the next free slot `AL950`.
+* Work: edit `skills/agent-linter/prompts/refs/finding_catalog.prompt` to add the AL950 entry "Inlined Vocabulary Should Be An Enum-Typed Field" (table row plus full section with *what it means*, *why it matters*, *default fix*, *good/bad* pair), and extend the AL200 section to name pipe-list vocabularies as a canonical duplicate-rule shape. Edit `skills/agent-linter/prompts/refs/examples.prompt` to add the AL950 before/after pair (prose pipe-list in role vs. enum decl + typed field). Edit `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` to add the task-first chooser row ("I need a field's value to come from a fixed vocabulary → declare `enum X` and set the field's `type: X`. Do not list values as prose. See `examples/139_enum_typed_field_bodies`."). Rewrite any Form A / Form B guidance in `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` to the canonical form. Add an example-139 entry to the doctrine-learn examples ladder (`skills/doctrine-learn/prompts/refs/examples_ladder.prompt`). Regenerate curated and build outputs per the emit pipeline in `pyproject.toml` (current scripts under `skills/<name>/pyproject` convention). Confirm the generated `.md` files in `skills/.curated/agent-linter/references/finding-catalog.md`, `skills/.curated/agent-linter/references/examples.md`, `skills/.curated/doctrine-learn/references/authoring-patterns.md` (and the ladder curated output) carry the new content.
 * Checklist (must all be done):
-  - `skills/agent-linter/prompts/refs/finding_catalog.prompt` contains the AL930 table row and full section with *what it means*, *why it matters*, *default fix*, *good / bad* pair, all at 7th-grade reading level.
+  - `skills/agent-linter/prompts/refs/finding_catalog.prompt` contains the AL950 table row and full section with *what it means*, *why it matters*, *default fix*, *good / bad* pair, all at 7th-grade reading level.
   - `skills/agent-linter/prompts/refs/finding_catalog.prompt` AL200 section names pipe-list vocabularies as a canonical duplicate-rule shape.
-  - `skills/agent-linter/prompts/refs/examples.prompt` contains the AL930 before/after pair.
+  - `skills/agent-linter/prompts/refs/examples.prompt` contains the AL950 before/after pair.
   - `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` contains the task-first chooser row naming the canonical form and cross-referencing `examples/139_enum_typed_field_bodies`.
   - `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` no longer contains Form A or Form B guidance; its examples use the canonical form.
   - The doctrine-learn examples ladder lists example 139 (exact ladder filename identified during implement by reading the `skills/doctrine-learn/` source tree).
@@ -1022,7 +1024,7 @@ Verification:
 * Verification (required proof):
   - The curated `.md` diffs show the expected new/edited content and nothing incidental.
   - `make verify-examples` and `make verify-diagnostics` remain green.
-  - A spot-read of `skills/.curated/agent-linter/references/finding-catalog.md` shows AL930 and the extended AL200 rendered correctly.
+  - A spot-read of `skills/.curated/agent-linter/references/finding-catalog.md` shows AL950 and the extended AL200 rendered correctly.
   - A spot-read of `skills/.curated/doctrine-learn/references/authoring-patterns.md` shows the new task-first chooser row.
 * Docs/comments (propagation; only if needed): none beyond what this phase ships.
 * Exit criteria (all required):
@@ -1123,7 +1125,7 @@ N/A — no runtime telemetry in this repo's scope.
 **Context.** User confirmed the drafted North Star and reinforced three requirements explicitly.
 
 **Decision.** Status `draft` → `active`. The following are locked in as confirmed in-scope and out-of-scope:
-- **In scope:** updates to the shipped `agent-linter` skill (AL930 + AL200 extension) and the shipped `doctrine-learn` skill (authoring-pattern row + examples-ladder entry). Edit `.prompt` source, regenerate curated outputs.
+- **In scope:** updates to the shipped `agent-linter` skill (AL950 + AL200 extension; `AL930`/`AL940` are already live, so the new finding takes the next free slot `AL950`) and the shipped `doctrine-learn` skill (authoring-pattern row + examples-ladder entry). Edit `.prompt` source, regenerate curated outputs.
 - **In scope:** every authoritative doc that carries truth about field-shaped surfaces is updated (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`, `CHANGELOG.md`, plus any index lines that name the relevant surfaces).
 - **Out of scope (hard):** no edits to `../psflows`. Reference excerpts only.
 
@@ -1196,7 +1198,7 @@ N/A — no runtime telemetry in this repo's scope.
 - **Editor snapshots move with the corpus.** `editors/vscode/tests/snap/examples/...` caches shipped example artifacts. Regenerated via `cd editors/vscode && make` after the migration lands.
 
 **Consequences.**
-- Section 7 phase plan has a clear earliest-first skeleton: (1) shared resolver + `FieldTypeRef` + E320 + builtin whitelist enforcement (2) IR model plumbing (`type_ref` on structured surfaces first) (3) grammar deletion of Form A/Form B (4) grammar extension + IR plumbing for prose-only surfaces (5) emit uniformity via `render_valid_values_line` (6) shipped example migration + behavior-preservation assertion tests (7) example 139 creation (8) docs + version bump + `CHANGELOG.md` (9) skills regeneration (agent-linter AL930 + AL200; doctrine-learn authoring pattern + ladder) (10) editor snapshot regeneration + final verification.
+- Section 7 phase plan has a clear earliest-first skeleton: (1) shared resolver + `FieldTypeRef` + E320 + builtin whitelist enforcement (2) IR model plumbing (`type_ref` on structured surfaces first) (3) grammar deletion of Form A/Form B (4) grammar extension + IR plumbing for prose-only surfaces (5) emit uniformity via `render_valid_values_line` (6) shipped example migration + behavior-preservation assertion tests (7) example 139 creation (8) docs + version bump + `CHANGELOG.md` (9) skills regeneration (agent-linter AL950 + AL200; doctrine-learn authoring pattern + ladder) (10) editor snapshot regeneration + final verification.
 - No open blockers. Every row in Section 6's change map has either a concrete file path + symbol or a "identified in phase-plan" flag for convention calls (e.g., exact record-scalar class name, ladder filename).
 - Plan is decision-complete for deep-dive. Ready to advance to `phase-plan`.
 
@@ -1246,3 +1248,53 @@ N/A — no runtime telemetry in this repo's scope.
 
 **Follow-ups.**
 - Phase 7 — bulk docs sweep: `LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `AGENT_IO_DESIGN_NOTES.md`, `VERSIONING.md` 4.1 → 5.0, `CHANGELOG.md` 5.0 entry, `COMPILER_ERRORS.md` E320 row cross-check, `examples/README.md` (entry already added in Phase 6).
+
+## 2026-04-19 — Phase 7 complete; authoritative docs synced to 5.0
+
+**Context.** `implement-loop` ran Phase 7. Every authoritative doc that carries shipped truth about field-shaped surfaces now reflects the new canonical form. The 4.1 → 5.0 breaking change is recorded in versioning and the changelog with a full migration path. Commit `4096c36 docs(phase 7): sync authoritative docs + 4.1 -> 5.0 bump + CHANGELOG entry`.
+
+**Key decisions.**
+- **Language reference gains one new subsection.** `docs/LANGUAGE_REFERENCE.md` teaches the canonical `enum X` plus `type: X` form in the output-schema subsection (Form A / Form B code samples are gone) and adds a new "Typed Field Bodies" subsection with code samples for output-schema fields, `row_schema` / `item_schema` entries, readable table columns, and record scalars. Every typed field renders the same `Valid values: …` line in declared order; glossary and label nodes stay prose-only.
+- **Design notes keep one decision entry.** `docs/LANGUAGE_DESIGN_NOTES.md` adds "One Canonical Form For Typed Field Bodies" naming the four supporting surfaces, the glossary/label prose-only exception, and example 139 as the manifest-enforced proof.
+- **Agent IO notes drop Form A/B.** `docs/AGENT_IO_DESIGN_NOTES.md` no longer teaches the inline `type: enum` plus `values:` form. The canonical-form snippet cross-references example 139.
+- **Versioning + changelog record the breaking cut.** `docs/VERSIONING.md` bumps "Current Doctrine language version" to 5.0 and adds a 4.1 → 5.0 breaking entry naming the deleted forms, E320, and the canonical migration. `CHANGELOG.md` gets a `### Breaking (language 4.1 -> 5.0)` block with the five bullets mandated by the plan: (a) canonical `enum X` + `type: X` on all four field-shaped surfaces with the unified `Valid values: …` render, (b) deleted inline `type: enum` + `values:`, (c) deleted legacy `type: string` + `enum:`, (d) tightened `type:` fail-loud with E320, (e) example 139 as proof plus the six migrated shipped examples.
+- **COMPILER_ERRORS retires E227-E229 as reserved.** The rows that named the old Form A/B diagnostics now point to a single retirement note naming 5.0; codes stay reserved to avoid accidental reuse. E320 stays consistent with the registered message template in `doctrine/diagnostics.py`.
+- **docs/README.md is accurate for 5.0.** Re-read; its index lines name `output schema` generically, never naming Form A / Form B. No change needed.
+
+**Consequences.**
+- `make verify-examples`, `make verify-diagnostics`, and `make verify-package` all green on the Phase 7 tip.
+- Plan-integrity gap (Phase 8 `AL930` collision) stays open — resolved in the Phase 8 commit, not here.
+
+**Follow-ups.**
+- Phase 8 — shipped-skill updates: add AL950 finding + extend AL200 in `agent-linter`; add task-first chooser row + example 139 ladder entry in `doctrine-learn`; rewrite Form A/B guidance in `outputs_and_schemas.prompt`; regenerate curated outputs.
+
+## 2026-04-19 — AL930 → AL950: plan-integrity fix for the new agent-linter finding
+
+**Context.** The plan drafted "Inlined Vocabulary Should Be An Enum-Typed Field" under `AL930`. A fresh scan of `skills/agent-linter/prompts/refs/finding_catalog.prompt` shows `AL930` is already live as "Skill Needs Host Contract" (line 53) and `AL940` is live as "Role Prose Shadows Typed Skill Scope" (line 54). Both codes are reserved.
+
+**Decision.** The new finding takes the next free slot **`AL950`**. Rename every plan-doc reference outside the Implementation Audit block from `AL930` to `AL950`; keep the audit block's narrative references to `AL930` as history of the collision. Apply the same rename to Section 0.2, Section 6.1, Section 7 Phase 8 heading + checklist, Section 10 North Star note, and the deep-dive consequences bullet.
+
+**Consequences.**
+- Phase 8 source edits use `AL950` throughout. Curated `.md` outputs will carry `AL950` and the extended `AL200` row.
+- No impact on Phase 7 (CHANGELOG already shipped without a numeric AL reference); the Phase 8 CHANGELOG follow-up bullet names `AL950` explicitly.
+
+**Follow-ups.**
+- Apply the Phase 8 `.prompt` edits under `AL950`; regenerate curated outputs; confirm `skills/.curated/agent-linter/references/finding-catalog.md` carries `AL950`.
+
+## 2026-04-19 — Phase 8 complete; shipped skills teach the canonical form
+
+**Context.** `implement-loop` ran Phase 8. Both shipped skills that teach Doctrine authoring now surface the canonical form explicitly.
+
+**Key decisions.**
+- **`agent-linter` adds `AL950` "Inlined Vocabulary Should Be An Enum-Typed Field."** The finding names a fixed set of values listed as prose (common shape: a pipe list inside a role step, or the same vocabulary repeated on the producer role and on a critic gate) and points the smallest-credible fix at `enum X` + `type: X`. `AL950` is added to `hybrid_checks` (side signals plus model judgment). The `AL200` row and section are extended to name pipe-list vocabularies as a canonical duplicate-rule shape and to cross-reference `AL950`.
+- **`agent-linter` examples add one before/after pair (`Example 8.5`).** The good example shows a critic gate disappearing once the vocabulary moves to an `enum` decl plus `type: StepRole` on the schema. The bad example is a vague one-liner that does not name the real fix.
+- **`doctrine-learn` adds one task-first chooser row.** "I need a field's value to come from a fixed vocabulary → declare `enum X` and set the field's `type: X`." The row names all four field-shaped surfaces and cross-references `examples/139_enum_typed_field_bodies`. The `outputs_and_schemas.prompt` field-shapes section now teaches `type: <EnumName>` as the one canonical form and explicitly retires the two pre-5.0 forms. The `examples_ladder.prompt` sixth rung lists example 139.
+- **No cross-skill reference.** The two skills keep clean separation per current convention. `agent-linter` does not cite `doctrine-learn`, and vice versa.
+
+**Consequences.**
+- `make verify-examples` and `make verify-diagnostics` green at Phase 8 tip. Curated outputs regenerated via `uv run --locked python -m doctrine.emit_skill` carry every new fragment.
+- Phase 8 Exit criteria met: all four `.prompt` source edits are in place; the examples ladder lists example 139; curated `.md` outputs are regenerated.
+- The plan Phase 8 skill-teaches-the-canonical-form objective lands without cutting any approved scope.
+
+**Follow-ups.**
+- Phase 9 — VS Code editor snapshot regeneration, full verify suite at the branch tip, psflows scratch conversion under read-only rule, and the final implementation-complete Decision Log entry.

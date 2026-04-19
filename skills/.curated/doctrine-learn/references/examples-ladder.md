@@ -142,6 +142,11 @@ reference material.
   declarations reused by local document table keys.
 - `examples/117_io_omitted_wrapper_titles` — omitted first-class IO
   wrapper titles lower one direct declaration.
+- `examples/139_enum_typed_field_bodies` — one canonical form for
+  field vocabularies. Declare `enum X: "..."` once, then write `type: X`
+  on an `output schema` field, a `row_schema` / `item_schema` entry, a
+  table column, or a record scalar. The schema owns the vocabulary; the
+  role body does not restate it.
 
 After this rung, you will stop forcing schemas where a readable
 document belongs and stop forcing documents where typed gates belong.

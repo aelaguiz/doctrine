@@ -89,16 +89,17 @@ before target config rows.
 `kind: JsonObject`.
 
 ```prompt-fragment
+enum RepoStatus: "Repo Status"
+    ok: "OK"
+    action_required: "Action Required"
+
 output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
         note: "Short natural-language status."
 
     field status: "Status"
-        type: enum
-        values:
-            ok
-            action_required
+        type: RepoStatus
         note: "Current repo outcome."
 
     field next_step: "Next Step"
@@ -141,7 +142,9 @@ Type intrinsics:
 - `type: number`
 - `type: integer`
 - `type: boolean`
-- `type: enum` with a `values:` block (preferred shipped form)
+- `type: <EnumName>` for a closed vocabulary. Declare the enum once
+  with `enum EnumName: "..."` and one member per value, then write
+  `type: EnumName` on the field. See `examples/139_enum_typed_field_bodies`.
 - `type: object` with nested `field` lines or an `any_of:` block
 
 Range and shape constraints:
@@ -166,9 +169,14 @@ Nullability:
 
 Enums:
 
-- For a local closed string vocabulary, prefer `type: enum` plus `values:`.
-- Legacy `type: string` plus `enum:` still compiles in the first cut. Both
-  forms lower to the same emitted string-enum wire shape.
+- Doctrine 5.0 ships exactly one canonical form for field
+  vocabularies: declare `enum EnumName: "..."` once, then write
+  `type: EnumName` on the field. The same form applies to readable
+  `row_schema` entries, readable `item_schema` entries, readable table
+  columns, and record scalars.
+- The inline `type: enum` + `values:` form and the legacy
+  `type: string` + `enum:` form are deleted in 5.0. Typing against an
+  unknown enum name fails loud with `E320`.
 
 ### Example Blocks
 
@@ -326,6 +334,10 @@ turn." The emitted route contract still carries `route.selector` with the
 bound field path and null behavior.
 
 ```prompt
+enum TurnResultKind: "Turn Result Kind"
+    handoff: "Handoff"
+    done: "Done"
+
 output schema WriterTurnResultSchema: "Writer Turn Result Schema"
     route field next_route: "Next Route"
         revise_more: "Send to RevisionPartner for one more pass." -> RevisionPartner
@@ -333,10 +345,7 @@ output schema WriterTurnResultSchema: "Writer Turn Result Schema"
         note: "Use null when the writer can finish without a handoff."
 
     field kind: "Kind"
-        type: enum
-        values:
-            handoff
-            done
+        type: TurnResultKind
 
     field summary: "Summary"
         type: string

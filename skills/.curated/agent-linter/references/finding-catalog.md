@@ -10,7 +10,7 @@ Use this file to calibrate what strong findings look like.
 | `AL110` | Pasted Reference Instead Of Pointer | Long reference text is pasted where a shared pointer should exist. | Replace the pasted block with a pointer to one shared source. |
 | `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. | Move the reusable method into a skill. |
 | `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
-| `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. | Lift the repeated rule into one shared skill or module. |
+| `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \| B \| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
 | `AL210` | Repeated Method Should Become A Skill | Several agents carry the same decision method without a shared skill owner. | Extract the shared method into a skill. |
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
 | `AL230` | Semantic Duplicate Across Agents | Several targets say the same rule in different words. | Collapse the semantic copies behind one shared owner. |
@@ -40,6 +40,7 @@ Use this file to calibrate what strong findings look like.
 | `AL900` | Skill Too Broad | One skill mixes several unrelated jobs or reads like a handbook. | Split the skill by job and keep one repeatable method per skill. |
 | `AL910` | Shared Law Trapped In Local Text | One local role carries a rule that should be shared by many roles. | Lift the shared law into a shared module or skill. |
 | `AL920` | Compiler-Owned Semantics Restated In Prose | Prose restates verdicts, routing, or other semantics the compiler already owns. | Delete the prose copy and point at the declared surface. |
+| `AL950` | Inlined Vocabulary Should Be An Enum-Typed Field | A fixed set of values is listed as prose (for example `A \| B \| C`) instead of a declared `enum` typed onto a field. | Declare `enum X: "..."` once, then write `type: X` on the field. |
 
 ## Full Calibration
 
@@ -77,12 +78,13 @@ Bad: `Inherit the full ReviewerWorkflow` with no remaining reference to it.
 
 ### `AL200` Duplicate Rule Across Agents
 
-What it means: The same rule or step list appears in several agents.
-Why it matters: One rule should have one owner.
-Default fix: Lift the repeated rule into one shared skill or module.
+What it means: The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A | B | C`) and repeated on several roles, or repeated once on a role and again as a critic gate check, is a canonical shape of this finding.
+Why it matters: One rule should have one owner. When the repeat is a value vocabulary, the two copies drift and the critic gate can silently fall behind the producer prose.
+Default fix: Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. The rendered schema now owns the vocabulary and the critic stops restating it. See also: `AL950`.
 Shared owner: Almost always required.
 Good: `Use the shared ClaimEvidenceCheck skill before you finalize work.`
 Bad: `Check each claim against a source quote. Mark weak quotes. Remove unsupported claims.` in three different roles.
+Bad: `step_role values are introduce | practice | test | capstone` written once on the producer role and again as a critic gate.
 
 ### `AL210` Repeated Method Should Become A Skill
 
@@ -320,6 +322,15 @@ Default fix: Delete the prose copy and point at the declared surface.
 Good: `Follow the declared route surface.`
 Bad: `If branch A happens, route to Reviewer; if branch B happens, stop with no owner.` copied into prose beside the real route surface.
 
+### `AL950` Inlined Vocabulary Should Be An Enum-Typed Field
+
+What it means: A fixed set of values is listed as prose instead of a declared `enum` typed onto a field. Common shapes are a pipe list (`A | B | C`) inside a role step, or a vocabulary repeated once on the producer role and again as a critic gate check.
+Why it matters: The prose copy and the gate copy will drift. The rendered schema should own the vocabulary, not the role body.
+Default fix: Declare `enum X: "..."` once with one member per value. Set the field's `type: X` on the schema, row_schema, item_schema, table column, or record scalar. Delete the prose and the duplicate gate line.
+Good: `type: StepRole` on the `step_role` field, backed by `enum StepRole: "Step Role"` with members `introduce`, `practice`, `test`, `capstone`.
+Bad: `step_role values are introduce | practice | test | capstone` written in the role body, plus `step_role_in_vocabulary` as a separate critic gate.
+See also: `AL200` for the duplicate-rule framing, and `examples/139_enum_typed_field_bodies/` for the canonical form.
+
 ## Severity
 
 - `high`: likely to mislead the agent or create conflicting truth
@@ -350,6 +361,7 @@ These checks benefit most from exact side signals plus model judgment:
 - `AL540`
 - `AL700`
 - `AL920`
+- `AL950`
 
 Useful exact side signals:
 

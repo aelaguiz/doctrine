@@ -137,6 +137,13 @@ to copy."""
   it without restating rows.
   See `examples/116_first_class_named_tables`.
 
+- I need a field's value to come from a fixed vocabulary.
+  Declare `enum X: "..."` once with one member per value. Set the field's
+  `type: X` on an `output schema` field, a readable `row_schema` or
+  `item_schema` entry, a table column, or a record scalar. Do not list
+  the values as prose on the role or as a separate critic gate.
+  See `examples/139_enum_typed_field_bodies`.
+
 - I need portable current truth the next owner can trust.
   Put the current artifact on the output and add a small `trust_surface`.
   Only type the fields the next owner must trust mechanically.

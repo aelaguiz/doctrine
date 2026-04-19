@@ -296,6 +296,46 @@ Shared owner:
 Maybe shorten it.
 """
 
+        section example_8_5: "Example 8.5: Good Inlined-Vocabulary Finding"
+            "Why it is good:"
+            bullets why:
+                "it names the pipe list as the shape that matters"
+                "it points at the canonical form instead of asking for vague rewording"
+                "it names the critic-gate copy that drifts once the vocabulary moves"
+
+            "Good:"
+            code:
+                language: md
+                text: """[MEDIUM] AL950 Inlined vocabulary should be an enum-typed field
+
+Target: `LessonStepPlanner` (producer role) and `LessonStepCritic` gate `step_role_in_vocabulary`
+
+Summary: The `step_role` vocabulary is written as prose on the producer role and repeated as a separate critic gate check. No `enum` declaration owns the four values.
+
+Evidence:
+- Role body: "`step_role` values are `introduce | practice | test | capstone`."
+- Critic gate body: "Fail if `step_role` is not one of `introduce`, `practice`, `test`, `capstone`."
+
+Why it matters: Two prose copies of the same vocabulary drift by hand. The rendered schema should own the four values so the critic gate can disappear.
+
+Smallest credible fix: Declare `enum StepRole: "Step Role"` with members `introduce`, `practice`, `test`, `capstone`. Set `type: StepRole` on the `step_role` field. Delete the producer prose and the critic gate.
+
+Shared owner:
+- Kind: enum declaration
+- Name: `StepRole`
+- Why: The vocabulary is shared by the schema, the producer, and the critic, so it should have one declared home.
+
+Suggested rewrite:
+Declare `enum StepRole: "Step Role"` once. Type `step_role` as `StepRole` on the field. See `examples/139_enum_typed_field_bodies/` for the canonical form on a `row_schema` entry.
+
+See also: `AL200`.
+"""
+            "Bad:"
+            code:
+                language: md
+                text: """The `step_role` list should probably be an enum or something.
+"""
+
         section example_8: "Example 8: Good Harness-Boundary Safety Finding"
             "Why it is good:"
             bullets why:
