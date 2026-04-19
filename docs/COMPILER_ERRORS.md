@@ -120,7 +120,7 @@ Stability rules:
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
 | `E276` | Missing local declaration reference | A local readable, analysis, named-table, output `shape:` ref, or addressable ref points at a declaration that does not exist. |
-| `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
+| `E280` | Missing import module | An imported module could not be found in the active import-root registry. When Doctrine runs through a wrapper harness that owns the import-root registry, use the wrapper's build entrypoint — invoking `python -m doctrine.emit_docs` directly bypasses the wrapper's active roots and surfaces this code. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
 | `E283` | Cyclic workflow composition | `use`-based workflow composition forms a cycle. |
@@ -150,11 +150,12 @@ Stability rules:
 | `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
 | `E312` | `self:` needs a declaration-root addressable context | `self:` was used on a surface that does not carry a live declaration-root addressable context. Use an explicit `Root:path` ref there. |
 | `E314` | Imported declaration is not exported | A cross-flow import reached the target flow, but the requested declaration stays internal because it is not marked `export`. |
-| `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. |
+| `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. Sibling `.prompt` files inside one flow reach each other by bare ref — see the "Flow Boundaries And Exports" section of `doctrine-learn/references/imports-and-refs.md`. |
 | `E316` | Sibling declaration collision | Two sibling prompt files in the same flow declared the same name, so Doctrine refused to guess which sibling owns it. |
 | `E317` | `via review` clause is misplaced or does not match the resolved outcome | A `via review.<section>.route` clause appears outside a `next_owner:` field body on an output declaration, or appears inside an output shape body, or names the wrong `on_*` section for the branch that resolves the route, or appears more than once in the same body. |
 | `E318` | Output shape selector + case dispatch is malformed | An output shape uses `case ...:` without a `selector:` block, a `case` block appears outside an output shape body, the selector does not resolve to a closed enum, a case selects the wrong enum (including a same-named enum from a different imported flow), the cases overlap, or the cases do not cover every enum member. |
 | `E319` | Agent selector binding is missing or wrong for an output shape | An agent's `final_output` points at an output shape with a `selector:` block, but the agent does not bind that selector under `selectors:`, binds the same selector twice, binds a selector key the shape does not declare, or binds the selector to a member of a same-named enum from a different imported flow. |
+| `E320` | Field `type:` references unknown name | A field's `type: <CNAME>` on any field-shaped surface (output schema field/route field/def, readable `row_schema` entry, readable `item_schema` entry, readable `table` column, record scalar) names something that is neither a builtin primitive (`string`, `integer`, `number`, `boolean`, `object`, `array`, `null`) nor a visible `enum` decl. Declare the enum or use a builtin. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
@@ -193,7 +194,7 @@ Stability rules:
 | Code | Stage | Summary | Notes |
 | --- | --- | --- | --- |
 | `E469` | compile | Review current artifact is outside the review subject set | `current artifact ... via ...` pointed at something other than a declared review subject or an emitted output. |
-| `E470` | compile | Invalid review declaration shape | Review inheritance, `review_family` authoring, case-selected review-family selection, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a missing inherited review family, overlapping or non-exhaustive cases, a duplicate `subject_map` entry, or a kind-mismatched override. |
+| `E470` | compile | Invalid review declaration shape | Review inheritance, `review_family` authoring, case-selected review-family selection, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a missing inherited review family, overlapping or non-exhaustive cases, a duplicate `subject_map` entry, or a kind-mismatched override. Grow the selector enum and the case list together — see the "Growing A Case Family" section of `doctrine-learn/references/reviews.md`. |
 | `E471` | parse | Illegal statement placement in review body | A review statement appeared in the wrong section family, such as `block` inside `on_accept` or `route` inside a pre-outcome review section. |
 | `E472` | parse | Invalid guarded match head | A review `match` head used an invalid guarded fallback shape, such as `else when ...`. |
 | `E473` | compile | Review fields surface is invalid or incomplete | The required `fields:` binding surface is missing or does not bind every required semantic channel. |
