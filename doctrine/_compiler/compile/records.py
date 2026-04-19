@@ -16,6 +16,7 @@ from doctrine._compiler.resolved_types import (
     ReviewSemanticContext,
     RouteSemanticContext,
 )
+from doctrine.emit_common import render_valid_values_line
 
 
 class CompileRecordsMixin:
@@ -93,6 +94,9 @@ class CompileRecordsMixin:
                 )
             if summary is None:
                 return None
+            valid_values = render_valid_values_line(item.type_ref)
+            if valid_values is not None:
+                summary = f"{summary} {valid_values}".strip()
             return f"- {label}: {summary}"
 
         if isinstance(item, model.GuardedOutputScalar):
@@ -346,10 +350,17 @@ class CompileRecordsMixin:
             route_semantics=route_semantics,
             render_profile=render_profile,
         )
+        valid_values = render_valid_values_line(item.type_ref)
         if item.body is None:
+            if valid_values is not None:
+                return (
+                    CompiledSection(title=label, body=(value, valid_values)),
+                )
             return (f"- {label}: {value}",)
 
         body: list[CompiledBodyItem] = [value]
+        if valid_values is not None:
+            body.append(valid_values)
         body.extend(
             self._compile_record_support_items(
                 item.body,

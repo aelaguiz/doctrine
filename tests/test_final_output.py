@@ -585,7 +585,10 @@ class FinalOutputTests(unittest.TestCase):
             "| `route` | object | Yes | No | Routing facts for the next step. |",
             rendered,
         )
-        self.assertIn("| `route.action` | string | Yes | No | Chosen route action. |", rendered)
+        self.assertIn(
+            "| `route.action` | string | Yes | No | Chosen route action. One of `reply`, `handoff`, `end_turn`. |",
+            rendered,
+        )
         self.assertIn(
             "| `route.owner` | string | Yes | Yes | Next owner when a handoff is needed. |",
             rendered,
@@ -1021,7 +1024,10 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Acceptance Review Schema |", rendered)
         self.assertIn("#### Payload Fields", rendered)
-        self.assertIn("| `verdict` | string | Yes | No | Review verdict. |", rendered)
+        self.assertIn(
+            "| `verdict` | string | Yes | No | Review verdict. One of `accepted`, `changes_requested`. |",
+            rendered,
+        )
         self.assertIn("#### Trust Surface", rendered)
         self.assertIn("- Current Artifact", rendered)
         self.assertIn("#### Failure Detail", rendered)

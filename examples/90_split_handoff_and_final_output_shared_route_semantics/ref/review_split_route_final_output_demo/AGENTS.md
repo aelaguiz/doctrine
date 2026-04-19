@@ -80,7 +80,7 @@ List exact failing gates, including Outline Complete when it fails.
 
 | Field | Type | Required On Wire | Null Allowed | Meaning |
 | --- | --- | --- | --- | --- |
-| `route` | string | Yes | No | Control route for the next owner. |
+| `route` | string | Yes | No | Control route for the next owner. One of `follow_up`, `revise`. |
 | `current_artifact` | string | Yes | No | Current artifact after review. |
 | `next_owner` | string | Yes | No | Next owner after review. |
 

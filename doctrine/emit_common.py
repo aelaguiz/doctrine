@@ -1,3 +1,20 @@
+"""Shared emit plumbing for `emit_docs`, `emit_flow`, and `emit_skill`.
+
+This module owns target resolution and the output-layout rules that all three
+emitters share. The high-level story lives in `docs/EMIT_GUIDE.md`; these
+docstrings pin the callable contract (inputs, outputs, error codes) so the
+three emitters can rely on one canonical owner.
+
+Key invariants held here:
+
+- Emitted output for an entrypoint lands under
+  `<target.output_dir>/<entrypoint_relative_dir(target.entrypoint)>`. The
+  `prompts/` directory in the authored tree is the pivot.
+- Only concrete agents emit. The walk in `collect_runtime_emit_roots` picks
+  up concrete agents in the root flow plus first-seen imported runtime
+  packages; file-module imports are traversed but never emit.
+- Target entrypoints must be one of `SUPPORTED_ENTRYPOINTS`.
+"""
 from __future__ import annotations
 
 import re
@@ -21,6 +38,7 @@ from doctrine.project_config import (
 
 if TYPE_CHECKING:
     from doctrine._compiler.indexing import IndexedUnit
+    from doctrine._compiler.resolve.field_types import FieldTypeRef
     from doctrine._compiler.session import CompilationSession
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +46,28 @@ CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
 DOCS_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
 SKILL_ENTRYPOINTS = ("SKILL.prompt",)
 SUPPORTED_ENTRYPOINTS = DOCS_ENTRYPOINTS + SKILL_ENTRYPOINTS
+
+
+# Single rendering path for field vocabularies across all field-shaped surfaces.
+def render_valid_values_line(type_ref: "FieldTypeRef | None") -> str | None:
+    """Format the canonical `Valid values: ...` line for an enum-typed field.
+
+    Returns `"Valid values: <k1>, <k2>, ..., <kn>."` when `type_ref` is an
+    `EnumTypeRef`, drawing each member's declared key in declared order.
+    Returns `None` for `BuiltinTypeRef` or `None`. This is the single
+    rendering path for field vocabularies across every field-shaped
+    surface (readable table columns, readable row_schema and item_schema
+    entries, record scalars, output-schema fields).
+    """
+    from doctrine._compiler.resolve.field_types import EnumTypeRef
+
+    if not isinstance(type_ref, EnumTypeRef):
+        return None
+    values = [member.key for member in type_ref.decl.members]
+    if not values:
+        return None
+    rendered = ", ".join(values)
+    return f"Valid values: {rendered}."
 
 
 @dataclass(slots=True, frozen=True)
@@ -115,6 +155,26 @@ def load_emit_targets(
     start_dir: str | Path | None = None,
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> dict[str, EmitTarget]:
+    """Load `[[tool.doctrine.emit.targets]]` from pyproject.toml.
+
+    Returns a dict keyed by `name`. Each `EmitTarget` carries the resolved
+    entrypoint path, output directory, and the loaded `ProjectConfig`.
+
+    Validation and error codes:
+
+    - E503 — pyproject.toml has no emit targets defined.
+    - E504 — pyproject.toml is missing.
+    - E507 — `pyproject_path` does not point at a `pyproject.toml` file.
+    - E508 — a target entry is not a TOML table.
+    - E509 — duplicate target name.
+    - E510 — entrypoint basename is not in `SUPPORTED_ENTRYPOINTS`.
+    - E511 — `output_dir` resolves to an existing file.
+    - E512/E513 — entrypoint path or required string field is missing/invalid.
+    - E520/E521 — `output_dir` or entrypoint falls outside the project root.
+
+    `provided_prompt_roots` is caller-owned input passed through to
+    `ProjectConfig`; it does not come from host TOML.
+    """
     config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
     project_config = _load_emit_project_config(
         config_path,
@@ -203,6 +263,17 @@ def resolve_direct_emit_target(
     allowed_entrypoints: tuple[str, ...] = SUPPORTED_ENTRYPOINTS,
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> EmitTarget:
+    """Build one `EmitTarget` from a bare entrypoint/output_dir pair.
+
+    This is the CLI-direct path used when no `[tool.doctrine.emit.targets]`
+    entry is available. Runs the same entrypoint, prompts-root, and
+    project-root checks as `load_emit_targets` and raises the same E5xx
+    codes on failure.
+
+    If `pyproject_path` is omitted, the `ProjectConfig` is loaded from the
+    nearest pyproject.toml found above `entrypoint`. `name` defaults to
+    `entrypoint.stem.lower()` when not supplied.
+    """
     base_dir = (Path(start_dir) if start_dir is not None else Path.cwd()).resolve()
     if pyproject_path is not None:
         config_path = resolve_pyproject_path(pyproject_path, start_dir=start_dir)
@@ -291,6 +362,24 @@ def _load_compile_project_config_for_entrypoint(
 def collect_runtime_emit_roots(
     session: "CompilationSession",
 ) -> tuple[RuntimeEmitRoot, ...]:
+    """Return the agents the three emitters should actually write.
+
+    The result is, in order:
+
+    1. Every concrete agent declared in the root flow itself.
+    2. Every first-seen imported *runtime package* reached by walking
+       imports in pre-order from the root flow. Each runtime package must
+       define exactly one concrete agent — that agent is the package's
+       emit root.
+
+    Imports that resolve to ordinary file modules are walked (so their
+    transitive runtime-package imports still surface) but do not themselves
+    emit. Pre-order traversal keeps first-seen ordering stable so the three
+    emitters agree on which package is responsible for a shared surface.
+
+    Raises `CompileError` (E299) if an imported runtime package has zero or
+    more than one concrete agent.
+    """
     root_flow = session.root_flow
     roots = [
         RuntimeEmitRoot(
@@ -382,6 +471,18 @@ def _unit_concrete_agent_names(unit: "IndexedUnit") -> tuple[str, ...]:
 
 
 def entrypoint_relative_dir(entrypoint: Path) -> Path:
+    """Path below the nearest `prompts/` ancestor.
+
+    Walks the parent chain of `entrypoint` and returns the path from the
+    first ancestor named `prompts` down to the entrypoint's parent. Returns
+    an empty `Path()` when the entrypoint sits directly inside `prompts/`.
+
+    This is the pivot every emitter uses to layer output: emitted files for
+    an entrypoint land under `<target.output_dir> / entrypoint_relative_dir(
+    target.entrypoint)`, preserving the authored subtree below `prompts/`.
+
+    Raises emit error E514 when no `prompts/` ancestor is found.
+    """
     resolved = entrypoint.resolve()
     for candidate in [resolved.parent, *resolved.parents]:
         if candidate.name == "prompts":

@@ -26,7 +26,7 @@ Summarize the repo state and end with the declared final output.
 | Field | Type | Required On Wire | Null Allowed | Meaning |
 | --- | --- | --- | --- | --- |
 | `summary` | string | Yes | No | Short natural-language status. |
-| `status` | string | Yes | No | Current repo outcome. |
+| `status` | string | Yes | No | Current repo outcome. One of `ok`, `action_required`. |
 | `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |
 
 #### Example

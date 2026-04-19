@@ -29,6 +29,7 @@ from doctrine._renderer.tables import (
     render_pipe_table as _render_pipe_table,
     render_structured_table as _render_structured_table,
 )
+from doctrine.emit_common import render_valid_values_line
 from doctrine.model import EmphasizedLine, ReadableInlineSchemaData
 
 def _render_block(
@@ -426,6 +427,9 @@ def _render_table_block(
         lines.append("| --- | --- |")
         for column in block.table.columns:
             meaning = " ".join(_render_prose_line(line, profile=profile) for line in column.body).strip()
+            valid_values = render_valid_values_line(column.type_ref)
+            if valid_values is not None:
+                meaning = f"{meaning} {valid_values}".strip()
             lines.append(f"| {column.title} | {meaning} |")
 
     if block.table.notes:
@@ -531,8 +535,11 @@ def _render_inline_schema(
         return []
     lines = [f"_{label}_"]
     for entry in schema.entries:
+        valid_values = render_valid_values_line(entry.type_ref)
         if not entry.body:
             lines.append(f"- {entry.title}")
+            if valid_values is not None:
+                lines.append(f"  {valid_values}")
             continue
         first, *rest = entry.body
         first_text = _render_prose_line(first, profile=profile)
@@ -542,6 +549,8 @@ def _render_inline_schema(
             lines.append(f"- {entry.title}")
         for line in rest:
             lines.append(f"  {_render_prose_line(line, profile=profile)}")
+        if valid_values is not None:
+            lines.append(f"  {valid_values}")
     return lines
 
 

@@ -21,7 +21,7 @@ Choose the next owner from the final output itself.
 
 | Field | Type | Required On Wire | Null Allowed | Meaning |
 | --- | --- | --- | --- | --- |
-| `next_route` | string | Yes | No | Pick the one next owner for this turn. |
+| `next_route` | string | Yes | No | Pick the one next owner for this turn. One of `seek_muse`, `ready_for_critic`. |
 | `summary` | string | Yes | No | Say what changed in this pass. |
 
 - Kind: Json Object
