@@ -116,7 +116,31 @@ prompt = "prompts/invalid_invalid_example/AGENTS.prompt"
 agent = "InvalidInvalidExampleJsonAgent"
 exception_type = "CompileError"
 error_code = "E216"
-location_line = 18
+location_line = 20
+
+[[cases]]
+name = "output-schema final output fails loud when the retired Form A `type: enum` + `values:` form is used"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_retired_form_a_type_enum_values/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "values",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when the retired Form B `type: string` + `enum:` form is used"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_retired_form_b_type_string_enum_block/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "enum",
+]
 
 [[cases]]
 name = "output-schema final output allows missing example and omits the example section"

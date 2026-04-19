@@ -733,18 +733,6 @@ class IoTransformerMixin:
     def output_schema_optional_stmt(self, meta, _items=None):
         return _with_source_span(model.OutputSchemaFlag(key="optional"), meta)
 
-    @v_args(meta=True)
-    def output_schema_enum_block(self, meta, items):
-        return _with_source_span(model.OutputSchemaEnum(values=tuple(items)), meta)
-
-    @v_args(meta=True)
-    def output_schema_values_block(self, meta, items):
-        return _with_source_span(model.OutputSchemaValues(values=tuple(items)), meta)
-
-    @v_args(inline=True)
-    def output_schema_enum_value(self, value):
-        return value
-
     @v_args(meta=True, inline=True)
     def output_schema_variant(self, meta, *children):
         key: str | None = None

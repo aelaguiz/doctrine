@@ -1,9 +1,11 @@
+enum AcceptanceRoute: "Acceptance Route"
+    follow_up: "Follow Up"
+    revise: "Revise"
+
+
 output schema AcceptanceControlSchema: "Acceptance Control Schema"
     field route: "Route"
-        type: enum
-        values:
-            follow_up
-            revise
+        type: AcceptanceRoute
         note: "Control route for the next owner."
 
     field current_artifact: "Current Artifact"

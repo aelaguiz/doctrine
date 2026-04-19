@@ -1,26 +1,9 @@
-enum RepoStatus: "Repo Status"
-    ok: "Ok"
-    action_required: "Action Required"
-
-
 output schema RepoStatusSchema: "Repo Status Schema"
-    field summary: "Summary"
-        type: string
-        note: "Short natural-language status."
-
     field status: "Status"
-        type: RepoStatus
-        note: "Current repo outcome."
-
-    field next_step: "Next Step"
         type: string
-        nullable
-        note: "Null only when no follow-up is needed."
-
-    example:
-        summary: 7
-        status: "ok"
-        next_step: null
+        enum:
+            ok
+            action_required
 
 
 output shape RepoStatusJson: "Repo Status JSON"
@@ -34,7 +17,7 @@ output RepoStatusFinalResponse: "Repo Status Final Response"
     requirement: Required
 
 
-agent InvalidInvalidExampleJsonAgent:
+agent InvalidRetiredFormBAgent:
     role: "Report repo status in structured form."
     workflow: "Summarize"
         "Summarize the repo state and end with the declared final output."

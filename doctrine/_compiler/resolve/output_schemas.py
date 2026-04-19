@@ -10,6 +10,7 @@ from doctrine._compiler.output_schema_diagnostics import (
     output_schema_related_site,
 )
 from doctrine._compiler.resolve.field_types import (
+    BUILTIN_TYPE_NAMES as _OUTPUT_SCHEMA_BUILTIN_TYPES,
     BuiltinTypeRef,
     EnumTypeRef,
     FieldTypeRef,
@@ -18,17 +19,6 @@ from doctrine._compiler.resolve.field_types import (
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 from doctrine._compiler.support_files import _dotted_decl_name
 
-_OUTPUT_SCHEMA_BUILTIN_TYPES = frozenset(
-    {
-        "array",
-        "boolean",
-        "integer",
-        "null",
-        "number",
-        "object",
-        "string",
-    }
-)
 _OUTPUT_SCHEMA_JSON_KEY_MAP = {
     "min_length": "minLength",
     "max_length": "maxLength",
@@ -56,11 +46,6 @@ class _OutputSchemaNodeParts:
     ref_source_span: model.SourceSpan | None = None
     items_value: model.NameRef | tuple[model.OutputSchemaBodyItem, ...] | None = None
     items_source_span: model.SourceSpan | None = None
-    enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
-    legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
-    legacy_enum_source_span: model.SourceSpan | None = None
-    inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
-    inline_enum_source_span: model.SourceSpan | None = None
     any_of: tuple[model.OutputSchemaVariant, ...] = ()
     any_of_source_span: model.SourceSpan | None = None
     fields: tuple[model.OutputSchemaField | model.OutputSchemaRouteField, ...] = ()
@@ -935,12 +920,6 @@ class ResolveOutputSchemasMixin:
             unit=unit,
             owner_label=owner_label,
         )
-        # Normalize the two authored inline-enum forms onto one lowered string-enum path.
-        self._normalize_output_schema_inline_enum(
-            parts,
-            unit=unit,
-            owner_label=owner_label,
-        )
         if not allow_nullable_flag and parts.nullable:
             raise output_schema_compile_error(
                 code="E299",
@@ -961,9 +940,6 @@ class ResolveOutputSchemasMixin:
                 parts.type_name is not None
                 or parts.ref is not None
                 or parts.items_value is not None
-                or parts.enum_values
-                or parts.legacy_enum_values
-                or parts.inline_enum_values
                 or parts.any_of
                 or parts.fields
                 or parts.defs
@@ -997,7 +973,6 @@ class ResolveOutputSchemasMixin:
                 parts.type_name is not None
                 or parts.ref is not None
                 or parts.items_value is not None
-                or parts.enum_values
                 or parts.has_const
                 or parts.fields
             ):
@@ -1056,7 +1031,6 @@ class ResolveOutputSchemasMixin:
             if (
                 parts.type_name is not None
                 or parts.items_value is not None
-                or parts.enum_values
                 or parts.has_const
                 or parts.fields
                 or parts.format_name is not None
@@ -1098,13 +1072,6 @@ class ResolveOutputSchemasMixin:
                 )
             return schema
 
-        # Phase 2 shape: `parts.type_ref` is populated for any authored
-        # `type: <CNAME>` that is a builtin or an enum decl. Form A
-        # (`type: enum` + `values:`) leaves `type_ref = None` and mutates
-        # `parts.type_name` / `parts.enum_values` during normalization;
-        # Form B (`type: string` + `enum:`) sets `type_ref` to the string
-        # builtin and fills `parts.enum_values` separately. The
-        # `parts.enum_values` fallback path goes away in Phase 3.
         enum_values_from_ref: tuple[model.OutputSchemaLiteralValue, ...] = ()
         if isinstance(parts.type_ref, BuiltinTypeRef):
             resolved_type = parts.type_ref.name
@@ -1114,7 +1081,7 @@ class ResolveOutputSchemasMixin:
                 member.key for member in parts.type_ref.decl.members
             )
         else:
-            resolved_type = parts.type_name
+            resolved_type = None
         if resolved_type is None:
             if parts.items_value is not None:
                 resolved_type = "array"
@@ -1211,8 +1178,6 @@ class ResolveOutputSchemasMixin:
             schema["pattern"] = parts.pattern
         if enum_values_from_ref:
             schema["enum"] = list(enum_values_from_ref)
-        elif parts.enum_values:
-            schema["enum"] = list(parts.enum_values)
         if parts.has_const:
             schema["const"] = parts.const_value
         for key, value in parts.constraints:
@@ -1346,8 +1311,6 @@ class ResolveOutputSchemasMixin:
         fields: list[model.OutputSchemaField | model.OutputSchemaRouteField] = []
         defs: list[model.OutputSchemaDef] = []
         route_choices: list[model.OutputSchemaRouteChoice] = []
-        legacy_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
-        inline_enum_values: tuple[model.OutputSchemaLiteralValue, ...] = ()
         variants: tuple[model.OutputSchemaVariant, ...] = ()
         constraints: list[tuple[str, int | float]] = []
         seen_child_items: dict[str, object] = {}
@@ -1383,17 +1346,12 @@ class ResolveOutputSchemasMixin:
                         )
                     parts.type_name = item.value
                     parts.type_source_span = item.source_span
-                    # `type: enum` is the Form A marker handled by
-                    # `_normalize_output_schema_inline_enum`; skip the shared
-                    # resolver there so Form A keeps compiling in this phase.
-                    # Form B (`type: string`) resolves cleanly to a builtin.
-                    if item.value != "enum":
-                        parts.type_ref = resolve_field_type_ref(
-                            item.value,
-                            span=item.source_span,
-                            unit=unit,
-                            lookup_enum=self._try_resolve_enum_decl,
-                        )
+                    parts.type_ref = resolve_field_type_ref(
+                        item.value,
+                        span=item.source_span,
+                        unit=unit,
+                        lookup_enum=self._try_resolve_enum_decl,
+                    )
                     continue
                 if item.key == "note":
                     if not isinstance(item.value, str):
@@ -1520,30 +1478,6 @@ class ResolveOutputSchemasMixin:
                     unit=unit,
                     source_span=item.source_span,
                 )
-            if isinstance(item, model.OutputSchemaEnum):
-                if legacy_enum_values:
-                    raise output_schema_compile_error(
-                        code="E299",
-                        summary="Duplicate output schema enum block",
-                        detail=f"Duplicate output schema enum in {owner_label}",
-                        unit=unit,
-                        source_span=item.source_span,
-                    )
-                legacy_enum_values = item.values
-                parts.legacy_enum_source_span = item.source_span
-                continue
-            if isinstance(item, model.OutputSchemaValues):
-                if inline_enum_values:
-                    raise output_schema_compile_error(
-                        code="E299",
-                        summary="Duplicate output schema values block",
-                        detail=f"Duplicate output schema values block in {owner_label}",
-                        unit=unit,
-                        source_span=item.source_span,
-                    )
-                inline_enum_values = item.values
-                parts.inline_enum_source_span = item.source_span
-                continue
             if isinstance(item, model.OutputSchemaItems):
                 if parts.items_value is not None:
                     raise output_schema_compile_error(
@@ -1656,109 +1590,9 @@ class ResolveOutputSchemasMixin:
         parts.fields = tuple(fields)
         parts.defs = tuple(defs)
         parts.route_choices = tuple(route_choices)
-        parts.legacy_enum_values = legacy_enum_values
-        parts.inline_enum_values = inline_enum_values
         parts.any_of = variants
         parts.constraints = tuple(constraints)
         return parts
-
-    def _normalize_output_schema_inline_enum(
-        self,
-        parts: _OutputSchemaNodeParts,
-        *,
-        unit: IndexedUnit,
-        owner_label: str,
-    ) -> None:
-        if parts.type_name == "enum":
-            if parts.legacy_enum_values:
-                raise output_schema_compile_error(
-                    code="E229",
-                    summary="Output schema inline enum forms cannot be mixed",
-                    detail=(
-                        f"{owner_label} uses `type: enum` with legacy `enum:`."
-                    ),
-                    unit=unit,
-                    source_span=parts.legacy_enum_source_span,
-                    related=(
-                        output_schema_related_site(
-                            label="`type: enum`",
-                            unit=unit,
-                            source_span=parts.type_source_span,
-                        ),
-                    ),
-                    hints=(
-                        "Use `values:` with `type: enum` for the new inline form.",
-                        "Keep legacy `enum:` only with `type: string`.",
-                    ),
-                )
-            if not parts.inline_enum_values:
-                raise output_schema_compile_error(
-                    code="E227",
-                    summary="Output schema inline enum is missing `values:`",
-                    detail=(
-                        f"{owner_label} uses `type: enum` without a `values:` block."
-                    ),
-                    unit=unit,
-                    source_span=parts.type_source_span,
-                    hints=(
-                        "Add a `values:` block under this output schema entry.",
-                    ),
-                )
-            parts.type_name = "string"
-            parts.enum_values = parts.inline_enum_values
-            return
-
-        if parts.inline_enum_values:
-            detail = (
-                f"{owner_label} uses `values:` without `type: enum`."
-                if parts.type_name is None
-                else f"{owner_label} uses `values:` with `type: {parts.type_name}`."
-            )
-            related = ()
-            if parts.type_source_span is not None:
-                related = (
-                    output_schema_related_site(
-                        label=f"`type: {parts.type_name}`",
-                        unit=unit,
-                        source_span=parts.type_source_span,
-                    ),
-                )
-            raise output_schema_compile_error(
-                code="E228",
-                summary="Output schema `values:` requires `type: enum`",
-                detail=detail,
-                unit=unit,
-                source_span=parts.inline_enum_source_span,
-                related=related,
-                hints=(
-                    "Use `type: enum` with `values:` for the new inline enum form.",
-                    "Keep `type: string` plus `enum:` only for the legacy form.",
-                ),
-            )
-
-        if parts.legacy_enum_values and parts.type_name not in {None, "string"}:
-            raise output_schema_compile_error(
-                code="E229",
-                summary="Legacy output schema `enum:` requires `type: string`",
-                detail=(
-                    f"{owner_label} uses legacy `enum:` with `type: {parts.type_name}`."
-                ),
-                unit=unit,
-                source_span=parts.legacy_enum_source_span,
-                related=(
-                    output_schema_related_site(
-                        label=f"`type: {parts.type_name}`",
-                        unit=unit,
-                        source_span=parts.type_source_span,
-                    ),
-                ),
-                hints=(
-                    "Keep legacy `enum:` only with `type: string`.",
-                    "Switch to `type: enum` plus `values:` if you want the new form.",
-                ),
-            )
-
-        parts.enum_values = parts.legacy_enum_values
 
     def _output_schema_example_item(
         self,

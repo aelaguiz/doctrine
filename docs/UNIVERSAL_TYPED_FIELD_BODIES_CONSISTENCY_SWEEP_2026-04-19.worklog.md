@@ -166,3 +166,131 @@ block — that is the fresh audit child's job.
 - `make verify-examples` and `make verify-diagnostics` both green.
 
 **Phase 2 complete.**
+
+## 2026-04-19 — Phase 3: delete Form A and Form B, migrate shipped examples and test fixtures, lock removal
+
+**Artifacts shipped.**
+
+- `doctrine/grammars/doctrine.lark` — `output_schema_values_block`,
+  `output_schema_enum_block`, and `output_schema_enum_value`
+  productions deleted, along with their registrations in
+  `output_schema_item_line`.
+- `doctrine/_parser/io.py` — `output_schema_enum_block`,
+  `output_schema_values_block`, and `output_schema_enum_value`
+  transformer methods deleted.
+- `doctrine/_model/io.py` — `OutputSchemaEnum` and `OutputSchemaValues`
+  dataclasses deleted; the `OutputSchemaBodyItem` type alias no longer
+  includes them.
+- `doctrine/model.py` — public re-exports of `OutputSchemaEnum` and
+  `OutputSchemaValues` removed.
+- `doctrine/_compiler/resolve/output_schemas.py` — the
+  `_normalize_output_schema_inline_enum` method (Form A + Form B
+  normalization, E227/E228/E229) deleted. Form A skip branch in
+  `_collect_output_schema_node_parts`'s `type:` capture deleted;
+  every `type: <CNAME>` now routes through `resolve_field_type_ref`.
+  `_OutputSchemaNodeParts` fields `enum_values`,
+  `legacy_enum_values`, `legacy_enum_source_span`,
+  `inline_enum_values`, `inline_enum_source_span` deleted.
+  `_lower_output_schema_parts` no longer reads
+  `parts.enum_values`; `schema["enum"]` is sourced solely from
+  `parts.type_ref` when it is an `EnumTypeRef`. Local
+  `_OUTPUT_SCHEMA_BUILTIN_TYPES` frozenset deleted; the module now
+  imports `BUILTIN_TYPE_NAMES` from `field_types` under an alias
+  so `field_types.py` owns the single canonical list.
+- Six shipped Form A examples migrated to `enum X: "..."` decl +
+  `type: X`: `examples/79_final_output_output_schema/prompts/AGENTS.prompt`
+  (+ `optional_no_example`, `invalid_invalid_example` variants),
+  `examples/85_review_split_final_output_output_schema/prompts/AGENTS.prompt`,
+  `examples/90_split_handoff_and_final_output_shared_route_semantics/prompts/AGENTS.prompt`,
+  `examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt`.
+  Each example's `ref/**` is byte-identical to the Phase 2 tip
+  (verified by `make verify-examples` reporting "Checked ref diffs:
+  None").
+- `tests/test_enum_migration_preservation.py` — five preservation
+  tests with hardcoded goldens captured from the Phase 2 tip. Each
+  test compiles one migrated example and asserts the emitted
+  `schema["properties"][...]["enum"]` list matches the captured
+  golden byte-for-byte.
+- `tests/test_output_schema_surface.py` — the parser-node test that
+  exercised `OutputSchemaValues` / `OutputSchemaEnum` nodes was
+  rewritten as `test_parser_builds_canonical_enum_typed_field`
+  (canonical form) plus a new `test_parser_rejects_retired_inline_enum_forms`
+  that asserts Form A and Form B source text raises `ParseError`.
+- `tests/test_output_schema_lowering.py` — Form A fixtures migrated to
+  canonical; the old `test_malformed_inline_enum_forms_fail_loud`
+  (E227/E228/E229) became `test_retired_inline_enum_forms_no_longer_parse`
+  (three cases: Form A, Form B, bare `values:` — all expected to
+  raise E320 or E101). The Phase 2 equivalence test became
+  `test_canonical_enum_form_lowers_to_string_type_with_enum_list`.
+- `tests/test_compile_diagnostics.py` — the four
+  `test_output_schema_{inline_enum_requires_values,values_requires_type_enum,mixed_inline_enum_forms,legacy_enum_requires_string}_*`
+  tests (E227/E228/E229) deleted.
+- `tests/test_final_output.py` — the six Form A fixtures migrated to
+  canonical. `test_json_final_output_keeps_legacy_inline_enum_form_compatible`
+  deleted outright.
+- `doctrine/_diagnostic_smoke/fixtures_final_output.py` — the two
+  Form A fixtures (`_final_output_json_source`'s default schema
+  body, and `_final_output_review_split_json_source`) migrated to
+  canonical `enum X: "..."` + `type: X`.
+- `examples/79_final_output_output_schema/prompts/invalid_retired_form_a_type_enum_values/AGENTS.prompt`
+  + `examples/79_final_output_output_schema/prompts/invalid_retired_form_b_type_string_enum_block/AGENTS.prompt`
+  — new parse-fail minimal reproductions.
+- `examples/79_final_output_output_schema/cases.toml` — two new
+  `parse_fail` cases for the two retired forms, each asserting
+  `ParseError` + `E101` + `Unexpected token` substring match.
+
+**Design notes.**
+
+- Goldens for the preservation test were captured from the Phase 2
+  tip before any example source rewrite. Each golden is the exact
+  `enum` list (value and order) that Form A's
+  `schema["enum"] = list(parts.enum_values)` path lowered. Because
+  Phase 2 already chose `member.key` (not `.wire`/`.value`) when
+  the canonical form emits its list, the migration preserves the
+  byte shape as long as each enum decl's member keys match the
+  original Form A barewords. Every migrated example satisfies that.
+- The retired `_normalize_output_schema_inline_enum` method was the
+  only module-internal reader of `parts.type_name == "enum"`. With
+  it gone, `type_name` still tracks the authored CNAME (used by
+  several validation branches for error detail) but never carries
+  the literal string `"enum"` past parse stage (the grammar no
+  longer accepts `type: enum` without it resolving to a declared
+  `enum` — and no one ships an enum called `enum`).
+- Form A and Form B parse failures are graceful: E101 with the
+  token `values` (Form A) or `enum` (Form B) highlighted at the
+  line where the retired block starts. The two manifest cases
+  assert that exact substring on the ParseError message.
+- E227, E228, E229 diagnostic codes are retired. They had no other
+  uses across the codebase (grepped `doctrine/`, `tests/`, docs
+  inventory unchanged by this phase — code-only cleanup belongs
+  to Phase 7).
+
+**Verification (proof).**
+
+- `make verify-examples` — green. "Checked ref diffs: None."
+- `make verify-diagnostics` — green. "diagnostic smoke checks passed".
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml`
+  — all 10 cases PASS, including both new parse-fail cases.
+- `uv run --locked python -m unittest tests.test_output_schema_surface
+  tests.test_output_schema_lowering tests.test_final_output
+  tests.test_compile_diagnostics tests.test_enum_migration_preservation
+  tests.test_field_type_ref` — green (238/238).
+- `uv run --locked python -m unittest discover -s tests` — green
+  (526/526).
+
+**Exit criteria status.**
+
+- Grammar, resolver, IR, test fixtures, and shipped example corpus
+  no longer contain Form A / Form B source text or code paths.
+- Every migrated example's emitted `schema["enum"]` list is
+  byte-identical (value and order) to the Phase 2 tip, asserted
+  by `tests/test_enum_migration_preservation.py` (5/5 passing).
+- Both deleted forms have manifest-backed "no longer parses"
+  cases in `examples/79_.../cases.toml` that PASS under
+  `verify_corpus`.
+- `make verify-examples` and `make verify-diagnostics` both green.
+- The shared resolver entrypoint is now the only path by which
+  `type:` resolves to an enum on output-schema surfaces; Form A's
+  skip branch at the capture site is gone.
+
+**Phase 3 complete.**

@@ -1,3 +1,8 @@
+enum TurnKind: "Turn Kind"
+    handoff: "Handoff"
+    done: "Done"
+
+
 output schema WriterTurnResultSchema: "Writer Turn Result Schema"
     route field next_route: "Next Route"
         revise_more: "Send to RevisionPartner for one more pass." -> RevisionPartner
@@ -5,10 +10,7 @@ output schema WriterTurnResultSchema: "Writer Turn Result Schema"
         note: "Use null when the writer can finish without a handoff."
 
     field kind: "Kind"
-        type: enum
-        values:
-            handoff
-            done
+        type: TurnKind
         note: "Say whether this turn hands off or finishes."
 
     field summary: "Summary"

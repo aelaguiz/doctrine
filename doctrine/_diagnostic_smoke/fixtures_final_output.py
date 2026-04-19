@@ -30,16 +30,18 @@ def _final_output_json_source(
     schema_body: str | None = None,
     example_body: str | None | object = _DEFAULT_EXAMPLE_BODY,
 ) -> str:
-    rendered_schema_body = schema_body or """output schema RepoStatusSchema: "Repo Status Schema"
+    rendered_schema_body = schema_body or """enum RepoStatus: "Repo Status"
+    ok: "OK"
+    action_required: "Action Required"
+
+
+output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
         note: "Short natural-language status."
 
     field status: "Status"
-        type: enum
-        values:
-            ok
-            action_required
+        type: RepoStatus
         note: "Current repo outcome."
 
     field next_step: "Next Step"
@@ -273,12 +275,14 @@ agent SplitReviewFinalOutputAgent:
 
 
 def _final_output_review_split_json_source() -> str:
-    return """output schema AcceptanceControlSchema: "Acceptance Control Schema"
+    return """enum AcceptanceRoute: "Acceptance Route"
+    follow_up: "Follow Up"
+    revise: "Revise"
+
+
+output schema AcceptanceControlSchema: "Acceptance Control Schema"
     field route: "Route"
-        type: enum
-        values:
-            follow_up
-            revise
+        type: AcceptanceRoute
         note: "Control route for the next owner."
 
     field current_artifact: "Current Artifact"

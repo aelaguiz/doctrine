@@ -85,8 +85,6 @@ from doctrine._model.io import (
     OutputSchemaBodyItem,
     OutputSchemaDecl,
     OutputSchemaDef,
-    OutputSchemaEnum,
-    OutputSchemaValues,
     OutputSchemaExample,
     OutputSchemaExampleArray,
     OutputSchemaExampleEntry,

@@ -870,6 +870,24 @@ Missing (code):
 
 ## Phase 3 — Delete Form A and Form B; migrate shipped examples; lock removal
 
+Status: COMPLETE
+
+Completed work:
+- Deleted grammar productions (`output_schema_values_block`, `output_schema_enum_block`, `output_schema_enum_value`) + registrations; parser transformer methods; model dataclasses (`OutputSchemaEnum`, `OutputSchemaValues`); public re-exports.
+- Deleted `_normalize_output_schema_inline_enum` (Form A + Form B + E227/E228/E229) and `_OutputSchemaNodeParts` fields (`enum_values`, `legacy_enum_values`, `legacy_enum_source_span`, `inline_enum_values`, `inline_enum_source_span`); deleted Form A skip branch at the `type:` capture site.
+- Consolidated `BUILTIN_TYPE_NAMES` to `doctrine/_compiler/resolve/field_types.py`; `output_schemas.py` imports under alias.
+- Migrated six shipped examples to `enum X: "..."` + `type: X`; `ref/**` byte-identical to Phase 2 tip.
+- Added `tests/test_enum_migration_preservation.py` (5 tests) with hardcoded goldens captured from Phase 2 tip.
+- Migrated fixtures in `tests/test_output_schema_surface.py`, `tests/test_output_schema_lowering.py`, `tests/test_final_output.py`, and `doctrine/_diagnostic_smoke/fixtures_final_output.py` to canonical.
+- Deleted `tests/test_compile_diagnostics.py` E227/E228/E229 tests and `tests/test_final_output.py::test_json_final_output_keeps_legacy_inline_enum_form_compatible`.
+- Added two manifest-backed parse-fail cases in `examples/79_.../cases.toml` (Form A `type: enum` + `values:` and Form B `type: string` + `enum:`) with matching minimal prompts.
+
+Verification:
+- `make verify-examples` green. "Checked ref diffs: None."
+- `make verify-diagnostics` green. "diagnostic smoke checks passed".
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/79_final_output_output_schema/cases.toml` — all 10 cases PASS.
+- `uv run --locked python -m unittest discover -s tests` — 526/526 green.
+
 * Goal: remove the two secondary enum forms from grammar, resolver, IR carrier, tests, and the shipped example corpus in one atomic cutover. Prove the migration preserves emitted JSON schema values via assertion tests, and lock the removal in with manifest-backed "no longer parses" cases. This is the breaking change.
 * Work: delete `output_schema_values_block` (production at `doctrine/grammars/doctrine.lark:805`) and its registration in `output_schema_item_line` (`:777`); delete `output_schema_enum_block` (`:804`) and its registration (`:776`); delete `output_schema_enum_value` (`:806`) if it has no remaining users. Delete Form A normalization branch at `doctrine/_compiler/resolve/output_schemas.py:1636-1671` and the Form B branch at `:1703-1716`. Delete `_OutputSchemaNodeParts.legacy_enum_values` and any related `enum_values` collector logic that existed only to support the two deleted forms. Move `BUILTIN_TYPE_NAMES` from `output_schemas.py:17-23` to `doctrine/_compiler/resolve/field_types.py`; delete the local copy. Rewrite each of the six shipped Form A examples (`examples/79_final_output_output_schema/prompts/AGENTS.prompt` at `:7-10`, `.../optional_no_example/AGENTS.prompt` at `:7-10`, `.../invalid_invalid_example/AGENTS.prompt` at `:7-10`, `examples/85_review_split_final_output_output_schema/prompts/AGENTS.prompt` at `:3-6`, `examples/90_split_handoff_and_final_output_shared_route_semantics/prompts/AGENTS.prompt` at `:3-6`, `examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt` at `:8-11`) from `type: enum` + `values:` to a separate `enum` decl + `type: <EnumName>` on the field. Regenerate each example's `ref/**`. Migrate test fixtures in `tests/test_output_schema_surface.py`, `tests/test_output_schema_lowering.py`, `tests/test_final_output.py`, `tests/test_compile_diagnostics.py`, and `doctrine/_diagnostic_smoke/fixtures_final_output.py` off of Form A / Form B to the canonical form. Add a manifest-backed compile-fail case for each deleted form asserting it no longer parses, and add behavior-preservation assertion tests that check the emitted JSON schema `enum` list is byte-identical (value and order) between pre-migration output (captured from the Phase 2 tip) and post-migration output.
 * Checklist (must all be done):
