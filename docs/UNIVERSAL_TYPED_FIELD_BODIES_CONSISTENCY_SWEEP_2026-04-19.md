@@ -919,6 +919,22 @@ Verification:
 
 ## Phase 4 — Extend structured `type:` slot to prose-only field-shaped surfaces
 
+Status: COMPLETE
+
+Completed work:
+- Added shared grammar fragment `typed_field_body_line` (alternatives: `output_schema_type_stmt` or prose line) in `doctrine/grammars/doctrine.lark`; wired it into `readable_inline_schema_item_body` and `readable_table_column_body`. Added a canonical-boundary comment above `readable_table_column_body`.
+- Split `record_keyed_item` → `record_keyed_scalar_item` (scalar-head; `record_keyed_scalar_body` carries `typed_field_body_line`) and `record_keyed_ref_item` (path_ref/name_ref head; keeps `record_item_body`). Applied the same split to `output_record_keyed_item` → `output_record_keyed_scalar_item` + `output_record_keyed_ref_item`.
+- Added `type_ref`, `type_name`, `type_source_span` to `ReadableSchemaEntry`, `ReadableTableColumn`, and `RecordScalar`. `ReadablePropertyItem` and `ReadableDefinitionItem` remain unchanged (prose-only).
+- Added parser helper `_split_typed_field_body` (readables) and `_split_record_scalar_body` (skills/io); both raise on duplicate `type:` lines and populate `type_name` + `type_source_span` on the IR.
+- Extended `_resolve_readable_inline_schema` and the table-column branch of `_resolve_document_blocks_body` to call `resolve_field_type_ref` and store the result on `type_ref`. Added `_resolve_output_item_type_refs` recursive walker in `doctrine/_compiler/resolve/outputs.py`; invoked from `_resolve_output_decl_body` (plus the two override / rebind paths) so `RecordScalar.type_name` always lowers to `RecordScalar.type_ref`.
+- Added `tests/test_typed_field_bodies.py` with 10 unit cases (builtin + enum + E320 for `row_schema` entries, `item_schema` entries, table columns, and record scalars).
+
+Verification:
+- `make verify-examples` green. "Checked ref diffs: None."
+- `make verify-diagnostics` green. "diagnostic smoke checks passed".
+- `uv run --locked python -m unittest tests.test_typed_field_bodies` — 10/10 green.
+- `uv run --locked python -m unittest discover -s tests` — 536/536 green.
+
 * Goal: add a structured `type:` slot to `readable_inline_schema_item_body` (serves both `row_schema` and `item_schema` entries), `readable_table_column_body`, and record scalar bodies (`record_keyed_item`, `output_record_keyed_item` scalar-head variants). Wire each surface's resolve path through the shared helper so every field-shaped surface in the language now accepts the same canonical `type: <CNAME>` form. Prose bodies remain valid alongside the type slot. Glossary/label nodes (`readable_property_item`, `readable_definition_item`) stay prose-only by explicit design.
 * Work: add a new grammar fragment `typed_field_body_line` that is an alternative of `output_schema_type_stmt` or a prose line. Expand `readable_inline_schema_item_body` at `doctrine/grammars/doctrine.lark:566` and `readable_table_column_body` at `:557` to use `_INDENT typed_field_body_line+ _DEDENT`. Expand `record_item_body` / `output_record_item_body` (at `:917` and `:866`) so that scalar-head record items (`record_keyed_item` with `record_head: string` at `:915`, and the matching `output_record_keyed_item` at `:862`) can include a `typed_field_body_line`. Add `type_ref: FieldTypeRef | None` to `ReadableSchemaEntry` at `doctrine/_model/readable.py:43`, `ReadableTableColumn` at `:65`, and the record scalar carrier IR class. Extend each surface's resolve path to collect the `type:` line and call `resolve_field_type_ref`, storing the returned `FieldTypeRef` on the IR `type_ref` field. Prose lines continue to populate the existing `body: tuple[ProseLine, ...]` field.
 * Checklist (must all be done):
