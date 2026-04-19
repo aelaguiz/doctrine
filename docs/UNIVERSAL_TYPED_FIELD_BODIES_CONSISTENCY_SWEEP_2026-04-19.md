@@ -33,133 +33,97 @@ related:
 
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
-Date: 2026-04-19
+Date: 2026-04-19 (fresh audit)
 Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phase 1 is complete and committed (`fe8767c feat(phase 1): shared field-type resolver + E320`); Phase 2 has substantial uncommitted work on the branch but is not done by its own Checklist; Phases 3 through 9 are not started. The remaining frontier spans Phase 2 (finish) through Phase 9 (final verification).
-- Prior audit ("implementation has not started; Phase 1 missing") was wrong. Evidence: `doctrine/_compiler/resolve/field_types.py` ships the five named exports plus an `EnumLookup` Protocol alias; `E320` is registered in `docs/COMPILER_ERRORS.md:158`; `tests/test_field_type_ref.py` covers the six Phase-1 behaviors; commit `fe8767c` landed them.
-- No execution-side plan rewrite has weakened Section 7. Planning-integrity snag noted under Phase 8: the plan names the new finding `AL930`, but `skills/agent-linter/prompts/refs/finding_catalog.prompt:53` already defines `AL930` as "Skill Needs Host Contract". Phase 8 execution must pick an unused code and append a Decision Log entry; the audit records this as a plan-integrity item, not an implementation completion.
+- Phases 1 through 5 are committed and verified at tip (`fe8767c`, `9027e2c`, `6f7018d`, `c48ed26`, `7a1125d`, `06f3930`). Phases 6, 7, 8, and 9 are untouched. The remaining approved frontier is **Phases 6 → 7 → 8 → 9**, grouped here because implementation must walk the ordered frontier, not pick off one local gap.
+- No execution-side plan rewrite weakened Section 7, Section 0, the TL;DR, or Definition of Done. Section 7 Phases 6-9 are still full-fat (new example 139, bulk docs at 4.1 → 5.0, agent-linter + doctrine-learn skill edits, editor snapshots + psflows scratch + final Decision Log).
+- The uncommitted working-tree edits under `docs/LANGUAGE_REFERENCE.md`, `skills/agent-linter/**`, and `skills/doctrine-learn/**` belong to adjacent plans (output-shape selector, export-namespace boundary, role/skill authoring refresh) — not to this plan. Repo grep for `AL930` + "Inlined Vocabulary" and for `139_enum_typed_field_bodies` returns zero matches in skill source and in the curated outputs. Phase 7/8 work here has not begun.
+- **Plan-integrity gap (Phase 8).** The plan nominates `AL930` for "Inlined Vocabulary Should Be An Enum-Typed Field", but `skills/agent-linter/prompts/refs/finding_catalog.prompt:53` already defines `AL930` as "Skill Needs Host Contract". Phase 8 execution must pick an unused code (likely `AL940` or next free slot after scanning the catalog), then sync Section 0.2, Section 6.1, Section 7 Phase 8 text, Phase 7 CHANGELOG wording, and append a Decision Log entry. This is a phase obligation, not a separate ticket.
 
 ## Reopened phases (false-complete fixes)
-- None. No phase was ever marked `Status: COMPLETE` in Section 7. Phase 1 is now truthfully complete per its Checklist and Exit criteria; Phase 2 is in-progress (uncommitted); Phases 3 through 9 are unstarted.
+- None. Phases 1 through 5 are truthfully complete per their Checklist + Exit criteria; fresh code reads confirm the committed state matches the plan. No phase was marked `COMPLETE` while carrying unfinished code work. Phase 2's "IN PROGRESS" status line in Section 7 is stale relative to commit `9027e2c`; it is corrected to `COMPLETE` by this audit, below the audit block, without reopening.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
 
-- Phase 2 — Wire structured output-schema surfaces to the shared resolver (in progress; uncommitted)
+- Frontier head — Phase 6: new manifest-backed example `examples/139_enum_typed_field_bodies/`
   - Evidence anchors:
-    - `doctrine/_model/io.py:276,285,302` — `type_ref: FieldTypeRef | None` is present on `OutputSchemaField`, `OutputSchemaDef`, and `OutputSchemaRouteField`. ✓
-    - `doctrine/_compiler/resolve/output_schemas.py:12-16` — imports `BuiltinTypeRef`, `EnumTypeRef`, `resolve_field_type_ref`.
-    - `doctrine/_compiler/resolve/output_schemas.py:46-48` — `_OutputSchemaNodeParts` now carries both `type_name` (legacy) and `type_ref` alongside `legacy_enum_values`.
-    - `doctrine/_compiler/resolve/output_schemas.py:1101-1117` — lowering prefers `parts.type_ref` for `BuiltinTypeRef`/`EnumTypeRef` and falls back to `parts.type_name` + `parts.enum_values` for Form A / Form B. ✓
-    - `doctrine/_compiler/resolve/output_schemas.py:1386-1397` — the `type:` capture routes through `resolve_field_type_ref` when `item.value != "enum"` (Form A still takes the legacy path). ✓
-    - `tests/` — only `test_field_type_ref.py` exists for this plan; `tests/test_output_schema_surface.py` and `tests/test_output_schema_lowering.py` contain no `type_ref`, `FieldTypeRef`, or `E320` references.
-    - Phase 2 changes are uncommitted: `git status` shows `M doctrine/_compiler/resolve/output_schemas.py`, `M doctrine/_model/io.py`, `M doctrine/diagnostics.py`, and friends.
-  - Plan expects (Phase 2 Checklist + Exit criteria):
-    - IR on all three structured output-schema classes carries `type_ref`. ✓
-    - `_collect_output_schema_node_parts` routes the `type:` capture through `resolve_field_type_ref`. ✓ for non-`enum` branch.
-    - `_lower_output_schema_parts` writes `schema["type"]` and `schema["enum"]` from `parts.type_ref` when present; falls back to Form A / Form B path when `parts.type_ref is None`. ✓
-    - Form A (`type: enum` + `values:`) continues to parse and compile; its lowered JSON schema is byte-identical to before Phase 2 for every shipped example that uses it. Not yet proven at the phase tip — Phase 2 artifacts are uncommitted and the worklog does not report a Phase 2 `make verify-examples` green pass.
-    - Form B (`type: string` + `enum:`) continues to parse and compile; byte-identical. Same verification gap.
-    - `type: <EnumName>` on the three surfaces resolves and emits `schema["type"]="string"` plus `schema["enum"]=[...]` in member order. No committed test proves this at the phase boundary.
-    - `type: <UnknownCNAME>` on the three surfaces raises `E320`. No committed test proves this at the phase boundary.
-    - New unit cases in `tests/test_output_schema_surface.py` and `tests/test_output_schema_lowering.py` covering (a) `type: <EnumName>` resolves and emits expected JSON schema, (b) `type: <UnknownCNAME>` raises `E320`, (c) existing Form A / Form B cases still pass byte-identically. **Missing.**
-    - Targeted parser source-span test confirming `E320` carries the CNAME span on the three output-schema surfaces. **Missing** (the Phase 1 test proves span carry in isolation, not through the output-schema collector).
-    - Checklist tension (`_OutputSchemaNodeParts.type_name` is replaced by `type_ref`): implementation keeps both fields so Phase 2's "Form A/B keep working" promise survives; `type_name` is scheduled to die in Phase 3 with `legacy_enum_values`. Call this an accepted transitional shape; the Phase 3 exit criteria still force the removal.
+    - `examples/` — last directory is `138_output_shape_case_selector`; there is no `examples/139_enum_typed_field_bodies/` directory at all.
+    - Repo grep for `139_enum_typed_field_bodies` returns zero matches outside this plan doc.
+  - Plan expects (Phase 6 Checklist + Exit criteria):
+    - `examples/139_enum_typed_field_bodies/prompts/AGENTS.prompt` with one `enum` decl plus one readable table whose `row_schema` entry carries `type: <EnumName>` alongside prose.
+    - `examples/139_enum_typed_field_bodies/cases.toml` with a `render_contract` case for the primary prompt and a `compile_fail` case pointing at an unknown-enum variant that asserts `E320`.
+    - `examples/139_enum_typed_field_bodies/ref/**` committed; rendered artifact includes the `Valid values: …` line under the typed field.
+    - The `compile_fail` variant lives either inline in `cases.toml` or as a sibling `prompts/*.prompt`; it is minimal and clearly labelled; it does not reuse the primary prompt.
+    - Plain-language prose at ~7th-grade reading level per AGENTS.md.
   - Code reality:
-    - Wiring and IR changes present but not committed; no new unit/integration coverage; Phase 2 worklog entry absent.
+    - Directory does not exist; no manifest; no ref artifacts.
   - Fix:
-    - Add the unit cases and source-span test named above, run `make verify-examples` + `make verify-diagnostics` from the Phase 2 tip, append a Phase 2 worklog entry with green signals, then commit as a Phase 2 checkpoint before starting Phase 3.
+    - Execute Phase 6. This is the frontier head — it unblocks the Phase 7 cross-reference and the Phase 8 examples-ladder entry.
 
-- Phase 3 — Delete Form A and Form B; migrate shipped examples; lock removal
+- Frontier — Phase 7: authoritative docs, 4.1 → 5.0 bump, CHANGELOG
   - Evidence anchors:
-    - `doctrine/grammars/doctrine.lark:776,777,804,805,806` — `output_schema_enum_block`, `output_schema_values_block`, and `output_schema_enum_value` productions and registrations are still present.
-    - `doctrine/_compiler/resolve/output_schemas.py:46-48,60-63` — `_OutputSchemaNodeParts.legacy_enum_values`, `legacy_enum_source_span`, `inline_enum_values`, `inline_enum_source_span` remain; the Form A / Form B normalization branches are still live.
-    - `doctrine/_compiler/resolve/output_schemas.py:17-23` (per plan anchor) — local `BUILTIN_TYPE_NAMES` constant has not moved to `field_types.py` (which now owns the authoritative copy). Both copies coexist.
-    - `examples/79_final_output_output_schema/prompts/AGENTS.prompt:7-8`, plus the sibling `.../optional_no_example/AGENTS.prompt`, `.../invalid_invalid_example/AGENTS.prompt`, `examples/85_review_split_final_output_output_schema/prompts/AGENTS.prompt`, `examples/90_split_handoff_and_final_output_shared_route_semantics/prompts/AGENTS.prompt`, and `examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt` — all six still author Form A (`type: enum` + `values:`).
-    - No `tests/test_enum_migration_preservation.py` (or equivalent); no manifest-backed "Form A no longer parses" or "Form B no longer parses" compile-fail cases under `doctrine/_diagnostic_smoke/`.
+    - `docs/VERSIONING.md:6` — "Current Doctrine language version: 4.1". No 4.1 → 5.0 entry anywhere in the file.
+    - `CHANGELOG.md:13,19` — top entry still says "Language version: 4.0 -> 4.1". No 5.0 entry.
+    - `docs/LANGUAGE_REFERENCE.md:881,938` — still shows `type: enum` + `values:` (Form A) in code examples. No new "Typed field bodies" subsection covering row_schema / item_schema / table column / record scalar. The uncommitted working-tree diff here belongs to prior plans (output-shape selector bullets; export/import namespace bullets).
+    - `docs/AGENT_IO_DESIGN_NOTES.md:126,219-220` — still references Form A (`type: enum` plus `values:`). No canonical-form rewrite.
+    - `docs/LANGUAGE_DESIGN_NOTES.md` — grep for "E320" / "Form A" / "Form B" / "enum.*values:" returns zero matches. No one-canonical-form decision note.
+    - `docs/COMPILER_ERRORS.md:158` — Phase 1 `E320` row is already present and consistent with the registered code; Phase 7 only needs to keep that row consistent with final CHANGELOG wording.
   - Plan expects:
-    - Both grammar productions deleted with their registrations; `output_schema_enum_value` helper deleted if unused; Form A and Form B normalization branches deleted; `_OutputSchemaNodeParts.legacy_enum_values` and Form-A/B-only fields deleted; six shipped examples rewritten to canonical form and `ref/**` regenerated; test fixtures in `tests/test_output_schema_surface.py`, `tests/test_output_schema_lowering.py`, `tests/test_final_output.py`, `tests/test_compile_diagnostics.py`, and `doctrine/_diagnostic_smoke/fixtures_final_output.py` migrated; manifest-backed "no longer parses" compile-fail cases for both deleted forms; a preservation assertion test locking JSON-schema `enum` value and order against the Phase 2 tip output for every migrated example; `BUILTIN_TYPE_NAMES` local copy removed in favor of the `field_types.py` owner.
+    - `LANGUAGE_REFERENCE.md` output-schema subsection rewritten off Form A / Form B; new "Typed field bodies" subsection covering all four prose-only-then-typed surfaces with cross-reference to `examples/139_enum_typed_field_bodies/`.
+    - `LANGUAGE_DESIGN_NOTES.md` decision note explaining the one-canonical-form rule and the glossary/label prose-only exception.
+    - `AGENT_IO_DESIGN_NOTES.md` rewritten off Form A / Form B.
+    - `docs/VERSIONING.md` and `CHANGELOG.md` 4.1 → 5.0 entry with the five-bullet summary (deleted Form A, deleted Form B, tightened `type:` fail-loud with E320, added structured `type:` to row_schema / item_schema / table column / record scalar, one-line migration).
+    - `docs/README.md` and `examples/README.md` index lines verified; updated if they name the changed surfaces.
   - Code reality:
-    - Grammar still parses both forms; resolver normalization branches intact; all six example files still use Form A; no preservation test; no "no longer parses" cases; dual `BUILTIN_TYPE_NAMES` definitions.
+    - No doc edits for this plan; VERSIONING.md and CHANGELOG.md still at 4.1; LANGUAGE_REFERENCE.md and AGENT_IO_DESIGN_NOTES.md still show Form A.
   - Fix:
-    - Execute Phase 3 per its Checklist and Exit criteria after Phase 2 is closed out.
+    - Execute Phase 7 after Phase 6 exists (so the cross-reference target is real).
 
-- Phase 4 — Extend structured `type:` slot to prose-only field-shaped surfaces
+- Frontier — Phase 8: agent-linter new-finding + AL200 extension; doctrine-learn authoring-pattern + ladder; plan-integrity fix for the `AL930` collision
   - Evidence anchors:
-    - `doctrine/grammars/doctrine.lark` — no `typed_field_body_line` fragment; `readable_inline_schema_item_body`, `readable_table_column_body`, `record_item_body`, and `output_record_item_body` are still prose-only.
-    - `doctrine/_model/readable.py` — `ReadableSchemaEntry` and `ReadableTableColumn` carry no `type_ref`; record scalar carriers carry no `type_ref`.
-    - Repo grep for `typed_field_body_line` matches only this plan doc.
+    - `skills/agent-linter/prompts/refs/finding_catalog.prompt:14,53,95,396,432` — `AL930` is live and means "Skill Needs Host Contract". No "Inlined Vocabulary Should Be An Enum-Typed Field" row. `AL200` section has not been extended with the pipe-list-vocabulary shape.
+    - `skills/agent-linter/prompts/refs/examples.prompt` — no AL930/new-finding before/after pair for inlined-vocabulary-should-be-enum.
+    - `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt:45` — mentions typed fields only in the context of route targets; no task-first chooser row for "fixed vocabulary on a field → `enum` decl + `type: X`"; no cross-reference to `examples/139_enum_typed_field_bodies`.
+    - `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` — still teaches Form A guidance; no canonical-form rewrite.
+    - `skills/.curated/agent-linter/references/finding-catalog.md` — grep for `AL930` returns the existing "Skill Needs Host Contract" row only; no inlined-vocabulary row.
+    - The uncommitted diffs in `skills/.curated/*`, `skills/agent-linter/prompts/refs/*`, and `skills/doctrine-learn/prompts/refs/*` belong to other plans (role/skill authoring refresh; abstract-agent IO override). None of them introduce the inlined-vocabulary finding or the example-139 ladder entry.
   - Plan expects:
-    - `typed_field_body_line` grammar fragment; `readable_inline_schema_item_body`, `readable_table_column_body`, and scalar-head `record_item_body`/`output_record_item_body` accept it; `type_ref` added to `ReadableSchemaEntry`, `ReadableTableColumn`, and the record scalar carrier; per-surface resolver call sites into `resolve_field_type_ref`; `ReadablePropertyItem` and `ReadableDefinitionItem` explicitly unchanged; unit cases for (a) builtin (b) enum (c) `E320` on each surface; parser source-span coverage for each; record-scalar rejection test when `record_head` is not scalar.
-  - Code reality:
-    - No grammar fragment; no IR fields; no resolver wiring; no tests.
-  - Fix:
-    - Execute Phase 4.
-
-- Phase 5 — Unified emit of `Valid values: …` line across every field-shaped surface
-  - Evidence anchors:
-    - `doctrine/emit_common.py` — no `render_valid_values_line` (repo-wide grep matches only this plan doc).
-    - `doctrine/_compiler/validate/__init__.py:271-293` (plan anchors) — `_json_schema_meaning` description-present branch still drops the enum vocabulary.
-    - `doctrine/emit_docs.py` readable-table-column, readable-schema-entry, record-scalar, and output-schema renderers do not call any valid-values helper.
-  - Plan expects:
-    - `render_valid_values_line` helper in `emit_common.py`; all four field-shaped renderers in `emit_docs.py` call it; `_json_schema_meaning` appends `One of <values>.` when both description and enum are present; unit cases per surface plus a `_json_schema_meaning` description-plus-enum case.
-  - Code reality:
-    - No helper; no renderer wiring; no validator meaning extension; no tests.
-  - Fix:
-    - Execute Phase 5.
-
-- Phase 6 — New example `examples/139_enum_typed_field_bodies/` as manifest-backed proof
-  - Evidence anchors:
-    - `examples/` — highest existing example is `138_output_shape_case_selector`; there is no `139_enum_typed_field_bodies/` directory.
-  - Plan expects:
-    - `examples/139_enum_typed_field_bodies/prompts/AGENTS.prompt` declaring one enum and a readable row_schema entry with `type: <EnumName>` alongside prose; `cases.toml` with `render_contract` plus `compile_fail` (unknown enum → `E320`); committed `ref/**`.
-  - Code reality:
-    - Directory does not exist.
-  - Fix:
-    - Execute Phase 6 after Phases 4–5 (so typed `row_schema` bodies and unified emit exist to be exercised).
-
-- Phase 7 — Authoritative docs, version bump, and CHANGELOG
-  - Evidence anchors:
-    - `docs/VERSIONING.md` and `CHANGELOG.md` — no 4.1 → 5.0 entry; `docs/LANGUAGE_REFERENCE.md` local diff covers the output shape selector and export-namespace work from prior plans, not the canonical-form rewrite or a "Typed field bodies" subsection; `docs/LANGUAGE_DESIGN_NOTES.md` and `docs/AGENT_IO_DESIGN_NOTES.md` carry no one-canonical-form decision note and still describe Form A / Form B as live.
-    - `docs/COMPILER_ERRORS.md:158` — the Phase 1 `E320` row exists and is already consistent with `doctrine/_compiler/resolve/field_types.py`; Phase 7 needs to keep that row consistent with the final CHANGELOG wording but does not author the row itself.
-  - Plan expects:
-    - `LANGUAGE_REFERENCE.md` output-schema subsection rewritten to canonical form; new "Typed field bodies" subsection covering row_schema / item_schema / table column / record scalar with cross-ref to `examples/139_enum_typed_field_bodies/`; one-canonical-form decision note in `LANGUAGE_DESIGN_NOTES.md`; `AGENT_IO_DESIGN_NOTES.md` Form A / Form B references rewritten to canonical; 4.1 → 5.0 entry in `VERSIONING.md` and `CHANGELOG.md` with the five-bullet summary; `docs/README.md` + `examples/README.md` index lines verified.
-  - Code reality:
-    - No edits in any of these files for this plan.
-  - Fix:
-    - Execute Phase 7.
-
-- Phase 8 — Shipped skills: agent-linter new-finding + AL200 extension, doctrine-learn authoring-pattern + ladder
-  - Evidence anchors:
-    - `skills/agent-linter/prompts/refs/finding_catalog.prompt:53` — `AL930` is already assigned to "Skill Needs Host Contract" (an unrelated finding). The plan's AL930 slot is taken.
-    - `skills/agent-linter/prompts/refs/examples.prompt` — no before/after pair for inlined-vocabulary-should-be-enum.
-    - `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt` — no task-first chooser row cross-referencing `examples/139_enum_typed_field_bodies`.
-    - `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` — still teaches Form A guidance.
-    - Local `git status` shows curated and `.prompt` files for `agent-linter` and `doctrine-learn` as modified, but their diffs belong to prior plans (not this one — repo grep for `AL930` + "Inlined Vocabulary"/"typed field bodies" returns zero matches in the skill source).
-  - Plan expects:
-    - New finding row + full section (what it means, why it matters, default fix, good/bad pair) for the inlined-vocabulary rule in `finding_catalog.prompt`; `AL200` section extended to name pipe-list vocabularies as a canonical duplicate-rule shape; new finding before/after pair in `examples.prompt`; task-first chooser row in `authoring_patterns.prompt` naming canonical form + cross-reference to `examples/139_enum_typed_field_bodies`; `outputs_and_schemas.prompt` rewritten off Form A; doctrine-learn examples ladder gains example 139; curated `.md` outputs regenerated under `skills/.curated/agent-linter/references/` and `skills/.curated/doctrine-learn/references/`; new prose passes the 7th-grade reading-level bar.
+    - New finding row + full section ("what it means", "why it matters", "default fix", "good / bad" pair) for "Inlined Vocabulary Should Be An Enum-Typed Field" under a chosen unused code.
+    - `AL200` section extended to name pipe-list vocabularies as a canonical duplicate-rule shape.
+    - Matching before/after pair in `examples.prompt`.
+    - Task-first chooser row in `authoring_patterns.prompt` + cross-reference to `examples/139_enum_typed_field_bodies`.
+    - `outputs_and_schemas.prompt` rewritten off Form A / Form B.
+    - doctrine-learn examples ladder gains an example-139 entry (exact ladder filename identified during implement).
+    - Curated `.md` outputs regenerated so `skills/.curated/agent-linter/references/finding-catalog.md`, `.../examples.md`, and `skills/.curated/doctrine-learn/references/authoring-patterns.md` carry the new content.
+    - New prose at ~7th-grade reading level per AGENTS.md.
   - Plan-integrity gap:
-    - The plan's nominated code `AL930` collides with the live catalog entry in `finding_catalog.prompt:53`. Phase 8 execution must pick an unused code, update Section 0.2, Section 6.1, Section 7 Phase 8 text, and append a Decision Log entry recording the rename. Do this in the Phase 8 run; the plan rewrite is part of the phase obligation, not a separate ticket.
+    - `AL930` collides with the live catalog entry in `finding_catalog.prompt:53`. Phase 8 must pick an unused code, then sync Section 0.2, Section 6.1, Section 7 Phase 8 heading + checklist, Phase 7 CHANGELOG bullet, and append a Decision Log entry recording the rename. This is a phase obligation, not a separate ticket.
   - Code reality:
-    - No prompt-source edits for this plan; curated outputs untouched for this plan.
+    - No prompt-source edits for this plan; no curated outputs regenerated for this plan; plan-integrity collision unresolved.
   - Fix:
-    - Execute Phase 8 after Phase 6, resolving the finding-code collision in the same run.
+    - Execute Phase 8 after Phase 6 (for the ladder cross-reference). Resolve the finding-code collision in the same run.
 
-- Phase 9 — Editor snapshots + final corpus-level verification
+- Frontier tail — Phase 9: editor snapshots + final corpus-level verification
   - Evidence anchors:
-    - `editors/vscode/tests/snap/examples/79_final_output_output_schema/...`, `.../121_nullable_route_field_final_output_contract/...` still reflect Form A pre-migration shape.
-    - No final Decision Log entry in Section 10 recording green `make verify-examples`, `make verify-diagnostics`, `make verify-package`, or the psflows scratch-conversion result.
+    - `editors/vscode/tests/snap/examples/79_final_output_output_schema/prompts/AGENTS.prompt` still carries the pre-migration Form B shape (`type: string` + `enum:` block at lines 10-13). Phase 3 migrated the shipped `examples/79/**/AGENTS.prompt` to the canonical form, but the editor snapshot copies were not regenerated. The `.../121_.../...` snapshot is similarly stale.
+    - Section 10 Decision Log has no final entry recording green `make verify-examples`, `make verify-diagnostics`, `make verify-package`, the release-flow status, or the psflows scratch-conversion result at the branch tip.
   - Plan expects:
-    - Snapshots regenerated via `cd editors/vscode && make` after Phases 3 and 5 land; full `make verify-examples`, `make verify-diagnostics`, `make verify-package` green; release-flow verification status recorded (or noted as n/a); psflows `step_role` scratch conversion compiles read-only on this branch; `git diff main -- ../psflows` empty; final Decision Log entry.
+    - `cd editors/vscode && make` regenerates snapshots cleanly; regenerated snapshots reflect the canonical form and the unified `Valid values:` line.
+    - `make verify-examples`, `make verify-diagnostics`, `make verify-package` all green on the branch tip.
+    - `uv run --locked python -m unittest tests.test_release_flow` green or explicitly noted n/a.
+    - Scratch conversion of `psflows/lesson_plan` `step_role` excerpt compiles against this branch under the canonical form; scratch file stays local and uncommitted.
+    - `git diff main -- ../psflows` empty (no file under `../psflows` modified in the branch diff).
+    - Final Decision Log entry in Section 10 names the green verification and declares the plan implementation-complete for 5.0.
   - Code reality:
-    - No snapshot regeneration possible while Phases 3 and 5 are absent; no final verification entry.
+    - Editor snapshots not regenerated; no final Decision Log entry; full corpus-level verify run not recorded at the Phase-9 tip.
   - Fix:
-    - Execute Phase 9 after Phases 2 through 8 land cleanly.
+    - Execute Phase 9 last, after Phases 6-8 land cleanly.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- None. The remaining work is entirely code, grammar, IR, resolver, emit, examples, docs, skill-prompt source edits, and editor snapshots — no manual QA gates the verdict here.
+- None. The remaining work is entirely code, grammar, IR, resolver, emit, examples, docs, skill-prompt source edits, skill curated regeneration, and editor snapshots — no manual QA gates the verdict.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -835,11 +799,7 @@ Status: COMPLETE (audit 2026-04-19; landed in `fe8767c`; all six Checklist behav
 
 ## Phase 2 — Wire structured output-schema surfaces to the shared resolver
 
-Status: IN PROGRESS (audit 2026-04-19; uncommitted partial work on branch)
-Missing (code):
-- New unit cases in `tests/test_output_schema_surface.py` and `tests/test_output_schema_lowering.py` covering (a) `type: <EnumName>` resolves + emits `schema["type"]="string"` and ordered `schema["enum"]`, (b) `type: <UnknownCNAME>` raises `E320`, (c) Form A / Form B byte-identical JSON schema compared with a Phase 1-tip golden.
-- Parser source-span test proving `E320` carries the CNAME span when raised from the output-schema collector (Phase 1's test covers the helper in isolation, not the collector path).
-- Phase 2 worklog entry recording green `make verify-examples` + `make verify-diagnostics` against the Phase 2 tip, then a Phase 2 commit so the frontier advances on a checkpoint, not on uncommitted local state.
+Status: COMPLETE (fresh audit 2026-04-19; landed in commit `9027e2c feat(phase 2): wire structured output-schema surfaces to resolve_field_type_ref + E320`; IR `type_ref` on `OutputSchemaField`/`OutputSchemaRouteField`/`OutputSchemaDef`; `_collect_output_schema_node_parts` routes the `type:` capture through `resolve_field_type_ref`; `_lower_output_schema_parts` prefers `parts.type_ref`; five lowering tests plus the `examples/79` E320 compile-fail case landed; `make verify-examples` and `make verify-diagnostics` green per worklog)
 
 * Goal: make every `type: <CNAME>` on `output_schema_field`, `output_schema_route_field`, and `output_schema_def` route through the shared helper. Kill the silent-malformed-schema latent bug (today `type: StepRole` silently writes `{"type": "StepRole"}`). Leave Form A and Form B working via their existing normalization branches so shipped examples continue to compile.
 * Work: add `type_ref: FieldTypeRef | None` to `OutputSchemaField` (`doctrine/_model/io.py:269`), `OutputSchemaRouteField` (`:293`), and `OutputSchemaDef` (`:277`). Replace `_OutputSchemaNodeParts.type_name: str | None` with `type_ref: FieldTypeRef | None` at `doctrine/_compiler/resolve/output_schemas.py:41`. Update `_collect_output_schema_node_parts` at `output_schemas.py:1350` so the `key == "type"` capture at `:1359` calls `resolve_field_type_ref(value, span=..., unit=...)` and stores the `FieldTypeRef` on `parts.type_ref`. Update `_lower_output_schema_parts` around `:1094-1190`: when `parts.type_ref` is a `BuiltinTypeRef`, set `schema["type"] = parts.type_ref.name`; when it is an `EnumTypeRef`, set `schema["type"] = "string"` and `schema["enum"] = [m.wire for m in parts.type_ref.decl.members]`. Keep the Form A branch at `:1629-1671` and the Form B branch at `:1703-1716` intact — they set `parts.enum_values` and leave `parts.type_ref = None`; lowering prefers `parts.type_ref` and falls back to the existing enum-values path when `type_ref` is `None`. Net effect for this phase: `type: <EnumName>` compiles correctly; `type: <UnknownCNAME>` raises E320; Form A and Form B keep compiling unchanged.
@@ -997,6 +957,7 @@ Verification:
 
 ## Phase 6 — New example `examples/139_enum_typed_field_bodies/` as manifest-backed proof
 
+* Status: COMPLETE 2026-04-19. Shipped `examples/139_enum_typed_field_bodies/` with `prompts/AGENTS.prompt` (one `enum StepRole` decl, one `document LessonPlanContract` whose `table step_arc.row_schema.step_role` carries `type: StepRole`), `prompts/invalid_unknown_enum_type_on_row_schema/AGENTS.prompt` (compile-fail variant), `cases.toml` with three cases (`render_declaration` on `LessonPlanContract`, `render_contract` on `LessonPlanDemo`, `compile_fail` for E320), and `ref/lesson_plan_contract/DOCUMENT.md` plus `ref/lesson_plan_demo/AGENTS.md`. Added an entry for example 139 to `examples/README.md`. `make verify-examples` and `make verify-diagnostics` both green.
 * Goal: ship one end-to-end example demonstrating the canonical form on the primary motivating surface (a readable `row_schema` entry with `type: <EnumName>`). Back it with `render_contract` plus `compile_fail` cases so the language guarantee is manifest-enforced.
 * Work: create `examples/139_enum_typed_field_bodies/` with `prompts/AGENTS.prompt`, `cases.toml`, and `ref/**`. The prompt declares one `enum` with a small, plainly-named vocabulary; a readable table with a `row_schema` entry whose body carries `type: <EnumName>` plus a short prose description. The manifest declares a `render_contract` case asserting the rendered artifact contains the `Valid values: …` line in declared order under the typed field. The manifest also declares a `compile_fail` case pointing at a variant source with `type: <UnknownEnumName>`, asserting E320 is raised.
 * Checklist (must all be done):
@@ -1268,3 +1229,19 @@ N/A — no runtime telemetry in this repo's scope.
 
 **Follow-ups.**
 - Phase 6 — ship `examples/139_enum_typed_field_bodies/` as manifest-backed proof. Render-contract case proves the `Valid values:` line renders under a typed `row_schema` entry; compile-fail case proves E320 fires on an unknown enum name.
+
+## 2026-04-19 — Phase 6 complete; example 139 ships typed `row_schema` proof via `render_declaration`
+
+**Context.** `implement-loop` ran Phase 6. `examples/139_enum_typed_field_bodies/` now ships end-to-end proof that a `row_schema` entry typed with `type: <EnumName>` renders a `Valid values: …` line in declared order, and that typing against an unknown enum name fails loud with E320.
+
+**Key decisions.**
+- **Valid-values proof runs through `render_declaration`, not `render_contract`.** `_render_inline_schema` at `doctrine/_renderer/blocks.py:534` is gated on `profile.name == "ContractMarkdown"`. Documents attached via `output.structure:` render through the ArtifactMarkdown profile, which deliberately collapses `row_schema` detail into the structure summary. The ContractMarkdown profile is only reached when a document, table, schema, or analysis decl is rendered as its own readable declaration (for example via `compile_readable_declaration`). Example 139 therefore uses `kind = "render_declaration"` on `LessonPlanContract` for the primary `Valid values:` proof, backed by a second `kind = "render_contract"` case on `LessonPlanDemo` that exercises the agent path and confirms the typed field does not destabilize the output-attached render.
+- **Three cases, one AGENTS.prompt, one compile-fail variant.** `cases.toml` declares: (1) `render_declaration` on `LessonPlanContract` asserting the exact markdown including `Valid values: introduce, practice, test, capstone.` under `_Row Schema_`; (2) `render_contract` on `LessonPlanDemo` asserting the agent-rendered output of the same prompt; (3) `compile_fail` on `prompts/invalid_unknown_enum_type_on_row_schema/AGENTS.prompt` asserting `E320` at line 10. The invalid variant is a minimal sibling prompt under `prompts/` per the plan's Checklist.
+- **Example index entry added.** `examples/README.md` now lists `139_enum_typed_field_bodies` with a one-line description naming the canonical form and the four reachable surfaces (table columns, `row_schema` / `item_schema` entries, record scalars, output-schema fields).
+
+**Consequences.**
+- `uv run --locked python -m doctrine.verify_corpus --manifest examples/139_enum_typed_field_bodies/cases.toml` passes all three cases. `make verify-examples` and `make verify-diagnostics` both green at the Phase 6 tip.
+- Phase 6 Exit criteria met: example directory exists with prompts, manifest, and ref/; both render cases plus the compile-fail case pass; rendered `ref/**` shows the `Valid values: …` line in declared order; both verify targets green.
+
+**Follow-ups.**
+- Phase 7 — bulk docs sweep: `LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `AGENT_IO_DESIGN_NOTES.md`, `VERSIONING.md` 4.1 → 5.0, `CHANGELOG.md` 5.0 entry, `COMPILER_ERRORS.md` E320 row cross-check, `examples/README.md` (entry already added in Phase 6).

@@ -1,0 +1,46 @@
+# A field's value comes from a small fixed vocabulary.
+#
+# Declare an `enum` once and type the field with that name. The renderer
+# emits a "Valid values:" line from the enum members in declared order, so
+# one readable source owns the vocabulary.
+#
+# This example types a `row_schema` entry on a readable table. The same
+# form works on table columns, record scalars, and output-schema fields.
+
+
+enum StepRole: "Step Role"
+    introduce: "Introduce"
+    practice: "Practice"
+    test: "Test"
+    capstone: "Capstone"
+
+
+document LessonPlanContract: "Lesson Plan Contract"
+    table step_arc: "Step Arc" required
+        row_schema:
+            step_role: "Step Role"
+                type: StepRole
+                "Name the step's role in the arc."
+
+        columns:
+            concept: "Concept"
+                "Name the concept the step teaches."
+
+            evidence: "Evidence"
+                "Name the evidence that proves the step landed."
+
+
+output LessonPlanFile: "Lesson Plan File"
+    target: File
+        path: "lesson_root/LESSON_PLAN.md"
+    shape: MarkdownDocument
+    structure: LessonPlanContract
+    requirement: Required
+
+
+agent LessonPlanDemo:
+    role: "Keep {{LessonPlanContract:step_arc.row_schema.step_role.title}} values in sync with the Step Role vocabulary."
+    workflow: "Plan"
+        "Write the lesson plan."
+    outputs: "Outputs"
+        LessonPlanFile

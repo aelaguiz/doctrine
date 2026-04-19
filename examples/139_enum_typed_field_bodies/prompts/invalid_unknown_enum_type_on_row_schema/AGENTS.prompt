@@ -1,0 +1,29 @@
+# Compile-fail variant: the row_schema entry types against an unknown
+# enum name. The resolver looks for a declared enum called `UnknownRole`,
+# finds none, and raises E320.
+
+
+document BrokenLessonPlanContract: "Broken Lesson Plan Contract"
+    table step_arc: "Step Arc" required
+        row_schema:
+            step_role: "Step Role"
+                type: UnknownRole
+                "Name the step's role in the arc."
+
+        columns:
+            concept: "Concept"
+                "Name the concept the step teaches."
+
+
+output BrokenLessonPlanFile: "Broken Lesson Plan File"
+    target: File
+        path: "lesson_root/BROKEN.md"
+    shape: MarkdownDocument
+    structure: BrokenLessonPlanContract
+    requirement: Required
+
+
+agent BrokenLessonPlanDemo:
+    role: "Demo."
+    outputs: "Outputs"
+        BrokenLessonPlanFile

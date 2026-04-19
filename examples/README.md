@@ -270,6 +270,7 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `136_review_shared_route_binding` | `via review.on_reject.route` lets a shared review-carrier output bind each critic's `next_owner:` to the resolved review route without forking layer-specific prose per critic. |
 | `137_role_home_shared_rules_split` | A role home may split always-on generic rules into their own `shared_rules:` slot so concrete roles can override `how_to_take_a_turn:` without losing the generic rules. |
 | `138_output_shape_case_selector` | One shared `output shape` with a `selector:` block and `case EnumType.member:` dispatch carries role-specific field notes that the compiler inlines per agent using each agent's `selectors:` binding. |
+| `139_enum_typed_field_bodies` | A field's fixed vocabulary lives in a declared `enum`; the field's body carries `type: <EnumName>`, and the renderer emits a `Valid values: ...` line in declared order under the typed entry. Works across readable table columns, `row_schema` / `item_schema` entries, record scalars, and output-schema fields. |
 
 ## Useful Commands
 
