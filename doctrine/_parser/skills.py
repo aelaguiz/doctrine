@@ -26,6 +26,34 @@ from doctrine._parser.parts import (
 from doctrine.diagnostics import TransformParseFailure
 
 
+def _split_record_scalar_body(
+    body, *, key: str
+):
+    """Split a record scalar-head body into non-type items and a `type:` name.
+
+    The grammar permits a `type:` line only inside the scalar-head record
+    body (`record_keyed_scalar_body`). Every field-shaped body in the
+    language routes `type:` through `resolve_field_type_ref`.
+    """
+    if body is None:
+        return None, None, None
+    remaining: list = []
+    type_name: str | None = None
+    type_source_span: model.SourceSpan | None = None
+    for item in body:
+        if isinstance(item, model.OutputSchemaSetting) and item.key == "type":
+            if type_name is not None:
+                raise TransformParseFailure(
+                    f"Duplicate `type:` line in record field `{key}` body.",
+                    hints=("Declare `type:` at most once per field.",),
+                )
+            type_name = item.value
+            type_source_span = item.source_span
+            continue
+        remaining.append(item)
+    return remaining, type_name, type_source_span
+
+
 class SkillsTransformerMixin:
     """Shared skills, records, skill package, and enum lowering."""
 
@@ -406,15 +434,47 @@ class SkillsTransformerMixin:
     def record_item_body(self, items):
         return tuple(items[0])
 
+    def record_keyed_scalar_body(self, items):
+        # Grammar: `_INDENT record_keyed_scalar_body_line+ _DEDENT`
+        # Each line is either an `OutputSchemaSetting(key="type")` or a
+        # record_item. We pass the whole list through; the item handler
+        # splits the `type:` line off into `type_name` + `type_source_span`.
+        return tuple(items)
+
     @v_args(meta=True, inline=True)
-    def record_keyed_item(self, meta, key, head, body=None):
-        if isinstance(head, str) and body is not None:
+    def record_keyed_scalar_item(self, meta, key, head, body=None):
+        body_items, type_name, type_source_span = _split_record_scalar_body(
+            body, key=key
+        )
+        if type_name is None and body_items is not None and body_items:
             return _with_source_span(
-                model.RecordSection(key=key, title=head, items=tuple(body)),
+                model.RecordSection(key=key, title=head, items=tuple(body_items)),
                 meta,
             )
+        scalar_body: tuple | None
+        if body_items:
+            scalar_body = tuple(body_items)
+        else:
+            scalar_body = None
         return _with_source_span(
-            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=scalar_body,
+                type_name=type_name,
+                type_source_span=type_source_span,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def record_keyed_ref_item(self, meta, key, head, body=None):
+        return _with_source_span(
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=None if body is None else tuple(body),
+            ),
             meta,
         )
 

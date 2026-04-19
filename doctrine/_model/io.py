@@ -26,6 +26,9 @@ class RecordScalar:
     key: str
     value: RecordScalarValue
     body: tuple["AnyRecordItem", ...] | None = None
+    type_ref: "FieldTypeRef | None" = None
+    type_name: str | None = None
+    type_source_span: SourceSpan | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -71,6 +71,86 @@ def resolve_field_type_ref(
     raise _raise_e320(name=name, span=span, unit=unit)
 
 
+def resolve_record_scalar_type_refs(
+    items: tuple[object, ...],
+    *,
+    unit: IndexedUnit,
+    lookup_enum: EnumLookup,
+) -> tuple[object, ...]:
+    """Walk `items` and fill `type_ref` on every reachable `RecordScalar`.
+
+    The walk is structural and immutable: each `RecordScalar` that carries a
+    `type_name` but no `type_ref` is replaced with a copy whose `type_ref`
+    resolves via `resolve_field_type_ref`. Unknown CNAMEs raise E320 at the
+    span captured by the parser. `RecordSection` and `GuardedOutputSection`
+    walls are descended; unrelated nodes (prose, refs, overrides) pass
+    through unchanged.
+    """
+    return tuple(
+        _resolve_record_type_ref_item(item, unit=unit, lookup_enum=lookup_enum)
+        for item in items
+    )
+
+
+def _resolve_record_type_ref_item(
+    item: object,
+    *,
+    unit: IndexedUnit,
+    lookup_enum: EnumLookup,
+) -> object:
+    if isinstance(item, model.RecordScalar):
+        resolved_body = None
+        if item.body is not None:
+            resolved_body = resolve_record_scalar_type_refs(
+                item.body, unit=unit, lookup_enum=lookup_enum
+            )
+        resolved_type_ref = item.type_ref
+        if resolved_type_ref is None and item.type_name is not None:
+            resolved_type_ref = resolve_field_type_ref(
+                item.type_name,
+                span=item.type_source_span,
+                unit=unit,
+                lookup_enum=lookup_enum,
+            )
+        if resolved_body is item.body and resolved_type_ref is item.type_ref:
+            return item
+        return model.RecordScalar(
+            key=item.key,
+            value=item.value,
+            body=resolved_body,
+            type_ref=resolved_type_ref,
+            type_name=item.type_name,
+            type_source_span=item.type_source_span,
+            source_span=item.source_span,
+        )
+    if isinstance(item, model.RecordSection):
+        resolved_items = resolve_record_scalar_type_refs(
+            item.items, unit=unit, lookup_enum=lookup_enum
+        )
+        if resolved_items is item.items:
+            return item
+        return model.RecordSection(
+            key=item.key,
+            title=item.title,
+            items=resolved_items,
+            source_span=item.source_span,
+        )
+    if isinstance(item, model.GuardedOutputSection):
+        resolved_items = resolve_record_scalar_type_refs(
+            item.items, unit=unit, lookup_enum=lookup_enum
+        )
+        if resolved_items is item.items:
+            return item
+        return model.GuardedOutputSection(
+            key=item.key,
+            title=item.title,
+            when_expr=item.when_expr,
+            items=resolved_items,
+            source_span=item.source_span,
+        )
+    return item
+
+
 def _raise_e320(
     *,
     name: str,
@@ -102,4 +182,5 @@ __all__ = [
     "FieldTypeRef",
     "EnumLookup",
     "resolve_field_type_ref",
+    "resolve_record_scalar_type_refs",
 ]

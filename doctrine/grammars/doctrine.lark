@@ -554,7 +554,12 @@ readable_table_use_body: readable_table_use_body_line+
 readable_row_schema_block: "row_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
 readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
 readable_table_column: CNAME ":" string _NL readable_table_column_body?
-readable_table_column_body: _INDENT block_lines _DEDENT
+// Every field-shaped body in the language (output schema fields + readable
+// row_schema entries + readable item_schema entries + readable table columns
+// + record scalar bodies) routes `type:` through `resolve_field_type_ref`.
+// To add a new field-shaped surface, include `typed_field_body_line` in its
+// body rule and call the helper from its resolver.
+readable_table_column_body: _INDENT typed_field_body_line+ _DEDENT
 readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
 readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
 readable_table_cell: CNAME ":" string _NL?                                   -> readable_table_cell_text
@@ -563,7 +568,10 @@ readable_table_notes_block: "notes" ":" _NL _INDENT readable_table_note+ _DEDENT
 readable_table_note: prose_line _NL?
 
 readable_inline_schema_item: CNAME ":" string _NL readable_inline_schema_item_body?
-readable_inline_schema_item_body: _INDENT block_lines _DEDENT
+readable_inline_schema_item_body: _INDENT typed_field_body_line+ _DEDENT
+
+?typed_field_body_line: output_schema_type_stmt
+                      | prose_line _NL?
 
 readable_callout_body: readable_callout_body_line+
 ?readable_callout_body_line: readable_callout_kind
@@ -854,11 +862,14 @@ output_record_body: output_record_item+
 output_override_keyed_item: "override" CNAME ":" string _NL output_record_item_body?
                          | "override" CNAME ":" path_ref _NL output_record_item_body?
                          | "override" CNAME ":" name_ref _NL output_record_item_body?
-output_record_keyed_item: CNAME ":" string _NL output_record_item_body?
-                      | CNAME ":" path_ref _NL output_record_item_body?
-                      | CNAME ":" name_ref _NL output_record_item_body?
+output_record_keyed_item: CNAME ":" string _NL output_record_keyed_scalar_body?       -> output_record_keyed_scalar_item
+                      | CNAME ":" path_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
+                      | CNAME ":" name_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
 output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
+output_record_keyed_scalar_body: _INDENT output_record_keyed_scalar_body_line+ _DEDENT
+?output_record_keyed_scalar_body_line: output_schema_type_stmt
+                                     | output_record_item
 
 trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
 output_override_trust_surface_block: "override" "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
@@ -907,11 +918,14 @@ output_override_readable_block: output_override_section_block
 output_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
-record_keyed_item: CNAME ":" record_head _NL record_item_body?
+record_keyed_item: CNAME ":" string _NL record_keyed_scalar_body?                -> record_keyed_scalar_item
+                 | CNAME ":" path_ref _NL record_item_body?                      -> record_keyed_ref_item
+                 | CNAME ":" name_ref _NL record_item_body?                      -> record_keyed_ref_item
 record_ref_item: name_ref _NL record_item_body?
 record_item_body: _INDENT record_body _DEDENT
-
-?record_head: string | path_ref | name_ref
+record_keyed_scalar_body: _INDENT record_keyed_scalar_body_line+ _DEDENT
+?record_keyed_scalar_body_line: output_schema_type_stmt
+                              | record_item
 
 enum_body: enum_member+
 enum_member: CNAME ":" string _NL? enum_member_body?

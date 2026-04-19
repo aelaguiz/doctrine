@@ -27,6 +27,7 @@ from doctrine._parser.parts import (
     _source_span_from_meta,
     _with_source_span,
 )
+from doctrine._parser.skills import _split_record_scalar_body
 from doctrine.diagnostics import TransformParseFailure
 
 
@@ -460,20 +461,57 @@ class IoTransformerMixin:
     def output_record_item_body(self, items):
         return tuple(items[0])
 
+    def output_record_keyed_scalar_body(self, items):
+        # Grammar: `_INDENT output_record_keyed_scalar_body_line+ _DEDENT`.
+        # Each line is either an `OutputSchemaSetting(key="type")` or an
+        # `output_record_item`. The item handler splits the `type:` line
+        # off into `type_name` + `type_source_span` on the resulting
+        # `RecordScalar`. Unwrap `OutputRecordSectionPart` the same way
+        # `output_record_body` does.
+        return tuple(
+            item.section if isinstance(item, OutputRecordSectionPart) else item
+            for item in items
+        )
+
     @v_args(meta=True, inline=True)
-    def output_record_keyed_item(self, meta, key, head, body=None):
-        if isinstance(head, str) and body is not None:
+    def output_record_keyed_scalar_item(self, meta, key, head, body=None):
+        body_items, type_name, type_source_span = _split_record_scalar_body(
+            body, key=key
+        )
+        if type_name is None and body_items is not None and body_items:
             line, column = _meta_line_column(meta)
             return OutputRecordSectionPart(
                 section=_with_source_span(
-                    model.RecordSection(key=key, title=head, items=tuple(body)),
+                    model.RecordSection(key=key, title=head, items=tuple(body_items)),
                     meta,
                 ),
                 line=line,
                 column=column,
             )
+        scalar_body: tuple | None
+        if body_items:
+            scalar_body = tuple(body_items)
+        else:
+            scalar_body = None
         return _with_source_span(
-            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=scalar_body,
+                type_name=type_name,
+                type_source_span=type_source_span,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_record_keyed_ref_item(self, meta, key, head, body=None):
+        return _with_source_span(
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=None if body is None else tuple(body),
+            ),
             meta,
         )
 

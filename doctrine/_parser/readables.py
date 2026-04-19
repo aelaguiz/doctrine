@@ -13,6 +13,34 @@ from doctrine._parser.parts import (
 from doctrine.diagnostics import TransformParseFailure
 
 
+def _split_typed_field_body(
+    body,
+) -> tuple[tuple[model.ProseLine, ...], str | None, model.SourceSpan | None]:
+    """Split a typed field body into prose lines and an optional `type:` name.
+
+    Every typed field body (readable row_schema entry, item_schema entry,
+    table column) routes `type:` through `resolve_field_type_ref`. Raises on
+    a duplicate `type:` line so the error surfaces at parse time.
+    """
+    if body is None:
+        return (), None, None
+    prose_lines: list[model.ProseLine] = []
+    type_name: str | None = None
+    type_source_span: model.SourceSpan | None = None
+    for item in body:
+        if isinstance(item, model.OutputSchemaSetting) and item.key == "type":
+            if type_name is not None:
+                raise TransformParseFailure(
+                    "Duplicate `type:` line in field body.",
+                    hints=("Declare `type:` at most once per field.",),
+                )
+            type_name = item.value
+            type_source_span = item.source_span
+            continue
+        prose_lines.append(item)
+    return tuple(prose_lines), type_name, type_source_span
+
+
 class ReadableNodeTransformerMixin:
     """Shared readable-block and readable-payload lowering for the public parser boundary."""
 
@@ -633,17 +661,20 @@ class ReadableNodeTransformerMixin:
 
     @v_args(meta=True, inline=True)
     def readable_table_column(self, meta, key, title, body=None):
+        prose, type_name, type_source_span = _split_typed_field_body(body)
         return _with_source_span(
             model.ReadableTableColumn(
                 key=key,
                 title=title,
-                body=tuple(body or ()),
+                body=prose,
+                type_name=type_name,
+                type_source_span=type_source_span,
             ),
             meta,
         )
 
     def readable_table_column_body(self, items):
-        return tuple(items[0])
+        return tuple(items)
 
     @v_args(meta=True)
     def readable_table_rows_block(self, meta, items):
@@ -671,13 +702,20 @@ class ReadableNodeTransformerMixin:
 
     @v_args(meta=True, inline=True)
     def readable_inline_schema_item(self, meta, key, title, body=None):
+        prose, type_name, type_source_span = _split_typed_field_body(body)
         return _with_source_span(
-            model.ReadableSchemaEntry(key=key, title=title, body=tuple(body or ())),
+            model.ReadableSchemaEntry(
+                key=key,
+                title=title,
+                body=prose,
+                type_name=type_name,
+                type_source_span=type_source_span,
+            ),
             meta,
         )
 
     def readable_inline_schema_item_body(self, items):
-        return tuple(items[0])
+        return tuple(items)
 
     @v_args(meta=True)
     def readable_callout_body(self, meta, items):

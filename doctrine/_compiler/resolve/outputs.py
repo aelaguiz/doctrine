@@ -17,6 +17,10 @@ from doctrine._compiler.final_output_diagnostics import (
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.output_schema_diagnostics import output_schema_compile_error
+from doctrine._compiler.resolve.field_types import (
+    resolve_field_type_ref,
+    resolve_record_scalar_type_refs,
+)
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     CompileError,
@@ -68,6 +72,84 @@ class ResolveOutputsMixin:
         key: str,
     ) -> object | None:
         return next((item for item in output_decl.items if self._output_item_key(item) == key), None)
+
+    def _resolve_output_item_type_refs(
+        self,
+        item: object,
+        *,
+        unit: IndexedUnit,
+    ) -> object:
+        # Walks an output-record item tree and fills in
+        # `RecordScalar.type_ref` by routing captured `type_name` through
+        # `resolve_field_type_ref`. Every field-shaped body in the language
+        # routes `type:` through that single entrypoint.
+        if isinstance(item, model.RecordScalar):
+            resolved_body = (
+                None
+                if item.body is None
+                else tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.body
+                )
+            )
+            type_ref = item.type_ref
+            if type_ref is None and item.type_name is not None:
+                type_ref = resolve_field_type_ref(
+                    item.type_name,
+                    span=item.type_source_span,
+                    unit=unit,
+                    lookup_enum=self._try_resolve_enum_decl,
+                )
+            return replace(item, body=resolved_body, type_ref=type_ref)
+        if isinstance(item, model.RecordSection):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        if isinstance(item, model.GuardedOutputSection):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        if isinstance(item, model.GuardedOutputScalar):
+            return replace(
+                item,
+                body=(
+                    None
+                    if item.body is None
+                    else tuple(
+                        self._resolve_output_item_type_refs(child, unit=unit)
+                        for child in item.body
+                    )
+                ),
+            )
+        if isinstance(item, model.RecordRef):
+            return replace(
+                item,
+                body=(
+                    None
+                    if item.body is None
+                    else tuple(
+                        self._resolve_output_item_type_refs(child, unit=unit)
+                        for child in item.body
+                    )
+                ),
+            )
+        if isinstance(item, model.OutputRecordCase):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        return item
 
     def _output_shape_item_by_key(
         self,
@@ -307,6 +389,13 @@ class ResolveOutputsMixin:
                     parent_output=parent_output,
                     parent_label=parent_label,
                 )
+            resolved = replace(
+                resolved,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in resolved.items
+                ),
+            )
             self._resolved_output_decl_cache[output_key] = resolved
             return resolved
         finally:
@@ -505,10 +594,15 @@ class ResolveOutputsMixin:
             if output_shape_decl.selector is not None
             else inherited_parent_output_shape.selector
         )
+        typed_items = resolve_record_scalar_type_refs(
+            tuple(resolved_items),
+            unit=unit,
+            lookup_enum=self._try_resolve_enum_decl,
+        )
         return model.OutputShapeDecl(
             name=output_shape_decl.name,
             title=output_shape_decl.title,
-            items=tuple(resolved_items),
+            items=typed_items,
             parent_ref=None,
             selector=inherited_selector,
             source_span=output_shape_decl.source_span,
@@ -740,10 +834,15 @@ class ResolveOutputsMixin:
                 ),
             )
 
+        typed_items = resolve_record_scalar_type_refs(
+            tuple(resolved_items),
+            unit=unit,
+            lookup_enum=self._try_resolve_enum_decl,
+        )
         return model.OutputDecl(
             name=output_decl.name,
             title=output_decl.title,
-            items=tuple(resolved_items),
+            items=typed_items,
             schema=resolved_schema,
             structure=resolved_structure,
             render_profile_ref=resolved_render_profile,
@@ -899,6 +998,9 @@ class ResolveOutputsMixin:
                 key=key,
                 value=item.value,
                 body=item.body,
+                type_ref=parent_item.type_ref,
+                type_name=parent_item.type_name,
+                type_source_span=parent_item.type_source_span,
                 source_span=item.source_span,
             )
 
@@ -1147,6 +1249,9 @@ class ResolveOutputsMixin:
                         for child in item.body
                     )
                 ),
+                type_ref=item.type_ref,
+                type_name=item.type_name,
+                type_source_span=item.type_source_span,
                 source_span=item.source_span,
             )
         if isinstance(item, model.RecordSection):

@@ -8,6 +8,7 @@ from doctrine._compiler.readable_diagnostics import (
     invalid_readable_block_error,
     readable_source_span,
 )
+from doctrine._compiler.resolve.field_types import resolve_field_type_ref
 from doctrine._compiler.resolved_types import (
     IndexedUnit,
     ResolvedRenderProfile,
@@ -434,22 +435,32 @@ class ResolveDocumentBlocksMixin:
                     first_source_span=seen_keys[entry.key].source_span,
                 )
             seen_keys[entry.key] = entry
+            resolved_body = tuple(
+                self._interpolate_authored_prose_line(
+                    line,
+                    unit=unit,
+                    owner_label=f"{owner_label}.{schema_label}.{entry.key}",
+                    surface_label=surface_label,
+                    ambiguous_label=f"{schema_label} interpolation ref",
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
+                for line in entry.body
+            )
+            resolved_type_ref = None
+            if entry.type_name is not None:
+                resolved_type_ref = resolve_field_type_ref(
+                    entry.type_name,
+                    span=entry.type_source_span,
+                    unit=unit,
+                    lookup_enum=self._try_resolve_enum_decl,
+                )
             entries.append(
                 replace(
                     entry,
-                    body=tuple(
-                        self._interpolate_authored_prose_line(
-                            line,
-                            unit=unit,
-                            owner_label=f"{owner_label}.{schema_label}.{entry.key}",
-                            surface_label=surface_label,
-                            ambiguous_label=f"{schema_label} interpolation ref",
-                            review_semantics=review_semantics,
-                            route_semantics=route_semantics,
-                            render_profile=render_profile,
-                        )
-                        for line in entry.body
-                    ),
+                    body=resolved_body,
+                    type_ref=resolved_type_ref,
                 )
             )
         return model.ReadableInlineSchemaData(
@@ -644,6 +655,14 @@ class ResolveDocumentBlocksMixin:
                     first_source_span=column_keys[column.key].source_span,
                 )
             column_keys[column.key] = column
+            resolved_type_ref = None
+            if column.type_name is not None:
+                resolved_type_ref = resolve_field_type_ref(
+                    column.type_name,
+                    span=column.type_source_span,
+                    unit=unit,
+                    lookup_enum=self._try_resolve_enum_decl,
+                )
             resolved_columns.append(
                 replace(
                     column,
@@ -657,6 +676,7 @@ class ResolveDocumentBlocksMixin:
                         )
                         for line in column.body
                     ),
+                    type_ref=resolved_type_ref,
                 )
             )
         if not resolved_columns:
