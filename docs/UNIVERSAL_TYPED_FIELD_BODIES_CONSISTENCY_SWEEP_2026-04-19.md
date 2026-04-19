@@ -968,6 +968,7 @@ Verification:
 
 ## Phase 5 — Unified emit of `Valid values: …` line across every field-shaped surface
 
+* Status: COMPLETE 2026-04-19. `render_valid_values_line` in `doctrine/emit_common.py` is the single helper; four surface renderers (readable table column, readable inline schema entry, record scalar, output-schema field) route through it. `_json_schema_meaning` emits `One of <values>.` in both the description-present and description-absent branches. `make verify-examples`, `make verify-diagnostics`, and the full unit suite (555 tests) all green at tip. Controlled `ref/**` drift captured in Decision Log entry dated 2026-04-19 "Phase 5 complete …".
 * Goal: render a single uniform `Valid values: a, b, c.` line under every field whose `type_ref` is an `EnumTypeRef`. Route every surface through one shared helper in `emit_common.py`. Extend `_json_schema_meaning` so existing output-schema fields that carry both a description and an enum vocabulary gain the valid-values line in their rendered meaning.
 * Work: add `render_valid_values_line(type_ref: FieldTypeRef | None) -> str | None` to `doctrine/emit_common.py`. Returns `"Valid values: <wire_1>, <wire_2>, …, <wire_n>."` when `type_ref` is an `EnumTypeRef` (values drawn from `type_ref.decl.members` in declared order); returns `None` otherwise. In `doctrine/emit_docs.py`, wire the helper into the readable-table-column renderer, the readable-schema-entry renderer (covers both `row_schema` and `item_schema`), the record-scalar renderer, and the output-schema field renderer. The emitted valid-values line sits immediately after the field description (when a prose body is present) or as the description (when no prose body exists). Extend `_json_schema_meaning` at `doctrine/_compiler/validate/__init__.py:271-293` to append `" One of <rendered>."` to the description when both description and `field_schema["enum"]` are present (previously only the description-absent branch rendered the vocabulary).
 * Checklist (must all be done):
@@ -1250,3 +1251,20 @@ N/A — no runtime telemetry in this repo's scope.
 
 **Follow-ups.**
 - User invokes the next command when ready.
+
+## 2026-04-19 — Phase 5 complete; `Valid values:` unified via one helper; controlled ref drift logged
+
+**Context.** `implement-loop` ran Phase 5 (unified emit of `Valid values: …` across every field-shaped surface). The shared helper `render_valid_values_line` now lives in `doctrine/emit_common.py` and is the single place that formats field-vocabulary prose for emit. Four surface renderers call it (readable table column, readable inline schema entry covering `row_schema` and `item_schema`, record scalar, output-schema field via `_json_schema_meaning`). The validator's `_json_schema_meaning` path is extended so that when both a description and a `field_schema["enum"]` are present, the rendered meaning now appends `One of <values>.` after the description instead of dropping the vocabulary.
+
+**Key decisions.**
+- **Helper draws `member.key`, not `member.value` or `member.wire`.** The existing JSON-schema lowering in `doctrine/_compiler/resolve/output_schemas.py:1081` already emits `schema["enum"]` from `member.key`. Rendering `Valid values: ok, blocked.` alongside `One of \`ok\`, \`blocked\`.` from the same source of truth keeps the two prose surfaces mutually consistent and keys/wires/titles from drifting in prose form. Unit and integration tests pin this choice.
+- **Integration tests live in `tests/test_emit_docs.py` across four new classes.** `ValidValuesLineHelperTests` pins the helper contract directly; `TypedFieldBodyEmitTests` drives each surface end-to-end where it can and directly via the inline-schema renderer where the `ContractMarkdown` profile cannot be reached via the manifest corpus; `JsonSchemaMeaningDescriptionPlusEnumTests` covers the `_json_schema_meaning` branches.
+- **Ref drift is controlled and limited to enum-valued output-schema fields.** Five shipped example refs now render the extended `One of \`…\`.` suffix after the description: `examples/79_final_output_output_schema/{build_ref,ref}/**`, `examples/85_review_split_final_output_output_schema/ref/**`, `examples/90_split_handoff_and_final_output_shared_route_semantics/ref/**`, `examples/120_route_field_final_output_contract/build_ref/**`, `examples/121_nullable_route_field_final_output_contract/build_ref/**`. No other `ref/**` file changed. The corresponding `cases.toml` `exact_lines` contracts update in lockstep.
+
+**Consequences.**
+- `make verify-examples` and `make verify-diagnostics` green at Phase 5 tip. Full unit suite (555 tests) green.
+- Phase 5 Exit criteria met: every Section 7 checklist item has a concrete artifact in-tree; the helper is the only module formatting valid-values prose; both `_json_schema_meaning` branches render the line.
+- Implementation Audit may reopen only if a later phase or auditor finds a surface that emits valid-values prose without routing through `render_valid_values_line`.
+
+**Follow-ups.**
+- Phase 6 — ship `examples/139_enum_typed_field_bodies/` as manifest-backed proof. Render-contract case proves the `Valid values:` line renders under a typed `row_schema` entry; compile-fail case proves E320 fires on an unknown enum name.
