@@ -1286,7 +1286,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|typed_as|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items|bind|emit|host_contract|receipt)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|selectors|case|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|export|flow|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|typed_as|list|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items|bind|emit|host_contract|receipt)\\b"
     },
     "routeSemanticRef": {
       "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
