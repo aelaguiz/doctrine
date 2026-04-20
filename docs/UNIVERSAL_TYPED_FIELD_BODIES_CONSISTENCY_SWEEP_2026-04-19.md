@@ -33,97 +33,46 @@ related:
 
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
-Date: 2026-04-19 (fresh audit)
+Date: 2026-04-19 (fresh audit, post-Phase-8 tip)
 Verdict (code): NOT COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- Phases 1 through 5 are committed and verified at tip (`fe8767c`, `9027e2c`, `6f7018d`, `c48ed26`, `7a1125d`, `06f3930`). Phases 6, 7, 8, and 9 are untouched. The remaining approved frontier is **Phases 6 → 7 → 8 → 9**, grouped here because implementation must walk the ordered frontier, not pick off one local gap.
-- No execution-side plan rewrite weakened Section 7, Section 0, the TL;DR, or Definition of Done. Section 7 Phases 6-9 are still full-fat (new example 139, bulk docs at 4.1 → 5.0, agent-linter + doctrine-learn skill edits, editor snapshots + psflows scratch + final Decision Log).
-- The uncommitted working-tree edits under `docs/LANGUAGE_REFERENCE.md`, `skills/agent-linter/**`, and `skills/doctrine-learn/**` belong to adjacent plans (output-shape selector, export-namespace boundary, role/skill authoring refresh) — not to this plan. Repo grep for `AL930` + "Inlined Vocabulary" and for `139_enum_typed_field_bodies` returns zero matches in skill source and in the curated outputs. Phase 7/8 work here has not begun.
-- **Plan-integrity gap (Phase 8).** The plan nominates `AL930` for "Inlined Vocabulary Should Be An Enum-Typed Field", but `skills/agent-linter/prompts/refs/finding_catalog.prompt:53` already defines `AL930` as "Skill Needs Host Contract". Phase 8 execution must pick an unused code (likely `AL940` or next free slot after scanning the catalog), then sync Section 0.2, Section 6.1, Section 7 Phase 8 text, Phase 7 CHANGELOG wording, and append a Decision Log entry. This is a phase obligation, not a separate ticket.
+- Phases 1 through 8 are committed and truthfully complete at branch tip (`fe8767c` Phase 1, `9027e2c` Phase 2, `6f7018d` Phase 3, `c48ed26`/`6302997` Phase 4, `7a1125d`/`06f3930` Phase 5, `05dd5b4` Phase 6, `4096c36` Phase 7, `88c5d8a` Phase 8). Fresh code reads confirm: `examples/139_enum_typed_field_bodies/` ships with prompts, manifest, and ref/ artifacts; `docs/VERSIONING.md:6` shows "Current Doctrine language version: 5.0"; `CHANGELOG.md:13,16,93` carries the 4.1 → 5.0 breaking block; `skills/agent-linter/prompts/refs/finding_catalog.prompt` and `skills/.curated/agent-linter/references/finding-catalog.md` carry `AL950`; `skills/doctrine-learn/prompts/refs/{authoring_patterns,outputs_and_schemas,examples_ladder}.prompt` cross-reference `examples/139_enum_typed_field_bodies`.
+- The plan-integrity collision flagged by the prior audit (`AL930` already meant "Skill Needs Host Contract") is resolved per Decision Log entry "2026-04-19 — AL930 → AL950: plan-integrity fix for the new agent-linter finding"; the new finding ships under the next free slot `AL950` and every plan-doc reference outside the prior audit narrative was renamed.
+- Phase 9 (editor snapshots + final corpus-level verification + final Decision Log entry) is the entire remaining approved frontier and is untouched. Phase 9 carries no `Status:` line in Section 7 — it was never claimed complete, so no phase needs reopening; the missing work is recorded below as the frontier head.
+- No execution-side plan rewrite weakened Section 7, Section 0, the TL;DR, or Definition of Done. Phases 1-8 carry full-fat completion narratives in Decision Log entries dated 2026-04-19, and the shipped artifacts back each claim.
+- The uncommitted working-tree `M` edits under `doctrine/_compiler/session.py`, `doctrine/_flow_render/svg.py`, `doctrine/diagnostics.py`, `doctrine/emit_docs.py`, `doctrine/emit_flow.py`, `doctrine/flow_renderer.py`, `doctrine/flow_svg.mjs`, `Makefile`, `.gitignore`, plus the `M` skills source/curated edits and the four untracked `docs/*_2026-04-1{8,9}.md` plan drafts, all belong to adjacent in-flight plans (authoring friction audit, language-gaps elegant-closure plan, layered-authoring docs, tighten-AGENTS.md render). They do not bear on this audit's verdict; Phase 9 itself only needs to touch `editors/vscode/tests/snap/examples/...` and append one Section 10 entry. If Phase 9 implementation must touch any of those `M` files, stop and confirm with the user per the parallel-edit safety rule.
 
 ## Reopened phases (false-complete fixes)
-- None. Phases 1 through 5 are truthfully complete per their Checklist + Exit criteria; fresh code reads confirm the committed state matches the plan. No phase was marked `COMPLETE` while carrying unfinished code work. Phase 2's "IN PROGRESS" status line in Section 7 is stale relative to commit `9027e2c`; it is corrected to `COMPLETE` by this audit, below the audit block, without reopening.
+- None. Every phase that carries `Status: COMPLETE` (Phases 1 through 8) is truthfully complete per its Checklist + Exit criteria; fresh code reads confirm the committed state matches the plan. No phase was marked `COMPLETE` while carrying unfinished code work.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
 
-- Frontier head — Phase 6: new manifest-backed example `examples/139_enum_typed_field_bodies/`
+- Frontier head — Phase 9 (editor snapshots + final corpus-level verification): editor snapshots stale; no final verify run recorded at branch tip; no final Decision Log entry
   - Evidence anchors:
-    - `examples/` — last directory is `138_output_shape_case_selector`; there is no `examples/139_enum_typed_field_bodies/` directory at all.
-    - Repo grep for `139_enum_typed_field_bodies` returns zero matches outside this plan doc.
-  - Plan expects (Phase 6 Checklist + Exit criteria):
-    - `examples/139_enum_typed_field_bodies/prompts/AGENTS.prompt` with one `enum` decl plus one readable table whose `row_schema` entry carries `type: <EnumName>` alongside prose.
-    - `examples/139_enum_typed_field_bodies/cases.toml` with a `render_contract` case for the primary prompt and a `compile_fail` case pointing at an unknown-enum variant that asserts `E320`.
-    - `examples/139_enum_typed_field_bodies/ref/**` committed; rendered artifact includes the `Valid values: …` line under the typed field.
-    - The `compile_fail` variant lives either inline in `cases.toml` or as a sibling `prompts/*.prompt`; it is minimal and clearly labelled; it does not reuse the primary prompt.
-    - Plain-language prose at ~7th-grade reading level per AGENTS.md.
-  - Code reality:
-    - Directory does not exist; no manifest; no ref artifacts.
-  - Fix:
-    - Execute Phase 6. This is the frontier head — it unblocks the Phase 7 cross-reference and the Phase 8 examples-ladder entry.
-
-- Frontier — Phase 7: authoritative docs, 4.1 → 5.0 bump, CHANGELOG
-  - Evidence anchors:
-    - `docs/VERSIONING.md:6` — "Current Doctrine language version: 4.1". No 4.1 → 5.0 entry anywhere in the file.
-    - `CHANGELOG.md:13,19` — top entry still says "Language version: 4.0 -> 4.1". No 5.0 entry.
-    - `docs/LANGUAGE_REFERENCE.md:881,938` — still shows `type: enum` + `values:` (Form A) in code examples. No new "Typed field bodies" subsection covering row_schema / item_schema / table column / record scalar. The uncommitted working-tree diff here belongs to prior plans (output-shape selector bullets; export/import namespace bullets).
-    - `docs/AGENT_IO_DESIGN_NOTES.md:126,219-220` — still references Form A (`type: enum` plus `values:`). No canonical-form rewrite.
-    - `docs/LANGUAGE_DESIGN_NOTES.md` — grep for "E320" / "Form A" / "Form B" / "enum.*values:" returns zero matches. No one-canonical-form decision note.
-    - `docs/COMPILER_ERRORS.md:158` — Phase 1 `E320` row is already present and consistent with the registered code; Phase 7 only needs to keep that row consistent with final CHANGELOG wording.
-  - Plan expects:
-    - `LANGUAGE_REFERENCE.md` output-schema subsection rewritten off Form A / Form B; new "Typed field bodies" subsection covering all four prose-only-then-typed surfaces with cross-reference to `examples/139_enum_typed_field_bodies/`.
-    - `LANGUAGE_DESIGN_NOTES.md` decision note explaining the one-canonical-form rule and the glossary/label prose-only exception.
-    - `AGENT_IO_DESIGN_NOTES.md` rewritten off Form A / Form B.
-    - `docs/VERSIONING.md` and `CHANGELOG.md` 4.1 → 5.0 entry with the five-bullet summary (deleted Form A, deleted Form B, tightened `type:` fail-loud with E320, added structured `type:` to row_schema / item_schema / table column / record scalar, one-line migration).
-    - `docs/README.md` and `examples/README.md` index lines verified; updated if they name the changed surfaces.
-  - Code reality:
-    - No doc edits for this plan; VERSIONING.md and CHANGELOG.md still at 4.1; LANGUAGE_REFERENCE.md and AGENT_IO_DESIGN_NOTES.md still show Form A.
-  - Fix:
-    - Execute Phase 7 after Phase 6 exists (so the cross-reference target is real).
-
-- Frontier — Phase 8: agent-linter new-finding + AL200 extension; doctrine-learn authoring-pattern + ladder; plan-integrity fix for the `AL930` collision
-  - Evidence anchors:
-    - `skills/agent-linter/prompts/refs/finding_catalog.prompt:14,53,95,396,432` — `AL930` is live and means "Skill Needs Host Contract". No "Inlined Vocabulary Should Be An Enum-Typed Field" row. `AL200` section has not been extended with the pipe-list-vocabulary shape.
-    - `skills/agent-linter/prompts/refs/examples.prompt` — no AL930/new-finding before/after pair for inlined-vocabulary-should-be-enum.
-    - `skills/doctrine-learn/prompts/refs/authoring_patterns.prompt:45` — mentions typed fields only in the context of route targets; no task-first chooser row for "fixed vocabulary on a field → `enum` decl + `type: X`"; no cross-reference to `examples/139_enum_typed_field_bodies`.
-    - `skills/doctrine-learn/prompts/refs/outputs_and_schemas.prompt` — still teaches Form A guidance; no canonical-form rewrite.
-    - `skills/.curated/agent-linter/references/finding-catalog.md` — grep for `AL930` returns the existing "Skill Needs Host Contract" row only; no inlined-vocabulary row.
-    - The uncommitted diffs in `skills/.curated/*`, `skills/agent-linter/prompts/refs/*`, and `skills/doctrine-learn/prompts/refs/*` belong to other plans (role/skill authoring refresh; abstract-agent IO override). None of them introduce the inlined-vocabulary finding or the example-139 ladder entry.
-  - Plan expects:
-    - New finding row + full section ("what it means", "why it matters", "default fix", "good / bad" pair) for "Inlined Vocabulary Should Be An Enum-Typed Field" under a chosen unused code.
-    - `AL200` section extended to name pipe-list vocabularies as a canonical duplicate-rule shape.
-    - Matching before/after pair in `examples.prompt`.
-    - Task-first chooser row in `authoring_patterns.prompt` + cross-reference to `examples/139_enum_typed_field_bodies`.
-    - `outputs_and_schemas.prompt` rewritten off Form A / Form B.
-    - doctrine-learn examples ladder gains an example-139 entry (exact ladder filename identified during implement).
-    - Curated `.md` outputs regenerated so `skills/.curated/agent-linter/references/finding-catalog.md`, `.../examples.md`, and `skills/.curated/doctrine-learn/references/authoring-patterns.md` carry the new content.
-    - New prose at ~7th-grade reading level per AGENTS.md.
-  - Plan-integrity gap:
-    - `AL930` collides with the live catalog entry in `finding_catalog.prompt:53`. Phase 8 must pick an unused code, then sync Section 0.2, Section 6.1, Section 7 Phase 8 heading + checklist, Phase 7 CHANGELOG bullet, and append a Decision Log entry recording the rename. This is a phase obligation, not a separate ticket.
-  - Code reality:
-    - No prompt-source edits for this plan; no curated outputs regenerated for this plan; plan-integrity collision unresolved.
-  - Fix:
-    - Execute Phase 8 after Phase 6 (for the ladder cross-reference). Resolve the finding-code collision in the same run.
-
-- Frontier tail — Phase 9: editor snapshots + final corpus-level verification
-  - Evidence anchors:
-    - `editors/vscode/tests/snap/examples/79_final_output_output_schema/prompts/AGENTS.prompt` still carries the pre-migration Form B shape (`type: string` + `enum:` block at lines 10-13). Phase 3 migrated the shipped `examples/79/**/AGENTS.prompt` to the canonical form, but the editor snapshot copies were not regenerated. The `.../121_.../...` snapshot is similarly stale.
-    - Section 10 Decision Log has no final entry recording green `make verify-examples`, `make verify-diagnostics`, `make verify-package`, the release-flow status, or the psflows scratch-conversion result at the branch tip.
-  - Plan expects:
-    - `cd editors/vscode && make` regenerates snapshots cleanly; regenerated snapshots reflect the canonical form and the unified `Valid values:` line.
-    - `make verify-examples`, `make verify-diagnostics`, `make verify-package` all green on the branch tip.
+    - `editors/vscode/tests/snap/examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt:8-12` still carries the pre-migration Form A shape (`type: enum` + `values:` block with `handoff` / `done`). The shipped `examples/121_.../prompts/AGENTS.prompt` was migrated to the canonical form in Phase 3, but the editor snapshot copy was not regenerated.
+    - `editors/vscode/tests/snap/examples/79_final_output_output_schema/prompts/AGENTS.prompt:7-13` still carries the pre-migration Form B shape (`type: string` + `enum:` block with `ok` / `action_required`). The shipped `examples/79_.../prompts/AGENTS.prompt:1-13` is now `enum RepoStatus` + `type: RepoStatus`. The corresponding `.../OPTIONAL_NO_EXAMPLE.prompt` snapshot is similarly stale; the `AGENTS.prompt.snap` and `OPTIONAL_NO_EXAMPLE.prompt.snap` rendered counterparts mirror the stale source.
+    - `editors/vscode/tests/snap/examples/` contains snapshots only for `79_...` and `121_...` from this plan's migration set; `85_...` and `90_...` have no snapshot directories so they are correctly absent here.
+    - Section 10 Decision Log has no final entry recording green `make verify-examples`, `make verify-diagnostics`, `make verify-package`, the release-flow status, the psflows scratch-conversion result, or the implementation-complete declaration for 5.0.
+  - Plan expects (Phase 9 Checklist + Exit criteria):
+    - `cd editors/vscode && make` regenerates snapshots cleanly; the regenerated `79_...` and `121_...` AGENTS.prompt + `.snap` pairs reflect the canonical `enum X` + `type: X` form (and the `79_...` OPTIONAL_NO_EXAMPLE pair likewise) plus the unified `Valid values: …` line where applicable.
+    - `make verify-examples` green on the branch tip.
+    - `make verify-diagnostics` green on the branch tip.
+    - `make verify-package` green on the branch tip.
     - `uv run --locked python -m unittest tests.test_release_flow` green or explicitly noted n/a.
-    - Scratch conversion of `psflows/lesson_plan` `step_role` excerpt compiles against this branch under the canonical form; scratch file stays local and uncommitted.
+    - Scratch conversion of a `psflows/lesson_plan` `step_role` excerpt compiles against this branch under the canonical form; scratch file stays local and uncommitted.
     - `git diff main -- ../psflows` empty (no file under `../psflows` modified in the branch diff).
     - Final Decision Log entry in Section 10 names the green verification and declares the plan implementation-complete for 5.0.
   - Code reality:
-    - Editor snapshots not regenerated; no final Decision Log entry; full corpus-level verify run not recorded at the Phase-9 tip.
+    - Editor snapshots not regenerated (Form A still in `121_.../AGENTS.prompt:8`; Form B still in `79_.../AGENTS.prompt:8` and `OPTIONAL_NO_EXAMPLE.prompt`).
+    - No final Decision Log entry exists.
+    - No commit on this branch records a clean Phase-9-tip run of `make verify-examples`, `make verify-diagnostics`, or `make verify-package`.
   - Fix:
-    - Execute Phase 9 last, after Phases 6-8 land cleanly.
+    - Execute Phase 9. The frontier is small (regenerate two editor snapshot directories, run the three verify targets at branch tip, do the local psflows scratch sanity check under the read-only rule, append the final Decision Log entry). Do not overwrite the working-tree `M` files listed in Code blockers above; if Phase 9 implementation discovers it needs to touch them, stop and confirm with the user.
 
 ## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- None. The remaining work is entirely code, grammar, IR, resolver, emit, examples, docs, skill-prompt source edits, skill curated regeneration, and editor snapshots — no manual QA gates the verdict.
+- None. The remaining work is entirely code (editor snapshot regeneration), verify-suite execution, and one Decision Log entry — no manual QA gates the verdict.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
@@ -1037,6 +986,8 @@ Verification:
 
 ## Phase 9 — Editor snapshots + final corpus-level verification
 
+Status: COMPLETE 2026-04-19 (snap regen produced canonical-form diffs for `79_final_output_output_schema/{AGENTS,OPTIONAL_NO_EXAMPLE}.prompt(.snap)` and `121_nullable_route_field_final_output_contract/AGENTS.prompt(.snap)`; all three `make verify-*` targets green at branch tip; release-flow tests N/A — release-flow surface untouched in this plan; scratch psflows conversion skipped per user direction to stay strictly inside the doctrine repo, no file under `../psflows` is modified).
+
 * Goal: bring the VS Code editor test snapshots in line with the migrated shipped corpus. Run the full verification suite once end-to-end. Confirm no file under `../psflows` is modified in the branch diff.
 * Work: run `cd editors/vscode && make` to regenerate editor snapshots under `editors/vscode/tests/snap/examples/...`. Review each regenerated snapshot for correctness (the Form A migrations in Phase 3 and the unified emit in Phase 5 can both affect cached snapshots). Commit regenerated snapshots. Run the full verify suite. Perform a scratch conversion of the `psflows/lesson_plan` `step_role` excerpt into the canonical form on this branch — compile locally, confirm it resolves under 5.0. The scratch is read-only and uncommitted; `../psflows` is not edited.
 * Checklist (must all be done):
@@ -1298,3 +1249,31 @@ N/A — no runtime telemetry in this repo's scope.
 
 **Follow-ups.**
 - Phase 9 — VS Code editor snapshot regeneration, full verify suite at the branch tip, psflows scratch conversion under read-only rule, and the final implementation-complete Decision Log entry.
+
+## 2026-04-19 — Phase 9 complete: editor snapshots regenerated, verify suite green, plan implementation-complete for 5.0
+
+**Context.** Phase 9 ran the full verification suite at the branch tip and regenerated the VS Code editor snapshots so the snap corpus reflects the canonical `enum X` + `type: X` form that landed in Phase 3 and the unified `Valid values:` line that landed in Phase 5.
+
+**Results.**
+- `cd editors/vscode && make` regenerated six snap files cleanly with no manual hand-edits:
+  - `editors/vscode/tests/snap/examples/79_final_output_output_schema/prompts/AGENTS.prompt(.snap)`
+  - `editors/vscode/tests/snap/examples/79_final_output_output_schema/prompts/OPTIONAL_NO_EXAMPLE.prompt(.snap)`
+  - `editors/vscode/tests/snap/examples/121_nullable_route_field_final_output_contract/prompts/AGENTS.prompt(.snap)`
+  Each diff replaces the pre-5.0 Form A (`type: enum` + `values:`) or Form B (`type: string` + `enum:`) with the canonical `enum X: "Title"` decl plus `type: X` on the field, matching the shipped corpus exactly.
+- `make verify-examples` green.
+- `make verify-diagnostics` green.
+- `make verify-package` green (artifacts emitted: `dist/doctrine_agents-4.0.1-py3-none-any.whl`, `dist/doctrine_agents-4.0.1.tar.gz`; smoke ran clean for both wheel and sdist).
+- `tests.test_release_flow` was not exercised separately because no release-flow surface was touched in this plan; recorded as N/A per Phase 9 Checklist.
+- `editors/vscode` integration test fails on a pre-existing `simple.greeting` import-link assertion in `tests/integration/suite/index.js`, unrelated to typed field bodies — flagged as out of scope for this plan.
+- The local psflows scratch conversion was skipped at user direction to keep this session strictly inside the doctrine repo. No file under `../psflows` was touched in this branch's diff. The shipped 5.0 surface (single `enum X` decl + `type: X` on the field) is the only canonical way to express a fixed vocabulary on a field-shaped slot, which is the exact shape the original psflows blocker called for.
+
+**Decision.** Plan implementation-complete for the 4.1 → 5.0 universal typed field bodies consistency sweep. All nine phases honored their Checklist and Exit criteria; no required code work remains.
+
+**Consequences.**
+- One canonical form (`enum X: "Title"` decl + `type: X`) is the only shipped way to express a fixed vocabulary on every field-shaped surface.
+- E320 fails loud on unknown type CNAME at every surface.
+- Both pre-5.0 secondary forms are gone from the grammar, the resolver, the shipped corpus, the editor snap corpus, the docs, and the shipped skills.
+- Language version is 5.0; CHANGELOG migration path stands.
+
+**Follow-ups.**
+- Use `$arch-docs` for any broader docs cleanup, consolidation, or plan/worklog retirement that should follow a clean code-complete audit.

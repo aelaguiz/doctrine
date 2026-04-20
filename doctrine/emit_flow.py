@@ -230,6 +230,15 @@ def _runtime_flow_roots_for_target(
     *,
     target: EmitTarget,
 ) -> tuple[RuntimeEmitRoot, ...]:
+    """Flow-graph-specific frontier for one emit target.
+
+    For `SOUL.prompt` entrypoints the flow graph needs *every* concrete
+    agent in the root flow so the rendered diagram can show handoffs
+    between siblings. For `AGENTS.prompt` and `SKILL.prompt` entrypoints
+    the graph follows the standard emit frontier from
+    `collect_runtime_emit_roots` — the root flow's concrete agents plus
+    first-seen imported runtime packages.
+    """
     if target.entrypoint.name == "SOUL.prompt":
         return tuple(
             RuntimeEmitRoot(

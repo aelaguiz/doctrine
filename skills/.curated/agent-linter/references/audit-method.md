@@ -84,6 +84,15 @@ Ask these first:
 - Do related surfaces contradict each other?
 - Does read-many work end in one compact handoff or a pile of raw notes?
 - Is the wording clear enough for a tired human to understand fast?
+- Does any role body tell the turn how to run a specific script, CLI, or hard requirement that a skill already owns or should own?
+- Does any role body cite planning-doc paths, planning rule IDs, or authoring rationale that belongs in git history?
+- Does any role name another Doctrine declaration (agent, output, review, schema field, document) as a quoted string literal instead of a typed ref?
+- Does any sentence in shipped role or skill prose run longer than about 40 words, nest parentheticals, or carry inline `(a)`/`(b)`/`(c)` enumerations?
+- When several concrete agents inherit the same abstract base, does the base absorb the shared scaffold (`inputs`, `skills`, `outputs`, `output schema`, `output shape`), or do the children re-declare it?
+- When several reviews share a slot-key taxonomy, are they siblings of one `review_family` with a `selector` and `cases:`, or parallel `workflow` declarations that will drift?
+- Does a review's `checks:` block collapse a multi-gate contract to `contract.passes`, or does it write one `accept` or `reject` line per declared gate slot?
+- Does a bare `skill` imported across several agents carry `use_when:` prose that names host-owned document or final-output slots, and is it missing a `host_contract:` + `bind:` coupling?
+- Does role prose enumerate allowed or forbidden verbs (`may call ...`, `may not call ...`, `is permitted to invoke ... via Bash`) where a typed skill scope already owns the verb set?
 
 ## Garry-Aligned Rules
 

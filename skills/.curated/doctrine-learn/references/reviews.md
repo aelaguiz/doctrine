@@ -171,6 +171,18 @@ cases:
 Case selectors must be non-overlapping and exhaustive. Each case declares
 exactly one `subject:`, one `contract:`, one `checks:` block, and both outcome
 sections.
+Parallel `workflow` declarations that each carry the same gate slot-keys
+drift: same slot name, different gate ids across layers, different prose for
+the same verdict. `review_family` collapses the taxonomy into one declaration.
+The gates are defined once, and cases override only the per-mode prose. See
+`AL270` and `AL830`.
+
+### Per-Gate Accept And Reject
+
+A review contract that declares N gate slots expects N `accept`/`reject`
+lines, not one rollup. `accept "..." when contract.passes` hides every failing
+gate behind a single predicate and loses per-gate routing consequences. Write
+one `accept` or `reject` per declared gate slot. See `AL450`.
 
 ### Review Inheritance
 

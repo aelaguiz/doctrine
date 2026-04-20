@@ -262,6 +262,10 @@ These shapes compile but push against the principles. Fix them early.
   every role.
 - Move the shared shape into a top-level `skills`, `inputs`, or
   `outputs` block and inherit it.
+- When the copy spans whole agent declaration blocks (`inputs`,
+  `skills`, `outputs`, `output schema`, `output shape`), hoist the scaffold
+  into an `abstract agent` base. Children override only the parts that
+  differ. See `examples/25_abstract_agent_io_override`.
 - See `examples/21_first_class_skills_blocks` and
   `examples/23_first_class_io_blocks`.
 
@@ -317,6 +321,171 @@ These shapes compile but push against the principles. Fix them early.
 - Do not let host facts turn into a second control plane for review,
   route, or currentness.
 
+### P1. Skill Capabilities Pulled Into The Agent Role
+
+The agent body tells the turn how to call a specific script, tool, or
+CLI. If a `skill` exists for the job, the agent should reference the
+skill, not restate its internals. Agents stay thin; skills own
+capabilities.
+
+- Trigger: the role prose names a script path, tool command, or hard
+  requirement that a declared `skill` already owns (or should own).
+- Fix: move the procedure into the `skill` body. Have the agent
+  reference the skill by declaration name.
+- Sub-case: role prose enumerating allowed or forbidden verbs
+  (`may call`, `may not call`, `is permitted to`) when a skill package
+  already types the verb set. The prose shadow will drift. Drop the
+  allowlist and cite the skill. Cross-link: `agent-linter` finding
+  `AL940`.
+- Cross-link: `agent-linter` finding `AL250`.
+
+### P2. Naked Script Or CLI Invocation In Role Prose
+
+Literal shell strings, executable paths, and flag lists quoted as
+instructions in the agent body belong on a `skill`, `workflow`, or
+`document` surface. Not inline on the role.
+
+- Trigger: the role prose contains a backticked shell command, an
+  executable path, or a flag list written as an instruction.
+- Fix: promote the invocation into a `skill` body. If no skill exists
+  yet, create one or point at an existing one.
+- Cross-link: `agent-linter` finding `AL260`.
+
+### P3. Planning-Doc Scaffolding In The Agent Body
+
+Emitted role prose should not cite its own planning doc by rule ID,
+carry "the rationale for this rule is …" notes, or embed rule IDs from a
+design doc. Authoring history belongs in git and in planning docs, not
+in the always-on agent body.
+
+- Trigger: prose cites planning-doc paths, rule IDs like `L3-A1`, or
+  authoring rationale inside the role body.
+- Fix: strip the citation. Keep the behavior; drop the provenance.
+- Cross-link: `agent-linter` finding `AL140`.
+
+### P4. Declaration Names Quoted As Strings
+
+When the role names another agent, output, review, schema field, or
+document as a quoted literal, it loses the typed truth Doctrine can
+already carry. Prefer `inputs:`, `outputs:`, readable declaration refs,
+`from ... import ...`, and addressable paths like
+`OutputSchema:field.subfield`.
+
+- Trigger: prose names a Doctrine declaration as a quoted literal
+  (`"LessonPlanner"`, `"home:issue.md"`,
+  `target_lesson_concepts_sha256`) where a typed ref would carry the
+  same truth.
+- Fix: replace the string with the right typed ref. See
+  `references/imports-and-refs.md` for the full ref vocabulary.
+- Cross-link: `agent-linter` finding `AL440`.
+
+### P5. Machine-Language Prose
+
+Sentences over about 40 words, nested parentheticals, inline
+`(a)`/`(b)`/`(c)` enumerations, dense jargon, and code-like phrasing
+read as state-transition code rather than human instruction. Shipped
+agent and skill prose must read at about a 7th grade level in plain
+human English. This rule reinforces the principle in
+`references/principles.md` section `p10`.
+
+- Trigger: any shipped agent or skill sentence longer than about
+  40 words, nested parentheticals, inline enumerations inside a
+  sentence, or code-like state-transition phrasing.
+- Fix: split every long sentence. Move enumerations into bullet
+  lists. Replace nested clauses with two short sentences.
+- Cross-link: `agent-linter` finding `AL740`.
+
+### P6. Skill Needs Host Contract
+
+A bare `skill` declaration is imported into two or more agents, and
+its `use_when:` or `purpose:` prose names host-owned document or
+final-output slots (`cite into`, `emit into`, `write to "Scope And
+Receipts"`). The coupling between the skill's output and the host's
+slots lives only in prose. The compiler cannot verify the host
+actually provides the slot.
+
+- Trigger: a bare `skill` imported across agents whose prose names
+  host-owned sections or imperative write-targets.
+- Fix: promote the skill to a `skill package` with `host_contract:`.
+  Let every consuming agent `bind:` the concrete slot once.
+  See `examples/124_skill_package_host_binding` and
+  `references/skills-and-packages.md` section `host_binding`.
+- Cross-link: `agent-linter` finding `AL930`.
+
+### P7. Typed Discipline Bash Escape
+
+The file goes through `$primitive`-typed skills for most work, then
+carves out a prose exception for a named verb set ("permitted to
+invoke via Bash: `rules list`, `receipts list`, `receipts read`").
+The exception reintroduces the untyped tool surface the discipline
+was written to forbid. The compiler cannot verify the allowed verbs,
+so one mutating call will not fail loud.
+
+- Trigger: prose that authorizes direct Bash for a named verb set
+  while the rest of the file uses typed skill invocations.
+- Fix: wrap the allowed verbs in a skill scope. Bind it at every
+  consuming agent. Drop the prose carveout. See
+  `references/skills-and-packages.md` section
+  `where_tool_invocations_belong`.
+- Cross-link: `agent-linter` finding `AL330`.
+
+### P8. Parallel Workflows As Review Contracts
+
+Two or more `workflow` declarations carry the same gate slot keys
+and are each bound as a review `contract:` on a different critic.
+The gate taxonomy now has several owners. One change has to land in
+every copy, and a critic can silently pick up the wrong contract.
+
+- Trigger: several `workflow` declarations share most slot keys
+  (output gates, receipt gates, process gates, ...) and each is bound
+  as `contract:` on a separate review.
+- Fix: collapse into one `review_family` with a `selector` and
+  exhaustive `cases:`. The taxonomy lives once; cases override only
+  the per-mode prose. See `examples/68_review_family_shared_scaffold`
+  and `examples/69_case_selected_review_family` and
+  `references/reviews.md` section `review_families`.
+- Cross-link: `agent-linter` finding `AL270`.
+
+### P9. Coarse Check Against Multi-Gate Contract
+
+The bound review contract declares several named gate slots, but the
+review's `checks:` block collapses every outcome to one rollup
+predicate such as `contract.passes`. The typed gates are the whole
+point of the contract. A rollup hides which gate failed, and the
+compiler cannot route per-gate outcomes (for example, a setup-gate
+failure blocking the run while an output-gate failure routes back
+to the producer).
+
+- Trigger: `accept` or `reject` lines all reference
+  `contract.passes` (or any single rollup predicate) when the bound
+  contract declares two or more gate slots.
+- Fix: write one `accept` or `reject` line per gate slot. Cite each
+  gate by its exported identity (`contract.output_gates_pass`,
+  `contract.setup_gates_pass`). See `references/reviews.md` section
+  `per_gate_checks`.
+- Cross-link: `agent-linter` finding `AL450`.
+
+### P10. Agent Skeleton Duplication
+
+Two or more concrete agents restate the same `inputs`, `skills`,
+`outputs`, `output schema`, and `output shape` declarations. An
+abstract base may already exist but stops short of absorbing the
+scaffold, so every child reruns the same blocks. One scaffold change
+has to land in every file, and the real per-child difference is
+buried under boilerplate.
+
+- Trigger: several concrete agents share more than half of their
+  declaration-block tokens (`inputs`, `skills`, `outputs`, `output
+  schema`, `output shape`). Line counts of the children far exceed
+  the base.
+- Fix: hoist the shared scaffold into an `abstract agent` base.
+  Keep concrete agents focused on the parts that differ (`workflow`,
+  `role`, per-child route or override). See
+  `examples/21_first_class_skills_blocks`,
+  `examples/25_abstract_agent_io_override`, and the abstract-agent
+  rules in `references/agents-and-workflows.md`.
+- Cross-link: `agent-linter` finding `AL280`.
+
 ## When To Split A File
 
 The AGENTS.md rule: if a functional code file grows past about 500 lines,
@@ -353,7 +522,7 @@ know the verdict, current artifact, and next owner."
 
 ## Related References
 
-- `references/principles.md` — the nine principles and the thin-harness
+- `references/principles.md` — the ten principles and the thin-harness
   rule.
 - `references/language-overview.md` — the shipped grammar shape and the
   core declaration vocabulary.

@@ -371,6 +371,157 @@ If the current request cannot be handled, say so in this turn and leave runtime 
                 text: """This safety language feels a bit strong.
 """
 
+        section example_9: "Example 9: Thin-Agent Boundary, Five Findings On One Role"
+            "Why it is good:"
+            bullets why:
+                "it fires five distinct findings on one compacted role excerpt"
+                "each finding names the single edit that removes it"
+                "it keeps the offending excerpt short and cites the one sentence that triggered each finding"
+                "it shows the reader how AL140, AL250, AL260, AL440, and AL740 stack on the same role body"
+
+            "Good:"
+            code:
+                language: md
+                text: """Verdict: fail
+Scope: one role body (`LensWarden`), authored source only
+
+Offending excerpt (one sentence from the role body):
+- "Per rule L3-A1 in docs/CURRICULUM_L3_IMPLEMENTATION_2026-04-18.md, LensWarden (when invoked, typically after the section planner (which itself runs after the track planner)) must install each rule (a) by calling `python authoring_lens/cli.py rules add --strict`, (b) verifying the sha256, then (c) handing the artifact to \\"LessonPlanner\\" via home:issue.md."
+
+[HIGH] AL140 Planning-Doc Scaffolding In Agent Body
+Evidence: "Per rule L3-A1 in docs/CURRICULUM_L3_IMPLEMENTATION_2026-04-18.md,..."
+Fix: Strip the planning-doc citation and the `L3-A1` rule ID. Keep the behavior; drop the provenance.
+
+[HIGH] AL250 Skill Capabilities Pulled Into Agent Role
+Evidence: "install each rule ... by calling `python authoring_lens/cli.py rules add --strict`, ... verifying the sha256"
+Shared owner:
+- Kind: skill
+- Name: `LensInstall`
+- Why: The install procedure and the sha256 check are reusable capability and should live on one skill.
+Fix: Move the install procedure into the `LensInstall` skill. Have the agent reference the skill.
+
+[MEDIUM] AL260 Naked Script Or CLI Invocation In Role Prose
+Evidence: "`python authoring_lens/cli.py rules add --strict`"
+Fix: Promote the invocation into the `LensInstall` skill body; delete the command from the role prose.
+
+[MEDIUM] AL440 Declaration Name Quoted As String Instead Of Typed Ref
+Evidence: "handing the artifact to \\"LessonPlanner\\" via home:issue.md"
+Fix: Replace the string `"LessonPlanner"` with the typed route ref on the workflow law or `final_output.route:` binding.
+
+[HIGH] AL740 Machine-Language Prose
+Evidence: The one sentence runs past 60 words, nests three parentheticals, and carries inline `(a)`/`(b)`/`(c)` enumerations.
+Fix: Split into short sentences. Move the three steps into a bullet list. Read the result out loud; one breath per sentence.
+
+Smallest credible fix first: AL250 and AL260 unblock AL740, because once the install steps move to the skill the remaining role prose is short enough to read at a 7th grade level.
+
+Suggested rewrite (role body after all five fixes):
+LensWarden installs each rule through the `LensInstall` skill. The skill owns the CLI call and the sha256 check. Hand the artifact to the declared route owner once install finishes.
+"""
+            "Bad:"
+            code:
+                language: md
+                text: """The role is too long and reads like code.
+It also mentions a CLI and a planning doc.
+Consider cleaning it up.
+"""
+
+        section example_10: "Example 10: Good Parallel-Workflows-As-Contracts Finding"
+            "Why it is good:"
+            bullets why:
+                "it names every parallel workflow as evidence, not just the first one"
+                "it shows the shared slot keys as the signal"
+                "it points at the one `review_family` shape that collapses them"
+
+            "Good:"
+            code:
+                language: md
+                text: """Verdict: fail
+Scope: cross-target, four parallel review contracts
+
+[MEDIUM] AL270 Parallel Workflows As Review Contracts
+
+Targets: `TrackScopeReviewContract`, `TrackShapeReviewContract`, `SectionShapeReviewContract`, `LessonPlanReviewContract`
+
+Summary: Four `workflow` declarations carry the same five gate slot keys and are each bound as a review `contract:` on a separate critic.
+
+Evidence:
+- Shared slot keys (all four workflows): `output_gates_pass`, `receipt_gates_pass`, `process_gates_pass`, `upstream_leakage_clean`, `setup_gates_pass`
+- `TrackScopeReviewContract` bound as `contract:` on `TrackScopeCritic`
+- `TrackShapeReviewContract` bound as `contract:` on `TrackShapeCritic`
+- `SectionShapeReviewContract` bound as `contract:` on `SectionShapeCritic`
+- `LessonPlanReviewContract` bound as `contract:` on `LessonPlanCritic`
+
+Why it matters: The gate taxonomy lives in four places. One change has to land in all of them, and the four contracts already drift in prose (`setup.lens_rules_match_scope` vs `setup_gates_pass`). A critic binding can silently pick up the wrong contract.
+
+Smallest credible fix: Collapse the four workflows into one `review_family` with a `selector` and exhaustive `cases:`.
+
+Shared owner:
+- Kind: contract
+- Name: `LayerAcceptanceReview`
+- Why: The five gate groups are one taxonomy. One `review_family` owns the shared shape; cases override only per-layer prose.
+
+Fix steps:
+- Define `review_family LayerAcceptanceReview` with `fields:` for the five gate identities.
+- Add `selector: mode layer = ReviewFacts.layer as ReviewLayer`.
+- Add four cases (`track_scope`, `track_shape`, `section_shape`, `lesson_plan`), each carrying its `subject`, `contract`, and `checks`.
+- Point every critic at the family; drop the parallel workflows.
+- See `examples/69_case_selected_review_family` for the shape.
+"""
+            "Bad:"
+            code:
+                language: md
+                text: """There is duplication across the four review contracts.
+Consider merging them.
+"""
+
+        section example_11: "Example 11: Good Agent Skeleton Duplication Finding"
+            "Why it is good:"
+            bullets why:
+                "it shows the exact declaration blocks that overlap"
+                "it keeps the real per-child difference in view"
+                "it names the abstract base that absorbs the scaffold"
+
+            "Good:"
+            code:
+                language: md
+                text: """Verdict: fail
+Scope: cross-target, four concrete agents inheriting one abstract base
+
+[MEDIUM] AL280 Agent Skeleton Duplication
+
+Targets: `TrackScopeLensWarden`, `TrackShapeLensWarden`, `SectionShapeLensWarden`, `LessonPlanLensWarden`
+
+Summary: Four concrete wardens restate the same `inputs`, `skills`, `outputs`, `output schema`, and `output shape` declarations. The abstract base they inherit only carries the lens slot bindings.
+
+Evidence:
+- Identical import block in each file: `CurriculumHandoffNote`, `LensWardenHandoffNote`, `CurriculumAgentResultSchema`, `CurriculumAgentResultJson`, `CurriculumAgentResult`, `CatalogOpsSkill`.
+- Identical `inputs LensWardenInputs[base.RallyManagedInputs]` declaration.
+- Identical `skills LensWardenSkills[base.RallyManagedSkills]` declaration.
+- Identical `output schema`, `output shape`, and `outputs` struct.
+- Only genuine per-layer difference: the one `route field next_route: <target>` line, the `workflow LensWardenWorkflow` step sequence, and the `role:` prose.
+
+Why it matters: One scaffold change has to land in all four files. The real per-layer logic (route target, workflow steps, role) is buried under ~70% boilerplate. Every new warden brings another copy.
+
+Smallest credible fix: Hoist the shared scaffold into the existing abstract base.
+
+Shared owner:
+- Kind: other
+- Name: `LensWardenBase`
+- Why: The abstract base already exists; it just stops at the lens-slot bindings. Moving inputs, skills, outputs, schema, and shape into the base lets concrete wardens carry only the parts that differ.
+
+Fix steps:
+- Move `inputs`, `skills`, `output schema`, `output shape`, and the `outputs` struct onto `LensWardenBase`.
+- Keep `workflow`, `role`, and the per-layer `route field next_route` on the concrete wardens.
+- Use `override` (`examples/25_abstract_agent_io_override`) for the route-field difference.
+- See `examples/21_first_class_skills_blocks` for hoisted reusable blocks.
+"""
+            "Bad:"
+            code:
+                language: md
+                text: """The four wardens look similar.
+Consider sharing more code.
+"""
+
     section what_good_looks_like: "What Good Looks Like"
         "A strong run should leave the reader with:"
         bullets expectations:

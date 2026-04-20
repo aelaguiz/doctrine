@@ -13,6 +13,30 @@ Doctrine also ships a separate runtime package surface under `AGENTS.prompt`. Th
 
 The two surfaces are additive. A package can still expose an inline `skill` to its consumers. The inline bridge carries `package: "<name>"` so the harness can load the package tree.
 
+## Where Tool Invocations Belong
+
+Script invocations, command shapes, CLI flag lists, and hard requirements
+for calling a tool belong on the skill surface, not on the consuming
+agent. The agent references the skill by name; the skill owns the "how."
+This keeps agents thin and keeps one fix landing in one place.
+
+- Put literal commands, executable paths, and flag lists in the `skill` body, not in role prose.
+- Put hard requirements (environment variables, auth, rate limits) in the skill's `non_negotiables` or `first_move` sections.
+- Let the agent cite the skill through a `skills:` block and reference it by declaration name.
+- If two agents need the same script, that is a reuse signal. Move the procedure into one shared skill.
+
+Anti-pattern: the role body says "Install each rule through
+`authoring_lens/cli.py rules add` via Bash." That sentence is a capability
+leak. Move it to the skill and let the agent reference the skill.
+
+`agent-linter` fails loud with `AL250` (skill capabilities pulled into
+agent role) and `AL260` (naked CLI in role prose) when this line crosses
+the boundary.
+A related anti-pattern is a prose carveout that authorizes direct Bash for
+a named verb set, when the rest of the file goes through `$primitive`-typed
+skills. That carveout reintroduces the untyped surface the discipline forbids.
+Wrap the allowed verbs in a skill scope instead. See `AL330`.
+
 ## The SKILL.prompt Entrypoint
 
 A `skill package` lives in a file named `SKILL.prompt`. The directory holding that file is the package source root.
@@ -246,6 +270,12 @@ Supported host-slot families today: `input`, `output`, `document`, `analysis`, `
 Bind targets may use `inputs:key`, `outputs:key`, `analysis`, `final_output`, ordinary declaration refs (`SectionMap`), or addressable child paths on those roots.
 
 See `examples/124_skill_package_host_binding/` for the whole `host_contract:` + `bind:` + `host:` flow including the `SKILL.contract.json` sidecar and the fail-loud counter cases.
+
+Anti-pattern: a bare `skill` decl whose `use_when:` prose names host-owned
+sections ("Scope And Receipts", "Final Response") or uses imperative write
+targets ("cite into", "emit into"). The coupling is invisible to the
+compiler, so drift is free. Promote the decl to a `skill package` with
+`host_contract:` and bind the slots at each host. See `AL930`.
 
 ## Install Tree And Emit
 

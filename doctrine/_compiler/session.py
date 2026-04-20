@@ -47,7 +47,45 @@ from doctrine._compiler.support import (
 
 
 class CompilationSession:
-    """Stable compile session boundary; doctrine.compiler re-exports this owner."""
+    """Stable boundary for compiling agents from one root prompt.
+
+    `doctrine.compiler` re-exports this class. Module-level `compile_prompt`
+    and `extract_target_flow_graph` are one-shot wrappers; hold a session
+    directly when compiling several agents against the same root, since
+    building the prompt graph is expensive and the flow cache must be shared
+    across the calls.
+
+    Lifecycle. `__init__` resolves the prompt root, loads the project config
+    (translating `tomllib.TOMLDecodeError` to E299 and `ProjectConfigError`
+    to E285), and pre-builds the root `IndexedFlow` into `_flow_cache`. Public
+    methods: `compile_agent[_from_unit]`, `compile_agents[_from_units]`,
+    `compile_skill_package`, `compile_readable_declaration`,
+    `extract_target_flow_graph[_from_units]`. Every public compile catches
+    `DoctrineError`, then calls `prepend_trace` + `ensure_location` so the
+    surfaced diagnostic always pins a truthful site even when raised deep.
+
+    Flow cache. `_flow_cache` maps `(resolved_prompt_root, resolved_flow_root)`
+    to the already-loaded `IndexedFlow`. It is **shared across threads**, not
+    thread-local: `_flow_lock` plus per-key `_flow_loading` events coordinate
+    concurrent loads so each flow is built at most once. The root flow is
+    seeded during `__init__` before any compile runs.
+
+    Order preservation. `compile_agents` runs parallel agent compiles on a
+    `ThreadPoolExecutor` but returns results in the caller's input order. It
+    keys futures by bare `agent_name`, so the input tuple must contain
+    distinct names; `compile_agents_from_units` keys on `(prompt_root,
+    flow_root, agent_name)` so the same name across different flows is safe.
+
+    `CompilationContext` (from `_compiler.context`) is built fresh per
+    compile call. Per-call mutable state (active agent key, skill-bind
+    context, previous-turn specs) lives on the context, not the session, so
+    it never leaks between threads.
+
+    `provided_prompt_roots` is a caller-owned input (see `project_config.py`
+    for the contract). When both a `project_config` and non-empty provided
+    roots are passed, the session merges them via
+    `with_provided_prompt_roots` before resolving the compile config.
+    """
 
     def __init__(
         self,
@@ -454,6 +492,12 @@ def compile_prompt(
     project_config: ProjectConfig | None = None,
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> CompiledAgent:
+    """One-shot convenience wrapper: build a session, compile one agent, discard.
+
+    Prefer holding a `CompilationSession` directly when compiling more than
+    one agent against the same prompt — the per-session flow cache is the
+    reason building a fresh session per agent is wasteful.
+    """
     return CompilationSession(
         prompt_file,
         project_config=project_config,
@@ -468,6 +512,10 @@ def extract_target_flow_graph(
     project_config: ProjectConfig | None = None,
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> FlowGraph:
+    """One-shot convenience wrapper: build a session and extract a flow graph.
+
+    Equivalent to `CompilationSession(...).extract_target_flow_graph(agent_names)`.
+    """
     return CompilationSession(
         prompt_file,
         project_config=project_config,

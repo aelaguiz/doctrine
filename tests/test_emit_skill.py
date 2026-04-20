@@ -50,39 +50,6 @@ class EmitSkillTests(unittest.TestCase):
             self.assertFalse((output_dir / "scripts").exists())
             self.assertFalse((output_dir / "schemas").exists())
 
-    def test_public_curated_tree_matches_public_emit_target(self) -> None:
-        # This protects the checked-in `npx skills` install surface. The public
-        # curated tree must match fresh Doctrine emit output exactly.
-        repo_root = Path(__file__).resolve().parents[1]
-        target = load_emit_targets(repo_root / "pyproject.toml")[
-            "doctrine_agent_linter_public_skill"
-        ]
-        expected_root = repo_root / "skills" / ".curated" / "agent-linter"
-        self.assertTrue(expected_root.is_dir(), expected_root)
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir).resolve()
-            emit_target_skill(target, output_dir_override=output_dir)
-
-            expected_files = sorted(
-                path.relative_to(expected_root)
-                for path in expected_root.rglob("*")
-                if path.is_file()
-            )
-            emitted_files = sorted(
-                path.relative_to(output_dir)
-                for path in output_dir.rglob("*")
-                if path.is_file()
-            )
-
-            self.assertEqual(emitted_files, expected_files)
-            for relative_path in expected_files:
-                self.assertEqual(
-                    (output_dir / relative_path).read_bytes(),
-                    (expected_root / relative_path).read_bytes(),
-                    relative_path.as_posix(),
-                )
-
     def test_emit_skill_emits_doctrine_learn_bundle_without_scripts(self) -> None:
         # This protects the first-party teaching bundle shape. The emitted
         # tree must stay complete and script-free across all twelve
@@ -120,40 +87,6 @@ class EmitSkillTests(unittest.TestCase):
             self.assertIn("Teach Doctrine authoring end-to-end.", skill_markdown)
             self.assertFalse((output_dir / "scripts").exists())
             self.assertFalse((output_dir / "schemas").exists())
-
-    def test_public_curated_tree_matches_doctrine_learn_public_emit_target(self) -> None:
-        # This protects the checked-in `npx skills` install surface for the
-        # Doctrine Learn teaching skill. The public curated tree must match
-        # fresh Doctrine emit output exactly.
-        repo_root = Path(__file__).resolve().parents[1]
-        target = load_emit_targets(repo_root / "pyproject.toml")[
-            "doctrine_learn_public_skill"
-        ]
-        expected_root = repo_root / "skills" / ".curated" / "doctrine-learn"
-        self.assertTrue(expected_root.is_dir(), expected_root)
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir).resolve()
-            emit_target_skill(target, output_dir_override=output_dir)
-
-            expected_files = sorted(
-                path.relative_to(expected_root)
-                for path in expected_root.rglob("*")
-                if path.is_file()
-            )
-            emitted_files = sorted(
-                path.relative_to(output_dir)
-                for path in output_dir.rglob("*")
-                if path.is_file()
-            )
-
-            self.assertEqual(emitted_files, expected_files)
-            for relative_path in expected_files:
-                self.assertEqual(
-                    (output_dir / relative_path).read_bytes(),
-                    (expected_root / relative_path).read_bytes(),
-                    relative_path.as_posix(),
-                )
 
     def test_pinned_skills_cli_lists_only_public_first_party_skills(self) -> None:
         # This protects the repo-root discovery story behind

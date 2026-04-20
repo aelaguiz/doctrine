@@ -1,3 +1,11 @@
+"""Public flow-render entrypoint for `emit_flow` and tests.
+
+This module pins the repo-relative host paths (pinned D2 package, the
+`flow_svg.mjs` helper, and `REPO_ROOT`) and forwards to `_flow_render.svg`
+for the actual subprocess work. Keep it thin: new rendering logic belongs
+in `_flow_render/` so every public caller shares one canonical entrypoint.
+"""
+
 from __future__ import annotations
 
 import subprocess
@@ -41,6 +49,18 @@ def render_flow_d2(graph: FlowGraph) -> str:
 
 
 def render_flow_svg(d2_path: Path, svg_path: Path) -> None:
+    """Render the `.d2` source at `d2_path` into an SVG at `svg_path`.
+
+    Raises `FlowRenderDependencyError` when a prerequisite is missing: the
+    pinned D2 bundle under `node_modules/`, the `flow_svg.mjs` helper, or
+    `node` on PATH. Raises `FlowRenderFailure` when the helper ran but exited
+    non-zero (D2 itself rejected the source). The caller in `emit_flow.py`
+    maps these to diagnostic codes E515 and E516 respectively.
+
+    Caller invariant: `d2_path` must already be on disk before this runs, and
+    stays on disk if this raises. That lets authors inspect the exact source
+    that failed to render without re-running the compile pass.
+    """
     _render_flow_svg(
         d2_path,
         svg_path,

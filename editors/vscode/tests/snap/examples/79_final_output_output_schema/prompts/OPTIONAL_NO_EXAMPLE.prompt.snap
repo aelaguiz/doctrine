@@ -1,3 +1,26 @@
+>enum RepoStatus: "Repo Status"
+#^^^^ source.doctrine keyword.declaration.doctrine
+#    ^ source.doctrine
+#     ^^^^^^^^^^ source.doctrine entity.name.type.doctrine
+#               ^ source.doctrine punctuation.separator.key-value.doctrine
+#                ^ source.doctrine
+#                 ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                  ^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                             ^ source.doctrine punctuation.definition.string.end.doctrine
+>    ok: "Ok"
+#^^^^ source.doctrine
+#    ^^ source.doctrine entity.name.section.doctrine
+#      ^ source.doctrine punctuation.separator.key-value.doctrine
+#       ^ source.doctrine
+#        ^^^^ source.doctrine string.quoted.double.doctrine
+>    action_required: "Action Required"
+#^^^^ source.doctrine
+#    ^^^^^^^^^^^^^^^ source.doctrine entity.name.section.doctrine
+#                   ^ source.doctrine punctuation.separator.key-value.doctrine
+#                    ^ source.doctrine
+#                     ^^^^^^^^^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
 >output schema RepoStatusSchema: "Repo Status Schema"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -22,9 +45,6 @@
 #            ^ source.doctrine punctuation.separator.key-value.doctrine
 #             ^ source.doctrine
 #              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->        required
-#^^^^^^^^ source.doctrine
-#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        note: "Short natural-language status."
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine
@@ -39,25 +59,12 @@
 #                  ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                   ^^^^^^ source.doctrine string.quoted.double.doctrine
 #                         ^ source.doctrine punctuation.definition.string.end.doctrine
->        type: string
+>        type: RepoStatus
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine
 #            ^ source.doctrine punctuation.separator.key-value.doctrine
 #             ^ source.doctrine
-#              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->        enum:
-#^^^^^^^^ source.doctrine
-#        ^^^^ source.doctrine entity.name.section.doctrine
-#            ^ source.doctrine punctuation.separator.key-value.doctrine
->            ok
-#^^^^^^^^^^^^ source.doctrine
-#            ^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
->            action_required
-#^^^^^^^^^^^^ source.doctrine
-#            ^^^^^^^^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
->        required
-#^^^^^^^^ source.doctrine
-#        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+#              ^^^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        note: "Current repo outcome."
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine
@@ -78,7 +85,7 @@
 #            ^ source.doctrine punctuation.separator.key-value.doctrine
 #             ^ source.doctrine
 #              ^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->        optional
+>        nullable
 #^^^^^^^^ source.doctrine
 #        ^^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        note: "Null only when no follow-up is needed."

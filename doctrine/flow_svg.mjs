@@ -1,3 +1,18 @@
+// Renders a `.d2` source file to SVG via the pinned D2 bundle.
+//
+// Determinism contract: the fields pinned in `renderOptions` below are what
+// keep the emitted SVG byte-stable across hosts and runs. Every checked-in
+// `*.flow.svg` under `examples/*/ref/` is diffed byte-for-byte by
+// `verify_corpus`, so changing any of these fields invalidates every flow ref:
+//   - `salt="doctrine-flow-v1"`: D2's id-generation seed. Bump this string
+//     only when a ref regeneration is the intent.
+//   - `animateInterval=0`: no animation timing baked into the SVG.
+//   - `center`, `pad`, `sketch`: layout knobs pinned so geometry never drifts.
+//
+// The Python caller at `doctrine/_flow_render/svg.py` spawns this helper and
+// translates exit codes into `FlowRenderDependencyError` / `FlowRenderFailure`.
+// This helper's only job is: compile, render with the pinned options, write.
+
 import { readFile, writeFile } from "node:fs/promises";
 import { D2 } from "@terrastruct/d2";
 

@@ -3,6 +3,37 @@ document ImportsAndRefs: "Imports And Refs"
 
 Use `import` to pull in a whole module by alias. Use `from module import Name` to pull in one symbol. Use addressable refs (and `self:`) to point inside a named declaration. Use grouped `inherit { ... }` to cherry-pick which parent fields a child keeps."""
 
+    section prefer_typed_refs: "Prefer Typed Refs Over Quoted Names"
+        """When a role, review, output, or skill needs to name another Doctrine
+declaration, use a typed ref, not a quoted string literal. A typed ref
+carries the exact truth the compiler can check. A quoted name is a
+decayed copy that drifts the moment the target renames."""
+
+        bullets shapes:
+            """Use `inputs:key` and `outputs:key` when pointing at the current
+  agent's IO slots."""
+            """Use `from module import Name` or a bare declaration ref when
+  pointing at another declaration by name."""
+            """Use addressable paths like `OutputSchema:field.subfield` when
+  pointing at a field inside a named declaration body."""
+            """Use `self:sibling_key` inside a declaration body when you want to
+  cite a sibling without repeating the parent name."""
+            """Use bare readable declaration refs (bare `Title` or `Title:key`)
+  inside interpolations where a declaration title or key is what you
+  actually want to render."""
+
+        """Anti-pattern: the role body carries a quoted string like
+`"LessonPlanner"`, `"home:issue.md"`, or
+`target_lesson_concepts_sha256` where a typed ref would carry the same
+truth. The string survives rename and drifts silently.
+
+`agent-linter` fails loud with `AL440` (declaration name quoted as string
+instead of typed ref) when a role cites another declaration this way.
+
+The sections below teach each ref form: module imports, symbol imports,
+multi-root resolution, addressable refs, self refs, grouped inherit, and
+IO section refs."""
+
     section module_imports: "Module Imports"
         """`import module.path` brings in another flow or runtime package. Its exported declarations are available under the dotted path.
 

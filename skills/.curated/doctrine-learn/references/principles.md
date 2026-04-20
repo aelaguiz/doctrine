@@ -8,7 +8,7 @@ The principles come from `PRINCIPLES.md` and from the durable read of "thin harn
 
 Doctrine sits on the authoring side of the line. The harness runs the loop, tools, files, memory, scheduling, and safety. Doctrine's job is to help that thin runtime load the right context at the right time. If a rule is really about runtime state, it belongs in the harness, not in authored doctrine.
 
-## The Nine Principles
+## The Ten Principles
 
 ### 1. Context Is A Budget
 
@@ -82,6 +82,25 @@ In Doctrine this is why the compiler fails loud, why the shipped `agent-linter` 
 
 One move to make: when an agent home grows past a page, treat that as a bug and open a review, not a refactor ticket for "later."
 
+### 10. Plain Human Speech
+
+Shipped agent prose and shipped skill prose must read like plain speech at about a 7th grade level. Short sentences. Direct verbs. Common words. Keep the Doctrine terms that carry exact meaning and simplify everything around them.
+
+This is a hard rule, not a style note. Role bodies that read like state-transition code burn prompt budget on every turn and hide the real instruction from the runtime. Machine-language prose is a readability failure and a fail-loud target for `agent-linter` finding `AL740`.
+
+Five concrete triggers to avoid in role prose:
+- Sentences longer than about 40 words.
+- Nested parentheticals (a clause inside a clause inside a clause).
+- Inline `(a)`/`(b)`/`(c)` enumerations embedded in a sentence instead of a bullet list.
+- Dense jargon-per-sentence that forces the reader to decode every clause.
+- Code-like phrasing that reads as state-transition code rather than human instruction.
+
+Bad: `The LensWarden, when invoked (typically after the section planner (which itself runs after the track planner)), must install each rule (a) by calling lens CLI rules add, (b) verifying the sha256, then (c) emitting the review verdict.`
+
+Good: `LensWarden installs each rule through the lens skill. The skill owns the CLI call and the sha256 check. Emit the review verdict once the install finishes.`
+
+One move to make: read every new sentence out loud. If you cannot say it in one breath at a normal pace, split it.
+
 ## Do / Do Not Cheat Sheet
 
 Do:
@@ -92,6 +111,7 @@ Do:
 - Share one doctrine home and patch it in place with `inherit` and `override`.
 - Ship each new feature with a small focused example.
 - Fail loud when the source is inconsistent.
+- Write role and skill prose at a 7th grade reading level in plain human speech.
 
 Do not:
 
@@ -101,5 +121,6 @@ Do not:
 - Use prose when typed truth is needed.
 - Grow features that make Doctrine act like the runtime.
 - Invent unshipped constructs. If it is not in `doctrine/grammars/doctrine.lark`, it does not exist yet.
+- Write role prose as state-transition code, nested parentheticals, or inline `(a)`/`(b)`/`(c)` enumerations.
 
 **Load when:** the author starts any new Doctrine task, is unsure which construct fits, or is about to push runtime behavior into authored doctrine.

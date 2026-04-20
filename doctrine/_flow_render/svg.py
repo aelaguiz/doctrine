@@ -32,6 +32,22 @@ def render_flow_svg(
     dependency_error_type,
     failure_type,
 ) -> None:
+    """Spawn the pinned D2 helper as a subprocess and translate its failures.
+
+    Two error translations live here and are the reason the public facade
+    raises two different exception types:
+      - `FileNotFoundError` from `run(...)` means `node` itself is not on
+        PATH. That is a prerequisite problem, not a render problem, so it
+        becomes `dependency_error_type` (mapped to E515 upstream).
+      - Non-zero exit after the helper starts means D2 compiled or rendered
+        the source but the helper rejected it. That becomes `failure_type`
+        (mapped to E516 upstream) with the helper's stderr — falling back to
+        stdout, then a synthesized exit-code message — as the detail.
+
+    Other prerequisite problems (missing pinned bundle, missing helper file)
+    are caught by the `ensure_pinned_d2_dependency` pre-flight before any
+    subprocess spawns.
+    """
     ensure_pinned_d2_dependency(
         package_path,
         helper_path=helper_path,

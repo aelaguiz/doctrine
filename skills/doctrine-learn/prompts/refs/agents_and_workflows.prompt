@@ -6,6 +6,10 @@ instruction surface that tell a turn how to do its job. Route-only turns,
 
 Keep agent homes thin. Put the one-sentence job on the agent and push reusable
 body into a named `workflow`, `review`, or `skill` that loads only when needed.
+Skills own capabilities; agents reference them. If the role prose is telling the
+turn how to call a script, run a tool, or meet a hard requirement, that content
+belongs on the `skill`, not on the agent. Violations fail loud under
+`agent-linter` finding `AL250`.
 
 Read the source of truth in this order before you ship code:"""
 
