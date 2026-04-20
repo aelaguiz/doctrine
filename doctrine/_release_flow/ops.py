@@ -38,6 +38,35 @@ from doctrine._release_flow.tags import (
 )
 
 
+def _require_release_ready(
+    *,
+    repo_root: Path,
+    release_tag: ReleaseTag,
+    current_language_version: LanguageVersion,
+) -> ReleaseEntry:
+    # Single cross-file consistency gate shared by `tag_release` and
+    # `draft_release`. Blocks on CHANGELOG entry / docs/VERSIONING.md mismatch
+    # via `require_validated_release_entry`, and on pyproject.toml mismatch
+    # via `require_matching_package_metadata_version`. `prepare_release`
+    # reports the same status read-only but does not call this helper, because
+    # its job is to surface every remaining gap on one worksheet rather than
+    # stop at the first one.
+    release_entry = require_validated_release_entry(
+        repo_root=repo_root,
+        release_tag=release_tag,
+        current_language_version=current_language_version,
+        expected_release_kind=expected_release_kind_for_tag(
+            repo_root=repo_root,
+            requested_tag=release_tag,
+        ),
+    )
+    require_matching_package_metadata_version(
+        repo_root=repo_root,
+        release_tag=release_tag,
+    )
+    return release_entry
+
+
 def prepare_release(
     *,
     repo_root: Path,
@@ -46,6 +75,13 @@ def prepare_release(
     language_version: str,
     channel: str,
 ) -> ReleasePlan:
+    # `prepare_release` is the planning / worksheet command. It raises on
+    # inputs that cannot be resolved at all (bad tag, bad bump, missing
+    # CHANGELOG / VERSIONING file) but deliberately returns status strings
+    # for CHANGELOG-entry, package-version, and language-header mismatch so
+    # the worksheet can list every remaining gap in one shot. The three-file
+    # consistency gate is enforced at `tag_release` / `draft_release` via
+    # `_require_release_ready`.
     requested_tag = parse_release_tag(release, channel=channel)
     current_language_version = load_current_language_version(repo_root)
     current_package_version = load_package_metadata_version(repo_root)
@@ -193,16 +229,11 @@ def tag_release(*, repo_root: Path, release: str, channel: str) -> None:
     current_language_version = load_current_language_version(repo_root)
     require_clean_worktree(repo_root)
     require_signing_key(repo_root)
-    release_entry = require_validated_release_entry(
+    release_entry = _require_release_ready(
         repo_root=repo_root,
         release_tag=release_tag,
         current_language_version=current_language_version,
-        expected_release_kind=expected_release_kind_for_tag(
-            repo_root=repo_root,
-            requested_tag=release_tag,
-        ),
     )
-    require_matching_package_metadata_version(repo_root=repo_root, release_tag=release_tag)
     tag_message = build_tag_message(release_entry)
     run_checked(
         ["git", "tag", "-s", "-a", release_tag.raw, "-m", tag_message],
@@ -230,16 +261,11 @@ def draft_release(
 ) -> None:
     release_tag = parse_release_tag(release, channel=channel)
     require_pushed_public_release_tag(repo_root, release_tag)
-    release_entry = require_validated_release_entry(
+    release_entry = _require_release_ready(
         repo_root=repo_root,
         release_tag=release_tag,
         current_language_version=load_current_language_version(repo_root),
-        expected_release_kind=expected_release_kind_for_tag(
-            repo_root=repo_root,
-            requested_tag=release_tag,
-        ),
     )
-    require_matching_package_metadata_version(repo_root=repo_root, release_tag=release_tag)
     previous = resolve_previous_tag(
         repo_root=repo_root,
         requested_tag=release_tag,

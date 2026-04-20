@@ -3,6 +3,9 @@ from __future__ import annotations
 import textwrap
 import unittest
 
+from doctrine._diagnostics.parse_errors import _GRAMMAR_TERMINAL_DEPENDENCIES
+from doctrine._parser.runtime import build_lark_parser
+from doctrine.indenter import DoctrineIndenter
 from doctrine.parser import parse_text
 
 
@@ -710,6 +713,49 @@ class ParseDiagnosticsTests(unittest.TestCase):
             summary_snippet="Enum member may declare `wire` at most once.",
             occurrence=2,
             expected_column=9,
+        )
+
+    def test_classifier_terminal_dependencies_match_live_grammar(self) -> None:
+        # The parse-error classifier at `doctrine/_diagnostics/parse_errors.py`
+        # branches on specific lark terminal names (e.g. "ROUTE", "ELSE",
+        # "VIA", "ACCEPT") to emit the specific E131/E132/E133/E471/E472/E104
+        # parse diagnostics. Those names are either authored terminals in
+        # `doctrine/grammars/doctrine.lark`, lark-generated anonymous names
+        # for string-literal keywords (`"accept"` → `ACCEPT`), or indenter
+        # tokens produced by `DoctrineIndenter` (`_NL`, `_INDENT`, `_DEDENT`).
+        #
+        # If a grammar refactor renames or removes any of these terminals, the
+        # classifier branch silently becomes dead code and the specific E1xx
+        # diagnostic degrades to the generic E101 fallback. The shipped corpus
+        # cases for E131/E132/E133 and the review smoke cases for E471/E472
+        # would still catch drift on the *currently-tested* set, but adding a
+        # new classifier branch that reads a new terminal has no forcing
+        # function to also add a corpus fixture for it.
+        #
+        # `_GRAMMAR_TERMINAL_DEPENDENCIES` is the explicit named-rule
+        # allowlist the classifier depends on. This test is the safeguard:
+        # fails loud if any name in the allowlist is not a terminal on the
+        # live compiled parser (plus indenter-produced token types). The
+        # expected user-visible failure when this regresses is that a parse
+        # error on code that should emit the specific diagnostic instead
+        # emits the generic E101.
+        parser = build_lark_parser()
+        grammar_terminal_names = {terminal.name for terminal in parser.terminals}
+        indenter_terminal_names = {
+            DoctrineIndenter.NL_type,
+            DoctrineIndenter.INDENT_type,
+            DoctrineIndenter.DEDENT_type,
+        }
+        live_terminal_universe = grammar_terminal_names | indenter_terminal_names
+        missing = sorted(_GRAMMAR_TERMINAL_DEPENDENCIES - live_terminal_universe)
+        self.assertEqual(
+            missing,
+            [],
+            "parse-error classifier references terminal names that no longer exist "
+            "on the live grammar or indenter: "
+            f"{missing}. Update `_GRAMMAR_TERMINAL_DEPENDENCIES` and the "
+            "corresponding classifier branch in `doctrine/_diagnostics/parse_errors.py` "
+            "to match the current grammar.",
         )
 
 

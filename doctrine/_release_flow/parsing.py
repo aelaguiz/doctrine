@@ -20,6 +20,12 @@ from doctrine._release_flow.models import (
 LANGUAGE_HEADER_RE = re.compile(
     r"^(?:unchanged \(still (?P<same>\d+\.\d+)\)|(?P<from>\d+\.\d+) -> (?P<to>\d+\.\d+))$"
 )
+# Placeholder detection is a conservative hygiene gate: if a release header
+# field contains any of these substrings (case-normalized), Doctrine blocks
+# the release and asks the author to rephrase. The block-on-substring bias
+# favors false-rejects over false-accepts — a release note that happens to
+# mention "TODO" or "placeholder" in prose can be reworded, but a shipped
+# release with "fill this in" wording cannot be taken back.
 PLACEHOLDER_SUBSTRINGS = (
     "fill this in",
     "update for this release",

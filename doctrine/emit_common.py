@@ -180,6 +180,8 @@ def load_emit_targets(
         config_path,
         provided_prompt_roots=provided_prompt_roots,
     )
+    # A missing or non-table `[tool.doctrine.emit]` produces an empty dict here;
+    # the loud failure is then the next check's E503 "Missing emit targets".
     emit = project_config.raw_emit if isinstance(project_config.raw_emit, dict) else {}
     raw_targets = emit.get("targets")
     if not isinstance(raw_targets, list) or not raw_targets:
@@ -377,8 +379,9 @@ def collect_runtime_emit_roots(
     emit. Pre-order traversal keeps first-seen ordering stable so the three
     emitters agree on which package is responsible for a shared surface.
 
-    Raises `CompileError` (E299) if an imported runtime package has zero or
-    more than one concrete agent.
+    Raises `CompileError` (E299) when an imported runtime package defines
+    more than one concrete agent. A transit package with zero concrete agents
+    is walked but contributes no emit root.
     """
     root_flow = session.root_flow
     roots = [
@@ -409,6 +412,9 @@ def collect_runtime_emit_roots(
                 for agent in imported_flow.agents_by_name.values()
                 if not agent.abstract
             )
+            # A transit runtime package (zero concrete agents, e.g. a module
+            # that only re-exports via nested imports) contributes no emit root
+            # of its own; keep walking without adding one.
             if not concrete_agents:
                 return
             if len(concrete_agents) != 1:
@@ -436,6 +442,8 @@ def collect_runtime_emit_roots(
         def walk_unit(unit) -> None:
             unit_key: Path | tuple[str, ...]
             source_path = unit.prompt_file.source_path
+            # Runtime-package units load without a filesystem path, so dedup by
+            # module_parts instead of the missing source_path.
             if source_path is None:
                 unit_key = unit.module_parts
             else:

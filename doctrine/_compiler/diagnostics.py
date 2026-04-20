@@ -23,6 +23,8 @@ def prompt_site(
     if path is None:
         return None, (), None
     resolved_path = path.resolve()
+    # File-scoped location when the caller has no truthful authored line —
+    # documented policy in docs/COMPILER_ERRORS.md (compile-diagnostics rules).
     if source_span is None:
         return DiagnosticLocation(path=resolved_path), (), None
     source = _read_source(resolved_path)

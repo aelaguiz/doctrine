@@ -8,6 +8,45 @@ from lark.exceptions import (
     UnexpectedToken,
 )
 
+# Grammar-terminal coupling contract.
+#
+# `_classify_unexpected_token` and `_is_review_statement_placement_error`
+# dispatch on specific lark terminal names (the `previous.type`, `exc.token.type`,
+# and `expected` strings they branch on). Those names are either authored
+# terminals in `doctrine/grammars/doctrine.lark`, lark-generated anonymous names
+# for keyword literals (e.g. `"accept"` → `ACCEPT`), or indenter-produced tokens
+# (`_NL`, `_INDENT`, `_DEDENT` from `DoctrineIndenter`).
+#
+# If any of these names disappears from the live grammar or the indenter — for
+# example, a grammar refactor renames the `"else"` literal to `"otherwise"`, or
+# the indenter stops emitting `_INDENT` — the corresponding classifier branch
+# silently becomes dead code and specific parse diagnostics (E131, E132, E133,
+# E471, E472, E104) degrade to the generic E101 fallback without any test
+# failing on the shipped corpus alone.
+#
+# `tests/test_parse_diagnostics.py::test_classifier_terminal_dependencies_match_live_grammar`
+# enforces this contract by intersecting this set with the terminals on the
+# compiled parser plus the indenter's produced token types. When adding a new
+# classifier branch that reads a terminal name, also add the name here; when
+# renaming or removing a grammar terminal, update this set and the branch.
+_GRAMMAR_TERMINAL_DEPENDENCIES: frozenset[str] = frozenset({
+    "ACCEPT",
+    "BLOCK",
+    "CARRY",
+    "CNAME",
+    "CURRENT",
+    "ELSE",
+    "IGNORE",
+    "PRESERVE",
+    "REJECT",
+    "ROUTE",
+    "SUPPORT_ONLY",
+    "VIA",
+    "_DEDENT",
+    "_INDENT",
+    "_NL",
+})
+
 
 def _extract_tree_position(obj: object) -> tuple[int | None, int | None]:
     if isinstance(obj, Token):

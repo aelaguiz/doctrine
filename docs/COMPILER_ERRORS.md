@@ -96,7 +96,7 @@ Stability rules:
 | `E217` | Final output lowered schema failed Draft 2020-12 validation | Doctrine lowered an `output schema`, but the resulting JSON Schema is not valid Draft 2020-12. |
 | `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
-| `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
+| `E226` | Reserved | Reserved for a future user-facing "unsupported record item" check. The shipped grammar already restricts what can appear on each record surface, so any unexpected record-item kind that reaches the compiler today is an internal invariant failure and fails loud as `E901`. |
 | `E227`-`E229` | Retired in language 5.0 | Covered the deleted inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form for `output schema` fields. Both forms are removed in 5.0; the canonical form is `enum X: "..."` plus `type: X`. Unknown `type:` names now fail loud under `E320`. Codes stay reserved to avoid accidental reuse. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
 | `E236` | Output schema `required` is retired | `required` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to delete it. Output-schema object properties still stay present on the wire today. |
@@ -160,7 +160,7 @@ Stability rules:
 | `E334` | Current output not emitted | A workflow-law current artifact points at an output the concrete turn does not emit. |
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
-| `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
+| `E337` | Retired | Reserved error code. Unknown `current artifact ... via ...` carrier fields fall through to the normal unknown-field check and fail loud as `E299`, which is the shared unknown-field code called out in the `E500` note. |
 | `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`, including `route.choice == OutputSchema.route_field.choice_key` on routed final outputs. |
 | `E339` | Routed next_owner field is not structurally bound | A route-only output includes a `next_owner` field, but that field does not structurally bind the routed target. |
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
@@ -277,6 +277,7 @@ Stability rules:
 | Code | Summary | Notes |
 | --- | --- | --- |
 | `E901` | Internal compiler error | The compiler hit an invariant failure or unsupported internal state. Treat this as a compiler bug. |
+| `E999` | Unclassified Doctrine error | Fallback code when a `DoctrineError` is raised without a more specific stage. Reached only when no narrower parse, compile, or emit code applies. Treat this as a compiler bug. |
 
 ### Rule-check codes
 

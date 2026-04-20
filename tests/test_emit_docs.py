@@ -1325,6 +1325,115 @@ class EmitDocsTests(unittest.TestCase):
             self.assertFalse(final_output_contract_path.exists())
             self.assertFalse(schema_dir.exists())
 
+    def test_emit_target_emits_contract_for_agent_with_only_previous_turn_inputs(self) -> None:
+        # An agent that reads a previous-turn input but has no `final_output`
+        # and no `review` must still get a `final_output.contract.json` emitted,
+        # because the harness needs the `io.previous_turn_inputs` block to
+        # route the next turn. This exercises the third arm of the suppression
+        # predicate in `_final_output_contract_payload`
+        # (`compiled.io is None or not compiled.io.previous_turn_inputs`):
+        # previous-turn inputs alone must flip suppress to emit. Without this
+        # guard, a future refactor that tightened the predicate could silently
+        # drop contracts for chat-style agents that only use last turn's state.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow RouteGuide: "Route Guide"
+                        sequence choose_route:
+                            "Pick the next owner."
+                            "Return the routed final output."
+
+                    workflow PreviousTurnGuide: "Previous Turn Guide"
+                        callout readback: "Readback"
+                            kind: note
+                            "Read the previous turn before you continue."
+
+                    output schema TurnResultSchema: "Turn Result Schema"
+                        route field next_route: "Next Route"
+                            send_to_follower: "Hand to follower." -> Follower
+
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+                            next_route: "send_to_follower"
+
+                    output shape TurnResultJson: "Turn Result JSON"
+                        kind: JsonObject
+                        schema: TurnResultSchema
+
+                    output TurnResult: "Turn Result"
+                        target: TurnResponse
+                        shape: TurnResultJson
+                        requirement: Required
+
+                    input PreviousTurnResult: "Previous Turn Result"
+                        source: RallyPreviousTurnOutput
+                        requirement: Advisory
+
+                    agent Follower:
+                        role: "Read the previous turn."
+                        workflow: PreviousTurnGuide
+                        inputs: "Inputs"
+                            PreviousTurnResult
+                        outputs: "Outputs"
+                            TurnResult
+
+                    agent Leader:
+                        role: "Hand work to the follower."
+                        workflow: RouteGuide
+                        outputs: "Outputs"
+                            TurnResult
+                        final_output:
+                            output: TurnResult
+                            route: next_route
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "follower" / "final_output.contract.json"
+            self.assertTrue(contract_path.is_file())
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertFalse(contract_data["final_output"]["exists"])
+            self.assertNotIn("review", contract_data)
+            self.assertEqual(
+                contract_data["io"]["previous_turn_inputs"][0]["input_key"],
+                "PreviousTurnResult",
+            )
+
     def test_emit_target_renders_titleless_readable_lists_without_helper_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

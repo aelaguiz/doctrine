@@ -158,7 +158,7 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
   enums, and workflow law
 - `emit_docs`, `emit_flow`, `emit_skill`, and structured-output schema
   validation helpers
-- manifest-backed verification through `examples/115_runtime_agent_packages`
+- manifest-backed verification through `examples/146_declarative_project_lint_rule`
 - a repo-local VS Code extension for `.prompt` files
 
 ## Workflow visualizer

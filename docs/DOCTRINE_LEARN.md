@@ -69,7 +69,7 @@ loadable references that the skill's `reference_map` routes to on demand:
 
 Every claim the skill makes about a construct cites at least one real
 example path from the shipped corpus (`examples/01_hello_world` through
-`examples/124_skill_package_host_binding`). No invented snippets.
+`examples/146_declarative_project_lint_rule`). No invented snippets.
 
 ## How To Use It
 

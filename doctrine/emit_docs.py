@@ -567,7 +567,10 @@ def _build_previous_turn_contexts(
             raise compile_error(
                 code="E901",
                 summary="Internal compiler error",
-                detail="Flow graph is missing flow-root identity while building previous-turn contexts.",
+                detail=(
+                    f"Flow graph edge `{edge.source_name} -> {edge.target_name}` is missing "
+                    "flow-root identity while building previous-turn contexts."
+                ),
                 path=session.root_flow.entrypoint_path,
             )
         predecessor_map.setdefault(target_key, set()).add(source_key)
