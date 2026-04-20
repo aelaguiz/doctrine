@@ -1,0 +1,143 @@
+document Rules: "Project Rules"
+    """This reference teaches how to author a declarative project `rule`. Doctrine
+ships a first-class `rule` surface that lets a project lint its own agent
+graph at compile time. Use a `rule` when the same invariant must hold across
+many concrete agents and you want the compiler (not a reviewer turn, not a
+harness check) to enforce it.
+
+Rules live alongside agents at the top of a prompt file. They run during
+compile, match concrete agents through a closed predicate set, and fire one
+of the shipped `RULE###` diagnostics when an agent violates an assertion.
+
+Read the source of truth in this order before you ship code:"""
+
+    bullets source_of_truth:
+        "`doctrine/grammars/doctrine.lark`"
+        "`docs/LANGUAGE_REFERENCE.md` (Project Rules section)"
+        "`docs/COMPILER_ERRORS.md` (Rule-check codes section)"
+
+    section when_to_use: "When to use"
+        "Use `rule` when:"
+        bullets use_rule:
+            """The same inheritance invariant must hold across every concrete agent in a
+  role class (for example, every `Composer` must inherit a shared upstream
+  invariant)."""
+            "A retired ancestor must never be inherited again."
+            """Every scoped agent must declare a specific slot so downstream readers know
+  where to look."""
+
+        "Do not use `rule` when:"
+        bullets do_not_use_rule:
+            """The constraint is specific to one agent. Put the constraint in that agent
+  directly."""
+            """The constraint needs runtime information. That belongs in the harness, not
+  in Doctrine."""
+            """The check is about emitted output shape. Use an `output schema` or a review
+  contract instead."""
+
+    section declaration_shape: "Declaration Shape"
+        "A minimal rule looks like this:"
+        code:
+            language: prompt-fragment
+            text: """rule ComposersCheckUpstream: "Every composer must inherit the invariant"
+    scope:
+        role_class: Composer
+    assertions:
+        requires inherit UpstreamPoisoningInvariant
+    message: "Every composer must inherit UpstreamPoisoningInvariant so upstream inputs are checked before composition."
+"""
+        "Required pieces:"
+        bullets required_pieces:
+            """`rule <RuleName>:` opens the declaration. The headline string is the
+  human-readable rule name shown in diagnostics."""
+            "`scope:` selects which concrete agents the rule evaluates."
+            "`assertions:` says what scoped agents must or must not do."
+            "`message:` is the plain-English explanation shown when the rule fires."
+
+    section closed_predicate_set: "Closed predicate set"
+        """The shipped predicate set is closed. Codes `RULE006` through `RULE099` are
+reserved for future extensions of this closed-predicate surface. Codes
+`RULE100` and above are reserved for any future open-expression-language
+evolution of the rule primitive. Do not invent new predicates in authoring."""
+
+        section scope_predicates: "Scope predicates"
+            "Scope predicates pick which concrete agents the rule applies to."
+            bullets scope_predicate_list:
+                "`agent_tag: <CNAME>` matches one agent whose name equals `<CNAME>`."
+                """`flow: <NameRef>` matches every agent whose ancestor chain transitively
+  includes the named flow or ancestor. If the target does not resolve, the
+  compiler raises `RULE001`."""
+                """`role_class: <CNAME>` matches every agent whose name ends with the
+  `<CNAME>` suffix (for example, `role_class: Composer` matches
+  `BriefComposer` and `NotesComposer`)."""
+                """`file_tree: <STRING>` matches every agent whose prompt file path matches
+  the glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root."""
+
+            """Multiple scope predicates combine with OR semantics: an agent matches when
+at least one predicate matches."""
+
+        section assertion_predicates: "Assertion predicates"
+            "Assertions say what the scoped agents must or must not do."
+            bullets assertion_predicate_list:
+                """`requires inherit <NameRef>` — the scoped agent must transitively inherit
+  from `<NameRef>`. Unknown target raises `RULE002`. Violations raise
+  `RULE003`."""
+                """`forbids bind <NameRef>` — the scoped agent must not transitively inherit
+  from `<NameRef>`. Unknown target raises `RULE002`. Violations raise
+  `RULE004`."""
+                """`requires declare <CNAME>` — the scoped agent (or one of its declared
+  ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`."""
+
+    section shipped_diagnostics: "Shipped diagnostics"
+        bullets codes:
+            "`RULE001` — scope predicate names a flow or ancestor that does not exist."
+            "`RULE002` — assertion target agent does not resolve."
+            "`RULE003` — scoped agent fails `requires inherit`."
+            "`RULE004` — scoped agent violates `forbids bind`."
+            "`RULE005` — scoped agent fails `requires declare`."
+
+    section worked_example: "Worked example"
+        """Copy `examples/146_declarative_project_lint_rule` when you add your first
+rule. That example ships the happy path plus one concrete compile-fail case
+per shipped `RULE###` code."""
+
+        "Minimal valid rule that scopes by role class and enforces a shared invariant:"
+        code:
+            language: prompt-fragment
+            text: """abstract agent UpstreamPoisoningInvariant:
+    role: "Shared invariant base that checks upstream inputs."
+
+
+agent BriefComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the weekly brief after checking upstream inputs."
+
+
+agent NotesComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the meeting notes after checking upstream inputs."
+
+
+rule ComposersCheckUpstream: "Every composer must inherit the invariant"
+    scope:
+        role_class: Composer
+    assertions:
+        requires inherit UpstreamPoisoningInvariant
+    message: "Every composer must inherit UpstreamPoisoningInvariant so upstream inputs are checked before composition."
+"""
+        """Drop the `[UpstreamPoisoningInvariant]` inheritance on any `*Composer` agent
+and the compiler raises `RULE003` pointing at that agent and at the rule's
+assertion site."""
+
+    section anti_patterns: "Anti-patterns"
+        bullets items:
+            """Do not restate runtime policy as a rule. Rules run at compile time on the
+  authored agent graph only."""
+            """Do not use `rule` where a direct inheritance would be clearer. If every
+  `Composer` already inherits a shared base at its declaration site, you do
+  not need a rule to enforce it."""
+            """Do not use `rule` as a reviewer. A `review` turn judges an artifact at
+  runtime. A `rule` checks authored structure at compile time. They do not
+  replace each other."""
+
+        """**Load when:** the author is adding a compile-time invariant across many
+concrete agents, retiring an ancestor that must never be inherited again, or
+requiring a named slot across a role class."""

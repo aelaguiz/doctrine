@@ -59,6 +59,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL960` | Process Evidence Emitted As Prose Not Typed Receipt | A skill's body or emitted artifact describes a run-by-run evidence envelope in prose rather than declaring a typed `receipt` host slot. | Promote the skill to a `skill package` and declare `receipt <slot>:` in `host_contract:` with typed fields; let critics bind the receipt by symbol. |
 | `AL970` | Critic Re-Invokes Producer Skill Instead Of Binding Audit Mode | A critic uses a separate or duplicated skill to audit the producer's work instead of binding the shared skill with `mode audit = SkillMode.audit as SkillMode`. | Share one skill across producer and auditor and declare the critic's bind with `mode audit = ...`. |
 | `AL980` | Output-Shape Selector Uses Deprecated Enum-Only Mode Form | A selector on an output shape still uses the old `mode role as WriterRole` enum-only form instead of the canonical `mode role = WriterRole.<case> as WriterRole` expr form. | Rewrite each selector to the expr-based form so the compiler can validate the picked case against the enum. |
+| `AL990` | Project Lacks An Enforcement Rule For Shared Inheritance Invariant | A set of concrete agents in the same role class all share the same required ancestor, forbidden ancestor, or required slot through hand-authored discipline, but no declarative `rule` encodes that invariant. | Add one top-level `rule` declaration with a closed `scope:` predicate and a closed `assertions:` predicate so the compiler raises the matching `RULE###` code when a future author drops the shared surface. |
 """
 
     section full_calibration: "Full Calibration"
@@ -480,6 +481,14 @@ document FindingCatalog: "Finding Catalog"
             "Good: `mode role = selectors.role as WriterRole`"
             "Bad: `mode role as WriterRole`"
             "See also: `examples/138_output_shape_case_selector/` for the migrated canonical form and `examples/144_skill_binding_producer_audit_mode/prompts/invalid_enum_only_selector/` for the preserved `E543` regression fixture."
+
+        section al990: "`AL990` Project Lacks An Enforcement Rule For Shared Inheritance Invariant"
+            "What it means: A set of concrete agents in the same role class all share the same required ancestor, forbidden ancestor, or required slot through hand-authored discipline, but no declarative `rule` encodes that invariant. The next author can forget it, and nothing will fail loud at compile time."
+            "Why it matters: The shipped `rule` primitive lets a project lint its own agent graph with closed `scope:` predicates and closed `assertions:` predicates. When the invariant exists only in reviewer prose or a human checklist, the compiler cannot raise `RULE003`, `RULE004`, or `RULE005` and the drift shows up later as broken runtime behavior or a bad review turn."
+            "Default fix: Add one top-level `rule <RuleName>: \"<headline>\"` declaration. Pick a scope predicate from the closed set (`agent_tag:`, `flow:`, `role_class:`, `file_tree:`). Pick one assertion from the closed set (`requires inherit`, `forbids bind`, `requires declare`). Add a plain-English `message:` explaining the invariant. Verify the project still compiles and that removing the shared base now raises the matching `RULE###` code."
+            "Good: `rule ComposersCheckUpstream: \"Every composer must inherit the invariant\"` with `scope: role_class: Composer` and `assertions: requires inherit UpstreamPoisoningInvariant`."
+            "Bad: Every `*Composer` agent inherits `UpstreamPoisoningInvariant` by convention only, and a new `BriefComposer` that drops the inheritance compiles clean."
+            "See also: `examples/146_declarative_project_lint_rule/` for the canonical form and one fixture per shipped `RULE###` code, and `docs/COMPILER_ERRORS.md` Rule-check codes section."
 
     section severity: "Severity"
         bullets levels:
