@@ -1727,10 +1727,20 @@ async function resolveReadableDefinition(site, source) {
     return undefined;
   }
 
-  const readable = findReadableDeclaration(
+  let readable = findReadableDeclaration(
     resolvedRef.source.index,
     resolvedRef.declarationName,
   );
+  let targetDocument = resolvedRef.source.document;
+  if (!readable) {
+    const sibling = await findFlowSiblingMatch(source, (siblingSource) =>
+      findReadableDeclaration(siblingSource.index, resolvedRef.declarationName),
+    );
+    if (sibling) {
+      readable = sibling.declaration;
+      targetDocument = sibling.document;
+    }
+  }
   if (!readable || (readable.kind === DECLARATION_KIND.AGENT && readable.abstract)) {
     return undefined;
   }
@@ -1738,7 +1748,7 @@ async function resolveReadableDefinition(site, source) {
   return [
     createDeclarationLocationLink(
       site.range,
-      resolvedRef.source.document,
+      targetDocument,
       readable.nameRange,
     ),
   ];
@@ -1761,12 +1771,24 @@ async function resolveAddressableDefinition(site, source) {
     return undefined;
   }
 
-  const declaration = site.selfRooted
+  let declaration = site.selfRooted
     ? resolvedRef.declaration
     : findAddressableDeclaration(
       resolvedRef.source.index,
       resolvedRef.declarationName,
     );
+  let resolvedSource = resolvedRef.source;
+  let resolvedDocument = site.selfRooted ? source.document : resolvedRef.source.document;
+  if (!site.selfRooted && !declaration) {
+    const sibling = await findFlowSiblingMatch(source, (siblingSource) =>
+      findAddressableDeclaration(siblingSource.index, resolvedRef.declarationName),
+    );
+    if (sibling) {
+      declaration = sibling.declaration;
+      resolvedDocument = sibling.document;
+      resolvedSource = getIndexedDocumentState(sibling.document);
+    }
+  }
   if (!declaration || (declaration.kind === DECLARATION_KIND.AGENT && declaration.abstract)) {
     return undefined;
   }
@@ -1775,7 +1797,7 @@ async function resolveAddressableDefinition(site, source) {
     return [
       createDeclarationLocationLink(
         site.range,
-        resolvedRef.source.document,
+        resolvedDocument,
         declaration.nameRange,
       ),
     ];
@@ -1784,7 +1806,7 @@ async function resolveAddressableDefinition(site, source) {
   const target = await findAddressablePathTarget({
     declaration,
     pathSegments: site.pathSegments.slice(0, site.segmentIndex + 1),
-    source: resolvedRef.source,
+    source: resolvedSource,
   });
   if (!target) {
     return undefined;
@@ -2805,11 +2827,47 @@ async function resolveReferenceTarget(ref, source, declarationKind, requireConcr
     resolvedRef.declarationName,
     { requireConcrete },
   );
-  if (!declaration) {
-    return undefined;
+  if (declaration) {
+    return { declaration, document: resolvedRef.source.document };
   }
 
-  return { declaration, document: resolvedRef.source.document };
+  const sibling = await findFlowSiblingDeclaration(
+    source,
+    resolvedRef.declarationName,
+    declarationKind,
+    { requireConcrete },
+  );
+  if (sibling) {
+    return sibling;
+  }
+  return undefined;
+}
+
+async function findFlowSiblingDeclaration(source, declarationName, declarationKind, options) {
+  return findFlowSiblingMatch(source, (siblingSource) =>
+    findDeclarationByKind(siblingSource.index, declarationKind, declarationName, options),
+  );
+}
+
+async function findFlowSiblingMatch(source, matchFn) {
+  if (!source.context || !source.context.promptRootUri) {
+    return undefined;
+  }
+  const promptRootUri = source.context.promptRootUri;
+  const pattern = new vscode.RelativePattern(promptRootUri, "**/*.prompt");
+  const siblingUris = await vscode.workspace.findFiles(pattern);
+  for (const siblingUri of siblingUris) {
+    if (siblingUri.toString() === source.document.uri.toString()) {
+      continue;
+    }
+    const siblingDocument = await vscode.workspace.openTextDocument(siblingUri);
+    const siblingSource = getIndexedDocumentState(siblingDocument);
+    const declaration = matchFn(siblingSource);
+    if (declaration) {
+      return { declaration, document: siblingDocument };
+    }
+  }
+  return undefined;
 }
 
 async function resolveWorkflowParentBody(site, source) {
@@ -3513,8 +3571,9 @@ function getPromptIndex(document) {
 }
 
 function parseDeclarationLine(lineText, lineNumber) {
+  const matchText = stripExportPrefix(lineText);
   for (const definition of DECLARATION_DEFINITIONS) {
-    const match = lineText.match(definition.regex);
+    const match = matchText.match(definition.regex);
     if (!match) {
       continue;
     }
@@ -6400,19 +6459,46 @@ function uriToModuleParts(documentUri, promptRootUri) {
   return withoutExtension.split("/").filter(Boolean);
 }
 
-function modulePartsToPromptUri(promptRootUri, moduleParts) {
+const PACKAGE_ENTRYPOINT_NAMES = ["AGENTS.prompt", "SOUL.prompt", "SKILL.prompt"];
+
+function leafModulePromptUri(promptRootUri, moduleParts) {
   const fileName = `${moduleParts[moduleParts.length - 1]}.prompt`;
   return vscode.Uri.joinPath(promptRootUri, ...moduleParts.slice(0, -1), fileName);
 }
 
+function packageEntrypointPromptUris(promptRootUri, moduleParts) {
+  return PACKAGE_ENTRYPOINT_NAMES.map((entrypointName) =>
+    vscode.Uri.joinPath(promptRootUri, ...moduleParts, entrypointName),
+  );
+}
+
+function moduleCandidateUris(promptRootUri, moduleParts) {
+  return [
+    leafModulePromptUri(promptRootUri, moduleParts),
+    ...packageEntrypointPromptUris(promptRootUri, moduleParts),
+  ];
+}
+
+function modulePartsToPromptUri(promptRootUri, moduleParts) {
+  const candidates = moduleCandidateUris(promptRootUri, moduleParts);
+  const existing = candidates.find((candidateUri) => uriExistsSync(candidateUri));
+  return existing || candidates[0];
+}
+
 function resolveAbsoluteImportTargetUri(importRootUris, moduleParts) {
-  const candidates = importRootUris
-    .map((promptRootUri) => modulePartsToPromptUri(promptRootUri, moduleParts))
-    .filter((targetUri) => uriExistsSync(targetUri));
-  if (candidates.length !== 1) {
+  const existingTargets = [];
+  for (const promptRootUri of importRootUris) {
+    for (const candidateUri of moduleCandidateUris(promptRootUri, moduleParts)) {
+      if (uriExistsSync(candidateUri)) {
+        existingTargets.push(candidateUri);
+        break;
+      }
+    }
+  }
+  if (existingTargets.length !== 1) {
     return undefined;
   }
-  return candidates[0];
+  return existingTargets[0];
 }
 
 function parseImportPath(rawPath) {
@@ -6715,6 +6801,14 @@ function createStructuralSiteAt(lineNumber, startCharacter, key) {
 
 function createNameRange(lineText, lineNumber, name) {
   return createFirstMatchRange(lineText, lineNumber, name);
+}
+
+function stripExportPrefix(lineText) {
+  const match = lineText.match(/^(\s*)export\s+/);
+  if (!match) {
+    return lineText;
+  }
+  return match[1] + lineText.slice(match[0].length);
 }
 
 function createFirstMatchRange(lineText, lineNumber, rawValue) {

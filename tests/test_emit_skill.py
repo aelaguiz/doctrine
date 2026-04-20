@@ -95,6 +95,7 @@ class EmitSkillTests(unittest.TestCase):
         # not the example build refs.
         repo_root = Path(__file__).resolve().parents[1]
         skills_cli = self._skills_cli(repo_root)
+        self._ensure_public_skills_emitted(repo_root)
         result = subprocess.run(
             [str(skills_cli), "add", ".", "--list"],
             cwd=repo_root,
@@ -119,6 +120,7 @@ class EmitSkillTests(unittest.TestCase):
         # skills path that the `skills` CLI owns.
         repo_root = Path(__file__).resolve().parents[1]
         skills_cli = self._skills_cli(repo_root)
+        self._ensure_public_skills_emitted(repo_root)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             home_dir = Path(temp_dir).resolve()
@@ -474,6 +476,17 @@ class EmitSkillTests(unittest.TestCase):
         if not cli_path.exists():
             self.skipTest("Run npm ci first to install the pinned `skills` CLI.")
         return cli_path
+
+    def _ensure_public_skills_emitted(self, repo_root: Path) -> None:
+        # `skills` CLI discovery in the priority `skills/.curated/` path only
+        # finds the two first-party skills once their SKILL.md trees have been
+        # emitted. On a fresh checkout that tree does not exist, and the CLI
+        # falls back to a repo-wide scan that picks up every example build_ref
+        # SKILL.md instead. Emit the two public skill targets so the CLI sees
+        # the same shape that `make skills` ships to users.
+        targets = load_emit_targets(repo_root / "pyproject.toml")
+        for target_name in ("doctrine_agent_linter_public_skill", "doctrine_learn_public_skill"):
+            emit_target_skill(targets[target_name])
 
     def _skills_env(self) -> dict[str, str]:
         env = os.environ.copy()

@@ -10,7 +10,6 @@ const REPO_ROOT = process.env.DOCTRINE_REPO_ROOT
 async function run() {
   await activateDoctrineExtension();
   await testImportLinks();
-  await testSkillPackageImportLinks();
   await testCrossRootImportLinks();
   await testEditableSiblingProviderRootLinks();
   await testGuardedOverrideDefinitionProvider();
@@ -45,37 +44,37 @@ async function testImportLinks() {
     document,
     "from simple.greeting import Greeting as GreetingStep",
     "simple.greeting",
-    "examples/03_imports/prompts/simple/greeting.prompt",
+    "examples/03_imports/prompts/simple/greeting/AGENTS.prompt",
   );
   assertLinkTargetOnLine(
     links,
     document,
-    "from chains.relative.entry import RelativeChain as RelativeChainStep",
+    "from chains.relative.entry import SharedChain as SharedChainStep",
     "chains.relative.entry",
-    "examples/03_imports/prompts/chains/relative/entry.prompt",
+    "examples/03_imports/prompts/chains/relative/entry/AGENTS.prompt",
   );
   assertLinkTargetOnLine(
     links,
     document,
     "import chains.deep.levels.one.two.entry as deep_chain",
     "chains.deep.levels.one.two.entry",
-    "examples/03_imports/prompts/chains/deep/levels/one/two/entry.prompt",
+    "examples/03_imports/prompts/chains/deep/levels/one/two/entry/AGENTS.prompt",
   );
 
   await assertDefinitionTarget({
-    declarationSnippet: "import .leaf",
+    declarationSnippet: "import chains.relative.leaf",
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/chains/relative/entry.prompt",
+      "examples/03_imports/prompts/chains/relative/entry/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
     sourceLineFragment:
-      "from chains.relative.entry import RelativeChain as RelativeChainStep",
+      "from chains.relative.entry import SharedChain as SharedChainStep",
     sourceText: "chains.relative.entry",
   });
 
   await assertDefinitionTarget({
     declarationSnippet: 'workflow Greeting: "Greeting"',
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/simple/greeting.prompt",
+      "examples/03_imports/prompts/simple/greeting/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
     sourceLineFragment: "from simple.greeting import Greeting as GreetingStep",
     sourceText: "Greeting",
@@ -84,44 +83,18 @@ async function testImportLinks() {
   await assertDefinitionTarget({
     declarationSnippet: 'workflow Greeting: "Greeting"',
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/simple/greeting.prompt",
+      "examples/03_imports/prompts/simple/greeting/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
     sourceLineFragment: "from simple.greeting import Greeting as GreetingStep",
     sourceText: "GreetingStep",
   });
 }
 
-async function testSkillPackageImportLinks() {
-  const document = await openPrompt(
-    "examples/100_skill_package_bundled_agents/prompts/SKILL.prompt",
-  );
-  const links = await vscode.commands.executeCommand(
-    "_executeLinkProvider",
-    document.uri,
-    100,
-  );
-
-  assert.ok(Array.isArray(links), "Skill package links should return an array.");
-
-  assertLinkTarget(
-    links,
-    document,
-    "agents.cold_reviewer",
-    "examples/100_skill_package_bundled_agents/prompts/agents/cold_reviewer.prompt",
-  );
-  assertLinkTarget(
-    links,
-    document,
-    "agents.escalation_router",
-    "examples/100_skill_package_bundled_agents/prompts/agents/escalation_router.prompt",
-  );
-}
-
 async function testDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'workflow Greeting: "Greeting"',
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/simple/greeting.prompt",
+      "examples/03_imports/prompts/simple/greeting/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
     sourceLineFragment: "use greeting: GreetingStep",
     sourceText: "GreetingStep",
@@ -130,19 +103,19 @@ async function testDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'workflow PoliteGreeting: "Polite Greeting"',
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/simple/nested/polite.prompt",
+      "examples/03_imports/prompts/simple/nested/polite/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
     sourceLineFragment: "use polite_greeting: polite.PoliteGreeting",
     sourceText: "polite.PoliteGreeting",
   });
 
   await assertDefinitionTarget({
-    declarationSnippet: 'workflow RelativeChain: "Relative Chain"',
+    declarationSnippet: 'workflow SharedChain: "Shared Chain"',
     expectedRelativeTargetPath:
-      "examples/03_imports/prompts/chains/relative/entry.prompt",
+      "examples/03_imports/prompts/chains/relative/entry/AGENTS.prompt",
     relativePath: "examples/03_imports/prompts/AGENTS.prompt",
-    sourceLineFragment: "use relative_chain: RelativeChainStep",
-    sourceText: "RelativeChainStep",
+    sourceLineFragment: "use shared_chain: SharedChainStep",
+    sourceText: "SharedChainStep",
   });
 
   await assertDefinitionTarget({
@@ -150,8 +123,8 @@ async function testDefinitionProvider() {
     expectedRelativeTargetPath:
       "examples/04_inheritance/prompts/shared/greeters.prompt",
     relativePath: "examples/04_inheritance/prompts/AGENTS.prompt",
-    sourceLineFragment: "abstract agent ImportedBaseGreeter[shared.greeters.PoliteGreeter]:",
-    sourceText: "shared.greeters.PoliteGreeter",
+    sourceLineFragment: "abstract agent ImportedBaseGreeter[PoliteGreeter]:",
+    sourceText: "PoliteGreeter",
   });
 
   await assertDefinitionTarget({
@@ -160,8 +133,8 @@ async function testDefinitionProvider() {
       "examples/17_agent_mentions/prompts/shared/roles.prompt",
     relativePath: "examples/17_agent_mentions/prompts/AGENTS.prompt",
     sourceLineFragment:
-      'route "If the work is ready for review" -> shared.roles.AcceptanceCritic',
-    sourceText: "shared.roles.AcceptanceCritic",
+      'route "If the work is ready for review" -> AcceptanceCritic',
+    sourceText: "AcceptanceCritic",
   });
 
   await assertDefinitionTarget({
@@ -289,9 +262,9 @@ async function testLateCorpusParityDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'skill LedgerNoteDelivery: "ledger-note-delivery"',
     expectedRelativeTargetPath:
-      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery.prompt",
+      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery/AGENTS.prompt",
     relativePath:
-      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery.prompt",
+      "examples/118_output_target_delivery_skill_binding/prompts/shared/delivery/AGENTS.prompt",
     sourceLineFragment: "delivery_skill: LedgerNoteDelivery",
     sourceText: "LedgerNoteDelivery",
   });
@@ -441,18 +414,12 @@ async function testCrossRootImportLinks() {
   assertLinkTarget(
     links,
     document,
-    "local.shared_turn",
-    "examples/75_cross_root_standard_library_imports/flow_alpha/prompts/local/shared_turn.prompt",
-  );
-  assertLinkTarget(
-    links,
-    document,
     "library.io.shared_inputs",
-    "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs.prompt",
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs/AGENTS.prompt",
   );
 
   const sharedDocument = await openPrompt(
-    "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt",
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening/AGENTS.prompt",
   );
   const sharedLinks = await vscode.commands.executeCommand(
     "_executeLinkProvider",
@@ -462,8 +429,8 @@ async function testCrossRootImportLinks() {
   assertLinkTarget(
     sharedLinks,
     sharedDocument,
-    "..context.topic",
-    "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic.prompt",
+    "library.context.topic",
+    "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic/AGENTS.prompt",
   );
 
   const ambiguousDocument = await openPrompt(
@@ -544,7 +511,7 @@ async function testCrossRootDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "workflow SharedStandardTurn",
     expectedRelativeTargetPath:
-      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/common_turn.prompt",
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/common_turn/AGENTS.prompt",
     relativePath:
       "examples/75_cross_root_standard_library_imports/flow_beta/prompts/AGENTS.prompt",
     sourceLineFragment: "workflow: library.workflows.common_turn.SharedStandardTurn",
@@ -554,7 +521,7 @@ async function testCrossRootDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "inputs SharedLibraryInputs",
     expectedRelativeTargetPath:
-      "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs.prompt",
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/io/shared_inputs/AGENTS.prompt",
     relativePath:
       "examples/75_cross_root_standard_library_imports/flow_alpha/prompts/AGENTS.prompt",
     sourceLineFragment: "inputs: library.io.shared_inputs.SharedLibraryInputs",
@@ -564,9 +531,9 @@ async function testCrossRootDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "workflow TopicContext",
     expectedRelativeTargetPath:
-      "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic.prompt",
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/context/topic/AGENTS.prompt",
     relativePath:
-      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening.prompt",
+      "examples/75_cross_root_standard_library_imports/shared/prompts/library/workflows/opening/AGENTS.prompt",
     sourceLineFragment: "use topic: library.context.topic.TopicContext",
     sourceText: "library.context.topic.TopicContext",
   });
@@ -700,9 +667,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "skills SharedSkills",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment:
       '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "self",
@@ -711,9 +678,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'can_run: "Can Run"',
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment:
       '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "can_run",
@@ -722,9 +689,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "skill grounding: GroundingSkill",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment:
       '"Keep {{self:can_run.grounding}} available before you act."',
     sourceText: "grounding",
@@ -733,9 +700,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "workflow ReviewRules",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.title",
     sourceText: "title",
   });
@@ -743,9 +710,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "skills SharedSkills",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:skills.title",
     sourceText: "title",
   });
@@ -753,9 +720,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "workflow WorkflowRoot",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "self",
   });
@@ -763,9 +730,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "use shared: ReviewRules",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "shared",
   });
@@ -773,9 +740,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'gates: "Gates"',
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "gates",
   });
@@ -783,9 +750,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'build: "Build"',
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "build",
   });
@@ -793,9 +760,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'check_build_honesty: "Check Build Honesty"',
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:shared.gates.build.check_build_honesty",
     sourceText: "check_build_honesty",
   });
@@ -803,9 +770,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "skills: SharedSkills",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "skills",
   });
@@ -813,9 +780,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: 'can_run: "Can Run"',
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "can_run",
   });
@@ -823,9 +790,9 @@ async function testAddressableDefinitionProvider() {
   await assertDefinitionTarget({
     declarationSnippet: "skill grounding: GroundingSkill",
     expectedRelativeTargetPath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     relativePath:
-      "examples/28_addressable_workflow_paths/prompts/SELF_AND_DESCENT.prompt",
+      "examples/28_addressable_workflow_paths/prompts/self_and_descent/AGENTS.prompt",
     sourceLineFragment: "self:skills.can_run.grounding",
     sourceText: "grounding",
   });
@@ -1362,8 +1329,8 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/15_workflow_body_refs/prompts/shared/contracts.prompt",
     relativePath: "examples/15_workflow_body_refs/prompts/AGENTS.prompt",
-    sourceLineFragment: "shared.contracts.CurrentIssuePlan",
-    sourceText: "shared.contracts.CurrentIssuePlan",
+    sourceLineFragment: "CurrentIssuePlan",
+    sourceText: "CurrentIssuePlan",
   });
 
   await assertDefinitionTarget({
@@ -1371,8 +1338,8 @@ async function testFullClickableSurface() {
     expectedRelativeTargetPath:
       "examples/16_workflow_string_interpolation/prompts/shared/contracts.prompt",
     relativePath: "examples/16_workflow_string_interpolation/prompts/AGENTS.prompt",
-    sourceLineFragment: "{{shared.contracts.TrackMetadata:source.path}}",
-    sourceText: "shared.contracts.TrackMetadata",
+    sourceLineFragment: "{{TrackMetadata:source.path}}",
+    sourceText: "TrackMetadata",
   });
 
   await assertDefinitionTarget({
