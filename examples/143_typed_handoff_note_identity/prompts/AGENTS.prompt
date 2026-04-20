@@ -1,0 +1,16 @@
+import shared.handoff
+
+output ReleaseNote: "Release Note"
+    target: shared.handoff.ReleaseNoteHandoff
+    shape: MarkdownDocument
+    structure: shared.handoff.ReleaseNoteDocument
+    requirement: Advisory
+
+    standalone_read: "Standalone Read"
+        "This note should stand on its own."
+
+
+agent ReleaseNotePublisher:
+    role: "Publish release notes."
+    outputs: "Outputs"
+        ReleaseNote

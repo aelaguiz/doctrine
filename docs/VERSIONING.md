@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 4.0
+Current Doctrine language version: 5.6
 
 ## The Version Lines
 
@@ -140,9 +140,10 @@ Every public release uses one release class.
   conditional emitted `SKILL.contract.json` sidecars for host-bound packages is
   an `additive` release when older inline skills and older skill packages
   still keep working unchanged.
-- Adding `type: enum` plus `values:` for local `output schema` enums is an
-  `additive` release when legacy `type: string` plus `enum:` still works and
-  emitted schema files keep the same string-enum wire shape.
+- Adding `type: enum` plus `values:` for local `output schema` enums was an
+  `additive` release when legacy `type: string` plus `enum:` still worked and
+  emitted schema files kept the same string-enum wire shape. Both forms are
+  deleted in the 4.1 → 5.0 breaking cut below.
 - Adding a top-level `route` block to `final_output.contract.json` is an
   `additive` release when existing `final_output` and `review` keys keep their
   shape and `contract_version` stays compatible.
@@ -152,6 +153,122 @@ Every public release uses one release class.
   `3.0` to `4.0`. `E310` stays reserved for the deferred grouped-override
   investigation, and `E311` stays reserved for a future dedicated IO-wrapper
   shorthand diagnostic.
+- Relaxing `E500` so carrier-mode review-driven agents may opt into
+  structural binding validation with `final_output.review_fields:` is an
+  `additive` language move. Existing programs keep compiling and emitting
+  unchanged because the relaxation only activates when the author writes
+  `review_fields:` on the carrier. Ships with a stdlib authoring pattern that
+  splits `shared_rules:` from `how_to_take_a_turn:` in role homes so
+  concrete roles can override the turn sequence without losing generic
+  rules. Also ships a `via review.on_<section>.route` clause inside
+  `next_owner:` output bodies so a shared review-carrier output can bind to
+  each critic's resolved route without forking prose per layer (new compile
+  code `E317`; baseline structural interpolation check still fires when both
+  `via` and literal interpolation are absent). Adds `selector:` on
+  `output shape` with `case EnumType.member:` dispatch inside shape bodies
+  plus an agent-side `selectors:` binding so one shared output shape can
+  carry role-specific field notes that the compiler inlines per agent (new
+  compile codes `E318` and `E319`). Advances the language line from `4.0` to
+  `4.1`. An audit pass tightened the shipped `E317` / `E318` / `E319`
+  catalog to cover misplaced `case` and `via` clauses, cross-flow enum
+  identity, inherited selector-backed shapes, and duplicate or unknown
+  selector bindings. Language 4.1 itself is unchanged; only the diagnostic
+  surface got sharper.
+- Unifying field vocabularies on one canonical form is `breaking`. The 4.1 →
+  5.0 cut deletes the inline `type: enum` plus `values:` form and the legacy
+  `type: string` plus `enum:` form that `output schema` fields once accepted.
+  The canonical form is to declare `enum X: "..."` once and type the field
+  with `type: X`. Four field-shaped surfaces now accept `type: <EnumName>`
+  with identical rendering: output-schema fields, readable `row_schema` and
+  `item_schema` entries, readable table columns, and record scalars. The
+  renderer emits a `Valid values: ...` line in declared order; the
+  JSON-schema path emits the same members as `enum`. Typing against an
+  unknown name fails loud with `E320`. Advances the language line from
+  `4.0` / `4.1` to `5.0`. Glossary and label nodes (`properties` items,
+  `definitions` items) stay prose-only by design.
+- Adding a per-case `override gates:` block inside a `review_family` case
+  body is an `additive` language move. One `review` contract may now back
+  several cases that need slightly different gate sets without forking the
+  contract. The block accepts `add NAME: "Title"`, `remove NAME`, and
+  `modify NAME: "Title"` clauses, and the case still references the same
+  `contract.NAME` symbols inside `checks:` (now resolved against the
+  per-case effective gate set). Removing or modifying a gate the contract
+  does not declare fails loud with `E531`; adding a name that already
+  exists fails loud with `E532`. Existing programs without the block keep
+  compiling unchanged. Advances the language line from `5.0` to `5.1`.
+- Adding a typed `receipt` host-slot family to `host_contract:` is one
+  backward-compatible language move. A skill package may now declare
+  `receipt <slot_key>: "Title"` with typed `<field_key>: <DeclaredType>`
+  entries (or `<field_key>: list[<DeclaredType>]`) so the package owns the
+  typed envelope it emits on every run. Receipt slots are not call-site
+  bound; the package owns them. Downstream consumers may reference fields
+  through the skill binding at `<skill_binding_key>.receipt.<field_key>`.
+  Empty receipt bodies fail loud with `E535`, unresolved receipt field
+  references fail with `E536`, and untyped field names fail with `E537`.
+  `SKILL.contract.json` now carries each receipt slot with its typed
+  `fields` map so runtime hosts can validate the emitted envelope.
+  Existing programs without a `receipt` slot keep compiling unchanged.
+  Advances the language line from `5.1` to `5.2`.
+- Adding `typed_as:` to `output target` bodies is one backward-compatible
+  language move. A custom `output target` may now point at a declared
+  `document`, `schema`, or `table` so the target carries the handoff-note
+  family identity. Consuming outputs may then omit a redundant
+  `structure:` or `schema:` line, or state the matching family for
+  clarity. The emitted output contract gains one `Typed As` row
+  immediately after `Target`. Typed targets whose ref does not resolve
+  to a `document`, `schema`, or `table` fail loud with `E533`. If a
+  downstream output's own `structure:` or `schema:` names a family that
+  disagrees with the target's `typed_as:` family, the compiler raises
+  `E534`. Existing programs without `typed_as:` keep compiling unchanged.
+  Advances the language line from `5.2` to `5.3`.
+- Adding a canonical `mode CNAME = expr as <Enum>` statement on skill
+  entries and normalizing `output shape` `selector:` to the same
+  production is one backward-compatible language move. Skill entries
+  now distinguish producer and audit uses of the same skill with the
+  same `mode_stmt` grammar production that review cases, law matchers,
+  and output-shape selectors already share. Three new compile codes
+  fail loud on authoring mistakes: `E540` for a mode `as` target that
+  does not resolve to a declared enum, `E541` for an audit-mode skill
+  entry that binds to an `output` or `final_output` host slot, and
+  `E542` for a `CNAME` that is not a member of the declared enum. The
+  enum-only `output shape` selector form (`mode CNAME as <Enum>`) is
+  soft-deprecated with `E543`. **Timebox:** the enum-only form will be
+  removed at the next minor language bump (language 5.4 → 5.5).
+  Existing programs that already use the expr-based form — every
+  shipped use in review cases, law matchers, and existing `mode`
+  statements — keep compiling unchanged. Advances the language line
+  from `5.3` to `5.4`.
+- Adding an optional `: <TypedEntityRef>` annotation on `abstract`
+  authored-agent slots is one backward-compatible language move. An
+  abstract agent may now narrow an abstract slot to a specific
+  declared family (`document`, `schema`, `table`, `enum`, `agent`, or
+  `workflow`). Concrete descendants must bind the slot to a `name_ref`
+  of the declared family. The compiler raises `E538` when a concrete
+  binds the slot with the wrong family or an inline workflow block,
+  and `E539` when the annotation fails to resolve. The annotation is
+  deliberately narrower than skill `host_contract` family typing and
+  output-schema field typing; the three shapes stay distinct. Existing
+  untyped abstract slots keep compiling unchanged. Advances the
+  language line from `5.4` to `5.5`.
+- Adding the declarative top-level `rule` primitive is one
+  backward-compatible language move. A `rule` declaration lints the
+  authored agent graph at compile time through a closed `scope:`
+  predicate set (`agent_tag: <CNAME>`, `flow: <NameRef>`,
+  `role_class: <CNAME>`, `file_tree: <STRING>`) and a closed
+  `assertions:` predicate set (`requires inherit <NameRef>`,
+  `forbids bind <NameRef>`, `requires declare <CNAME>`). Rule-check
+  diagnostics live in their own `RULE###` band so they stay visibly
+  distinct from the `E###` codes. The shipped codes are `RULE001`
+  (scope predicate target does not resolve), `RULE002` (assertion
+  target does not resolve), `RULE003` (scoped agent fails
+  `requires inherit`), `RULE004` (scoped agent violates
+  `forbids bind`), and `RULE005` (scoped agent fails
+  `requires declare`). **RULE-band stability rule:** codes `RULE006`
+  through `RULE099` are reserved for future extensions of this
+  closed-predicate surface, and codes `RULE100` and above are reserved
+  for any future open-expression-language evolution of the rule
+  primitive. Existing programs that declare no `rule` keep compiling
+  unchanged. Advances the language line from `5.5` to `5.6`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

@@ -1,0 +1,39 @@
+import cross_flow_a as mod_a
+import cross_flow_b as mod_b
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    selector:
+        mode role = selectors.role as mod_a.WriterRole
+
+    field_notes: "Field Notes"
+        case mod_a.WriterRole.producer:
+            "Producer guidance from flow A."
+        case mod_a.WriterRole.critic:
+            "Critic guidance from flow A."
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+
+agent WriterDemo:
+    role: "Draft the writer turn bound to flow A's selector enum."
+    selectors:
+        role: mod_a.WriterRole.producer
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

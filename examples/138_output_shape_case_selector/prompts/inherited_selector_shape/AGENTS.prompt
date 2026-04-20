@@ -1,0 +1,23 @@
+from inherited_parent import ParentWriterTurnJson
+from inherited_parent import WriterRole
+
+
+output shape ChildWriterTurnJson[ParentWriterTurnJson]: "Child Writer Turn JSON"
+    inherit kind
+    inherit schema
+    inherit field_notes
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: ChildWriterTurnJson
+    requirement: Required
+
+
+agent WriterProducer:
+    role: "Draft the next writer turn with the inherited selector shape."
+    selectors:
+        role: WriterRole.producer
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

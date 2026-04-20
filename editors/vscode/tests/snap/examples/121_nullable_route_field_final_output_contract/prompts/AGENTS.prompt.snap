@@ -1,3 +1,26 @@
+>enum TurnKind: "Turn Kind"
+#^^^^ source.doctrine keyword.declaration.doctrine
+#    ^ source.doctrine
+#     ^^^^^^^^ source.doctrine entity.name.type.doctrine
+#             ^ source.doctrine punctuation.separator.key-value.doctrine
+#              ^ source.doctrine
+#               ^ source.doctrine punctuation.definition.string.begin.doctrine
+#                ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+#                         ^ source.doctrine punctuation.definition.string.end.doctrine
+>    handoff: "Handoff"
+#^^^^ source.doctrine
+#    ^^^^^^^ source.doctrine entity.name.section.doctrine
+#           ^ source.doctrine punctuation.separator.key-value.doctrine
+#            ^ source.doctrine
+#             ^^^^^^^^^ source.doctrine string.quoted.double.doctrine
+>    done: "Done"
+#^^^^ source.doctrine
+#    ^^^^ source.doctrine entity.name.section.doctrine
+#        ^ source.doctrine punctuation.separator.key-value.doctrine
+#         ^ source.doctrine
+#          ^^^^^^ source.doctrine string.quoted.double.doctrine
+>
+>
 >output schema WriterTurnResultSchema: "Writer Turn Result Schema"
 #^^^^^^ source.doctrine keyword.declaration.doctrine
 #      ^ source.doctrine
@@ -48,22 +71,12 @@
 #                ^ source.doctrine punctuation.definition.string.begin.doctrine
 #                 ^^^^ source.doctrine string.quoted.double.doctrine
 #                     ^ source.doctrine punctuation.definition.string.end.doctrine
->        type: enum
+>        type: TurnKind
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine
 #            ^ source.doctrine punctuation.separator.key-value.doctrine
 #             ^ source.doctrine
-#              ^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
->        values:
-#^^^^^^^^ source.doctrine
-#        ^^^^^^ source.doctrine entity.name.section.doctrine
-#              ^ source.doctrine punctuation.separator.key-value.doctrine
->            handoff
-#^^^^^^^^^^^^ source.doctrine
-#            ^^^^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
->            done
-#^^^^^^^^^^^^ source.doctrine
-#            ^^^^ source.doctrine entity.name.type.reference.standalone.doctrine entity.name.type.doctrine support.type.reference.doctrine
+#              ^^^^^^^^ source.doctrine entity.name.type.reference.key-value.doctrine entity.name.type.doctrine support.type.reference.doctrine
 >        note: "Say whether this turn hands off or finishes."
 #^^^^^^^^ source.doctrine
 #        ^^^^ source.doctrine entity.name.section.doctrine

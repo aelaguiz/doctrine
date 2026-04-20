@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
-from typing import TypeAlias as _TypeAlias
+from typing import Literal as _Literal, TYPE_CHECKING, TypeAlias as _TypeAlias
 
 from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
+
+if TYPE_CHECKING:
+    from doctrine._compiler.resolve.field_types import FieldTypeRef
 
 
 @_dataclass(slots=True, frozen=True)
@@ -23,6 +26,9 @@ class RecordScalar:
     key: str
     value: RecordScalarValue
     body: tuple["AnyRecordItem", ...] | None = None
+    type_ref: "FieldTypeRef | None" = None
+    type_name: str | None = None
+    type_source_span: SourceSpan | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -67,9 +73,27 @@ class RecordRef:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class ReviewRouteVia:
+    section: _Literal["on_accept", "on_reject"]
+    resolution: _Literal["route"]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputRecordCase:
+    enum_member_ref: NameRef
+    items: tuple["AnyRecordItem", ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 RecordItem: _TypeAlias = ProseLine | RecordScalar | RecordSection | RecordRef | ReadableBlock
-AnyRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
-OutputRecordItem: _TypeAlias = RecordItem | GuardedOutputSection | GuardedOutputScalar
+AnyRecordItem: _TypeAlias = (
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia | OutputRecordCase
+)
+OutputRecordItem: _TypeAlias = (
+    RecordItem | GuardedOutputSection | GuardedOutputScalar | ReviewRouteVia | OutputRecordCase
+)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -224,10 +248,19 @@ class OutputTargetDecl:
     title: str
     items: tuple[RecordItem, ...]
     delivery_skill_ref: NameRef | None = None
+    typed_as: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
+
+
+@_dataclass(slots=True, frozen=True)
+class OutputShapeSelectorConfig:
+    field_name: str
+    enum_ref: NameRef
+    expr: Expr | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -236,6 +269,7 @@ class OutputShapeDecl:
     title: str
     items: tuple[OutputShapeAuthoredItem, ...]
     parent_ref: NameRef | None = None
+    selector: OutputShapeSelectorConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -244,6 +278,7 @@ class OutputSchemaField:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -252,6 +287,7 @@ class OutputSchemaDef:
     key: str
     title: str
     items: tuple["OutputSchemaBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -268,6 +304,7 @@ class OutputSchemaRouteField:
     key: str
     title: str
     items: tuple["OutputSchemaRouteBodyItem", ...]
+    type_ref: "FieldTypeRef | None" = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -308,18 +345,6 @@ class OutputSchemaFlag:
 class OutputSchemaSetting:
     key: str
     value: str | int | float | bool | None | NameRef
-    source_span: SourceSpan | None = _field(default=None, compare=False)
-
-
-@_dataclass(slots=True, frozen=True)
-class OutputSchemaEnum:
-    values: tuple[OutputSchemaLiteralValue, ...]
-    source_span: SourceSpan | None = _field(default=None, compare=False)
-
-
-@_dataclass(slots=True, frozen=True)
-class OutputSchemaValues:
-    values: tuple[OutputSchemaLiteralValue, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -380,8 +405,6 @@ class OutputSchemaOverrideExample:
 OutputSchemaBodyItem: _TypeAlias = (
     OutputSchemaFlag
     | OutputSchemaSetting
-    | OutputSchemaEnum
-    | OutputSchemaValues
     | OutputSchemaItems
     | OutputSchemaAnyOf
     | OutputSchemaField
@@ -450,13 +473,36 @@ class SkillPackageHostSlot:
 
 
 @_dataclass(slots=True, frozen=True)
+class ReceiptField:
+    key: str
+    type_ref: NameRef
+    list_element: bool = False
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ReceiptHostSlot:
+    key: str
+    title: str
+    fields: tuple[ReceiptField, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+    @property
+    def family(self) -> str:
+        return "receipt"
+
+
+SkillPackageHostSlotItem: _TypeAlias = SkillPackageHostSlot | ReceiptHostSlot
+
+
+@_dataclass(slots=True, frozen=True)
 class SkillPackageDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
     metadata: SkillPackageMetadata
     emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
-    host_contract: tuple[SkillPackageHostSlot, ...] = ()
+    host_contract: tuple[SkillPackageHostSlotItem, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

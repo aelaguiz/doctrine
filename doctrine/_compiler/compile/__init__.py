@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine._compiler.compile.agent import CompileAgentMixin
 from doctrine._compiler.compile.final_output import CompileFinalOutputMixin
+from doctrine._compiler.compile.output_selectors import CompileOutputSelectorsMixin
 from doctrine._compiler.compile.outputs import CompileOutputsMixin
 from doctrine._compiler.compile.readable_blocks import CompileReadableBlocksMixin
 from doctrine._compiler.compile.readables import CompileReadablesMixin
@@ -23,6 +24,7 @@ class CompileMixin(
     CompileReadableBlocksMixin,
     CompileAgentMixin,
     CompileReadablesMixin,
+    CompileOutputSelectorsMixin,
     CompileFinalOutputMixin,
     CompileSkillPackageMixin,
 ):

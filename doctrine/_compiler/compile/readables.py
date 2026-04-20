@@ -662,7 +662,12 @@ class CompileReadablesMixin:
 
         return CompiledTableData(
             columns=tuple(
-                CompiledTableColumn(key=column.key, title=column.title, body=column.body)
+                CompiledTableColumn(
+                    key=column.key,
+                    title=column.title,
+                    body=column.body,
+                    type_ref=column.type_ref,
+                )
                 for column in table.columns
             ),
             rows=tuple(compiled_rows),

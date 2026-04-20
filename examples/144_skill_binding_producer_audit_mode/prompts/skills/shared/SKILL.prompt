@@ -1,0 +1,5 @@
+skill package SharedSkillPackage: "Shared Skill Package"
+    metadata:
+        name: "shared-skill-package"
+        description: "Shared producer/audit package with no host binds."
+    "Run the shared producer/audit package."

@@ -398,16 +398,17 @@ class FinalOutputTests(unittest.TestCase):
     def test_json_final_output_exposes_schema_metadata_and_payload_preview(self) -> None:
         agent = self._compile_agent(
             """
+            enum RepoStatus: "Repo Status"
+                ok: "OK"
+                action_required: "Action Required"
+
             output schema RepoStatusSchema: "Repo Status Schema"
                 field summary: "Summary"
                     type: string
                     note: "Short natural-language status."
 
                 field status: "Status"
-                    type: enum
-                    values:
-                        ok
-                        action_required
+                    type: RepoStatus
                     note: "Current repo outcome."
 
                 field next_step: "Next Step"
@@ -477,12 +478,13 @@ class FinalOutputTests(unittest.TestCase):
         # Their declared example must validate and the rendered row must stay readable.
         agent = self._compile_agent(
             """
+            enum StatusCode: "Status Code"
+                ok: "OK"
+                blocked: "Blocked"
+
             output schema StatusSchema: "Status Schema"
                 field status: "Status"
-                    type: enum
-                    values:
-                        ok
-                        blocked
+                    type: StatusCode
                     nullable
 
                 field kind: "Kind"
@@ -526,6 +528,11 @@ class FinalOutputTests(unittest.TestCase):
         # The rendered table should expose child fields instead of hiding them.
         agent = self._compile_agent(
             """
+            enum RouteAction: "Route Action"
+                reply: "Reply"
+                handoff: "Handoff"
+                end_turn: "End Turn"
+
             output schema RoutedSchema: "Routed Schema"
                 field summary: "Summary"
                     type: string
@@ -536,11 +543,7 @@ class FinalOutputTests(unittest.TestCase):
                     note: "Routing facts for the next step."
 
                     field action: "Action"
-                        type: enum
-                        values:
-                            reply
-                            handoff
-                            end_turn
+                        type: RouteAction
                         note: "Chosen route action."
 
                     field owner: "Owner"
@@ -582,7 +585,10 @@ class FinalOutputTests(unittest.TestCase):
             "| `route` | object | Yes | No | Routing facts for the next step. |",
             rendered,
         )
-        self.assertIn("| `route.action` | string | Yes | No | Chosen route action. |", rendered)
+        self.assertIn(
+            "| `route.action` | string | Yes | No | Chosen route action. One of `reply`, `handoff`, `end_turn`. |",
+            rendered,
+        )
         self.assertIn(
             "| `route.owner` | string | Yes | Yes | Next owner when a handoff is needed. |",
             rendered,
@@ -623,41 +629,6 @@ class FinalOutputTests(unittest.TestCase):
 
         self.assertEqual(error.code, "E216")
         self.assertIn("does not match the lowered schema", str(error))
-
-    def test_json_final_output_keeps_legacy_inline_enum_form_compatible(self) -> None:
-        agent = self._compile_agent(
-            """
-            output schema LegacyStatusSchema: "Legacy Status Schema"
-                field status: "Status"
-                    type: string
-                    enum:
-                        ok
-                        blocked
-
-            output shape LegacyStatusJson: "Legacy Status JSON"
-                kind: JsonObject
-                schema: LegacyStatusSchema
-
-            output LegacyStatusFinalResponse: "Legacy Status Final Response"
-                target: TurnResponse
-                shape: LegacyStatusJson
-                requirement: Required
-
-            agent LegacyStatusAgent:
-                role: "Report status in the legacy enum form."
-                outputs: "Outputs"
-                    LegacyStatusFinalResponse
-                final_output: LegacyStatusFinalResponse
-            """,
-            agent_name="LegacyStatusAgent",
-        )
-
-        self.assertIsNotNone(agent.final_output)
-        self.assertIsNotNone(agent.final_output.lowered_schema)
-        self.assertEqual(
-            agent.final_output.lowered_schema["properties"]["status"]["enum"],
-            ["ok", "blocked"],
-        )
 
     def test_json_final_output_allows_missing_schema_owned_example(self) -> None:
         # Structured final-output contracts may omit `example:`. The rendered
@@ -926,12 +897,13 @@ class FinalOutputTests(unittest.TestCase):
     def test_review_driven_final_output_renders_schema_backed_json_contract(self) -> None:
         agent = self._compile_agent(
             """
+            enum ReviewVerdict: "Review Verdict"
+                accepted: "Accepted"
+                changes_requested: "Changes Requested"
+
             output schema AcceptanceReviewSchema: "Acceptance Review Schema"
                 field verdict: "Verdict"
-                    type: enum
-                    values:
-                        accepted
-                        changes_requested
+                    type: ReviewVerdict
                     note: "Review verdict."
 
                 field reviewed_artifact: "Reviewed Artifact"
@@ -1052,7 +1024,10 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("| Format | Structured JSON |", rendered)
         self.assertIn("| Schema | Acceptance Review Schema |", rendered)
         self.assertIn("#### Payload Fields", rendered)
-        self.assertIn("| `verdict` | string | Yes | No | Review verdict. |", rendered)
+        self.assertIn(
+            "| `verdict` | string | Yes | No | Review verdict. One of `accepted`, `changes_requested`. |",
+            rendered,
+        )
         self.assertIn("#### Trust Surface", rendered)
         self.assertIn("- Current Artifact", rendered)
         self.assertIn("#### Failure Detail", rendered)
@@ -1313,12 +1288,13 @@ class FinalOutputTests(unittest.TestCase):
         # just because the bound field lives on the review comment output.
         agent = self._compile_agent(
             """
+            enum ControlRoute: "Control Route"
+                follow_up: "Follow Up"
+                revise: "Revise"
+
             output schema AcceptanceControlSchema: "Acceptance Control Schema"
                 field route: "Route"
-                    type: enum
-                    values:
-                        follow_up
-                        revise
+                    type: ControlRoute
                     note: "Control route for the next owner."
 
                 field current_artifact: "Current Artifact"
@@ -1473,12 +1449,13 @@ class FinalOutputTests(unittest.TestCase):
     def test_review_driven_split_json_final_output_can_render_route_semantics(self) -> None:
         agent = self._compile_agent(
             """
+            enum ControlRoute: "Control Route"
+                follow_up: "Follow Up"
+                revise: "Revise"
+
             output schema AcceptanceControlSchema: "Acceptance Control Schema"
                 field route: "Route"
-                    type: enum
-                    values:
-                        follow_up
-                        revise
+                    type: ControlRoute
                     note: "Control route for the next owner."
 
                 field current_artifact: "Current Artifact"

@@ -13,6 +13,7 @@ skill package DoctrineLearn: "Doctrine Learn"
         "references/imports-and-refs.md": ImportsAndRefs
         "references/emit-targets.md": EmitTargets
         "references/reviews.md": Reviews
+        "references/rules.md": Rules
         "references/agents-and-workflows.md": AgentsAndWorkflows
         "references/documents-and-tables.md": DocumentsAndTables
         "references/skills-and-packages.md": SkillsAndPackages
@@ -61,6 +62,7 @@ skill package DoctrineLearn: "Doctrine Learn"
         "`references/language-overview.md` owns the shipped grammar shape, the core declaration vocabulary, and the ladder of first examples. Load when the author is new to Doctrine or unsure which construct fits."
         "`references/agents-and-workflows.md` owns `agent`, `workflow`, route-only turns, `handoff_routing`, `grounding`, and workflow law. Load when the author is wiring turn flow or handoffs."
         "`references/reviews.md` owns `review`, `review_family`, carried state, verdict coupling, and review-driven `final_output`. Load when the author is adding a gate, a verdict, or a reviewer agent."
+        "`references/rules.md` owns the declarative project `rule` primitive, its closed scope and assertion predicate set, and the `RULE###` diagnostic band. Load when the author is adding a compile-time invariant across many concrete agents."
         "`references/outputs-and-schemas.md` owns `output`, `output schema`, `route field`, `final_output`, output inheritance, and schema emission. Load when the author is shaping the turn's typed answer."
         "`references/documents-and-tables.md` owns `document`, `table`, readable lists, and `render_profile`. Load when the author is shipping readable prose or structured reference material."
         "`references/skills-and-packages.md` owns `skill`, `skill package`, `SKILL.prompt`, `host_contract:`, `bind:`, and `emit:` companions. Load when the author is modeling reusable capability or shipping a package."

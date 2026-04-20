@@ -1,0 +1,18 @@
+# A concrete composer does not declare the required slot.
+# The compiler must fail with RULE005.
+
+abstract agent ComposerBase:
+    role: "Base composer with an abstract notes slot."
+    abstract notes
+
+
+agent BriefComposer:
+    role: "Compose the weekly brief without declaring the notes slot."
+
+
+rule ComposersDeclareNotes: "Every composer must declare a notes slot"
+    scope:
+        role_class: Composer
+    assertions:
+        requires declare notes
+    message: "Every composer must declare a notes slot so downstream readers know where to look."

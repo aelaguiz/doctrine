@@ -1,0 +1,8 @@
+skill ProducerEmptyReceiptSkill: "Producer Empty Receipt Skill"
+    purpose: "Package declares a receipt slot without fields."
+    package: "producer-empty-receipt-package"
+
+agent ProducerDemo:
+    role: "Run the producer package so E535 can fire."
+    skills: "Skills"
+        skill producer: ProducerEmptyReceiptSkill

@@ -1,0 +1,12 @@
+# The abstract agent declares `abstract policy: MissingPolicyDoc`, but
+# `MissingPolicyDoc` is never declared. The compiler must fail with E539.
+
+abstract agent TypedPolicyReviewer:
+    role: "Review a draft section against a named typed policy."
+    abstract policy: MissingPolicyDoc
+
+
+agent AccuracyReviewer[TypedPolicyReviewer]:
+    role: "Review draft sections against the accuracy policy."
+
+    policy: MissingPolicyDoc

@@ -40,6 +40,7 @@ prompt_file: _NL* declaration+ _NL*
                        | skill_package_decl
                        | skill_decl
                        | enum_decl
+                       | rule_decl
                        | abstract_agent
                        | agent
 
@@ -79,6 +80,29 @@ skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package
 skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
+// Top-level `rule` declaration. The P7 predicate set is deliberately closed;
+// the `RULE100+` diagnostic band is reserved for future open-expression
+// evolution. Do not widen this grammar without a Decision Log entry.
+rule_decl: "rule" CNAME ":" string _NL _INDENT rule_body _DEDENT
+rule_body: rule_scope_block rule_assertions_block rule_message
+rule_scope_block: "scope" ":" _NL _INDENT rule_scope_predicate+ _DEDENT
+?rule_scope_predicate: agent_tag_predicate
+                     | flow_predicate
+                     | role_class_predicate
+                     | file_tree_predicate
+agent_tag_predicate: "agent_tag" ":" CNAME _NL
+flow_predicate: "flow" ":" name_ref _NL
+role_class_predicate: "role_class" ":" CNAME _NL
+file_tree_predicate: "file_tree" ":" string _NL
+rule_assertions_block: "assertions" ":" _NL _INDENT rule_assertion+ _DEDENT
+?rule_assertion: requires_inherit_assertion
+               | forbids_bind_assertion
+               | requires_declare_assertion
+requires_inherit_assertion: "requires" "inherit" name_ref _NL
+forbids_bind_assertion: "forbids" "bind" name_ref _NL
+requires_declare_assertion: "requires" "declare" CNAME _NL
+rule_message: "message" ":" string _NL
+
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
 inheritance: "[" name_ref "]"
@@ -98,10 +122,14 @@ inheritance: "[" name_ref "]"
             | skills_field
             | review_field
             | final_output_field
+            | agent_selectors_field
             | agent_slot_abstract
             | agent_slot_inherit
             | agent_slot_override
             | agent_slot_field
+
+agent_selectors_field: "selectors" ":" _NL _INDENT agent_selector_stmt+ _DEDENT
+agent_selector_stmt: CNAME ":" name_ref _NL
 
 role_field: "role" ":" string _NL role_body?
 role_body: _INDENT block_lines _DEDENT
@@ -133,7 +161,11 @@ review_grouped_inherit_keys: [review_item_key ("," review_item_key)* ","?]
 schema_grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
-agent_slot_abstract: "abstract" CNAME _NL?
+// `abstract` carries an optional typed annotation (`: <name_ref>`) that is deliberately
+// narrower than skill `host_contract` family typing — concrete descendants must bind the
+// slot to a name_ref of the declared family, but this does not converge the agent-slot,
+// skill-host-slot, and output-schema-field shapes. See §10 Decision Log 2026-04-19.
+agent_slot_abstract: "abstract" CNAME (":" name_ref)? _NL?
 agent_slot_inherit: "inherit" CNAME _NL? -> agent_slot_inherit
                   | "inherit" "{" grouped_inherit_keys "}" _NL? -> agent_slot_inherit_group
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
@@ -202,10 +234,18 @@ selector_block: "selector" ":" _NL _INDENT review_selector_stmt+ _DEDENT
 review_selector_stmt: "mode" CNAME "=" expr "as" name_ref _NL
 review_cases_block: "cases" ":" _NL _INDENT review_case_decl+ _DEDENT
 review_case_decl: CNAME ":" string _NL _INDENT review_case_body _DEDENT
-review_case_body: review_case_when_stmt review_case_subject_stmt review_case_contract_stmt review_case_checks review_case_on_accept review_case_on_reject
+review_case_body: review_case_when_stmt review_case_subject_stmt review_case_contract_stmt review_case_gates_override_block? review_case_checks review_case_on_accept review_case_on_reject
 review_case_when_stmt: "when" union_expr _NL
 review_case_subject_stmt: "subject" ":" artifact_subject_expr _NL
 review_case_contract_stmt: "contract" ":" review_contract_ref _NL
+// Sibling of schema_override_sections:397-400 — block-level override inside a review case.
+review_case_gates_override_block: "override" "gates" ":" _NL _INDENT review_case_gate_override_clause+ _DEDENT
+review_case_gate_override_clause: review_case_gate_add
+                                | review_case_gate_remove
+                                | review_case_gate_modify
+review_case_gate_add: "add" CNAME ":" string _NL
+review_case_gate_remove: "remove" CNAME _NL
+review_case_gate_modify: "modify" CNAME ":" string _NL
 review_case_checks: "checks" ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_case_on_accept: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 review_case_on_reject: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
@@ -550,7 +590,12 @@ readable_table_use_body: readable_table_use_body_line+
 readable_row_schema_block: "row_schema" ":" _NL _INDENT readable_inline_schema_item+ _DEDENT
 readable_table_columns_block: "columns" ":" _NL _INDENT readable_table_column+ _DEDENT
 readable_table_column: CNAME ":" string _NL readable_table_column_body?
-readable_table_column_body: _INDENT block_lines _DEDENT
+// Every field-shaped body in the language (output schema fields + readable
+// row_schema entries + readable item_schema entries + readable table columns
+// + record scalar bodies) routes `type:` through `resolve_field_type_ref`.
+// To add a new field-shaped surface, include `typed_field_body_line` in its
+// body rule and call the helper from its resolver.
+readable_table_column_body: _INDENT typed_field_body_line+ _DEDENT
 readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
 readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
 readable_table_cell: CNAME ":" string _NL?                                   -> readable_table_cell_text
@@ -559,7 +604,10 @@ readable_table_notes_block: "notes" ":" _NL _INDENT readable_table_note+ _DEDENT
 readable_table_note: prose_line _NL?
 
 readable_inline_schema_item: CNAME ":" string _NL readable_inline_schema_item_body?
-readable_inline_schema_item_body: _INDENT block_lines _DEDENT
+readable_inline_schema_item_body: _INDENT typed_field_body_line+ _DEDENT
+
+?typed_field_body_line: output_schema_type_stmt
+                      | prose_line _NL?
 
 readable_callout_body: readable_callout_body_line+
 ?readable_callout_body_line: readable_callout_kind
@@ -655,7 +703,10 @@ skills_inherit: "inherit" CNAME _NL? -> skills_inherit
 skills_override_section: "override" CNAME ":" string? _NL _INDENT skills_section_body _DEDENT
 skills_override_entry: "override" CNAME ":" name_ref _NL skill_entry_body?
 skill_entry_body: _INDENT skill_entry_body_line+ _DEDENT
+// `mode_stmt` is the canonical mode production shared with review cases and
+// law matchers (pattern propagation).
 skill_entry_body_line: skill_entry_bind_block
+                     | mode_stmt
                      | record_item
 skill_entry_bind_block: "bind" ":" _NL _INDENT skill_entry_bind_item+ _DEDENT
 skill_entry_bind_item: CNAME ":" skill_entry_bind_target _NL?
@@ -690,8 +741,13 @@ input_structure_stmt: "structure" ":" name_ref _NL?
 
 output_target_body: output_target_body_line+
 output_target_body_line: output_target_delivery_skill_stmt
+                       | output_target_typed_as_stmt
                        | record_item
 output_target_delivery_skill_stmt: "delivery_skill" ":" name_ref _NL?
+// Sibling of `FieldTypeRef`'s nested-type shape (pattern propagation): names a
+// declared `document`, `schema`, or `table` so downstream agents can bind this
+// target as a typed input by family instead of reconstructing it from prose.
+output_target_typed_as_stmt: "typed_as" ":" name_ref _NL?
 
 output_body: output_body_line+
 output_body_line: output_record_item
@@ -726,11 +782,17 @@ output_override_render_profile_stmt: "override" "render_profile" ":" name_ref _N
 output_shape_body: output_shape_body_line+
 output_shape_body_line: output_shape_schema_item
                       | output_shape_override_schema_item
+                      | output_shape_selector_block
                       | output_record_item
                       | output_inherit
                       | output_override_item
 output_shape_schema_item: "schema" ":" name_ref _NL?
 output_shape_override_schema_item: "override" "schema" ":" name_ref _NL?
+output_shape_selector_block: "selector" ":" _NL _INDENT output_shape_selector_stmt+ _DEDENT
+// Accepts both the shipped enum-only form (soft-deprecated under `E543`) and
+// the canonical expr-based form shared with review cases and law matchers.
+output_shape_selector_stmt: "mode" CNAME "as" name_ref _NL                 -> output_shape_selector_enum_stmt
+                          | "mode" CNAME "=" expr "as" name_ref _NL        -> output_shape_selector_expr_stmt
 
 output_schema_body: output_schema_body_line+
 ?output_schema_body_line: output_schema_field
@@ -766,8 +828,6 @@ output_schema_route_field_body: _INDENT output_schema_route_field_line+ _DEDENT
                        | output_schema_nullable_stmt
                        | output_schema_required_stmt
                        | output_schema_optional_stmt
-                       | output_schema_enum_block
-                       | output_schema_values_block
                        | output_schema_any_of_block
                        | output_schema_min_length_stmt
                        | output_schema_max_length_stmt
@@ -794,9 +854,6 @@ output_schema_items_block: "items" ":" _NL _INDENT output_schema_item_line+ _DED
 output_schema_nullable_stmt: "nullable" _NL?
 output_schema_required_stmt: "required" _NL?
 output_schema_optional_stmt: "optional" _NL?
-output_schema_enum_block: "enum" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
-output_schema_values_block: "values" ":" _NL _INDENT output_schema_enum_value+ _DEDENT
-output_schema_enum_value: output_schema_literal _NL?
 output_schema_route_choice: CNAME ":" string "->" name_ref _NL?
 output_schema_any_of_block: "any_of" ":" _NL _INDENT output_schema_variant+ _DEDENT
 output_schema_variant: "variant" CNAME? ":" _NL _INDENT output_schema_item_line+ _DEDENT
@@ -829,6 +886,15 @@ output_schema_example_array_item: "-" output_schema_example_scalar _NL?
                    | output_readable_block
                    | output_record_keyed_item
                    | output_record_ref_item
+                   | output_record_case_stmt
+                   | review_route_via_stmt
+
+output_record_case_stmt: "case" name_ref ":" _NL _INDENT output_record_body _DEDENT
+
+review_route_via_stmt: "via" "review" "." review_outcome_section "." review_route_resolution _NL
+review_outcome_section: "on_accept" -> review_outcome_accept
+                      | "on_reject" -> review_outcome_reject
+review_route_resolution: "route" -> review_route_resolution_route
 
 output_override_guarded_section: "override" CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
 output_override_guarded_scalar_item: "override" CNAME ":" string "when" expr _NL output_record_item_body?
@@ -843,11 +909,14 @@ output_record_body: output_record_item+
 output_override_keyed_item: "override" CNAME ":" string _NL output_record_item_body?
                          | "override" CNAME ":" path_ref _NL output_record_item_body?
                          | "override" CNAME ":" name_ref _NL output_record_item_body?
-output_record_keyed_item: CNAME ":" string _NL output_record_item_body?
-                      | CNAME ":" path_ref _NL output_record_item_body?
-                      | CNAME ":" name_ref _NL output_record_item_body?
+output_record_keyed_item: CNAME ":" string _NL output_record_keyed_scalar_body?       -> output_record_keyed_scalar_item
+                      | CNAME ":" path_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
+                      | CNAME ":" name_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
 output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
+output_record_keyed_scalar_body: _INDENT output_record_keyed_scalar_body_line+ _DEDENT
+?output_record_keyed_scalar_body_line: output_schema_type_stmt
+                                     | output_record_item
 
 trust_surface_block: "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
 output_override_trust_surface_block: "override" "trust_surface" ":" _NL _INDENT trust_surface_item+ _DEDENT
@@ -874,8 +943,13 @@ package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDEN
 package_metadata_item: CNAME ":" string _NL?
 package_emit_block: "emit" ":" _NL _INDENT package_emit_item+ _DEDENT
 package_emit_item: string ":" name_ref _NL?
-package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot+ _DEDENT
+package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot_item+ _DEDENT
+?package_host_slot_item: package_host_slot
+                       | package_host_receipt_slot
 package_host_slot: package_host_slot_family CNAME ":" string _NL?
+// Closed enum on purpose. Adding a new family means adding a new shipped slot
+// kind here, a model variant in `_model/io.py`, parser wiring, validator
+// coverage, and the matching teaching surface; do not add open-ended values.
 package_host_slot_family: "input" -> package_host_slot_family_input
                          | "output" -> package_host_slot_family_output
                          | "document" -> package_host_slot_family_document
@@ -883,6 +957,11 @@ package_host_slot_family: "input" -> package_host_slot_family_input
                          | "schema" -> package_host_slot_family_schema
                          | "table" -> package_host_slot_family_table
                          | "final_output" -> package_host_slot_family_final_output
+package_host_receipt_slot: "receipt" CNAME ":" string _NL receipt_slot_body?
+receipt_slot_body: _INDENT receipt_field+ _DEDENT
+receipt_field: CNAME ":" receipt_field_type _NL?
+receipt_field_type: receipt_field_list_type | name_ref
+receipt_field_list_type: "list" "[" name_ref "]"
 
 record_readable_block: record_section_block
                      | readable_nonsection_block
@@ -896,11 +975,14 @@ output_override_readable_block: output_override_section_block
 output_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
-record_keyed_item: CNAME ":" record_head _NL record_item_body?
+record_keyed_item: CNAME ":" string _NL record_keyed_scalar_body?                -> record_keyed_scalar_item
+                 | CNAME ":" path_ref _NL record_item_body?                      -> record_keyed_ref_item
+                 | CNAME ":" name_ref _NL record_item_body?                      -> record_keyed_ref_item
 record_ref_item: name_ref _NL record_item_body?
 record_item_body: _INDENT record_body _DEDENT
-
-?record_head: string | path_ref | name_ref
+record_keyed_scalar_body: _INDENT record_keyed_scalar_body_line+ _DEDENT
+?record_keyed_scalar_body_line: output_schema_type_stmt
+                              | record_item
 
 enum_body: enum_member+
 enum_member: CNAME ":" string _NL? enum_member_body?

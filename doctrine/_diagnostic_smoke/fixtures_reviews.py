@@ -216,3 +216,146 @@ input ReviewFacts: "Review Facts"
     )
     return source
 
+
+def _review_case_gate_override_base_source(*, override_block: str) -> str:
+    """Case-selected review with one override block spliced in per caller.
+
+    The override_block is pasted inside case `draft_path` right after its
+    `contract:` line. Use this for E531/E532 smoke fixtures.
+    """
+    return f"""enum ReviewMode: "Review Mode"
+    draft_rewrite: "draft-rewrite"
+    metadata_refresh: "metadata-refresh"
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "unit_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+input MetadataRecord: "Metadata Record"
+    source: File
+        path: "unit_root/METADATA.json"
+    shape: JsonObject
+    requirement: Required
+
+input ReviewFacts: "Review Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+workflow DraftReviewContract: "Draft Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+workflow MetadataReviewContract: "Metadata Review Contract"
+    freshness: "Freshness"
+        "Confirm the metadata stays current."
+
+agent RevisionOwner:
+    role: "Own the next revision pass after review."
+    workflow: "Revise"
+        "Take the selected current artifact to the next revision step."
+
+output SelectedReviewComment: "Selected Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "Say whether the review accepted the selected subject or asked for changes."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Sum up the review work that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Sum up the parts of the selected subject the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name the next owner. Use {{{{RevisionOwner}}}} in both selected review modes."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that is current in the selected review mode."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    standalone_read: "Standalone Read"
+        "This comment should stand on its own."
+
+    trust_surface:
+        current_artifact
+
+review_family SelectedReviewFamily: "Selected Review"
+    comment_output: SelectedReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        current_artifact: current_artifact
+
+    selector:
+        mode selected_mode = ReviewFacts.selected_mode as ReviewMode
+
+    cases:
+        draft_path: "Draft Path"
+            when ReviewMode.draft_rewrite
+            subject: DraftSpec
+            contract: DraftReviewContract
+{override_block}
+            checks:
+                accept "The draft review contract passes." when contract.passes
+            on_accept:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Accepted draft rewrite goes to RevisionOwner." -> RevisionOwner
+            on_reject:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Rejected draft rewrite goes to RevisionOwner." -> RevisionOwner
+
+        metadata_path: "Metadata Path"
+            when ReviewMode.metadata_refresh
+            subject: MetadataRecord
+            contract: MetadataReviewContract
+            checks:
+                accept "The metadata review contract passes." when contract.passes
+            on_accept:
+                current artifact MetadataRecord via SelectedReviewComment.current_artifact
+                route "Accepted metadata refresh goes to RevisionOwner." -> RevisionOwner
+            on_reject:
+                current artifact MetadataRecord via SelectedReviewComment.current_artifact
+                route "Rejected metadata refresh goes to RevisionOwner." -> RevisionOwner
+
+agent SelectedReviewFamilyDemo:
+    role: "Keep case-selected review families explicit and exhaustive."
+    review: SelectedReviewFamily
+    inputs: "Inputs"
+        DraftSpec
+        MetadataRecord
+        ReviewFacts
+    outputs: "Outputs"
+        SelectedReviewComment
+"""
+
+
+def _review_case_gate_override_remove_missing_source() -> str:
+    override_block = (
+        "            override gates:\n"
+        "                remove not_declared\n"
+    )
+    return _review_case_gate_override_base_source(override_block=override_block)
+
+
+def _review_case_gate_override_add_collision_source() -> str:
+    override_block = (
+        "            override gates:\n"
+        "                add completeness: \"Collides\"\n"
+    )
+    return _review_case_gate_override_base_source(override_block=override_block)

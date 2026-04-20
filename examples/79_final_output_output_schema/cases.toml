@@ -37,7 +37,7 @@ expected_lines = [
   "| Field | Type | Required On Wire | Null Allowed | Meaning |",
   "| --- | --- | --- | --- | --- |",
   "| `summary` | string | Yes | No | Short natural-language status. |",
-  "| `status` | string | Yes | No | Current repo outcome. |",
+  "| `status` | string | Yes | No | Current repo outcome. One of `ok`, `action_required`. |",
   "| `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |",
   "",
   "#### Example",
@@ -69,14 +69,14 @@ kind = "build_contract"
 build_target = "example_79_final_output_output_schema"
 
 [[cases]]
-name = "output-schema final output fails loud when the lowered schema fails Draft 2020-12"
+name = "output-schema final output fails loud when `type:` names an unknown declaration"
 status = "active"
 kind = "compile_fail"
 prompt = "prompts/invalid_invalid_output_schema/AGENTS.prompt"
 agent = "InvalidInvalidOutputSchemaAgent"
 exception_type = "CompileError"
-error_code = "E217"
-location_line = 1
+error_code = "E320"
+location_line = 3
 
 [[cases]]
 name = "output-schema final output fails loud when the lowered schema exceeds OpenAI nesting limits"
@@ -116,7 +116,31 @@ prompt = "prompts/invalid_invalid_example/AGENTS.prompt"
 agent = "InvalidInvalidExampleJsonAgent"
 exception_type = "CompileError"
 error_code = "E216"
-location_line = 18
+location_line = 20
+
+[[cases]]
+name = "output-schema final output fails loud when the retired Form A `type: enum` + `values:` form is used"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_retired_form_a_type_enum_values/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "values",
+]
+
+[[cases]]
+name = "output-schema final output fails loud when the retired Form B `type: string` + `enum:` form is used"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_retired_form_b_type_string_enum_block/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected token",
+  "enum",
+]
 
 [[cases]]
 name = "output-schema final output allows missing example and omits the example section"
@@ -155,7 +179,7 @@ expected_lines = [
   "| Field | Type | Required On Wire | Null Allowed | Meaning |",
   "| --- | --- | --- | --- | --- |",
   "| `summary` | string | Yes | No | Short natural-language status. |",
-  "| `status` | string | Yes | No | Current repo outcome. |",
+  "| `status` | string | Yes | No | Current repo outcome. One of `ok`, `action_required`. |",
   "| `next_step` | string | Yes | Yes | Null only when no follow-up is needed. |",
   "",
   "- Kind: Json Object",

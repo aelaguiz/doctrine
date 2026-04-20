@@ -16,6 +16,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedAbstractAgentSlot,
     ResolvedAgentSlot,
     ResolvedAgentSlotState,
+    ResolvedTypedAgentSlot,
     ResolvedWorkflowBody,
 )
 from doctrine._compiler.support_files import _dotted_decl_name
@@ -201,6 +202,22 @@ class ResolveAgentSlotsMixin:
                             ),
                         )
                     if isinstance(parent_slot, ResolvedAbstractAgentSlot):
+                        if parent_slot.declared_type is not None and isinstance(
+                            field.value, model.NameRef
+                        ):
+                            family = self._resolve_typed_slot_family(
+                                parent_slot.declared_type,
+                                unit=unit,
+                            )
+                            if family is not None:
+                                resolved_slots.append(
+                                    ResolvedTypedAgentSlot(
+                                        key=field.key,
+                                        family=family,
+                                        entity_ref=field.value,
+                                    )
+                                )
+                                continue
                         resolved_slots.append(
                             ResolvedAgentSlot(
                                 key=field.key,
@@ -252,7 +269,17 @@ class ResolveAgentSlotsMixin:
                     parent_slot = parent_slots_by_key.get(field.key)
                     if isinstance(parent_slot, ResolvedAgentSlot):
                         accounted_parent_concrete_keys.add(field.key)
-                    resolved_slots.append(ResolvedAbstractAgentSlot(key=field.key))
+                    declared_type = field.declared_type
+                    if declared_type is None and isinstance(
+                        parent_slot, ResolvedAbstractAgentSlot
+                    ):
+                        declared_type = parent_slot.declared_type
+                    resolved_slots.append(
+                        ResolvedAbstractAgentSlot(
+                            key=field.key,
+                            declared_type=declared_type,
+                        )
+                    )
                     continue
 
                 if isinstance(field, model.AuthoredSlotInherit):

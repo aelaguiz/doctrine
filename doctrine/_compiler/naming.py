@@ -10,6 +10,7 @@ from doctrine._model.agent import (
     InputsField,
     OutputsField,
     ReviewField,
+    SelectorsField,
     SkillsField,
 )
 from doctrine._model.core import AddressableRef, NameRef
@@ -54,6 +55,8 @@ def _agent_typed_field_key(field: Field) -> str:
         return "review"
     if isinstance(field, FinalOutputField):
         return "final_output"
+    if isinstance(field, SelectorsField):
+        return "selectors"
     return type(field).__name__
 
 

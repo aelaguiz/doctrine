@@ -287,6 +287,7 @@ class CompileReadableBlocksMixin:
                             )
                             for line in column.body
                         ),
+                        type_ref=column.type_ref,
                     )
                 )
             if not resolved_columns:

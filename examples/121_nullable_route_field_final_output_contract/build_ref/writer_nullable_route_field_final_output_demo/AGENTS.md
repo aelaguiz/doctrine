@@ -21,8 +21,8 @@ Either hand off or finish from one routed final output.
 
 | Field | Type | Required On Wire | Null Allowed | Meaning |
 | --- | --- | --- | --- | --- |
-| `next_route` | string | Yes | Yes | Use null when the writer can finish without a handoff. |
-| `kind` | string | Yes | No | Say whether this turn hands off or finishes. |
+| `next_route` | string | Yes | Yes | Use null when the writer can finish without a handoff. One of `revise_more`. |
+| `kind` | string | Yes | No | Say whether this turn hands off or finishes. One of `handoff`, `done`. |
 | `summary` | string | Yes | No | Short handoff or closeout summary. |
 
 - Kind: Json Object

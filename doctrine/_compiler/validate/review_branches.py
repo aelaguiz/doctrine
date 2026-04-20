@@ -416,6 +416,7 @@ class ValidateReviewBranchesMixin:
         output_unit: IndexedUnit,
         field_path: tuple[str, ...],
         owner_label: str,
+        resolved_section_key: str | None = None,
     ) -> None:
         field_node = self._resolve_output_field_node(
             output_decl,
@@ -467,6 +468,48 @@ class ValidateReviewBranchesMixin:
             label=route.label,
             unit=review_unit,
         )
+        via_items = _collect_review_route_via_items(target)
+        if len(via_items) > 1:
+            raise review_compile_error(
+                code="E317",
+                summary="Duplicate `via review` clause in override body",
+                detail=(
+                    f"Only one `via review.<section>.route` clause is allowed per override body "
+                    f"in {owner_label}: {output_decl.name}.{'.'.join(field_path)}"
+                ),
+                unit=output_unit,
+                source_span=via_items[1].source_span,
+                related=(
+                    review_related_site(
+                        label="first via clause",
+                        unit=output_unit,
+                        source_span=via_items[0].source_span,
+                    ),
+                ),
+            )
+        if via_items:
+            via = via_items[0]
+            if resolved_section_key is not None and via.section != resolved_section_key:
+                raise review_compile_error(
+                    code="E317",
+                    summary="Review route-source `via` clause does not match the resolved outcome section",
+                    detail=(
+                        f"`via review.{via.section}.route` on "
+                        f"{output_decl.name}.{'.'.join(field_path)} does not match the "
+                        f"`{resolved_section_key}` route that resolved `next_owner` in "
+                        f"{owner_label}."
+                    ),
+                    unit=output_unit,
+                    source_span=via.source_span,
+                    related=(
+                        review_related_site(
+                            label="resolved route",
+                            unit=review_unit,
+                            source_span=route.source_span,
+                        ),
+                    ),
+                )
+            return
         self._validate_route_owner_alignment(
             target,
             route_branch=route_branch,
@@ -485,3 +528,16 @@ class ValidateReviewBranchesMixin:
             error_summary="Review next owner does not match the bound output field",
             error_hints=(),
         )
+
+
+def _collect_review_route_via_items(
+    target: model.RecordScalar
+    | model.RecordSection
+    | model.GuardedOutputSection
+    | model.GuardedOutputScalar,
+) -> tuple[model.ReviewRouteVia, ...]:
+    if isinstance(target, (model.RecordSection, model.GuardedOutputSection)):
+        items = target.items
+    else:
+        items = target.body or ()
+    return tuple(item for item in items if isinstance(item, model.ReviewRouteVia))

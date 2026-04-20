@@ -96,10 +96,8 @@ Stability rules:
 | `E217` | Final output lowered schema failed Draft 2020-12 validation | Doctrine lowered an `output schema`, but the resulting JSON Schema is not valid Draft 2020-12. |
 | `E218` | Final output lowered schema is outside the OpenAI structured-outputs subset | Doctrine lowered an `output schema`, but the result uses a shape or rule the OpenAI structured-outputs subset does not allow. |
 | `E220`-`E225` | Typed declaration completeness errors | These codes cover missing required typed declaration fields such as skill purpose, input source, input shape, input requirement, and output target shape combinations. |
-| `E226` | Unsupported record item | A record surface contains an item kind the shipped compiler does not support there. |
-| `E227` | Output schema inline enum is missing `values:` | An `output schema` entry uses `type: enum` but does not define a `values:` block. |
-| `E228` | Output schema `values:` requires `type: enum` | An `output schema` entry uses `values:` without the new `type: enum` form. |
-| `E229` | Output schema inline enum form is mixed or invalid | An `output schema` entry mixes `type: enum` with legacy `enum:` or uses legacy `enum:` with the wrong type. |
+| `E226` | Reserved | Reserved for a future user-facing "unsupported record item" check. The shipped grammar already restricts what can appear on each record surface, so any unexpected record-item kind that reaches the compiler today is an internal invariant failure and fails loud as `E901`. |
+| `E227`-`E229` | Retired in language 5.0 | Covered the deleted inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form for `output schema` fields. Both forms are removed in 5.0; the canonical form is `enum X: "..."` plus `type: X`. Unknown `type:` names now fail loud under `E320`. Codes stay reserved to avoid accidental reuse. |
 | `E230`-`E235` | Config declaration and config instance errors | These codes cover invalid config item shapes, duplicate or unknown keys, missing required keys, and bad config key declarations. |
 | `E236` | Output schema `required` is retired | `required` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to delete it. Output-schema object properties still stay present on the wire today. |
 | `E237` | Output schema `optional` is retired | `optional` is still parseable inside `output schema` so Doctrine can fail loudly and tell authors to use `nullable` when the value may be `null`. |
@@ -120,7 +118,7 @@ Stability rules:
 | `E274` | Addressable path must stay addressable | A path tried to keep traversing after it had already reached a scalar or other non-addressable surface. |
 | `E275` | Typed declaration must stay typed | A typed declaration field such as `source`, `target`, or `shape` was treated like an untyped pathable value. |
 | `E276` | Missing local declaration reference | A local readable, analysis, named-table, output `shape:` ref, or addressable ref points at a declaration that does not exist. |
-| `E280` | Missing import module | An imported module could not be found in the active import-root registry. |
+| `E280` | Missing import module | An imported module could not be found in the active import-root registry. When Doctrine runs through a wrapper harness that owns the import-root registry, use the wrapper's build entrypoint — invoking `python -m doctrine.emit_docs` directly bypasses the wrapper's active roots and surfaces this code. |
 | `E281` | Missing imported declaration | The imported module resolved, but the requested declaration does not exist there. |
 | `E282` | Route target must be a concrete agent | A route points at an abstract or otherwise invalid target. |
 | `E283` | Cyclic workflow composition | `use`-based workflow composition forms a cycle. |
@@ -150,15 +148,19 @@ Stability rules:
 | `E309` | Malformed grouped `inherit` | A grouped `inherit { ... }` is empty, repeats the same key, or uses a key that is not legal on that grouped surface. |
 | `E312` | `self:` needs a declaration-root addressable context | `self:` was used on a surface that does not carry a live declaration-root addressable context. Use an explicit `Root:path` ref there. |
 | `E314` | Imported declaration is not exported | A cross-flow import reached the target flow, but the requested declaration stays internal because it is not marked `export`. |
-| `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. |
+| `E315` | Same-flow import retired | One sibling `.prompt` file tried to import another sibling from the same flow, even though the flow already shares one flat namespace. Sibling `.prompt` files inside one flow reach each other by bare ref — see the "Flow Boundaries And Exports" section of `doctrine-learn/references/imports-and-refs.md`. |
 | `E316` | Sibling declaration collision | Two sibling prompt files in the same flow declared the same name, so Doctrine refused to guess which sibling owns it. |
+| `E317` | `via review` clause is misplaced or does not match the resolved outcome | A `via review.<section>.route` clause appears outside a `next_owner:` field body on an output declaration, or appears inside an output shape body, or names the wrong `on_*` section for the branch that resolves the route, or appears more than once in the same body. |
+| `E318` | Output shape selector + case dispatch is malformed | An output shape uses `case ...:` without a `selector:` block, a `case` block appears outside an output shape body, the selector does not resolve to a closed enum, a case selects the wrong enum (including a same-named enum from a different imported flow), the cases overlap, or the cases do not cover every enum member. |
+| `E319` | Agent selector binding is missing or wrong for an output shape | An agent's `final_output` points at an output shape with a `selector:` block, but the agent does not bind that selector under `selectors:`, binds the same selector twice, binds a selector key the shape does not declare, or binds the selector to a member of a same-named enum from a different imported flow. |
+| `E320` | Field `type:` references unknown name | A field's `type: <CNAME>` on any field-shaped surface (output schema field/route field/def, readable `row_schema` entry, readable `item_schema` entry, readable `table` column, record scalar) names something that is neither a builtin primitive (`string`, `integer`, `number`, `boolean`, `object`, `array`, `null`) nor a visible `enum` decl. Declare the enum or use a builtin. |
 | `E331` | Missing current-subject form | An active workflow-law leaf branch did not resolve either `current artifact ... via ...` or `current none`. |
 | `E332` | Multiple current-subject forms | One active workflow-law leaf branch declared more than one current subject. |
 | `E333` | Current carrier output not emitted | The output carrying current truth is not emitted by the concrete turn. |
 | `E334` | Current output not emitted | A workflow-law current artifact points at an output the concrete turn does not emit. |
 | `E335` | Current artifact target has wrong kind | A `current artifact` target does not resolve to a declared or bound concrete-turn input or output. |
 | `E336` | Current carrier field missing from trust surface | A currentness carrier field is not listed in the target output's `trust_surface`. |
-| `E337` | Unknown current carrier field | A `current artifact ... via ...` carrier points at an unknown output field. |
+| `E337` | Retired | Reserved error code. Unknown `current artifact ... via ...` carrier fields fall through to the normal unknown-field check and fail loud as `E299`, which is the shared unknown-field code called out in the `E500` note. |
 | `E338` | Output guard reads disallowed source | A guarded output item reads a workflow-local binding, emitted output field, undeclared runtime name, or other disallowed expression source instead of only declared inputs, enum members, or live compiler-owned route semantics such as `route.exists` and `route.choice`, including `route.choice == OutputSchema.route_field.choice_key` on routed final outputs. |
 | `E339` | Routed next_owner field is not structurally bound | A route-only output includes a `next_owner` field, but that field does not structurally bind the routed target. |
 | `E340` | Standalone read references guarded output detail | A `standalone_read` section structurally references guarded output detail that may be absent when the guard is false. |
@@ -190,7 +192,7 @@ Stability rules:
 | Code | Stage | Summary | Notes |
 | --- | --- | --- | --- |
 | `E469` | compile | Review current artifact is outside the review subject set | `current artifact ... via ...` pointed at something other than a declared review subject or an emitted output. |
-| `E470` | compile | Invalid review declaration shape | Review inheritance, `review_family` authoring, case-selected review-family selection, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a missing inherited review family, overlapping or non-exhaustive cases, a duplicate `subject_map` entry, or a kind-mismatched override. |
+| `E470` | compile | Invalid review declaration shape | Review inheritance, `review_family` authoring, case-selected review-family selection, `subject_map` authoring, or explicit review patching used an invalid structural shape, such as a review cycle, a missing inherited review family, overlapping or non-exhaustive cases, a duplicate `subject_map` entry, or a kind-mismatched override. Grow the selector enum and the case list together — see the "Growing A Case Family" section of `doctrine-learn/references/reviews.md`. |
 | `E471` | parse | Illegal statement placement in review body | A review statement appeared in the wrong section family, such as `block` inside `on_accept` or `route` inside a pre-outcome review section. |
 | `E472` | parse | Invalid guarded match head | A review `match` head used an invalid guarded fallback shape, such as `else when ...`. |
 | `E473` | compile | Review fields surface is invalid or incomplete | The required `fields:` binding surface is missing or does not bind every required semantic channel. |
@@ -220,7 +222,7 @@ Stability rules:
 | `E497` | compile | Review currentness does not match the declared carrier field | The declared currentness carrier field is not guaranteed to reflect the resolved review currentness, including branches that resolve `current none`. |
 | `E498` | compile | Required carried review field is omitted when semantic value exists | A carried semantic field can be live on a branch without the bound output field also being live. |
 | `E499` | compile | Required conditional review output section is missing after its guard resolves true | A review-bound conditional output field or section does not stay aligned with the resolved review semantics. |
-| `E500` | compile | `final_output.review_fields` is used in an invalid place | Split-final review bindings were used on a non-review agent or on the review carrier itself. |
+| `E500` | compile | `final_output.review_fields` is used in an invalid place | Review-field bindings were used on a non-review agent. Carrier-mode review-driven agents may opt into `review_fields:` as explicit structural validation; bindings that reference a field missing from the carrier fail loud through the normal unknown-field check (`E299`). |
 
 ### Emit codes
 
@@ -255,6 +257,19 @@ Stability rules:
 | `E528` | Release tag signing is not configured | Doctrine could not find the git signing key needed for signed public tags. |
 | `E529` | GitHub release command failed | GitHub draft or publish release commands failed. |
 | `E530` | Release package metadata version is missing or does not match | `pyproject.toml` is missing a usable `[project].version`, or that version does not match the requested public release's package version. |
+| `E531` | Review case override removes or modifies a gate that the contract does not declare | A review case's `override gates:` block tries to `remove` or `modify` a gate name that the case's contract does not declare (or that a prior `remove` already deleted). |
+| `E532` | Review case override adds or modifies a gate that collides with an existing name | A review case's `override gates:` block tries to `add` a gate name that is already declared by the contract (after `remove` entries apply), or declares the same `modify` target twice. |
+| `E533` | Typed output target references a non-document/schema/table entity | An `output target`'s `typed_as:` ref resolved to an entity kind other than `document`, `schema`, or `table`. |
+| `E534` | Downstream structure family does not match typed output target family | An `output` declaration's `structure:` or `schema:` points at an entity whose family does not match the target's `typed_as:` family. |
+| `E535` | Receipt host slot must declare at least one typed field | A `receipt` host slot in a skill package's `host_contract:` was declared without fields, or declared two fields that share the same key. |
+| `E536` | Receipt field reference does not resolve | A dotted addressable reference through a skill binding's receipt slot names a field the receipt host slot does not declare. |
+| `E537` | Receipt field type is not a declared entity | A `receipt` host slot field was typed with a name that is not a declared `schema`, `table`, `enum`, or `document` in scope. |
+| `E538` | Concrete agent binds typed abstract slot to a wrong-family entity | A concrete agent binds a typed abstract slot to a `name_ref` whose entity family does not match the abstract declaration, or binds the slot with an inline workflow block instead of a `name_ref`. |
+| `E539` | Typed abstract slot annotation references an unknown entity | An `abstract` slot declaration's `: <TypedEntityRef>` annotation does not resolve to a declared `document`, `schema`, `table`, `enum`, `agent`, or `workflow`. |
+| `E540` | Skill-binding mode reference does not resolve | A skill entry's `mode CNAME = expr as <Enum>` targets an enum name that does not resolve in scope. |
+| `E541` | Audit-mode skill binding emits to an output target | A skill entry tagged with `mode audit = ...` bound its skill to a host slot in the `output` or `final_output` family. Audit-mode bindings must stay read-only. |
+| `E542` | Skill package has no contract for the declared mode | A skill entry's `mode CNAME = ...` names a mode whose `CNAME` is not a member of the declared enum. |
+| `E543` | Deprecated enum-only output-shape mode form | An output shape's `selector:` still uses the enum-only `mode CNAME as <Enum>` form. Use the expr-based `mode CNAME = expr as <Enum>` form; the enum-only form will be removed at the next minor bump. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes
@@ -262,6 +277,29 @@ Stability rules:
 | Code | Summary | Notes |
 | --- | --- | --- |
 | `E901` | Internal compiler error | The compiler hit an invariant failure or unsupported internal state. Treat this as a compiler bug. |
+| `E999` | Unclassified Doctrine error | Fallback code when a `DoctrineError` is raised without a more specific stage. Reached only when no narrower parse, compile, or emit code applies. Treat this as a compiler bug. |
+
+### Rule-check codes
+
+The `RULE###` band covers diagnostics raised by the declarative `rule` primitive
+described in [`LANGUAGE_REFERENCE.md`](./LANGUAGE_REFERENCE.md). Rule checks run
+during compile and share the same error envelope as the `E###` codes.
+
+| Code | Summary | Notes |
+| --- | --- | --- |
+| `RULE001` | Rule declaration references an unknown scope predicate target | A rule's `scope:` predicate names a `flow: <agent>` whose target agent is not declared in the prompt graph. |
+| `RULE002` | Rule assertion target does not resolve | A rule's `assertions:` block references an agent (for `requires inherit` or `forbids bind`) that is not declared in the prompt graph. |
+| `RULE003` | Scoped agent fails `requires inherit` assertion | A concrete agent that matches the rule's `scope:` predicates does not inherit the required ancestor named in `requires inherit`. |
+| `RULE004` | Scoped agent violates `forbids bind` assertion | A concrete agent that matches the rule's `scope:` predicates inherits from an ancestor that the rule forbids via `forbids bind`. |
+| `RULE005` | Scoped agent fails `requires declare` assertion | A concrete agent that matches the rule's `scope:` predicates does not declare (or inherit) the slot named in `requires declare`. |
+
+The rule primitive ships a closed predicate set: scope predicates are limited to
+`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`, and
+`file_tree: <STRING>`; assertions are limited to `requires inherit <NameRef>`,
+`forbids bind <NameRef>`, and `requires declare <CNAME>`. Codes `RULE006` through
+`RULE099` are reserved for future extensions of this closed-predicate surface.
+Codes `RULE100` and above are reserved for any future open-expression-language
+evolution of the rule primitive.
 
 ## Example
 

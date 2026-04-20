@@ -8,6 +8,265 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+Release kind: Breaking
+Release channel: stable
+Language version: 4.0 -> 5.6
+Affected surfaces:
+- 4.0 -> 4.1 additive moves: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), `via review.on_*.route` binding inside `next_owner:` output bodies (new compile code `E317`), `selector:` on `output shape` with `case EnumType.member:` dispatch plus agent-side `selectors:` binding (new compile codes `E318` and `E319`), and the numbered example corpus additions (`135_review_carrier_structured`, `136_review_shared_route_binding`, `137_role_home_shared_rules_split`, `138_output_shape_case_selector`).
+- 4.1 -> 5.0 breaking cut: the `output schema` field `type:` slot (the inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form are deleted), readable `row_schema` and `item_schema` entry bodies, readable table column bodies, and record-scalar bodies (all four surfaces now accept `type: <EnumName>` to name a declared `enum`), a new compile code `E320` for `type:` names that are neither a builtin primitive nor a resolvable `enum`, the renderer (now emits one `Valid values: ...` line per typed field under a unified helper), the JSON-schema lowering path (now appends `One of ...` after a field description when both a description and a closed vocabulary are present), six shipped examples that migrated from the deleted forms (`79/AGENTS.prompt`, `79/optional_no_example/AGENTS.prompt`, `79/invalid_invalid_example/AGENTS.prompt`, `85/AGENTS.prompt`, `90/AGENTS.prompt`, `121/AGENTS.prompt`), the new example `139_enum_typed_field_bodies`, and docs (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `AGENT_IO_DESIGN_NOTES.md`, `VERSIONING.md`, `COMPILER_ERRORS.md`, `examples/README.md`).
+- 5.0 -> 5.1 additive moves: per-case `override gates:` block inside a `review_family` case body (one shared `contract:` may now back several cases with `add NAME: "Title"`, `remove NAME`, and `modify NAME: "Title"` clauses; case `checks:` references resolve against the per-case effective gate set), two new compile codes `E531` (remove or modify of a gate the contract never declared) and `E532` (add or modify name collision), the new example `141_review_case_gate_override` with one positive `render_contract` case plus two `compile_fail` cases, the curated `doctrine-learn` reviews reference (new `Per-Case Gate Override` section), the curated `agent-linter` finding catalog (new `AL246 Per-Case Gate Delta Split Into Parallel Contracts` finding), the VSCode tmLanguage grammar (highlights `add` / `remove` / `modify` clauses), and docs (`LANGUAGE_REFERENCE.md`, `REVIEW_SPEC.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`).
+- 5.1 -> 5.2 additive moves: a typed `receipt` host-slot family on `skill package` `host_contract:` (author may declare `receipt <slot_key>: "Title"` with typed `<field_key>: <DeclaredType>` or `<field_key>: list[<DeclaredType>]` entries so the package owns the typed envelope it emits on every run), three new compile codes `E535` (empty receipt body or duplicate field key), `E536` (unresolved receipt field reference through a skill binding), and `E537` (receipt field type is not a declared `enum`/`table`/`schema`/`document`), receipt slots are exempt from the exact-once call-site bind requirement (the package owns them), `SKILL.contract.json` now carries each receipt slot with its typed `fields` map, the new example `142_skill_host_receipt_envelope` with a positive `render_contract` case, a `build_contract` case, and two `compile_fail` cases for `E535` and `E537`, the curated `doctrine-learn` skills reference (new `Typed Receipt Envelope` section), the curated `agent-linter` finding catalog (new `AL960 Process Evidence Emitted As Prose Not Typed Receipt` finding), the VSCode tmLanguage grammar (highlights the `receipt` host-slot keyword), and docs (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`, `AGENTS.md`, `examples/README.md`).
+- 5.2 -> 5.3 additive moves: a `typed_as:` line inside `output target` bodies pointing at a declared `document`, `schema`, or `table` (the target now carries the handoff-note family identity so downstream outputs can bind the same family without restating the structure), two new compile codes `E533` (typed output target ref that does not resolve to a `document`/`schema`/`table`) and `E534` (downstream structure family mismatch when a consuming output's `structure:` or `schema:` disagrees with the target's `typed_as:` family), the emitted output contract gains a `Typed As` row immediately after `Target`, the new example `143_typed_handoff_note_identity` with one positive `render_contract` case plus two `compile_fail` cases for `E533` and `E534`, the curated `doctrine-learn` outputs reference (new `Typed Handoff-Note Targets` section), the VSCode tmLanguage grammar and go-to-definition resolver (highlights and navigates the `typed_as:` keyword), and docs (`LANGUAGE_REFERENCE.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`).
+- 5.3 -> 5.4 additive moves: a canonical `mode CNAME = expr as <Enum>` statement on skill entries so producer vs. audit uses of the same skill stay compile-time distinguishable (three new compile codes `E540` for an unresolved mode enum ref, `E541` for an audit-mode binding that emits to an `output` or `final_output` host slot, and `E542` for a mode whose `CNAME` is not a member of the declared enum), `output shape` `selector:` now accepts the same canonical expr-based production (`mode CNAME = expr as <Enum>`) so shape selectors, review cases, law matchers, and skill-binding modes all share one `mode_stmt` grammar production, a new compile code `E543` soft-deprecates the enum-only shorthand (`mode CNAME as <Enum>`) with a one-minor-bump timebox (the enum-only form will be removed at the next minor bump), example `138_output_shape_case_selector` migrated to the expr-based form on every case, the new example `144_skill_binding_producer_audit_mode` with a producer agent + auditor agent sharing one skill plus four `compile_fail` cases for `E540`/`E541`/`E542`/`E543`, and docs (`LANGUAGE_REFERENCE.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`).
+- 5.4 -> 5.5 additive moves: an optional `: <TypedEntityRef>` annotation on `abstract` authored-agent slots so an abstract agent may narrow a policy slot to a specific declared family (`document`, `schema`, `table`, `enum`, `agent`, or `workflow`). Concrete descendants bind the slot to a `name_ref` of the declared family. Two new compile codes: `E538` (concrete agent binds typed abstract slot to a wrong-family entity or with an inline workflow block) and `E539` (typed abstract slot annotation references an unknown entity). The annotation is deliberately narrower than skill `host_contract` family typing and output-schema field typing; the three shapes stay distinct. The new example `145_abstract_agent_typed_parameters` ships one abstract reviewer with a typed `policy:` slot plus two concrete descendants binding it to different documents, along with two `compile_fail` cases for `E538` and `E539`. Docs touched: `LANGUAGE_REFERENCE.md`, `COMPILER_ERRORS.md`, and `VERSIONING.md`.
+- 5.5 -> 5.6 additive moves: a declarative top-level `rule` primitive so a project may lint its own agent graph at compile time. A `rule` declares a closed `scope:` predicate set (`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`, `file_tree: <STRING>`) and a closed `assertions:` predicate set (`requires inherit <NameRef>`, `forbids bind <NameRef>`, `requires declare <CNAME>`) plus a plain-English `message:` shown when the rule fires. Five new `RULE###`-band diagnostics: `RULE001` (rule scope predicate target does not resolve), `RULE002` (rule assertion target does not resolve), `RULE003` (scoped agent fails `requires inherit`), `RULE004` (scoped agent violates `forbids bind`), `RULE005` (scoped agent fails `requires declare`). Codes `RULE006` through `RULE099` are reserved for future closed-predicate extensions; codes `RULE100` and above are reserved for any future open-expression-language evolution. The new example `146_declarative_project_lint_rule` ships one happy-path rule plus one `compile_fail` case per shipped `RULE###` code. Curated `doctrine-learn` gains `references/rules.md`; curated `agent-linter` gains `AL990 Project Lacks An Enforcement Rule For Shared Inheritance Invariant`. VSCode tmLanguage grammar highlights the `rule` declaration plus the `scope`, `assertions`, `requires`, `forbids`, `agent_tag`, `role_class`, `file_tree`, `declare`, and `message` keywords. Docs touched: `LANGUAGE_REFERENCE.md` (new `Project Rules` section), `COMPILER_ERRORS.md` (new `Rule-check codes` subsection with RULE-band reservation note), and `VERSIONING.md`.
+Who must act: authors whose `.prompt` files use the inline `type: enum` plus `values:` form or the legacy `type: string` plus `enum:` form on any `output schema` field, and downstream tooling that parsed those syntactic forms.
+Who does not need to act: authors who already typed `output schema` fields with a declared `enum`, authors who only use builtin primitive `type:` values, authors using split-mode review carriers or existing role homes, and runtime consumers of emitted Markdown or emitted JSON schemas (the wire shape is preserved; only the rendered `Valid values:` line is new).
+Upgrade steps: (1) install the matching release from your package index; (2) for every `output schema` field that used `type: enum` plus `values:`, lift the member list into a new top-level `enum X: "..."` decl and rewrite the field body as `type: X`; (3) for every legacy `type: string` plus `enum:` field, do the same; (4) on any readable `row_schema` / `item_schema` entry, table column, or record scalar that previously listed a vocabulary as prose, declare the `enum` once and rewrite the body as `type: X`; (5) re-run `make verify-examples` and `make verify-diagnostics` and confirm `E320` fires only on truly unknown names.
+Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
+Support-surface version changes: Doctrine language 4.0 -> 5.3; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
+
+### Added
+- Declarative top-level `rule` primitive so a project may lint its own agent
+  graph at compile time. A rule declares a closed `scope:` predicate set
+  (`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`,
+  `file_tree: <STRING>`) and a closed `assertions:` predicate set
+  (`requires inherit <NameRef>`, `forbids bind <NameRef>`,
+  `requires declare <CNAME>`) plus a plain-English `message:` shown when
+  the rule fires. Scope predicates combine with OR semantics. Five new
+  `RULE###`-band diagnostics fail loud when a rule is malformed or when
+  a scoped concrete agent violates an assertion: `RULE001` (scope predicate
+  target does not resolve), `RULE002` (assertion target does not resolve),
+  `RULE003` (scoped agent fails `requires inherit`), `RULE004` (scoped
+  agent violates `forbids bind`), `RULE005` (scoped agent fails
+  `requires declare`). Codes `RULE006`-`RULE099` are reserved for future
+  closed-predicate extensions. Codes `RULE100`+ are reserved for any
+  future open-expression-language evolution.
+- Example `146_declarative_project_lint_rule` proves the rule primitive
+  with one happy-path `render_contract` case covering two composer agents
+  plus one `compile_fail` case per shipped `RULE###` code.
+- Curated `doctrine-learn` gains `references/rules.md` teaching the closed
+  predicate set, the shipped diagnostics, and the canonical authoring form.
+- Curated `agent-linter` gains `AL990 Project Lacks An Enforcement Rule For
+  Shared Inheritance Invariant` so audits flag role classes whose shared
+  ancestor is enforced by hand-authored discipline only.
+- VSCode tmLanguage grammar highlights the `rule` declaration plus the
+  `scope`, `assertions`, `requires`, `forbids`, `agent_tag`, `role_class`,
+  `file_tree`, `declare`, and `message` keywords.
+- Carrier-mode review-driven agents may now declare `final_output.review_fields:`
+  as an explicit opt-in to structural binding validation on the single
+  carrier output. The compiler runs the same field-binding and
+  semantic-output-binding checks that split mode runs. `E500` still fires
+  for authoring `review_fields:` on a non-review agent; unknown-field
+  bindings on the carrier surface as `E299` via the shared binding
+  validator.
+- Example `135_review_carrier_structured` proves the carrier-mode opt-in
+  and includes a compile-fail fixture for an unknown bound field.
+- Example `137_role_home_shared_rules_split` and a new
+  `LANGUAGE_DESIGN_NOTES.md` section recommend the stdlib pattern of
+  splitting always-on `shared_rules:` from role-specific
+  `how_to_take_a_turn:` on an abstract role home.
+- Output record bodies may include a `via review.on_accept.route` or
+  `via review.on_reject.route` clause inside a `next_owner:` field body.
+  The clause is a compile-time structural assertion: it proves the field
+  is bound to the resolved review route without requiring a literal
+  `{{TargetAgent}}` interpolation. The prose on the shared carrier stays
+  layer-neutral, so one shape can back multiple critics whose
+  `on_reject` routes differ. A new compile code `E317` fires when the
+  named section does not match the branch that resolved the route, or
+  when more than one `via` clause appears in one override body.
+- Example `136_review_shared_route_binding` proves the shared-carrier
+  pattern with two critic agents that share one output declaration,
+  plus compile-fail fixtures for `E317` (section mismatch) and `E496`
+  (missing `via` and missing literal interpolation still fails loud).
+- Output shapes may declare a `selector:` block with
+  `mode <field_name> as <Enum>` and bodies may then use
+  `case EnumType.member:` blocks to inline role-specific lines.
+  Concrete agents bind the selector with a new `selectors:` field
+  (`selector_name: EnumType.member`). The compiler resolves dispatch at
+  compile time so each agent's emitted shape support only shows lines
+  that apply to its bound member. New compile codes `E318` (shape-side:
+  malformed selector, wrong enum in a case, overlapping cases, or
+  non-exhaustive cases) and `E319` (agent-side: missing or mismatched
+  selector binding).
+- Example `138_output_shape_case_selector` proves the pattern with
+  three agents (`WriterProducer`, `WriterCritic`, `WriterComposer`)
+  that share one output declaration but emit role-specific field notes,
+  plus compile-fail fixtures for `E318` (non-exhaustive cases and
+  `case` without `selector:`) and `E319` (missing agent binding).
+- Example `140_typed_gates_symbol_reference` proves the typed-gate
+  teaching loop: a schema contract with a typed `gates:` block, a review
+  body that rejects and accepts on `contract.NAME` identities, failing-
+  gate prose that interpolates the same `contract.NAME` symbols, and a
+  sibling `compile_fail` case that fires `E477` on a typo. The curated
+  `doctrine-learn` reviews reference now includes a "Typed Gates,
+  Declared Once, Referenced By Symbol" section pointing at the example,
+  and the `agent-linter` finding catalog adds `AL245` for review gates
+  authored as inline prose instead of typed contract gates.
+- A `review_family` case body may now declare an `override gates:` block
+  to carry a case-scoped gate delta against the shared review contract.
+  The block accepts `add NAME: "Title"`, `remove NAME`, and
+  `modify NAME: "Title"` clauses. The case `checks:` block still
+  references the same `contract.NAME` symbols, now resolved against the
+  per-case effective gate set. Two new compile codes fail loud on
+  authoring mistakes: `E531` for a `remove` or `modify` of a gate the
+  contract does not declare, and `E532` for an `add` (or duplicate
+  `modify`) that collides with a name the effective gate set already
+  carries. Existing programs without the block keep compiling unchanged.
+- Example `141_review_case_gate_override` proves the per-case override
+  pattern with one positive `render_contract` case (one shared review
+  contract drives a `quick_path` case unchanged and a `full_path` case
+  that removes one gate, adds another, and renames a third) plus two
+  `compile_fail` cases that fire `E531` and `E532`. The curated
+  `doctrine-learn` reviews reference now includes a `Per-Case Gate
+  Override` section pointing at the example, and the `agent-linter`
+  finding catalog adds `AL246 Per-Case Gate Delta Split Into Parallel
+  Contracts` for two or more review cases that share one
+  `review_family` and only differ in a small gate delta yet bind their
+  own near-duplicate contract instead of using the override block.
+- VSCode tmLanguage grammar now highlights the per-case gate override
+  clauses (`add NAME: "..."`, `remove NAME`, `modify NAME: "..."`).
+- `skill package` `host_contract:` now supports a typed `receipt`
+  host-slot family. Author `receipt <slot_key>: "Title"` inside
+  `host_contract:` with typed `<field_key>: <DeclaredType>` or
+  `<field_key>: list[<DeclaredType>]` entries so the package owns the
+  typed envelope it emits on every run. Receipt fields type with a
+  declared `enum`, `table`, `schema`, or `document`. Receipt slots are
+  exempt from the exact-once call-site bind requirement: the package
+  owns its receipt envelope, so consuming skill entries do not re-bind
+  receipt slots. Downstream consumers reference receipt fields through
+  the skill binding, e.g. `<skill_binding_key>.receipt.<field_key>`.
+  Three new compile codes fail loud on authoring mistakes: `E535` for
+  a receipt body declared without fields or with duplicate field keys,
+  `E536` for a dotted reference through a skill binding that names a
+  field the receipt host slot does not declare, and `E537` for a
+  receipt field typed with a name that is not a declared `enum`,
+  `table`, `schema`, or `document`. `SKILL.contract.json` now records
+  each receipt slot with its typed `fields` map so runtime hosts can
+  validate the emitted envelope. Existing packages without a `receipt`
+  slot keep compiling unchanged.
+- Example `142_skill_host_receipt_envelope` proves the typed receipt
+  envelope pattern with one positive `render_contract` case, one
+  `build_contract` case that exercises the typed `fields` map in
+  `SKILL.contract.json`, and two `compile_fail` cases that fire `E535`
+  (empty receipt body) and `E537` (receipt field typed with an
+  undeclared name). The curated `doctrine-learn` skills reference now
+  includes a `Typed Receipt Envelope` section pointing at the example,
+  and the `agent-linter` finding catalog adds
+  `AL960 Process Evidence Emitted As Prose Not Typed Receipt` for
+  skills that describe a run-by-run evidence envelope in prose instead
+  of a typed `receipt` slot.
+- VSCode tmLanguage grammar now highlights the `receipt` host-slot
+  keyword.
+- `output target` bodies may now declare `typed_as:` pointing at a
+  declared `document`, `schema`, or `table`. The target carries the
+  handoff-note family identity so downstream outputs that bind the
+  target may omit a redundant `structure:` or `schema:` line, or state
+  the matching family for clarity. The emitted output contract gains a
+  `Typed As` row immediately after `Target` so downstream readers see
+  the bound family directly. A new compile code `E533` fires when
+  `typed_as:` resolves to an entity kind other than `document`,
+  `schema`, or `table`, and `E534` fires when a downstream output's
+  `structure:` or `schema:` family disagrees with the target's
+  `typed_as:` family.
+- Example `143_typed_handoff_note_identity` proves the typed
+  handoff-note target with a positive `render_contract` case that
+  verifies the new `Typed As` row, plus two `compile_fail` cases for
+  `E533` (enum typed target) and `E534` (document family mismatch).
+- Curated `doctrine-learn` outputs reference now includes a
+  `Typed Handoff-Note Targets` section pointing at the example.
+- VSCode tmLanguage grammar now highlights the `typed_as:` keyword,
+  and the VSCode resolver navigates `typed_as:` refs to the bound
+  `document`, `schema`, or `table` definition.
+- A skill entry may now carry a canonical
+  `mode CNAME = expr as <Enum>` statement. The production is the same
+  `mode_stmt` shared with review cases, law matchers, and output-shape
+  selectors, so one mode concept reaches across every surface that
+  dispatches by enum. Use it to distinguish producer and audit uses of
+  the same skill without authoring parallel skill declarations. Three
+  new compile codes fail loud on authoring mistakes: `E540` for a mode
+  `as` target that does not resolve to a declared enum, `E541` for an
+  audit-mode skill entry that binds to an `output` or `final_output`
+  host slot (audit-mode bindings stay read-only), and `E542` for a
+  `CNAME` that is not a member of the declared enum.
+- Example `144_skill_binding_producer_audit_mode` proves the pattern
+  with one producer agent and one auditor agent sharing one skill
+  declaration, plus four `compile_fail` cases that fire `E540`, `E541`,
+  `E542`, and `E543`.
+- `output shape` `selector:` statements now accept the canonical
+  expr-based `mode CNAME = expr as <Enum>` form shared with the rest of
+  the `mode_stmt` surface. Authors should write
+  `mode role = selectors.role as WriterRole` instead of the enum-only
+  shorthand. A new compile code `E543` soft-deprecates the enum-only
+  form (`mode CNAME as <Enum>`) with a one-minor-bump timebox; the
+  enum-only form will be removed at the next minor bump. Example
+  `138_output_shape_case_selector` now uses the expr-based form on
+  every case, and example `144` preserves one regression fixture on
+  the enum-only form so the deprecation signal stays honest.
+
+### Changed
+- `E500` semantics: was "final_output review_fields may not be repeated on
+  the review carrier"; now "`final_output.review_fields` is used in an
+  invalid place". The carrier arm now validates bindings instead of
+  rejecting the shape.
+- Removed the example `106` compile-fail fixture that asserted the old
+  E500 behavior. That constraint is no longer part of the language.
+
+### Fixed
+- Output shape selector identity now compares the resolved
+  `(owner_module_parts, enum_name)` pair instead of the enum basename. A
+  selector on `mod_a.WriterRole` no longer accepts a binding or case on a
+  same-named `mod_b.WriterRole` from a different imported flow.
+- Inherited output shapes now rebind `selector:` and every
+  `case EnumType.member:` ref through the parent's module parts, so a
+  child flow that `inherit`s a selector-backed shape compiles without
+  spurious `E318` or cross-flow identity errors.
+- `case` blocks that appear outside an output shape body and
+  `via review.<section>.route` clauses that appear outside a `next_owner:`
+  field body now fail loud (`E318` and `E317`) instead of being silently
+  dropped at render.
+- Duplicate and unknown selector bindings on an agent now fail loud with
+  `E319` instead of silently matching the first entry.
+- `examples/136_review_shared_route_binding` and
+  `examples/138_output_shape_case_selector` manifests cover every new
+  failure mode and the cross-flow and inherited-shape happy paths.
+
+### Deprecated (language 5.3 -> 5.4)
+- The enum-only `output shape` `selector:` form
+  (`mode CNAME as <Enum>`) is soft-deprecated with a one-minor-bump
+  timebox. Authors should migrate to the canonical
+  `mode CNAME = expr as <Enum>` form shared with review cases, law
+  matchers, and skill-binding modes. The grammar still accepts the
+  enum-only form, but the validator now raises `E543` when it appears.
+  The form will be removed at the next minor bump.
+
+### Breaking (language 4.1 -> 5.0)
+- One canonical form for closed field vocabularies. On every field-shaped
+  surface — `output schema` fields, readable `row_schema` and `item_schema`
+  entries, readable table columns, and record scalars — declare `enum X:
+  "..."` once and type the field body with `type: X`. The renderer emits
+  one `Valid values: ...` line per typed field in declared order under a
+  unified helper. The JSON-schema lowering path emits the same members as
+  `enum`.
+- Deleted the inline `type: enum` plus `values:` form that `output schema`
+  fields once accepted.
+- Deleted the legacy `type: string` plus `enum:` form that `output schema`
+  fields once accepted.
+- Tightened the field `type:` slot: names that are neither a builtin
+  primitive nor a resolvable `enum` now fail loud with a new compile code
+  `E320`. The message names the hit and suggests either declaring the
+  enum or using a builtin primitive.
+- Extended the typed `type:` slot to `row_schema`, `item_schema`, table
+  columns, and record scalars. Glossary and label nodes (`properties`
+  items and `definitions` items) stay prose-only by design.
+- Example `139_enum_typed_field_bodies` ships the canonical form on a
+  `row_schema` entry with `render_contract` and `compile_fail` cases.
+- Migrated six shipped example prompts (`79/AGENTS.prompt`,
+  `79/optional_no_example/AGENTS.prompt`,
+  `79/invalid_invalid_example/AGENTS.prompt`, `85/AGENTS.prompt`,
+  `90/AGENTS.prompt`, `121/AGENTS.prompt`) off the deleted forms onto the
+  canonical `enum X` plus `type: X` form.
+
 Use this section for work that is not public yet.
 
 When you cut a public release:

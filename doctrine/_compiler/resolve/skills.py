@@ -648,7 +648,11 @@ class ResolveSkillsMixin:
         package_contract: CompiledSkillPackageContract,
         agent_context: ActiveSkillBindAgentContext,
     ) -> None:
-        slot_map = {slot.key: slot for slot in package_contract.host_contract}
+        slot_map = {
+            slot.key: slot
+            for slot in package_contract.host_contract
+            if not isinstance(slot, model.ReceiptHostSlot)
+        }
         bind_map = {bind.key: bind for bind in entry.binds}
 
         if not slot_map:
@@ -782,6 +786,24 @@ class ResolveSkillsMixin:
                     package_contract=package_contract,
                     agent_context=active_agent_context,
                 )
+        resolved_binds_for_mode: dict[str, ResolvedSkillBindTarget] | None = None
+        if entry.mode is not None:
+            active_agent_context = self._active_skill_bind_agent_context
+            if active_agent_context is not None and entry.binds:
+                resolved_binds_for_mode = {
+                    bind.key: self._resolve_skill_entry_bind_target(
+                        bind.target,
+                        bind_key=bind.key,
+                        unit=unit,
+                        agent_context=active_agent_context,
+                    )
+                    for bind in entry.binds
+                }
+            self._validate_skill_entry_mode(
+                entry,
+                metadata_unit=unit,
+                resolved_binds=resolved_binds_for_mode,
+            )
         return ResolvedSkillEntry(
             key=entry.key,
             metadata_unit=unit,
@@ -792,5 +814,6 @@ class ResolveSkillsMixin:
             package_unit=package_unit,
             package_decl=package_decl,
             package_contract=package_contract,
+            mode=entry.mode,
             source_span=entry.source_span,
         )

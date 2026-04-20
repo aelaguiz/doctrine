@@ -65,6 +65,7 @@ class UnitDeclarations:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    rules_by_name: dict[str, model.RuleDecl]
 
 
 @dataclass(slots=True, frozen=True)
@@ -131,6 +132,7 @@ class IndexedFlow:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    rules_by_name: dict[str, model.RuleDecl]
 
 
 def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
@@ -715,6 +717,7 @@ def index_unit(
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
+    rules_by_name: dict[str, model.RuleDecl] = {}
 
     for declaration in prompt_file.declarations:
         if isinstance(declaration, model.ImportDecl):
@@ -966,6 +969,16 @@ def index_unit(
             )
             agents_by_name[declaration.name] = declaration
             continue
+        if isinstance(declaration, model.RuleDecl):
+            _register_decl(
+                rules_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            rules_by_name[declaration.name] = declaration
+            continue
         raise compile_error(
             code="E901",
             summary="Internal compiler error",
@@ -1018,6 +1031,7 @@ def index_unit(
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
+        rules_by_name=rules_by_name,
     )
     indexed_unit = IndexedUnit(
         prompt_root=prompt_root,

@@ -6,6 +6,10 @@ instruction surface that tell a turn how to do its job. Route-only turns,
 
 Keep agent homes thin. Put the one-sentence job on the agent and push reusable
 body into a named `workflow`, `review`, or `skill` that loads only when needed.
+Skills own capabilities; agents reference them. If the role prose is telling the
+turn how to call a script, run a tool, or meet a hard requirement, that content
+belongs on the `skill`, not on the agent. Violations fail loud under
+`agent-linter` finding `AL250`.
 
 Read the source of truth in this order before you ship code:"""
 
@@ -49,6 +53,10 @@ and may carry a title."""
   same authored order."""
             "`override read_first: NewWorkflow` replaces an inherited slot in place."
             "`abstract <slot_key>` marks a slot a concrete child must define directly."
+            """`abstract <slot_key>: TypedEntity` narrows the slot to one typed family
+  (document, schema, table, enum, agent, or workflow). Concrete children bind by
+  name reference to that family. E538 and E539 catch wrong-family or unresolved
+  annotations at compile time."""
 
         "See `examples/07_handoffs` for a concrete-agent-with-inheritance example."
 

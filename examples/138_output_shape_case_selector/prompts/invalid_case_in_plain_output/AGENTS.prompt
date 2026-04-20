@@ -1,0 +1,33 @@
+enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+    field_notes: "Field Notes"
+        case WriterRole.producer:
+            "Case blocks do not belong in plain output declarations."
+
+
+agent WriterDemo:
+    role: "Draft the writer turn."
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

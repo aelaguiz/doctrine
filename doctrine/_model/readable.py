@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
-from typing import TypeAlias as _TypeAlias
+from typing import TYPE_CHECKING, TypeAlias as _TypeAlias
 
 from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SourceSpan
+
+if TYPE_CHECKING:
+    from doctrine._compiler.resolve.field_types import FieldTypeRef
 
 
 ReadableRequirement: _TypeAlias = str
@@ -44,6 +47,9 @@ class ReadableSchemaEntry:
     key: str
     title: str
     body: tuple[ProseLine, ...] = ()
+    type_ref: "FieldTypeRef | None" = None
+    type_name: str | None = None
+    type_source_span: SourceSpan | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -66,6 +72,9 @@ class ReadableTableColumn:
     key: str
     title: str
     body: tuple[ProseLine, ...]
+    type_ref: "FieldTypeRef | None" = None
+    type_name: str | None = None
+    type_source_span: SourceSpan | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

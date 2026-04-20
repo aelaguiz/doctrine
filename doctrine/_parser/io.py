@@ -12,6 +12,7 @@ from doctrine._parser.parts import (
     OutputSchemaPart,
     OutputStructurePart,
     OutputTargetDeliverySkillPart,
+    OutputTargetTypedAsPart,
     RenderProfilePart,
     TrustSurfacePart,
     _body_prose_location,
@@ -27,6 +28,7 @@ from doctrine._parser.parts import (
     _source_span_from_meta,
     _with_source_span,
 )
+from doctrine._parser.skills import _split_record_scalar_body
 from doctrine.diagnostics import TransformParseFailure
 
 
@@ -367,6 +369,43 @@ class IoTransformerMixin:
     def output_shape_override_schema_item(self, ref):
         return model.OutputOverrideRecordScalar(key="schema", value=ref)
 
+    @v_args(meta=True)
+    def output_shape_selector_block(self, meta, items):
+        if len(items) != 1:
+            raise TransformParseFailure(
+                "Output shape selector blocks must declare exactly one selector.",
+                location=_meta_line_column(meta),
+            )
+        return items[0]
+
+    @v_args(meta=True, inline=True)
+    def output_shape_selector_enum_stmt(self, meta, field_name, enum_ref):
+        return _with_source_span(
+            model.OutputShapeSelectorConfig(field_name=field_name, enum_ref=enum_ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_shape_selector_expr_stmt(self, meta, field_name, expr, enum_ref):
+        return _with_source_span(
+            model.OutputShapeSelectorConfig(
+                field_name=field_name,
+                enum_ref=enum_ref,
+                expr=expr,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_record_case_stmt(self, meta, enum_member_ref, body):
+        return _with_source_span(
+            model.OutputRecordCase(
+                enum_member_ref=enum_member_ref,
+                items=tuple(body),
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def output_schema_stmt(self, meta, ref):
         line, column = _meta_line_column(meta)
@@ -434,20 +473,57 @@ class IoTransformerMixin:
     def output_record_item_body(self, items):
         return tuple(items[0])
 
+    def output_record_keyed_scalar_body(self, items):
+        # Grammar: `_INDENT output_record_keyed_scalar_body_line+ _DEDENT`.
+        # Each line is either an `OutputSchemaSetting(key="type")` or an
+        # `output_record_item`. The item handler splits the `type:` line
+        # off into `type_name` + `type_source_span` on the resulting
+        # `RecordScalar`. Unwrap `OutputRecordSectionPart` the same way
+        # `output_record_body` does.
+        return tuple(
+            item.section if isinstance(item, OutputRecordSectionPart) else item
+            for item in items
+        )
+
     @v_args(meta=True, inline=True)
-    def output_record_keyed_item(self, meta, key, head, body=None):
-        if isinstance(head, str) and body is not None:
+    def output_record_keyed_scalar_item(self, meta, key, head, body=None):
+        body_items, type_name, type_source_span = _split_record_scalar_body(
+            body, key=key
+        )
+        if type_name is None and body_items is not None and body_items:
             line, column = _meta_line_column(meta)
             return OutputRecordSectionPart(
                 section=_with_source_span(
-                    model.RecordSection(key=key, title=head, items=tuple(body)),
+                    model.RecordSection(key=key, title=head, items=tuple(body_items)),
                     meta,
                 ),
                 line=line,
                 column=column,
             )
+        scalar_body: tuple | None
+        if body_items:
+            scalar_body = tuple(body_items)
+        else:
+            scalar_body = None
         return _with_source_span(
-            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=scalar_body,
+                type_name=type_name,
+                type_source_span=type_source_span,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_record_keyed_ref_item(self, meta, key, head, body=None):
+        return _with_source_span(
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=None if body is None else tuple(body),
+            ),
             meta,
         )
 
@@ -531,6 +607,22 @@ class IoTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True, inline=True)
+    def review_route_via_stmt(self, meta, section, resolution):
+        return _with_source_span(
+            model.ReviewRouteVia(section=section, resolution=resolution),
+            meta,
+        )
+
+    def review_outcome_accept(self, _items):
+        return "on_accept"
+
+    def review_outcome_reject(self, _items):
+        return "on_reject"
+
+    def review_route_resolution_route(self, _items):
+        return "route"
+
     @v_args(meta=True)
     def trust_surface_block(self, meta, items):
         return _positioned_trust_surface(meta, tuple(items))
@@ -576,6 +668,7 @@ class IoTransformerMixin:
                 title=title,
                 items=body[0],
                 delivery_skill_ref=body[1],
+                typed_as=body[2],
             ),
             meta,
         )
@@ -587,6 +680,7 @@ class IoTransformerMixin:
     def output_target_body(self, items):
         record_items: list[model.RecordItem] = []
         delivery_skill_ref: model.NameRef | None = None
+        typed_as_ref: model.NameRef | None = None
         for item in items:
             if isinstance(item, OutputTargetDeliverySkillPart):
                 if delivery_skill_ref is not None:
@@ -598,13 +692,28 @@ class IoTransformerMixin:
                     )
                 delivery_skill_ref = item.ref
                 continue
+            if isinstance(item, OutputTargetTypedAsPart):
+                if typed_as_ref is not None:
+                    raise TransformParseFailure(
+                        "Output target declarations may define `typed_as:` only once.",
+                        hints=("Keep exactly one typed identity per output target.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                typed_as_ref = item.ref
+                continue
             record_items.append(item)
-        return tuple(record_items), delivery_skill_ref
+        return tuple(record_items), delivery_skill_ref, typed_as_ref
 
     @v_args(meta=True, inline=True)
     def output_target_delivery_skill_stmt(self, meta, ref):
         line, column = _meta_line_column(meta)
         return OutputTargetDeliverySkillPart(ref=ref, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def output_target_typed_as_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return OutputTargetTypedAsPart(ref=ref, line=line, column=column)
 
     @v_args(meta=True, inline=True)
     def output_shape_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
@@ -615,12 +724,25 @@ class IoTransformerMixin:
             parent_ref = parent_ref_or_title
             title = title_or_body
             items = body
+        selector: model.OutputShapeSelectorConfig | None = None
+        non_selector_items: list[object] = []
+        for item in items:
+            if isinstance(item, model.OutputShapeSelectorConfig):
+                if selector is not None:
+                    raise TransformParseFailure(
+                        f"Output shape `{name}` declares more than one `selector:` block.",
+                        location=_meta_line_column(meta),
+                    )
+                selector = item
+                continue
+            non_selector_items.append(item)
         return _with_source_span(
             model.OutputShapeDecl(
                 name=name,
                 title=title,
-                items=tuple(items),
+                items=tuple(non_selector_items),
                 parent_ref=parent_ref,
+                selector=selector,
             ),
             meta,
         )
@@ -677,18 +799,6 @@ class IoTransformerMixin:
     @v_args(meta=True)
     def output_schema_optional_stmt(self, meta, _items=None):
         return _with_source_span(model.OutputSchemaFlag(key="optional"), meta)
-
-    @v_args(meta=True)
-    def output_schema_enum_block(self, meta, items):
-        return _with_source_span(model.OutputSchemaEnum(values=tuple(items)), meta)
-
-    @v_args(meta=True)
-    def output_schema_values_block(self, meta, items):
-        return _with_source_span(model.OutputSchemaValues(values=tuple(items)), meta)
-
-    @v_args(inline=True)
-    def output_schema_enum_value(self, value):
-        return value
 
     @v_args(meta=True, inline=True)
     def output_schema_variant(self, meta, *children):

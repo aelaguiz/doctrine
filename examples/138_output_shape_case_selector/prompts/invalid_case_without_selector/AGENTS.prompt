@@ -1,0 +1,40 @@
+# `case ...:` dispatch inside an output shape requires a `selector:` block
+# on that shape. This fixture uses `case` without a selector and expects
+# E318.
+
+
+enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    field_notes: "Field Notes"
+        case WriterRole.producer:
+            "Producer guidance."
+        case WriterRole.critic:
+            "Critic guidance."
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+
+agent WriterDemo:
+    role: "Draft the writer turn."
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

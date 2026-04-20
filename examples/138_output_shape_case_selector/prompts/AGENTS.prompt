@@ -1,0 +1,76 @@
+# One shared output shape can carry role-specific field notes by pairing a
+# `selector:` on the shape with `case EnumType.member:` dispatch inside the
+# body. Each agent binds the selector under a `selectors:` block, and the
+# compiler inlines only the matching case at emit time.
+#
+# This keeps shared shapes single-sourced. The same shape serves producer,
+# critic, and composer, but each agent's final_output only shows the lines
+# that apply to its role.
+
+
+enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+    composer: "Composer"
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    field body: "Body"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+        body: "Short draft covering the first milestone."
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    selector:
+        mode role = selectors.role as WriterRole
+
+    field_notes: "Field Notes"
+        "Always ground the headline in today's work."
+        case WriterRole.producer:
+            "Write one fresh draft. Do not critique prior drafts."
+        case WriterRole.critic:
+            "Critique the latest draft. Name the one biggest gap."
+        case WriterRole.composer:
+            "Merge the accepted critique back into the draft."
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+
+agent WriterProducer:
+    role: "Draft the next writer turn."
+    selectors:
+        role: WriterRole.producer
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse
+
+
+agent WriterCritic:
+    role: "Critique the latest writer draft."
+    selectors:
+        role: WriterRole.critic
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse
+
+
+agent WriterComposer:
+    role: "Compose the final writer turn."
+    selectors:
+        role: WriterRole.composer
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

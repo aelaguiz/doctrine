@@ -89,6 +89,13 @@ Important rules:
   `route`.
 - `abstract <slot_key>` marks an authored slot that concrete children must
   define directly.
+- `abstract <slot_key>: <TypedEntityRef>` narrows the slot to a declared
+  `document`, `schema`, `table`, `enum`, `agent`, or `workflow`. Each concrete
+  descendant must bind the slot to a `name_ref` of the same family. The
+  compiler rejects wrong-family bindings with `E538` and unresolvable
+  annotations with `E539`. The annotation is deliberately narrower than
+  skill `host_contract` family typing and output-schema field typing; the
+  three shapes remain distinct.
 - `inherit <slot_key>` keeps an inherited authored slot unchanged.
 - `inherit {slot_a, slot_b}` is grouped parser sugar for repeated inherited
   slot accounting in the same authored order.
@@ -418,7 +425,18 @@ Important rules:
   `BuildSurfaceSchema:sections.summary.title`,
   `BuildSurfaceSchema:artifacts.manifest_file.title`, and
   `BuildSurfaceSchema:groups.downstream_rebuild.title`.
-- `review contract:` may point at either a `workflow` or a `schema`.
+- `review contract:` may point at either a `workflow` or a `schema`. Review
+  bodies reference contract gates by symbol as `contract.NAME`, and a typo in
+  that reference fails loud with `E477`. See
+  [REVIEW_SPEC.md](REVIEW_SPEC.md#review-contracts) and
+  `examples/140_typed_gates_symbol_reference/` for proof.
+- A case inside `review_family cases:` may adjust the shared contract's gate
+  set through `override gates:` with `add`, `remove`, and `modify` lines.
+  Removing or modifying a gate that the contract does not declare fails loud
+  with `E531`; adding a gate name that already exists in the case's effective
+  gate set fails loud with `E532`. See
+  [REVIEW_SPEC.md](REVIEW_SPEC.md#core-review-configuration) and
+  `examples/141_review_case_gate_override/` for proof.
 
 ### Tables
 
@@ -729,7 +747,7 @@ Important rules:
   `{{host:slot_key.path.to.child}}` interpolation.
 - Emitted docs and bundled agent prompts use the same `host:` root anywhere
   that artifact kind already supports normal addressable refs.
-- The first cut supports these host-slot families:
+- The shipped host-slot families are:
   - `input`
   - `output`
   - `document`
@@ -737,6 +755,7 @@ Important rules:
   - `schema`
   - `table`
   - `final_output`
+  - `receipt`
 - Bind targets may point at:
   - `inputs:key`
   - `outputs:key`
@@ -744,12 +763,86 @@ Important rules:
   - `final_output`
   - ordinary declaration refs such as `SectionMap`
   - addressable child paths on those same roots
-- Every declared host slot must be bound exactly once.
+- Every declared host slot must be bound exactly once, except `receipt`
+  slots — the package owns the receipt contract itself, so receipt slots
+  are not bound at the call site.
 - Unknown slots, missing binds, extra binds, wrong families, and bad child
   paths fail loud.
+
+#### Receipt Host Slots
+
+Receipt slots let a skill package declare the typed receipt envelope it
+emits on every run. The typed fields are the contract — downstream critics
+can reference them by symbol without restating the prose.
+
+```prompt
+skill package ProducerPackage: "Producer Package"
+    metadata:
+        name: "producer-package"
+    host_contract:
+        receipt process_receipt: "Process Receipt"
+            confidence: ConfidenceLevel
+            evidence: list[EvidenceRow]
+    "Every run emits the process receipt."
+```
+
+Rules:
+
+- A `receipt` slot body must declare at least one typed field. Empty
+  receipts fail with `E535`.
+- Each field types its value with a declared `enum`, `table`, `schema`,
+  or `document`. Using an undeclared name fails with `E537`.
+- `list[Row]` marks a repeating field.
+- Critics and other consumers address receipt fields through the skill
+  binding: `skill_binding_key.receipt.field_key`. References that do not
+  resolve fail with `E536`.
+- `SKILL.contract.json` records each receipt slot with its typed
+  `fields` map so runtime hosts can validate the emitted envelope.
 - When a package has host-binding truth, `SKILL.contract.json` records the
   package host contract and the host paths used by each emitted prompt-authored
   artifact.
+
+#### Skill Binding Mode
+
+A skill entry may tag itself with a `mode` statement. This is the canonical
+`mode CNAME = expr as name_ref` production shared with review cases, law
+matchers, and output-shape selectors. The mode keeps producer and audit uses
+of the same skill compile-time distinguishable.
+
+```prompt
+enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+skill SharedSkill: "Shared Skill"
+    purpose: "Run the shared producer/audit package."
+    package: "shared-skill-package"
+
+
+agent ProducerAgent:
+    role: "Run the shared skill in producer mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode producer = SkillMode.producer as SkillMode
+
+
+agent AuditorAgent:
+    role: "Run the shared skill in audit mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode audit = SkillMode.audit as SkillMode
+```
+
+Rules:
+
+- The `CNAME` after `mode` must be one of the declared enum's members.
+  Unknown names fail with `E542`.
+- The `name_ref` after `as` must resolve to a declared enum. Unresolved
+  targets fail with `E540`.
+- A skill entry tagged with `mode audit = ...` must not `bind:` to an
+  `output` or `final_output` host slot. Audit-mode bindings stay read-only
+  and fail with `E541` if they try to emit.
 
 ## Inputs And Outputs
 
@@ -852,7 +945,29 @@ Important rules:
 - Custom targets can be declared with `output target`.
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.
+- A custom `output target` may also declare `typed_as:` pointing at a
+  `document`, `schema`, or `table`. That makes the target carry the handoff
+  note's family identity. `typed_as:` referencing any other entity kind fails
+  loud with `E533`. If a downstream `output` that uses the target also sets
+  `structure:` or `schema:`, the family must match the target's `typed_as:`
+  family or the compiler raises `E534`. See
+  `examples/143_typed_handoff_note_identity/` for the canonical form.
 - Output shapes can be named with `output shape`.
+- An `output shape` may declare a `selector:` block. Each selector statement
+  uses the canonical expr-based `mode CNAME = expr as EnumType` production,
+  the same one shared with review cases, law matchers, and skill-binding
+  modes. `expr` is usually the selector field access, e.g.
+  `mode role = selectors.role as WriterRole`. The enum-only shorthand
+  `mode CNAME as EnumType` is soft-deprecated and fails with `E543`; it
+  will be removed at the next minor bump. Each `as` target must resolve to
+  a closed enum.
+- Inside a shape with a `selector:`, body items may use `case EnumType.member:`
+  blocks for per-case content. Cases must cover every enum member exactly once
+  and must not overlap. `case` outside a shape body, or without a `selector:`,
+  is fail-loud (`E318`).
+- An agent that points `final_output` at a shape with a `selector:` must bind
+  every selector key under a `selectors:` block. Duplicates, unknown keys, and
+  bindings to a same-named enum from a different flow are fail-loud (`E319`).
 - `schema:` on `output` attaches a Doctrine `schema` declaration.
 - `schema:` on `output shape` remains the owner-aware attachment point for
   `output schema` when the shape kind is `JsonObject`.
@@ -868,10 +983,14 @@ Important rules:
 - `required` and `optional` are retired on this surface. Doctrine still
   parses them there only so it can raise targeted upgrade errors.
 - Doctrine does not ship `?` shorthand for `output schema` fields.
-- For a local closed string vocabulary inside `output schema`, prefer
-  `type: enum` plus `values:`.
-- In the first cut, legacy `type: string` plus `enum:` still compiles.
-  Both forms lower to the same emitted string-enum wire shape.
+- For a closed vocabulary on any field-shaped surface — output-schema
+  fields, `row_schema` / `item_schema` entries, table columns, and record
+  scalars — declare `enum X: "..."` once and type the field with `type: X`.
+  The renderer emits a `Valid values: <k1>, <k2>, ...` line in declared
+  order under the typed field; the JSON-schema lowering path emits the
+  same members as `enum`. Typing against an unknown name fails loud with
+  `E320`. See `examples/139_enum_typed_field_bodies/` for the canonical
+  form on a `row_schema` entry.
 - A structured final output may declare a first-class routed owner with
   `route field`.
 - A `route field` owns the route choice keys, labels, and named target agents
@@ -922,15 +1041,21 @@ Important rules:
 - The designated final output renders under a dedicated `Final Output`
   section and is omitted from ordinary `Outputs` rendering for that agent.
 
-Preferred local inline enum form:
+Canonical form for a closed field vocabulary:
 
 ```prompt
+enum Status: "Status"
+    ok: "OK"
+    action_required: "Action Required"
+
 field status: "Status"
-    type: enum
-    values:
-        ok
-        action_required
+    type: Status
 ```
+
+The same `type: <EnumName>` form types a `row_schema` or `item_schema`
+entry, a readable table column, or a record scalar. Every typed field
+renders the same `Valid values: ok, action_required.` line in declared
+order. Typing against an unknown name fails loud with `E320`.
 
 Nullable field example:
 
@@ -1020,6 +1145,36 @@ The emitted output contract starts like this:
 | Requirement | Advisory |
 ```
 
+Typed handoff-note target example:
+
+```prompt
+document ReleaseNoteDocument: "Release Note"
+    section summary: "Summary"
+        "Say what shipped."
+
+output target ReleaseNoteHandoff: "Release Note Handoff"
+    typed_as: ReleaseNoteDocument
+
+output ReleaseNote: "Release Note"
+    target: ReleaseNoteHandoff
+    shape: MarkdownDocument
+    requirement: Advisory
+    structure: ReleaseNoteDocument
+```
+
+The emitted contract carries a `Typed As` row so downstream readers see the
+bound family directly:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Release Note Handoff |
+| Typed As | Release Note |
+| Shape | Markdown Document |
+| Requirement | Advisory |
+| Structure | Release Note |
+```
+
 ### Output Inheritance
 
 Inherited outputs use the same explicit patching style Doctrine already uses
@@ -1086,6 +1241,14 @@ Important rules:
   `prompts`. Provider roots come from the Python API, not from host TOML.
 - Cross-flow imports only see declarations marked `export`. Non-exported
   declarations stay private to their home flow and fail loud with `E314`.
+- The `export` keyword is a leading modifier on a declaration line, for
+  example `export workflow Foo: "Foo"` or `export agent Bar:`. A declaration
+  without `export` is private to its home flow regardless of its visibility
+  name.
+- Sibling `.prompt` files inside one flow share one namespace and reach each
+  other by bare name. Using `from <same-flow> import Name` is fail-loud
+  (`E315`). Two sibling declarations with the same name collide fail-loud
+  (`E316`).
 - A file-backed `<module>.prompt` import is a compile-time boundary with one
   prompt file as its full flow surface.
 - A directory-backed `<module>/AGENTS.prompt` import is a runtime package
@@ -1220,6 +1383,67 @@ Important rules:
 - `wire:` is optional and remains the host-facing or serialized value.
 - The one-line member form remains legal shorthand for `title == wire`.
 
+### Typed Field Bodies
+
+When a field's value comes from a small fixed vocabulary, declare the enum
+once and type the field with that name. The language ships exactly one
+canonical form:
+
+```prompt
+enum StepRole: "Step Role"
+    introduce: "Introduce"
+    practice: "Practice"
+    test: "Test"
+    capstone: "Capstone"
+```
+
+Every field-shaped surface then carries `type: <EnumName>` in the field
+body:
+
+```prompt
+# output-schema field
+output schema ReviewSchema: "Review Schema"
+    field status: "Status"
+        type: StepRole
+
+# row_schema entry on a readable table
+table step_arc: "Step Arc" required
+    row_schema:
+        step_role: "Step Role"
+            type: StepRole
+            "Name the step's role in the arc."
+
+# item_schema entry on a readable list
+sequence read_order: "Read Order"
+    item_schema:
+        step_role: "Step Role"
+            type: StepRole
+
+# readable table column
+columns:
+    step_role: "Step Role"
+        type: StepRole
+        "Coach guidance level for the step."
+
+# record scalar on a structured comment output
+output StepNote: "Step Note"
+    target: TurnResponse
+    shape: Comment
+    message as step_role: "Step Role"
+        type: StepRole
+```
+
+The renderer emits the same `Valid values: introduce, practice, test, capstone.`
+line in declared order under each typed field. The JSON-schema lowering
+path emits the same member keys as `enum`. Typing against an unknown
+name fails loud with `E320`.
+
+Glossary and label nodes (`properties` and `definitions` items) stay
+prose-only by design.
+
+See `examples/139_enum_typed_field_bodies/` for the canonical form on a
+`row_schema` entry, backed by `render_contract` and `compile_fail` cases.
+
 The shipped expression surface supports:
 
 - dotted refs
@@ -1231,6 +1455,61 @@ The shipped expression surface supports:
 
 Those expressions are used in `when`, `match`, guarded output items,
 workflow law, and review semantics.
+
+## Project Rules
+
+Doctrine ships a declarative `rule` primitive that a project uses to lint its
+own agent graph. A `rule` lives at the top of a prompt file and runs during
+compile. If the rule matches a concrete agent and the agent violates an
+assertion, the compiler raises a `RULE###` diagnostic (see
+[`COMPILER_ERRORS.md`](./COMPILER_ERRORS.md)).
+
+The shape is:
+
+```doctrine
+rule <RuleName>: "Human-readable rule headline"
+    scope:
+        <scope predicate>
+    assertions:
+        <assertion predicate>
+    message: "Plain-English explanation shown when the rule fires."
+```
+
+The shipped predicate set is closed. Scope predicates select which concrete
+agents the rule evaluates against:
+
+- `agent_tag: <CNAME>` — the agent whose name equals `<CNAME>` exactly
+- `flow: <NameRef>` — every agent whose ancestor chain transitively includes
+  the named flow or ancestor
+- `role_class: <CNAME>` — every agent whose name ends with the `<CNAME>`
+  suffix
+- `file_tree: <STRING>` — every agent whose prompt file path matches the
+  glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root
+
+Multiple scope predicates combine with OR semantics: an agent matches the
+rule when at least one predicate matches.
+
+Assertions say what scoped agents must or must not do:
+
+- `requires inherit <NameRef>` — the scoped agent must transitively inherit
+  from `<NameRef>`. If the target agent is not declared, the compiler raises
+  `RULE002`. If a scoped agent fails the check, it raises `RULE003`.
+- `forbids bind <NameRef>` — the scoped agent must not transitively inherit
+  from `<NameRef>`. Unknown target raises `RULE002`. Violations raise
+  `RULE004`.
+- `requires declare <CNAME>` — the scoped agent (or one of its declared
+  ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`.
+
+The `flow: <NameRef>` scope predicate also requires its target to resolve. If
+it does not, the compiler raises `RULE001`.
+
+The `message:` body is surfaced back to the author when the rule fires. Use it
+to explain the invariant in plain English so a downstream author can read the
+diagnostic alone and know what to fix.
+
+See [`../examples/146_declarative_project_lint_rule`](../examples/146_declarative_project_lint_rule)
+for the manifest-backed teaching example that covers all five shipped
+`RULE###` codes.
 
 ## Markdown Emission
 

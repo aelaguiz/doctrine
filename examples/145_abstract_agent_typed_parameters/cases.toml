@@ -1,0 +1,40 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "accuracy reviewer binds a typed policy slot to the accuracy document"
+status = "active"
+kind = "render_contract"
+agent = "AccuracyReviewer"
+assertion = "exact_lines"
+expected_lines = [
+  "Review draft sections against the accuracy policy.",
+]
+
+[[cases]]
+name = "tone reviewer binds the same typed policy slot to a different document"
+status = "active"
+kind = "render_contract"
+agent = "ToneReviewer"
+assertion = "exact_lines"
+expected_lines = [
+  "Review draft sections against the tone policy.",
+]
+
+[[cases]]
+name = "concrete agent binding a typed policy slot to a wrong-family entity emits E538"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_wrong_family_binding/AGENTS.prompt"
+agent = "AccuracyReviewer"
+exception_type = "CompileError"
+error_code = "E538"
+
+[[cases]]
+name = "typed abstract slot annotation referencing an unknown entity emits E539"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unresolved_annotation/AGENTS.prompt"
+agent = "AccuracyReviewer"
+exception_type = "CompileError"
+error_code = "E539"

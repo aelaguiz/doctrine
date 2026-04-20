@@ -22,10 +22,12 @@ from doctrine._compiler.validate.contracts import ValidateContractsMixin
 from doctrine._compiler.validate.display import ValidateDisplayMixin
 from doctrine._compiler.validate.law_paths import ValidateLawPathsMixin
 from doctrine._compiler.validate.outputs import ValidateOutputsMixin
+from doctrine._compiler.validate.output_structure import ValidateOutputStructureMixin
 from doctrine._compiler.validate.readables import ValidateReadablesMixin
 from doctrine._compiler.validate.reviews import ValidateReviewsMixin
 from doctrine._compiler.validate.route_semantics import ValidateRouteSemanticsMixin
 from doctrine._compiler.validate.routes import ValidateRoutesMixin
+from doctrine._compiler.validate.rules import ValidateRulesMixin
 from doctrine._compiler.validate.schema_helpers import ValidateSchemaHelpersMixin
 
 
@@ -35,6 +37,7 @@ class ValidateMixin(
     ValidateReadablesMixin,
     ValidateRoutesMixin,
     ValidateOutputsMixin,
+    ValidateOutputStructureMixin,
     ValidateRouteSemanticsMixin,
     ValidateContractsMixin,
     ValidateDisplayMixin,
@@ -42,6 +45,7 @@ class ValidateMixin(
     ValidateAddressableChildrenMixin,
     ValidateAddressableDisplayMixin,
     ValidateLawPathsMixin,
+    ValidateRulesMixin,
 ):
     """Validation, review, and route helper boundary for CompilationContext."""
 
@@ -279,15 +283,20 @@ class ValidateMixin(
         description = field_schema.get("description")
         if not isinstance(description, str) or not description.strip():
             description = resolved_schema.get("description")
-        if isinstance(description, str) and description.strip():
-            return description.strip()
         enum_values = resolved_schema.get("enum")
+        rendered_enum_line: str | None = None
         if isinstance(enum_values, list) and enum_values:
             rendered_values = [value for value in enum_values if value is not None]
-            if not rendered_values:
-                return ""
-            rendered = ", ".join(f"`{value}`" for value in rendered_values)
-            return f"One of {rendered}."
+            if rendered_values:
+                rendered = ", ".join(f"`{value}`" for value in rendered_values)
+                rendered_enum_line = f"One of {rendered}."
+        if isinstance(description, str) and description.strip():
+            stripped_description = description.strip()
+            if rendered_enum_line is not None:
+                return f"{stripped_description} {rendered_enum_line}"
+            return stripped_description
+        if rendered_enum_line is not None:
+            return rendered_enum_line
         return ""
 
     def _strip_nullable_json_schema(

@@ -157,9 +157,9 @@ class DeclarationTransformerMixin:
 
     def _skill_package_host_contract(
         self,
-        slots: tuple[model.SkillPackageHostSlot, ...],
-    ) -> tuple[model.SkillPackageHostSlot, ...]:
-        seen_keys: dict[str, model.SkillPackageHostSlot] = {}
+        slots: tuple[model.SkillPackageHostSlotItem, ...],
+    ) -> tuple[model.SkillPackageHostSlotItem, ...]:
+        seen_keys: dict[str, model.SkillPackageHostSlotItem] = {}
         for slot in slots:
             existing = seen_keys.get(slot.key)
             if existing is not None:

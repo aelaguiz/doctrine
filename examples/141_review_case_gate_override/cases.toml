@@ -1,0 +1,120 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "review case gates_override lets one contract back two cases with different gate sets"
+status = "active"
+kind = "render_contract"
+agent = "DraftReviewFamilyDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Ship one review contract and split gates per case with override gates.",
+  "",
+  "## Draft Review",
+  "",
+  "Selected review mode: Review Mode.",
+  "",
+  "### Quick Path",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Shared Review Contract.",
+  "",
+  "#### Checks",
+  "",
+  "Accept only if The shared review contract passes.",
+  "",
+  "#### If Accepted",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Accepted quick path draft goes to RevisionOwner.",
+  "",
+  "#### If Rejected",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Rejected quick path draft goes to RevisionOwner.",
+  "",
+  "### Full Path",
+  "",
+  "Review subject: Draft Spec.",
+  "Shared review contract: Shared Review Contract.",
+  "",
+  "#### Checks",
+  "",
+  "Accept only if The shared review contract passes.",
+  "",
+  "#### If Accepted",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Accepted full path draft goes to RevisionOwner.",
+  "",
+  "#### If Rejected",
+  "",
+  "Current artifact: Draft Spec.",
+  "",
+  "Rejected full path draft goes to RevisionOwner.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Spec",
+  "",
+  "- Source: File",
+  "- Path: `draft_root/DRAFT_SPEC.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "### Review Facts",
+  "",
+  "- Source: Prompt",
+  "- Shape: Json Object",
+  "- Requirement: Required",
+  "",
+  "## Outputs",
+  "",
+  "### Selected Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Verdict: State the review verdict.",
+  "- Reviewed Artifact: Name the reviewed artifact this review judged.",
+  "- Analysis Performed: Sum up the review work that led to the verdict.",
+  "- Output Contents That Matter: Sum up the parts of the draft the next owner should read first.",
+  "- Next Owner: Name RevisionOwner as the next owner.",
+  "- Current Artifact: Name the artifact that is current in the selected review mode.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Show this only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "Name the failing review gates in authored order.",
+  "",
+  "#### Trust Surface",
+  "",
+  "- `Current Artifact`",
+]
+
+[[cases]]
+name = "review case override cannot remove a gate the contract never declared"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_remove_missing_gate/AGENTS.prompt"
+agent = "BrokenRemoveDemo"
+exception_type = "CompileError"
+error_code = "E531"
+location_line = 100
+
+[[cases]]
+name = "review case override cannot add a gate name that the contract already declares"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_add_colliding_gate/AGENTS.prompt"
+agent = "BrokenAddDemo"
+exception_type = "CompileError"
+error_code = "E532"
+location_line = 101

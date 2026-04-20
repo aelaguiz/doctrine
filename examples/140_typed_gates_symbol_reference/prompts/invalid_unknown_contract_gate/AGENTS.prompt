@@ -1,0 +1,95 @@
+# This sibling case proves `E477` fires when a review rejects on a
+# `contract.NAME` identity that is not declared on the contract. A typo in a
+# gate symbol is a compile error, not silent drift.
+
+schema BriefReviewContract: "Brief Review Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the reviewed brief."
+
+    gates:
+        audience_named: "Audience Named"
+            "Confirm the reviewed brief names the audience."
+
+        next_action_clear: "Next Action Clear"
+            "Confirm the reviewed brief names the next action."
+
+
+input DraftBrief: "Draft Brief"
+    source: File
+        path: "brief_root/DRAFT_BRIEF.md"
+    shape: MarkdownDocument
+    requirement: Required
+    audience_missing: "Audience Missing"
+    next_action_missing: "Next Action Missing"
+
+
+agent ReviewLead:
+    role: "Own accepted brief follow-up."
+    workflow: "Follow Up"
+        "Take the accepted brief to the next step."
+
+
+agent BriefAuthor:
+    role: "Repair rejected brief defects."
+    workflow: "Revise"
+        "Revise the same brief when review requests changes."
+
+
+output BriefReviewComment: "Brief Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State the review verdict."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "State what the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name {{ReviewLead}} when accepted and {{BriefAuthor}} when rejected."
+
+
+review BriefReview: "Brief Review"
+    subject: DraftBrief
+    contract: BriefReviewContract
+    comment_output: BriefReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        next_owner: next_owner
+
+    contract_gate_checks: "Contract Gate Checks"
+        reject contract.audience_named when DraftBrief.audience_missing
+        # The next line references `contract.next_action_clarity`, but the
+        # contract declared the gate as `next_action_clear`. The compiler
+        # fails loud with E477 on the unresolved symbol.
+        reject contract.next_action_clarity when DraftBrief.next_action_missing
+        accept "The typed review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted brief goes to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected brief goes to BriefAuthor." -> BriefAuthor
+
+
+agent BrokenTypedGateDemo:
+    role: "Prove that a typo in a contract gate reference fails loud with E477."
+    review: BriefReview
+    inputs: "Inputs"
+        DraftBrief
+    outputs: "Outputs"
+        BriefReviewComment

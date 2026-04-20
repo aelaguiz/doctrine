@@ -4,6 +4,7 @@
 .codex/
 /_audit_ledger.md
 /.doc-audit-ledger.md
+/_comment_ledger.md
 .env
 .env.*
 !.env.example
@@ -14,6 +15,10 @@ __pycache__/
 /editors/vscode/node_modules/
 /editors/vscode/.vscode-test/
 /examples/*/build/
+/skills/.curated/
+/.agents/
+/.claude/skills/
+/skills-lock.json
 /editors/vscode/*.vsix
 /repomix-output.md
 /repomix-output.xml

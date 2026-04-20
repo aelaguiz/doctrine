@@ -1,0 +1,26 @@
+output schema RepoStatusSchema: "Repo Status Schema"
+    field status: "Status"
+        type: string
+        enum:
+            ok
+            action_required
+
+
+output shape RepoStatusJson: "Repo Status JSON"
+    kind: JsonObject
+    schema: RepoStatusSchema
+
+
+output RepoStatusFinalResponse: "Repo Status Final Response"
+    target: TurnResponse
+    shape: RepoStatusJson
+    requirement: Required
+
+
+agent InvalidRetiredFormBAgent:
+    role: "Report repo status in structured form."
+    workflow: "Summarize"
+        "Summarize the repo state and end with the declared final output."
+    outputs: "Outputs"
+        RepoStatusFinalResponse
+    final_output: RepoStatusFinalResponse

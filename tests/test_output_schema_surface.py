@@ -119,73 +119,35 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         self.assertIsInstance(child_decl.items[4], model.OutputSchemaField)
         self.assertIsInstance(child_decl.items[5], model.OutputSchemaOverrideExample)
 
-    def test_parser_builds_new_values_nodes_and_keeps_legacy_enum_nodes(self) -> None:
-        prompt = parse_text(
-            textwrap.dedent(
-                """
-            output schema ReviewControlSchema: "Review Control Schema"
+    def test_parser_rejects_retired_inline_enum_forms(self) -> None:
+        # `values:` (Form A values block) and `enum:` (Form B legacy enum
+        # block) are no longer grammar productions under 5.0. Authors
+        # must declare `enum X: "..."` and write `type: X` on the field.
+        form_a_source = textwrap.dedent(
+            """
+            output schema BrokenA: "Broken A"
                 field section_edit: "Section Edit"
                     type: enum
                     values:
                         full_rewrite
                         new_section
-                        existing_section_edit
-
-                field metadata: "Metadata"
-                    type: object
-
-                    field mode: "Mode"
-                        type: enum
-                        values:
-                            auto
-                            manual
-                        nullable
-
+            """
+        )
+        form_b_source = textwrap.dedent(
+            """
+            output schema BrokenB: "Broken B"
                 field legacy_status: "Legacy Status"
                     type: string
                     enum:
                         ok
                         blocked
-                """
-            )
+            """
         )
-
-        self.assertEqual(len(prompt.declarations), 1)
-
-        decl = prompt.declarations[0]
-        self.assertIsInstance(decl, model.OutputSchemaDecl)
-        self.assertEqual(decl.name, "ReviewControlSchema")
-        self.assertEqual([item.key for item in decl.items], ["section_edit", "metadata", "legacy_status"])
-
-        section_edit = decl.items[0]
-        self.assertIsInstance(section_edit, model.OutputSchemaField)
-        self.assertEqual(section_edit.items[0], model.OutputSchemaSetting(key="type", value="enum"))
-        self.assertEqual(
-            section_edit.items[1],
-            model.OutputSchemaValues(
-                values=("full_rewrite", "new_section", "existing_section_edit")
-            ),
-        )
-
-        metadata = decl.items[1]
-        self.assertIsInstance(metadata, model.OutputSchemaField)
-        nested_mode = metadata.items[1]
-        self.assertIsInstance(nested_mode, model.OutputSchemaField)
-        self.assertEqual(nested_mode.key, "mode")
-        self.assertEqual(nested_mode.items[0], model.OutputSchemaSetting(key="type", value="enum"))
-        self.assertEqual(
-            nested_mode.items[1],
-            model.OutputSchemaValues(values=("auto", "manual")),
-        )
-        self.assertEqual(nested_mode.items[2], model.OutputSchemaFlag(key="nullable"))
-
-        legacy_status = decl.items[2]
-        self.assertIsInstance(legacy_status, model.OutputSchemaField)
-        self.assertEqual(legacy_status.items[0], model.OutputSchemaSetting(key="type", value="string"))
-        self.assertEqual(
-            legacy_status.items[1],
-            model.OutputSchemaEnum(values=("ok", "blocked")),
-        )
+        from doctrine.diagnostics import ParseError
+        with self.assertRaises(ParseError):
+            parse_text(form_a_source)
+        with self.assertRaises(ParseError):
+            parse_text(form_b_source)
 
     def test_parser_builds_route_field_nodes_and_route_choices(self) -> None:
         prompt = parse_text(

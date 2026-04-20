@@ -122,10 +122,13 @@ Important rules:
 - `required` and `optional` are retired on this surface. Doctrine still
   parses them there only so it can raise targeted upgrade errors.
 - Doctrine does not ship `?` shorthand for `output schema` fields.
-- For a local closed string vocabulary inside `output schema`, prefer
-  `type: enum` plus `values:`.
-- In the first cut, legacy `type: string` plus `enum:` still compiles, and
-  both forms lower to the same emitted string-enum wire shape.
+- For a closed vocabulary on any field-shaped surface — output-schema
+  fields, `row_schema` / `item_schema` entries, readable table columns,
+  and record scalars — declare `enum X: "..."` once and type the field
+  with `type: X`. The renderer emits a `Valid values: ...` line in
+  declared order under the typed field; the JSON-schema lowering path
+  emits the same members as `enum`. Typing against an unknown name
+  fails loud with `E320`.
 - Doctrine `schema` declarations may now own reusable `sections:`, optional
   `gates:`, first-class `artifacts:`, and reusable `groups:`.
 - Output-attached schemas must still expose at least one section even when the
@@ -212,15 +215,22 @@ final_output:
 - If that `output schema` omits `example:`, Doctrine still emits the payload
   contract and simply skips the `Example` section.
 
-Preferred local inline enum form:
+Canonical form for a closed field vocabulary:
 
 ```prompt
+enum Route: "Route"
+    follow_up: "Follow Up"
+    revise: "Revise"
+
 field route: "Route"
-    type: enum
-    values:
-        follow_up
-        revise
+    type: Route
 ```
+
+The same `type: <EnumName>` form types a `row_schema` or `item_schema`
+entry, a readable table column, or a record scalar. Every typed field
+renders the same `Valid values: follow_up, revise.` line in declared
+order. See [../examples/139_enum_typed_field_bodies/](../examples/139_enum_typed_field_bodies/)
+for the canonical form on a `row_schema` entry.
 
 Nullable field example:
 

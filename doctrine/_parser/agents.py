@@ -49,6 +49,23 @@ class AgentTransformerMixin:
     def review_field(self, meta, ref):
         return _with_source_span(model.ReviewField(value=ref), meta)
 
+    @v_args(meta=True)
+    def agent_selectors_field(self, meta, items):
+        return _with_source_span(
+            model.SelectorsField(bindings=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def agent_selector_stmt(self, meta, selector_name, enum_member_ref):
+        return _with_source_span(
+            model.AgentSelectorBinding(
+                selector_name=selector_name,
+                enum_member_ref=enum_member_ref,
+            ),
+            meta,
+        )
+
     @v_args(meta=True, inline=True)
     def final_output_field(self, meta, ref_or_body):
         if isinstance(ref_or_body, FinalOutputBodyParts):

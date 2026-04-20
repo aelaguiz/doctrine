@@ -26,6 +26,34 @@ from doctrine._parser.parts import (
 from doctrine.diagnostics import TransformParseFailure
 
 
+def _split_record_scalar_body(
+    body, *, key: str
+):
+    """Split a record scalar-head body into non-type items and a `type:` name.
+
+    The grammar permits a `type:` line only inside the scalar-head record
+    body (`record_keyed_scalar_body`). Every field-shaped body in the
+    language routes `type:` through `resolve_field_type_ref`.
+    """
+    if body is None:
+        return None, None, None
+    remaining: list = []
+    type_name: str | None = None
+    type_source_span: model.SourceSpan | None = None
+    for item in body:
+        if isinstance(item, model.OutputSchemaSetting) and item.key == "type":
+            if type_name is not None:
+                raise TransformParseFailure(
+                    f"Duplicate `type:` line in record field `{key}` body.",
+                    hints=("Declare `type:` at most once per field.",),
+                )
+            type_name = item.value
+            type_source_span = item.source_span
+            continue
+        remaining.append(item)
+    return remaining, type_name, type_source_span
+
+
 class SkillsTransformerMixin:
     """Shared skills, records, skill package, and enum lowering."""
 
@@ -138,12 +166,14 @@ class SkillsTransformerMixin:
     def skill_entry(self, meta, key, target, body=None):
         items = tuple() if body is None else body.items
         binds = tuple() if body is None else body.binds
+        mode = None if body is None else body.mode
         return _with_source_span(
             model.SkillEntry(
                 key=key,
                 target=target,
                 items=items,
                 binds=binds,
+                mode=mode,
             ),
             meta,
         )
@@ -160,12 +190,14 @@ class SkillsTransformerMixin:
     def skills_override_entry(self, meta, key, target, body=None):
         items = tuple() if body is None else body.items
         binds = tuple() if body is None else body.binds
+        mode = None if body is None else body.mode
         return _with_source_span(
             model.OverrideSkillEntry(
                 key=key,
                 target=target,
                 items=items,
                 binds=binds,
+                mode=mode,
             ),
             meta,
         )
@@ -216,6 +248,7 @@ class SkillsTransformerMixin:
     def skill_entry_body(self, items):
         record_items: list[model.RecordItem] = []
         binds: tuple[model.SkillEntryBind, ...] = ()
+        mode: model.ModeStmt | None = None
         seen_bind = False
         for item in items:
             if isinstance(item, SkillEntryBindBlockPart):
@@ -229,8 +262,20 @@ class SkillsTransformerMixin:
                 binds = self._skill_entry_binds(item.binds)
                 seen_bind = True
                 continue
+            if isinstance(item, model.ModeStmt):
+                if mode is not None:
+                    line = item.source_span.line if item.source_span is not None else None
+                    column = item.source_span.column if item.source_span is not None else None
+                    raise TransformParseFailure(
+                        "Skill entries may declare `mode` only once.",
+                        hints=("Keep exactly one `mode <CNAME> = <expr> as <Enum>` line per skill entry.",),
+                        line=line,
+                        column=column,
+                    )
+                mode = item
+                continue
             record_items.append(item)
-        return SkillEntryBodyParts(items=tuple(record_items), binds=binds)
+        return SkillEntryBodyParts(items=tuple(record_items), binds=binds, mode=mode)
 
     @v_args(inline=True)
     def skill_entry_body_line(self, value):
@@ -240,7 +285,7 @@ class SkillsTransformerMixin:
         record_items: list[model.RecordItem] = []
         metadata = model.SkillPackageMetadata()
         emit_entries: tuple[model.SkillPackageEmitEntry, ...] = ()
-        host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+        host_contract: tuple[model.SkillPackageHostSlotItem, ...] = ()
         seen_metadata = False
         seen_emit = False
         seen_host_contract = False
@@ -341,6 +386,41 @@ class SkillsTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True, inline=True)
+    def package_host_receipt_slot(self, meta, key, title, fields=None):
+        field_tuple: tuple[model.ReceiptField, ...] = (
+            tuple(fields) if fields is not None else ()
+        )
+        return _with_source_span(
+            model.ReceiptHostSlot(key=key, title=title, fields=field_tuple),
+            meta,
+        )
+
+    def receipt_slot_body(self, items):
+        return tuple(items)
+
+    @v_args(meta=True, inline=True)
+    def receipt_field(self, meta, key, type_value):
+        type_ref, list_element = type_value
+        return _with_source_span(
+            model.ReceiptField(
+                key=key,
+                type_ref=type_ref,
+                list_element=list_element,
+            ),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def receipt_field_type(self, value):
+        if isinstance(value, tuple):
+            return value
+        return (value, False)
+
+    @v_args(inline=True)
+    def receipt_field_list_type(self, name_ref):
+        return (name_ref, True)
+
     def package_host_slot_family_input(self, _children):
         return "input"
 
@@ -406,15 +486,47 @@ class SkillsTransformerMixin:
     def record_item_body(self, items):
         return tuple(items[0])
 
+    def record_keyed_scalar_body(self, items):
+        # Grammar: `_INDENT record_keyed_scalar_body_line+ _DEDENT`
+        # Each line is either an `OutputSchemaSetting(key="type")` or a
+        # record_item. We pass the whole list through; the item handler
+        # splits the `type:` line off into `type_name` + `type_source_span`.
+        return tuple(items)
+
     @v_args(meta=True, inline=True)
-    def record_keyed_item(self, meta, key, head, body=None):
-        if isinstance(head, str) and body is not None:
+    def record_keyed_scalar_item(self, meta, key, head, body=None):
+        body_items, type_name, type_source_span = _split_record_scalar_body(
+            body, key=key
+        )
+        if type_name is None and body_items is not None and body_items:
             return _with_source_span(
-                model.RecordSection(key=key, title=head, items=tuple(body)),
+                model.RecordSection(key=key, title=head, items=tuple(body_items)),
                 meta,
             )
+        scalar_body: tuple | None
+        if body_items:
+            scalar_body = tuple(body_items)
+        else:
+            scalar_body = None
         return _with_source_span(
-            model.RecordScalar(key=key, value=head, body=None if body is None else tuple(body)),
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=scalar_body,
+                type_name=type_name,
+                type_source_span=type_source_span,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def record_keyed_ref_item(self, meta, key, head, body=None):
+        return _with_source_span(
+            model.RecordScalar(
+                key=key,
+                value=head,
+                body=None if body is None else tuple(body),
+            ),
             meta,
         )
 

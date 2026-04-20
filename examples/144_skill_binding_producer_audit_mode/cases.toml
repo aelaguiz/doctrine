@@ -1,0 +1,74 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "producer-mode skill binding renders the shared package home"
+status = "active"
+kind = "render_contract"
+agent = "ProducerAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the shared skill in producer mode.",
+  "",
+  "## Skills",
+  "",
+  "### Shared Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Run the shared producer/audit package.",
+]
+
+[[cases]]
+name = "audit-mode skill binding renders the shared package home"
+status = "active"
+kind = "render_contract"
+agent = "AuditorAgent"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the shared skill in audit mode.",
+  "",
+  "## Skills",
+  "",
+  "### Shared Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Run the shared producer/audit package.",
+]
+
+[[cases]]
+name = "skill binding mode tagged with an undeclared enum emits E540"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_mode_enum_missing/AGENTS.prompt"
+agent = "ProducerAgent"
+exception_type = "CompileError"
+error_code = "E540"
+
+[[cases]]
+name = "skill binding mode that is not a member of the enum emits E542"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_mode_not_in_enum/AGENTS.prompt"
+agent = "ProducerAgent"
+exception_type = "CompileError"
+error_code = "E542"
+
+[[cases]]
+name = "audit-mode skill binding that emits to a final_output slot emits E541"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_audit_mode_output_bind/AGENTS.prompt"
+agent = "AuditorAgent"
+exception_type = "CompileError"
+error_code = "E541"
+
+[[cases]]
+name = "deprecated enum-only output-shape selector form emits E543"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_enum_only_selector/AGENTS.prompt"
+agent = "WriterDemo"
+exception_type = "CompileError"
+error_code = "E543"

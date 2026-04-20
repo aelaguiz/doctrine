@@ -7,7 +7,9 @@ from doctrine.renderer import render_markdown
 
 from doctrine._diagnostic_smoke.fixtures import (
     SmokeFailure,
+    _abstract_slot_annotation_unresolved_source,
     _analysis_attachment_source,
+    _concrete_agent_wrong_family_binding_source,
     _expect,
     _final_output_file_target_source,
     _final_output_json_source,
@@ -21,8 +23,23 @@ from doctrine._diagnostic_smoke.fixtures import (
     _output_schema_attachment_source,
     _output_schema_owner_conflict_source,
     _output_schema_structure_conflict_source,
+    _output_shape_enum_only_selector_source,
+    _output_target_typed_as_family_mismatch_source,
+    _output_target_typed_as_unsupported_kind_source,
     _reserved_analysis_slot_source,
+    _rule_forbids_bind_violated_source,
+    _rule_requires_declare_violated_source,
+    _rule_requires_inherit_violated_source,
+    _rule_unknown_assertion_target_source,
+    _rule_unknown_scope_target_source,
+    _skill_binding_mode_audit_output_bind_source,
+    _skill_binding_mode_enum_missing_source,
+    _skill_binding_mode_not_in_enum_source,
     _write_prompt,
+)
+from doctrine._diagnostic_smoke.fixtures_reviews import (
+    _review_case_gate_override_add_collision_source,
+    _review_case_gate_override_remove_missing_source,
 )
 
 
@@ -71,6 +88,21 @@ def run_compile_checks() -> None:
     _check_readable_table_requires_columns()
     _check_output_schema_owner_conflict_surfaces_as_parse_error()
     _check_output_schema_structure_conflict_surfaces_as_parse_error()
+    _check_review_case_gate_override_remove_missing_has_specific_code()
+    _check_review_case_gate_override_add_collision_has_specific_code()
+    _check_output_target_typed_as_unsupported_kind_emits_e533()
+    _check_output_target_typed_as_family_mismatch_emits_e534()
+    _check_skill_binding_mode_enum_missing_emits_e540()
+    _check_skill_binding_mode_audit_output_bind_emits_e541()
+    _check_skill_binding_mode_not_in_enum_emits_e542()
+    _check_output_shape_enum_only_selector_emits_e543()
+    _check_concrete_agent_wrong_family_binding_emits_e538()
+    _check_abstract_slot_annotation_unresolved_emits_e539()
+    _check_rule_unknown_scope_target_emits_rule001()
+    _check_rule_unknown_assertion_target_emits_rule002()
+    _check_rule_requires_inherit_violated_emits_rule003()
+    _check_rule_forbids_bind_violated_emits_rule004()
+    _check_rule_requires_declare_violated_emits_rule005()
 
 
 def _check_compile_missing_role_has_specific_code() -> None:
@@ -151,11 +183,10 @@ def _check_final_output_invalid_lowered_schema_has_specific_code() -> None:
             compile_prompt(prompt, "RepoStatusAgent")
         except Exception as exc:
             _expect(type(exc).__name__ == "CompileError", f"expected CompileError, got {type(exc).__name__}")
-            _expect(getattr(exc, "code", None) == "E217", f"expected E217, got {getattr(exc, 'code', None)}")
-            _expect("Draft 2020-12" in str(exc), str(exc))
-            _expect("output schema RepoStatusSchema" in str(exc), str(exc))
+            _expect(getattr(exc, "code", None) == "E320", f"expected E320, got {getattr(exc, 'code', None)}")
+            _expect("definitely_not_a_real_json_schema_type" in str(exc), str(exc))
             return
-        raise SmokeFailure("expected compile failure for invalid lowered final_output schema, but compilation succeeded")
+        raise SmokeFailure("expected compile failure for unknown output-schema `type:` name, but compilation succeeded")
 
 
 def _check_final_output_excessive_nesting_has_specific_code() -> None:
@@ -363,6 +394,36 @@ def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
         raise SmokeFailure("expected parse failure for output schema owner conflict, but parsing succeeded")
 
 
+def _check_review_case_gate_override_remove_missing_has_specific_code() -> None:
+    source = _review_case_gate_override_remove_missing_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "SelectedReviewFamilyDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E531", line=88)
+            return
+        raise SmokeFailure(
+            "expected compile failure for review case override removing an undeclared gate, but compilation succeeded"
+        )
+
+
+def _check_review_case_gate_override_add_collision_has_specific_code() -> None:
+    source = _review_case_gate_override_add_collision_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "SelectedReviewFamilyDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E532", line=89)
+            return
+        raise SmokeFailure(
+            "expected compile failure for review case override adding a colliding gate, but compilation succeeded"
+        )
+
+
 def _check_output_schema_structure_conflict_surfaces_as_parse_error() -> None:
     source = _output_schema_structure_conflict_source()
     with TemporaryDirectory() as tmp_dir:
@@ -376,3 +437,233 @@ def _check_output_schema_structure_conflict_surfaces_as_parse_error() -> None:
             _expect("structure" in str(exc), str(exc))
             return
         raise SmokeFailure("expected parse failure for output schema and structure conflict, but parsing succeeded")
+
+
+def _check_output_target_typed_as_unsupported_kind_emits_e533() -> None:
+    source = _output_target_typed_as_unsupported_kind_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "StrayHandoffDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E533", line=6)
+            return
+        raise SmokeFailure(
+            "expected compile failure for typed_as referencing a non-document/schema/table entity, but compilation succeeded"
+        )
+
+
+def _check_output_target_typed_as_family_mismatch_emits_e534() -> None:
+    source = _output_target_typed_as_family_mismatch_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "MismatchedHandoffDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E534", line=16)
+            return
+        raise SmokeFailure(
+            "expected compile failure for output family mismatch with typed_as, but compilation succeeded"
+        )
+
+
+def _check_skill_binding_mode_enum_missing_emits_e540() -> None:
+    source = _skill_binding_mode_enum_missing_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ProducerAgent")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E540", line=22)
+            return
+        raise SmokeFailure(
+            "expected compile failure for skill-binding mode referencing an undeclared enum, but compilation succeeded"
+        )
+
+
+def _check_skill_binding_mode_audit_output_bind_emits_e541() -> None:
+    source = _skill_binding_mode_audit_output_bind_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "AuditorAgent")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E541", line=33)
+            return
+        raise SmokeFailure(
+            "expected compile failure for audit-mode skill binding that emits to a final_output slot, but compilation succeeded"
+        )
+
+
+def _check_skill_binding_mode_not_in_enum_emits_e542() -> None:
+    source = _skill_binding_mode_not_in_enum_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "ProducerAgent")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E542", line=22)
+            return
+        raise SmokeFailure(
+            "expected compile failure for skill-binding mode that is not a member of the enum, but compilation succeeded"
+        )
+
+
+def _check_output_shape_enum_only_selector_emits_e543() -> None:
+    source = _output_shape_enum_only_selector_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "WriterDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E543", line=19)
+            return
+        raise SmokeFailure(
+            "expected compile failure for deprecated enum-only output-shape selector form, but compilation succeeded"
+        )
+
+
+def _check_concrete_agent_wrong_family_binding_emits_e538() -> None:
+    source = _concrete_agent_wrong_family_binding_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "TypedPolicyConcrete")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E538", line=17)
+            return
+        raise SmokeFailure(
+            "expected compile failure for concrete agent binding typed abstract slot to a wrong-family entity, but compilation succeeded"
+        )
+
+
+def _check_abstract_slot_annotation_unresolved_emits_e539() -> None:
+    source = _abstract_slot_annotation_unresolved_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "TypedPolicyConcrete")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E539", line=2)
+            return
+        raise SmokeFailure(
+            "expected compile failure for typed abstract slot annotation referencing an unknown entity, but compilation succeeded"
+        )
+
+
+def _check_rule_unknown_scope_target_emits_rule001() -> None:
+    source = _rule_unknown_scope_target_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "DemoComposer")
+        except Exception as exc:
+            _expect(
+                type(exc).__name__ == "CompileError",
+                f"expected CompileError, got {type(exc).__name__}",
+            )
+            _expect(
+                getattr(exc, "code", None) == "RULE001",
+                f"expected RULE001, got {getattr(exc, 'code', None)}",
+            )
+            return
+        raise SmokeFailure(
+            "expected compile failure for rule scope referencing an unknown agent, but compilation succeeded"
+        )
+
+
+def _check_rule_unknown_assertion_target_emits_rule002() -> None:
+    source = _rule_unknown_assertion_target_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "DemoComposer")
+        except Exception as exc:
+            _expect(
+                type(exc).__name__ == "CompileError",
+                f"expected CompileError, got {type(exc).__name__}",
+            )
+            _expect(
+                getattr(exc, "code", None) == "RULE002",
+                f"expected RULE002, got {getattr(exc, 'code', None)}",
+            )
+            return
+        raise SmokeFailure(
+            "expected compile failure for rule assertion referencing an unknown agent, but compilation succeeded"
+        )
+
+
+def _check_rule_requires_inherit_violated_emits_rule003() -> None:
+    source = _rule_requires_inherit_violated_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "HonestComposer")
+        except Exception as exc:
+            _expect(
+                type(exc).__name__ == "CompileError",
+                f"expected CompileError, got {type(exc).__name__}",
+            )
+            _expect(
+                getattr(exc, "code", None) == "RULE003",
+                f"expected RULE003, got {getattr(exc, 'code', None)}",
+            )
+            return
+        raise SmokeFailure(
+            "expected compile failure for scoped agent missing required inheritance, but compilation succeeded"
+        )
+
+
+def _check_rule_forbids_bind_violated_emits_rule004() -> None:
+    source = _rule_forbids_bind_violated_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "BadComposer")
+        except Exception as exc:
+            _expect(
+                type(exc).__name__ == "CompileError",
+                f"expected CompileError, got {type(exc).__name__}",
+            )
+            _expect(
+                getattr(exc, "code", None) == "RULE004",
+                f"expected RULE004, got {getattr(exc, 'code', None)}",
+            )
+            return
+        raise SmokeFailure(
+            "expected compile failure for scoped agent binding a forbidden ancestor, but compilation succeeded"
+        )
+
+
+def _check_rule_requires_declare_violated_emits_rule005() -> None:
+    source = _rule_requires_declare_violated_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "PlainComposer")
+        except Exception as exc:
+            _expect(
+                type(exc).__name__ == "CompileError",
+                f"expected CompileError, got {type(exc).__name__}",
+            )
+            _expect(
+                getattr(exc, "code", None) == "RULE005",
+                f"expected RULE005, got {getattr(exc, 'code', None)}",
+            )
+            return
+        raise SmokeFailure(
+            "expected compile failure for scoped agent missing required slot declaration, but compilation succeeded"
+        )

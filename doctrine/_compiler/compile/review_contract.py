@@ -153,14 +153,37 @@ class CompileReviewContractMixin:
                     ),
                 )
             if final_output_key == comment_output_key:
-                if authored_review_fields is not None:
-                    self._invalid_final_output_review_fields(
-                        agent_name=agent.name,
-                        unit=unit,
-                        source_span=final_output_field.source_span,
-                        detail="review_fields may appear only on split final responses",
-                    )
                 final_mode = "carrier"
+                if authored_review_fields is not None:
+                    # Carrier-mode review_fields validate against the single
+                    # carrier output. The author opts in by writing
+                    # review_fields:; the compiler validates the bindings just
+                    # as it does in split mode. Control-readiness stays True
+                    # because the carrier is always the final response.
+                    final_response_fields = self._validate_review_field_bindings(
+                        authored_review_fields,
+                        field_binding_unit=unit,
+                        output_decl=final_output_decl,
+                        output_unit=final_output_unit,
+                        owner_label=f"agent {agent.name} final_output.review_fields",
+                        require_core_fields=False,
+                        require_blocked_gate=False,
+                        require_active_mode=False,
+                        require_trigger_reason=False,
+                    )
+                    final_response_field_spans = self._review_field_binding_source_spans(
+                        authored_review_fields
+                    )
+                    self._validate_review_semantic_output_bindings(
+                        all_branches,
+                        review_unit=review_unit,
+                        field_binding_unit=unit,
+                        output_decl=final_output_decl,
+                        output_unit=final_output_unit,
+                        field_bindings=final_response_fields,
+                        field_binding_spans=final_response_field_spans,
+                        owner_label=f"agent {agent.name} final_output.review_fields",
+                    )
                 control_ready = True
             else:
                 final_mode = "split"

@@ -6,6 +6,7 @@ from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.law import IgnoreStmt, PreserveStmt, SupportOnlyStmt
+from doctrine._model.schema import SchemaGate
 
 
 @_dataclass(slots=True, frozen=True)
@@ -253,6 +254,14 @@ class ReviewOverrideOutcomeSection:
 
 
 @_dataclass(slots=True, frozen=True)
+class ReviewCaseGatesOverride:
+    add: tuple[SchemaGate, ...] = ()
+    remove: tuple[str, ...] = ()
+    modify: tuple[SchemaGate, ...] = ()
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class ReviewCase:
     key: str
     title: str
@@ -262,6 +271,7 @@ class ReviewCase:
     checks: tuple[ReviewPreOutcomeStmt, ...]
     on_accept: ReviewOutcomeSection
     on_reject: ReviewOutcomeSection
+    gates_override: ReviewCaseGatesOverride | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

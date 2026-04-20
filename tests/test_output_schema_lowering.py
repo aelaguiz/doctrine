@@ -8,7 +8,7 @@ from pathlib import Path
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.session import CompilationSession
-from doctrine.diagnostics import CompileError
+from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.parser import parse_file
 
 
@@ -57,6 +57,10 @@ class OutputSchemaLoweringTests(unittest.TestCase):
     def test_lowerer_handles_inheritance_defs_recursion_and_nullable_fields(self) -> None:
         decl, lowered = self._lower_output_schema(
             """
+            enum StatusVocabulary: "Status Vocabulary"
+                ok: "OK"
+                blocked: "Blocked"
+
             output schema BasePayload: "Base Payload"
                 field kind: "Kind"
                     type: string
@@ -92,10 +96,7 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 inherit Node
 
                 field status: "Status"
-                    type: enum
-                    values:
-                        ok
-                        blocked
+                    type: StatusVocabulary
                     nullable
                     note: "Current status."
 
@@ -221,35 +222,23 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             },
         )
 
-    def test_legacy_string_enum_form_lowers_like_new_inline_enum_values_form(self) -> None:
-        _, new_lowered = self._lower_output_schema(
+    def test_canonical_enum_decl_lowers_to_string_enum_union(self) -> None:
+        _, lowered = self._lower_output_schema(
             """
+            enum StatusVocabulary: "Status Vocabulary"
+                ok: "OK"
+                blocked: "Blocked"
+
             output schema StatusPayload: "Status Payload"
                 field status: "Status"
-                    type: enum
-                    values:
-                        ok
-                        blocked
-                    nullable
-            """,
-            schema_name="StatusPayload",
-        )
-        _, legacy_lowered = self._lower_output_schema(
-            """
-            output schema StatusPayload: "Status Payload"
-                field status: "Status"
-                    type: string
-                    enum:
-                        ok
-                        blocked
+                    type: StatusVocabulary
                     nullable
             """,
             schema_name="StatusPayload",
         )
 
-        self.assertEqual(new_lowered, legacy_lowered)
         self.assertEqual(
-            new_lowered["properties"]["status"],
+            lowered["properties"]["status"],
             {
                 "title": "Status",
                 "type": ["string", "null"],
@@ -257,66 +246,57 @@ class OutputSchemaLoweringTests(unittest.TestCase):
             },
         )
 
-    def test_malformed_inline_enum_forms_fail_loud(self) -> None:
+    def test_retired_inline_enum_forms_no_longer_parse(self) -> None:
         cases = (
             (
-                "missing_values",
+                "form_a_type_enum",
                 """
                 output schema BrokenPayload: "Broken Payload"
                     field status: "Status"
                         type: enum
-                """,
-                "E227",
-                "missing `values:`",
-            ),
-            (
-                "values_without_type_enum",
-                """
-                output schema BrokenPayload: "Broken Payload"
-                    field status: "Status"
                         values:
                             ok
                             blocked
                 """,
-                "E228",
-                "`values:` requires `type: enum`",
             ),
             (
-                "string_type_with_values",
+                "form_b_type_string_enum_block",
                 """
                 output schema BrokenPayload: "Broken Payload"
                     field status: "Status"
                         type: string
-                        values:
-                            ok
-                            blocked
-                """,
-                "E228",
-                "`values:` requires `type: enum`",
-            ),
-            (
-                "enum_type_with_legacy_enum_block",
-                """
-                output schema BrokenPayload: "Broken Payload"
-                    field status: "Status"
-                        type: enum
                         enum:
                             ok
                             blocked
                 """,
-                "E229",
-                "cannot be mixed",
+            ),
+            (
+                "bare_values_block",
+                """
+                output schema BrokenPayload: "Broken Payload"
+                    field status: "Status"
+                        values:
+                            ok
+                            blocked
+                """,
             ),
         )
 
-        for case_name, source, expected_code, expected_text in cases:
+        for case_name, source in cases:
             with self.subTest(case=case_name):
-                error = self._lower_output_schema_error(
-                    source,
-                    schema_name="BrokenPayload",
+                with self.assertRaises(DoctrineError) as ctx:
+                    self._lower_output_schema(
+                        source,
+                        schema_name="BrokenPayload",
+                    )
+                # Form A (`type: enum`) raises E320 — `enum` is neither a
+                # builtin nor a declared enum. Form B and bare `values:`
+                # fail at parse time because their grammar productions no
+                # longer exist.
+                self.assertIn(
+                    ctx.exception.diagnostic.code,
+                    {"E320", "E101"},
                 )
-                self.assertEqual(error.code, expected_code)
-                self.assertIn(expected_text, str(error))
 
     def test_route_field_lowers_to_string_enum_wire_shape(self) -> None:
         _decl, lowered = self._lower_output_schema(
@@ -476,6 +456,115 @@ class OutputSchemaLoweringTests(unittest.TestCase):
                 )
                 self.assertEqual(error.code, expected_code)
                 self.assertIn(expected_text, str(error))
+
+    def test_type_naming_local_enum_lowers_to_string_with_member_keys(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            enum RepoStatus: "Repo Status"
+                ok: "OK"
+                action_required: "Action Required"
+
+            output schema StatusPayload: "Status Payload"
+                field status: "Status"
+                    type: RepoStatus
+                    note: "Current outcome."
+            """,
+            schema_name="StatusPayload",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["status"],
+            {
+                "title": "Status",
+                "description": "Current outcome.",
+                "type": "string",
+                "enum": ["ok", "action_required"],
+            },
+        )
+
+    def test_type_naming_enum_in_def_and_field_produces_canonical_shape(self) -> None:
+        _decl, lowered = self._lower_output_schema(
+            """
+            enum StepRole: "Step Role"
+                introduce: "Introduce"
+                practice: "Practice"
+
+            output schema LessonPayload: "Lesson Payload"
+                field step_role: "Step Role"
+                    type: StepRole
+
+                def StepRoleDef: "Step Role Def"
+                    type: StepRole
+            """,
+            schema_name="LessonPayload",
+        )
+
+        self.assertEqual(
+            lowered["properties"]["step_role"],
+            {
+                "title": "Step Role",
+                "type": "string",
+                "enum": ["introduce", "practice"],
+            },
+        )
+        self.assertEqual(
+            lowered["$defs"]["StepRoleDef"],
+            {
+                "title": "Step Role Def",
+                "type": "string",
+                "enum": ["introduce", "practice"],
+            },
+        )
+
+    def test_type_naming_unknown_cname_raises_e320(self) -> None:
+        error = self._lower_output_schema_error(
+            """
+            output schema BrokenPayload: "Broken Payload"
+                field status: "Status"
+                    type: NotADeclaredName
+            """,
+            schema_name="BrokenPayload",
+        )
+        self.assertEqual(error.code, "E320")
+        self.assertIn("NotADeclaredName", str(error))
+
+    def test_type_naming_non_enum_decl_raises_e320(self) -> None:
+        # A bare CNAME that happens to name an existing output-schema decl is
+        # not an enum; the helper must still raise E320 rather than silently
+        # writing {"type": "AnotherSchema"}.
+        error = self._lower_output_schema_error(
+            """
+            output schema AnotherSchema: "Another Schema"
+                field inner: "Inner"
+                    type: string
+
+            output schema BrokenPayload: "Broken Payload"
+                field status: "Status"
+                    type: AnotherSchema
+            """,
+            schema_name="BrokenPayload",
+        )
+        self.assertEqual(error.code, "E320")
+        self.assertIn("AnotherSchema", str(error))
+
+    def test_canonical_enum_form_lowers_to_string_type_with_enum_list(self) -> None:
+        _, lowered = self._lower_output_schema(
+            """
+            enum RepoStatus: "Repo Status"
+                ok: "OK"
+                action_required: "Action Required"
+
+            output schema Payload: "Payload"
+                field status: "Status"
+                    type: RepoStatus
+            """,
+            schema_name="Payload",
+        )
+        self.assertEqual(lowered["properties"]["status"]["type"], "string")
+        self.assertEqual(
+            lowered["properties"]["status"]["enum"],
+            ["ok", "action_required"],
+        )
 
 
 if __name__ == "__main__":

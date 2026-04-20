@@ -1,3 +1,41 @@
+"""Public error types and diagnostic rendering for Doctrine.
+
+Stage labels. Every diagnostic carries a `stage` string set by the raising
+subclass:
+
+    ParseError    -> "parse"    (fallback code E199)
+    CompileError  -> "compile"  (fallback code E299)
+    EmitError     -> "emit"     (fallback code E599)
+    DoctrineError -> "runtime"  (fallback code E999)
+
+Code bands. Code bands are authoritative in `docs/COMPILER_ERRORS.md` and
+are wider than the fallback first-digit would suggest:
+
+    E001-E099   reserved language-rule errors (E001/E002/E003 have pinned meanings)
+    E100-E199   parse
+    E200-E468   semantic compile
+    E469-E500   review-specific parse + compile
+    E501-E699   emit / build-target
+    E900-E999   internal bugs or invariant failures
+
+Stage and band do not always map one-to-one. Some parser-transform failures
+are raised as `ParseError` (stage="parse") but carry codes in the compile
+band — e.g. `E309` on malformed grouped `inherit` is raised by
+`ParseError.from_transform` via `TransformParseFailure`. Treat the code
+catalog as the source of truth for the band; the stage records *where* in
+the pipeline the failure was raised.
+
+Adding a new subclass. Set both `stage` and `fallback_code` at class
+definition time. A missing `fallback_code` inherits `DoctrineError`'s
+`E999`, which silently lands the diagnostic in the runtime bucket regardless
+of what the subclass actually represents.
+
+`DoctrineDiagnostic` (from `_diagnostics.contracts`) is the immutable wire
+shape: `(code, stage, summary, detail, location, excerpt, caret_column,
+related, hints, trace, cause)`. `DoctrineError` wraps one and adds the
+`prepend_trace` / `ensure_location` mutators for compile-path enrichment.
+"""
+
 from __future__ import annotations
 
 import tomllib
@@ -104,6 +142,12 @@ def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -
 
 
 class DoctrineError(RuntimeError):
+    """Base for every Doctrine diagnostic. Owns the runtime (E9xx) bucket.
+
+    Subclasses override `stage` and `fallback_code` to claim their bucket.
+    Raising `DoctrineError` directly means "no stage fits" and lands in E9xx.
+    """
+
     stage = "runtime"
     fallback_code = "E999"
     fallback_summary = "Unexpected Doctrine error"
@@ -242,6 +286,17 @@ class DoctrineError(RuntimeError):
 
 
 class ParseError(DoctrineError):
+    """Parse-stage diagnostic (E1xx). Raised only from `doctrine.parser`.
+
+    Two construction paths:
+      - `from_lark`: lexer / parser failure (UnexpectedCharacters -> E102,
+        UnexpectedEOF -> E103, UnexpectedToken -> classified by
+        `_classify_unexpected_token`, anything else -> E199).
+      - `from_transform`: post-parse transform failure. `TransformParseFailure`
+        carries its own (code, summary, hints); invalid string literals map to
+        E106; everything else defaults to E105.
+    """
+
     stage = "parse"
     fallback_code = "E199"
     fallback_summary = "Parse failure"
@@ -336,12 +391,29 @@ class ParseError(DoctrineError):
 
 
 class CompileError(DoctrineError):
+    """Compile-stage diagnostic. Raised from `doctrine/_compiler/**`.
+
+    Every compile-path raise should supply an explicit code via `from_parts`;
+    E299 is only the "author forgot a code" fallback, not a design intent.
+    Codes span the E200-E468 compile band (plus E469-E500 for review-specific
+    checks and E900-E999 for invariant failures); see `docs/COMPILER_ERRORS.md`.
+    """
+
     stage = "compile"
     fallback_code = "E299"
     fallback_summary = "Compile failure"
 
 
 class EmitError(DoctrineError):
+    """Emit-stage diagnostic. Raised from the three emit pipelines.
+
+    Codes sit in the E501-E699 emit / build-target band.
+    `from_toml_decode` is the dedicated constructor for `tomllib` failures on
+    emit-config (`pyproject.toml [tool.doctrine.emit]`); it always emits E506
+    with a caret anchored at the TOML decode position. Other emit errors use
+    the generic `from_parts` path with an explicit code.
+    """
+
     stage = "emit"
     fallback_code = "E599"
     fallback_summary = "Emit failure"

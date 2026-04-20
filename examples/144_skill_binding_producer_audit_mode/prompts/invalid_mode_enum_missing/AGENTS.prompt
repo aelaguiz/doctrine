@@ -1,0 +1,15 @@
+enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+skill SharedSkill: "Shared Skill"
+    purpose: "Run the shared producer/audit package."
+    package: "shared-skill-package"
+
+
+agent ProducerAgent:
+    role: "Tag the skill binding with an undeclared enum."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode producer = SkillMode.producer as MissingEnum

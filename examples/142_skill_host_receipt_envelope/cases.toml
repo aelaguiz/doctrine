@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "receipt-bearing skill package renders with host contract receipt slot"
+status = "active"
+kind = "render_contract"
+agent = "ProducerDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the producer package and emit its typed receipt envelope.",
+  "",
+  "## Skills",
+  "",
+  "### Producer Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Produce a typed receipt envelope.",
+]
+
+[[cases]]
+name = "receipt-bearing package emits typed host_contract fields in its build contract"
+status = "active"
+kind = "build_contract"
+build_target = "example_142_skill_host_receipt_envelope"
+
+[[cases]]
+name = "receipt slot declared without fields fails with E535"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_empty_receipt/AGENTS.prompt"
+agent = "ProducerDemo"
+exception_type = "CompileError"
+error_code = "E535"
+
+[[cases]]
+name = "receipt field type that is not a declared entity fails with E537"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_bad_receipt_type/AGENTS.prompt"
+agent = "ProducerDemo"
+exception_type = "CompileError"
+error_code = "E537"

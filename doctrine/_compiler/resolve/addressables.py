@@ -708,6 +708,29 @@ class ResolveAddressablesMixin:
                 )
             next_node = children.get(segment)
             if next_node is None:
+                from doctrine._compiler.resolved_types import ReceiptBindingTarget
+
+                if isinstance(current.target, ReceiptBindingTarget):
+                    known = ", ".join(
+                        sorted(field.key for field in current.target.slot.fields)
+                    ) or "(none)"
+                    raise reference_compile_error(
+                        code="E536",
+                        summary="Receipt field reference does not resolve",
+                        detail=(
+                            f"Receipt field reference does not resolve on "
+                            f"{surface_label} in {owner_label}: {ref_label}. "
+                            f"Skill binding `{current.target.entry_key}` exposes "
+                            f"receipt slot `{current.target.slot.key}` with fields: "
+                            f"{known}."
+                        ),
+                        unit=current.unit,
+                        source_span=source_span,
+                        hints=(
+                            "Reference an existing receipt field, or add the field "
+                            "to the package's receipt host slot.",
+                        ),
+                    )
                 raise reference_compile_error(
                     code="E273",
                     summary="Unknown addressable path",

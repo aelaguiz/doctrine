@@ -8,7 +8,7 @@ UV_RUN := $(UV) run --locked $(PYTHON)
 VERIFY_FLOW_PREREQ := $(UV_RUN) -m doctrine.verify_prereqs --require-flow-renderer
 VSCODE_MAKE := $(MAKE) -C editors/vscode
 
-.PHONY: help setup test tests check verify verify-examples verify-diagnostics verify-skill-examples build-dist verify-skill-install verify-package verify-package-wheel verify-package-sdist release-prepare release-tag release-draft release-publish vscode-tests vscode-package
+.PHONY: help setup test tests check verify verify-examples verify-diagnostics verify-skill-examples build-dist verify-skill-install verify-package verify-package-wheel verify-package-sdist release-prepare release-tag release-draft release-publish vscode-tests vscode-package skills
 
 help:
 	@printf '%s\n' \
@@ -28,7 +28,8 @@ help:
 		'make verify            Run the shipped verify targets.' \
 		'make check             Run unit tests plus shipped verify targets.' \
 		'make vscode-tests      Run the VS Code extension test suite.' \
-		'make vscode-package    Build the VS Code extension VSIX.'
+		'make vscode-package    Build the VS Code extension VSIX.' \
+		'make skills            Emit the first-party curated skill trees and install them with npx skills add .'
 
 setup:
 	$(UV) sync
@@ -96,3 +97,8 @@ vscode-tests:
 
 vscode-package:
 	$(VSCODE_MAKE) package
+
+skills:
+	$(UV_RUN) -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
+	$(UV_RUN) -m doctrine.emit_skill --target doctrine_learn_public_skill
+	npx skills add .

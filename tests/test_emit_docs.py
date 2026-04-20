@@ -1325,6 +1325,115 @@ class EmitDocsTests(unittest.TestCase):
             self.assertFalse(final_output_contract_path.exists())
             self.assertFalse(schema_dir.exists())
 
+    def test_emit_target_emits_contract_for_agent_with_only_previous_turn_inputs(self) -> None:
+        # An agent that reads a previous-turn input but has no `final_output`
+        # and no `review` must still get a `final_output.contract.json` emitted,
+        # because the harness needs the `io.previous_turn_inputs` block to
+        # route the next turn. This exercises the third arm of the suppression
+        # predicate in `_final_output_contract_payload`
+        # (`compiled.io is None or not compiled.io.previous_turn_inputs`):
+        # previous-turn inputs alone must flip suppress to emit. Without this
+        # guard, a future refactor that tightened the predicate could silently
+        # drop contracts for chat-style agents that only use last turn's state.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    workflow RouteGuide: "Route Guide"
+                        sequence choose_route:
+                            "Pick the next owner."
+                            "Return the routed final output."
+
+                    workflow PreviousTurnGuide: "Previous Turn Guide"
+                        callout readback: "Readback"
+                            kind: note
+                            "Read the previous turn before you continue."
+
+                    output schema TurnResultSchema: "Turn Result Schema"
+                        route field next_route: "Next Route"
+                            send_to_follower: "Hand to follower." -> Follower
+
+                        field kind: "Kind"
+                            type: string
+
+                        example:
+                            kind: "handoff"
+                            next_route: "send_to_follower"
+
+                    output shape TurnResultJson: "Turn Result JSON"
+                        kind: JsonObject
+                        schema: TurnResultSchema
+
+                    output TurnResult: "Turn Result"
+                        target: TurnResponse
+                        shape: TurnResultJson
+                        requirement: Required
+
+                    input PreviousTurnResult: "Previous Turn Result"
+                        source: RallyPreviousTurnOutput
+                        requirement: Advisory
+
+                    agent Follower:
+                        role: "Read the previous turn."
+                        workflow: PreviousTurnGuide
+                        inputs: "Inputs"
+                            PreviousTurnResult
+                        outputs: "Outputs"
+                            TurnResult
+
+                    agent Leader:
+                        role: "Hand work to the follower."
+                        workflow: RouteGuide
+                        outputs: "Outputs"
+                            TurnResult
+                        final_output:
+                            output: TurnResult
+                            route: next_route
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            contract_path = root / "build" / "follower" / "final_output.contract.json"
+            self.assertTrue(contract_path.is_file())
+            contract_data = json.loads(contract_path.read_text(encoding="utf-8"))
+            self.assertFalse(contract_data["final_output"]["exists"])
+            self.assertNotIn("review", contract_data)
+            self.assertEqual(
+                contract_data["io"]["previous_turn_inputs"][0]["input_key"],
+                "PreviousTurnResult",
+            )
+
     def test_emit_target_renders_titleless_readable_lists_without_helper_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -1970,6 +2079,416 @@ class EmitDocsTests(unittest.TestCase):
                     "SOUL.md" in str(exc_info.exception)
                     or "case-collides" in str(exc_info.exception)
                 )
+
+
+class ValidValuesLineHelperTests(unittest.TestCase):
+    """Unit cases for the canonical `render_valid_values_line` helper."""
+
+    def _enum_type_ref(self):
+        from doctrine import model
+        from doctrine._compiler.resolve.field_types import EnumTypeRef
+
+        members = (
+            model.EnumMember(key="ok", title="OK"),
+            model.EnumMember(key="blocked", title="Blocked"),
+        )
+        decl = model.EnumDecl(name="Status", title="Status", members=members)
+        ref = model.NameRef(module_parts=(), declaration_name="Status")
+        return EnumTypeRef(ref=ref, decl=decl)
+
+    def _builtin_type_ref(self):
+        from doctrine._compiler.resolve.field_types import BuiltinTypeRef
+
+        return BuiltinTypeRef(name="string")
+
+    def test_returns_none_for_none_type_ref(self) -> None:
+        from doctrine.emit_common import render_valid_values_line
+
+        self.assertIsNone(render_valid_values_line(None))
+
+    def test_returns_none_for_builtin_type_ref(self) -> None:
+        from doctrine.emit_common import render_valid_values_line
+
+        self.assertIsNone(render_valid_values_line(self._builtin_type_ref()))
+
+    def test_renders_valid_values_line_for_enum_type_ref(self) -> None:
+        from doctrine.emit_common import render_valid_values_line
+
+        rendered = render_valid_values_line(self._enum_type_ref())
+        self.assertEqual(rendered, "Valid values: ok, blocked.")
+
+    def test_renders_keys_even_when_enum_members_declare_wire(self) -> None:
+        from doctrine import model
+        from doctrine._compiler.resolve.field_types import EnumTypeRef
+        from doctrine.emit_common import render_valid_values_line
+
+        members = (
+            model.EnumMember(key="section_author", title="Section Author", wire="section-author"),
+            model.EnumMember(key="copy_editor", title="Copy Editor", wire="copy-editor"),
+        )
+        decl = model.EnumDecl(name="NextOwner", title="Next Owner", members=members)
+        ref = model.NameRef(module_parts=(), declaration_name="NextOwner")
+        rendered = render_valid_values_line(EnumTypeRef(ref=ref, decl=decl))
+        self.assertEqual(
+            rendered,
+            "Valid values: section_author, copy_editor.",
+        )
+
+
+class TypedFieldBodyEmitTests(unittest.TestCase):
+    """Emit-side unit cases across every field-shaped surface for type_ref.
+
+    Covers readable table column, readable row_schema / item_schema entry,
+    record scalar, and output-schema field surfaces with `None`,
+    `BuiltinTypeRef`, and `EnumTypeRef` inputs to confirm the shared helper
+    is the only place that renders the `Valid values:` line.
+    """
+
+    def _compile_agent_markdown(self, source: str, agent_name: str) -> str:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompts = root / "prompts"
+            prompts.mkdir()
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(source),
+                encoding="utf-8",
+            )
+            session = CompilationSession(parse_file(prompts / "AGENTS.prompt"))
+            compiled = session.compile_agent(agent_name)
+            from doctrine.renderer import render_markdown
+
+            return render_markdown(compiled)
+
+    # -- readable table column ------------------------------------------------
+
+    def test_readable_table_column_renders_valid_values_for_enum_type(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            enum Status: "Status"
+                ok: "OK"
+                blocked: "Blocked"
+
+            document StatusDoc: "Status Doc"
+                table StatusTable: "Status Table"
+                    columns:
+                        status: "Status"
+                            type: Status
+                            "Current status."
+
+            agent StatusTableColumnDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    StatusDocFile
+            output StatusDocFile: "Status Doc File"
+                target: File
+                    path: "status.md"
+                shape: MarkdownDocument
+                structure: StatusDoc
+                requirement: Required
+            """,
+            agent_name="StatusTableColumnDemo",
+        )
+        self.assertIn("Valid values: ok, blocked.", markdown)
+
+    def test_readable_table_column_omits_valid_values_for_builtin_type(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            document CountDoc: "Count Doc"
+                table CountTable: "Count Table"
+                    columns:
+                        count: "Count"
+                            type: integer
+                            "Item count."
+
+            output CountDocFile: "Count Doc File"
+                target: File
+                    path: "count.md"
+                shape: MarkdownDocument
+                structure: CountDoc
+                requirement: Required
+
+            agent CountTableColumnDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    CountDocFile
+            """,
+            agent_name="CountTableColumnDemo",
+        )
+        self.assertNotIn("Valid values:", markdown)
+
+    def test_readable_table_column_omits_valid_values_when_untyped(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            document NoteDoc: "Note Doc"
+                table NoteTable: "Note Table"
+                    columns:
+                        note: "Note"
+                            "A note."
+
+            output NoteDocFile: "Note Doc File"
+                target: File
+                    path: "note.md"
+                shape: MarkdownDocument
+                structure: NoteDoc
+                requirement: Required
+
+            agent NoteTableColumnDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    NoteDocFile
+            """,
+            agent_name="NoteTableColumnDemo",
+        )
+        self.assertNotIn("Valid values:", markdown)
+
+    # -- readable row_schema / item_schema entry ------------------------------
+    #
+    # Row_schema and item_schema entries only surface via `_render_inline_schema`
+    # under the `ContractMarkdown` profile. The existing manifest-backed corpus
+    # does not exercise that surface, so these tests drive the renderer helper
+    # directly with a typed `ReadableSchemaEntry`.
+
+    def _build_schema_data(self, *, type_ref) -> object:
+        from doctrine._model.readable import (
+            ReadableInlineSchemaData,
+            ReadableSchemaEntry,
+        )
+
+        return ReadableInlineSchemaData(
+            entries=(
+                ReadableSchemaEntry(
+                    key="status",
+                    title="Status",
+                    body=("Row status.",),
+                    type_ref=type_ref,
+                ),
+            ),
+        )
+
+    def test_readable_schema_entry_row_schema_renders_valid_values_for_enum(self) -> None:
+        from doctrine import model
+        from doctrine._compiler.resolve.field_types import EnumTypeRef
+        from doctrine._compiler.resolved_types import ResolvedRenderProfile
+        from doctrine._renderer.blocks import _render_inline_schema
+
+        members = (
+            model.EnumMember(key="ok", title="OK"),
+            model.EnumMember(key="blocked", title="Blocked"),
+        )
+        decl = model.EnumDecl(name="Status", title="Status", members=members)
+        ref = model.NameRef(module_parts=(), declaration_name="Status")
+        schema = self._build_schema_data(type_ref=EnumTypeRef(ref=ref, decl=decl))
+
+        lines = _render_inline_schema(
+            "Row Schema",
+            schema,
+            profile=ResolvedRenderProfile(name="ContractMarkdown"),
+        )
+        rendered = "\n".join(lines)
+        self.assertIn("Valid values: ok, blocked.", rendered)
+
+    def test_readable_schema_entry_item_schema_omits_valid_values_for_builtin(self) -> None:
+        from doctrine._compiler.resolve.field_types import BuiltinTypeRef
+        from doctrine._compiler.resolved_types import ResolvedRenderProfile
+        from doctrine._renderer.blocks import _render_inline_schema
+
+        schema = self._build_schema_data(type_ref=BuiltinTypeRef(name="integer"))
+        lines = _render_inline_schema(
+            "Item Schema",
+            schema,
+            profile=ResolvedRenderProfile(name="ContractMarkdown"),
+        )
+        rendered = "\n".join(lines)
+        self.assertNotIn("Valid values:", rendered)
+
+    def test_readable_schema_entry_item_schema_omits_valid_values_when_untyped(self) -> None:
+        from doctrine._compiler.resolved_types import ResolvedRenderProfile
+        from doctrine._renderer.blocks import _render_inline_schema
+
+        schema = self._build_schema_data(type_ref=None)
+        lines = _render_inline_schema(
+            "Item Schema",
+            schema,
+            profile=ResolvedRenderProfile(name="ContractMarkdown"),
+        )
+        rendered = "\n".join(lines)
+        self.assertNotIn("Valid values:", rendered)
+
+    # -- record scalar --------------------------------------------------------
+
+    def test_record_scalar_renders_valid_values_for_enum_type(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            enum Status: "Status"
+                ok: "OK"
+                blocked: "Blocked"
+
+            output StatusOutput: "Status Output"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                status: "Status"
+                    type: Status
+
+            agent StatusScalarDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    StatusOutput
+            """,
+            agent_name="StatusScalarDemo",
+        )
+        self.assertIn("Valid values: ok, blocked.", markdown)
+
+    def test_record_scalar_omits_valid_values_for_builtin_type(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            output CountOutput: "Count Output"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                count: "Count"
+                    type: integer
+
+            agent CountScalarDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    CountOutput
+            """,
+            agent_name="CountScalarDemo",
+        )
+        self.assertNotIn("Valid values:", markdown)
+
+    def test_record_scalar_omits_valid_values_when_untyped(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            output NoteOutput: "Note Output"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                note: "Note"
+                    "A short note."
+
+            agent NoteScalarDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    NoteOutput
+            """,
+            agent_name="NoteScalarDemo",
+        )
+        self.assertNotIn("Valid values:", markdown)
+
+    # -- output-schema field (via _json_schema_meaning) -----------------------
+
+    def test_output_schema_field_renders_one_of_when_description_and_enum_present(
+        self,
+    ) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            enum Status: "Status"
+                ok: "OK"
+                blocked: "Blocked"
+
+            output schema StatusSchema: "Status Schema"
+                field status: "Status"
+                    type: Status
+                    note: "Current outcome."
+
+                example:
+                    status: "ok"
+
+            output shape StatusJson: "Status JSON"
+                kind: JsonObject
+                schema: StatusSchema
+
+            output StatusFinalResponse: "Status Final Response"
+                target: TurnResponse
+                shape: StatusJson
+                requirement: Required
+
+            agent OutputSchemaEnumDescDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    StatusFinalResponse
+                final_output: StatusFinalResponse
+            """,
+            agent_name="OutputSchemaEnumDescDemo",
+        )
+        self.assertIn(
+            "| `status` | string | Yes | No | Current outcome. One of `ok`, `blocked`. |",
+            markdown,
+        )
+
+    def test_output_schema_field_renders_description_only_for_builtin(self) -> None:
+        markdown = self._compile_agent_markdown(
+            """\
+            output schema SummarySchema: "Summary Schema"
+                field summary: "Summary"
+                    type: string
+                    note: "Short summary."
+
+                example:
+                    summary: "All good."
+
+            output shape SummaryJson: "Summary JSON"
+                kind: JsonObject
+                schema: SummarySchema
+
+            output SummaryFinalResponse: "Summary Final Response"
+                target: TurnResponse
+                shape: SummaryJson
+                requirement: Required
+
+            agent OutputSchemaBuiltinDemo:
+                role: "Demo."
+                outputs: "Outputs"
+                    SummaryFinalResponse
+                final_output: SummaryFinalResponse
+            """,
+            agent_name="OutputSchemaBuiltinDemo",
+        )
+        self.assertIn(
+            "| `summary` | string | Yes | No | Short summary. |",
+            markdown,
+        )
+
+
+class JsonSchemaMeaningDescriptionPlusEnumTests(unittest.TestCase):
+    """Direct unit cases for `_json_schema_meaning`'s extended branches."""
+
+    def _meaning(self, field_schema: dict, *, root_schema: dict | None = None) -> str:
+        from doctrine._compiler.validate import ValidateMixin
+
+        class _Stub(ValidateMixin):
+            pass
+
+        return _Stub()._json_schema_meaning(
+            field_schema,
+            root_schema=root_schema if root_schema is not None else field_schema,
+        )
+
+    def test_description_plus_enum_renders_both_lines(self) -> None:
+        meaning = self._meaning(
+            {
+                "description": "Current outcome.",
+                "enum": ["ok", "blocked"],
+            }
+        )
+        self.assertEqual(meaning, "Current outcome. One of `ok`, `blocked`.")
+
+    def test_description_only_still_renders_description(self) -> None:
+        meaning = self._meaning({"description": "Short summary."})
+        self.assertEqual(meaning, "Short summary.")
+
+    def test_enum_only_still_renders_one_of(self) -> None:
+        meaning = self._meaning({"enum": ["ok", "blocked"]})
+        self.assertEqual(meaning, "One of `ok`, `blocked`.")
+
+    def test_empty_schema_renders_empty_string(self) -> None:
+        meaning = self._meaning({})
+        self.assertEqual(meaning, "")
 
 
 if __name__ == "__main__":

@@ -3886,13 +3886,15 @@ class CompileDiagnosticTests(unittest.TestCase):
                 CompilationSession(prompt).compile_agent("RepoStatusAgent")
 
         error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E217")
+        self.assertEqual(error.diagnostic.code, "E320")
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index('output schema RepoStatusSchema: "Repo Status Schema"') + 1,
+        rendered_lines = rendered.splitlines()
+        type_line_number = next(
+            index + 1
+            for index, line in enumerate(rendered_lines)
+            if "type: definitely_not_a_real_json_schema_type" in line
         )
-        self.assertIn("not valid Draft 2020-12 JSON Schema", str(error))
+        self.assertEqual(error.diagnostic.location.line, type_line_number)
         self.assertIn("definitely_not_a_real_json_schema_type", str(error))
 
     def test_final_output_openai_subset_failure_points_at_schema_line(self) -> None:
@@ -3946,194 +3948,6 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("outside the supported OpenAI structured outputs subset", str(error))
         self.assertIn("nesting exceeds 5 levels", str(error))
-
-    def test_output_schema_inline_enum_requires_values_points_at_type_line(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
-                output schema RepoStatusSchema: "Repo Status Schema"
-                    field status: "Status"
-                        type: enum
-
-                output shape RepoStatusJson: "Repo Status JSON"
-                    kind: JsonObject
-                    schema: RepoStatusSchema
-
-                output RepoStatusFinalResponse: "Repo Status Final Response"
-                    target: TurnResponse
-                    shape: RepoStatusJson
-                    requirement: Required
-
-                agent RepoStatusAgent:
-                    role: "Report repo status in structured form."
-                    workflow: "Summarize"
-                        "Summarize the repo state and end with the declared final output."
-                    outputs: "Outputs"
-                        RepoStatusFinalResponse
-                    final_output: RepoStatusFinalResponse
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-            prompt = parse_file(prompt_path)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(prompt).compile_agent("RepoStatusAgent")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E227")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index("        type: enum") + 1,
-        )
-        self.assertIn("missing `values:`", str(error))
-
-    def test_output_schema_values_requires_type_enum_points_at_values_line(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
-                output schema RepoStatusSchema: "Repo Status Schema"
-                    field status: "Status"
-                        type: string
-                        values:
-                            ok
-                            blocked
-
-                output shape RepoStatusJson: "Repo Status JSON"
-                    kind: JsonObject
-                    schema: RepoStatusSchema
-
-                output RepoStatusFinalResponse: "Repo Status Final Response"
-                    target: TurnResponse
-                    shape: RepoStatusJson
-                    requirement: Required
-
-                agent RepoStatusAgent:
-                    role: "Report repo status in structured form."
-                    workflow: "Summarize"
-                        "Summarize the repo state and end with the declared final output."
-                    outputs: "Outputs"
-                        RepoStatusFinalResponse
-                    final_output: RepoStatusFinalResponse
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-            prompt = parse_file(prompt_path)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(prompt).compile_agent("RepoStatusAgent")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E228")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index("        values:") + 1,
-        )
-        self.assertEqual(len(error.diagnostic.related), 1)
-        self.assertEqual(
-            error.diagnostic.related[0].location.line,
-            rendered.splitlines().index("        type: string") + 1,
-        )
-        self.assertIn("`values:` requires `type: enum`", str(error))
-
-    def test_output_schema_mixed_inline_enum_forms_point_at_legacy_enum_line(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
-                output schema RepoStatusSchema: "Repo Status Schema"
-                    field status: "Status"
-                        type: enum
-                        enum:
-                            ok
-                            blocked
-
-                output shape RepoStatusJson: "Repo Status JSON"
-                    kind: JsonObject
-                    schema: RepoStatusSchema
-
-                output RepoStatusFinalResponse: "Repo Status Final Response"
-                    target: TurnResponse
-                    shape: RepoStatusJson
-                    requirement: Required
-
-                agent RepoStatusAgent:
-                    role: "Report repo status in structured form."
-                    workflow: "Summarize"
-                        "Summarize the repo state and end with the declared final output."
-                    outputs: "Outputs"
-                        RepoStatusFinalResponse
-                    final_output: RepoStatusFinalResponse
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-            prompt = parse_file(prompt_path)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(prompt).compile_agent("RepoStatusAgent")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E229")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index("        enum:") + 1,
-        )
-        self.assertEqual(len(error.diagnostic.related), 1)
-        self.assertEqual(
-            error.diagnostic.related[0].location.line,
-            rendered.splitlines().index("        type: enum") + 1,
-        )
-        self.assertIn("cannot be mixed", str(error))
-
-    def test_output_schema_legacy_enum_requires_string_points_at_enum_line(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
-                output schema RepoStatusSchema: "Repo Status Schema"
-                    field status: "Status"
-                        type: integer
-                        enum:
-                            1
-                            2
-
-                output shape RepoStatusJson: "Repo Status JSON"
-                    kind: JsonObject
-                    schema: RepoStatusSchema
-
-                output RepoStatusFinalResponse: "Repo Status Final Response"
-                    target: TurnResponse
-                    shape: RepoStatusJson
-                    requirement: Required
-
-                agent RepoStatusAgent:
-                    role: "Report repo status in structured form."
-                    workflow: "Summarize"
-                        "Summarize the repo state and end with the declared final output."
-                    outputs: "Outputs"
-                        RepoStatusFinalResponse
-                    final_output: RepoStatusFinalResponse
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-            prompt = parse_file(prompt_path)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(prompt).compile_agent("RepoStatusAgent")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E229")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index("        enum:") + 1,
-        )
-        self.assertEqual(len(error.diagnostic.related), 1)
-        self.assertEqual(
-            error.diagnostic.related[0].location.line,
-            rendered.splitlines().index("        type: integer") + 1,
-        )
-        self.assertIn("requires `type: string`", str(error))
 
     def test_output_schema_required_points_at_required_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

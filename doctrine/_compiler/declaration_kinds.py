@@ -200,6 +200,14 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         readable=False,
         addressable_root=False,
     ),
+    DeclarationKind(
+        name="rule",
+        label="rule declaration",
+        registry_attr="rules_by_name",
+        decl_type=model.RuleDecl,
+        readable=False,
+        addressable_root=False,
+    ),
 )
 
 

@@ -248,6 +248,18 @@ def _final_output_contract_payload(
     compiled,
     target: EmitTarget,
 ) -> dict[str, object] | None:
+    """Build the `final_output.contract.json` payload for one agent.
+
+    Returns `None` — which suppresses the sidecar file — when the agent has
+    no `final_output`, no `review`, and no previous-turn inputs. In that
+    shape the agent has nothing machine-addressable to hand to a harness,
+    so a contract file would only carry noise.
+
+    The payload carries `contract_version = FINAL_OUTPUT_CONTRACT_VERSION`.
+    Bump that constant whenever any field in this payload (agent identity,
+    route contract, final_output, io, review) changes shape, so consumers
+    can detect an incompatible emit.
+    """
     if (
         compiled.final_output is None
         and compiled.review is None
@@ -555,7 +567,10 @@ def _build_previous_turn_contexts(
             raise compile_error(
                 code="E901",
                 summary="Internal compiler error",
-                detail="Flow graph is missing flow-root identity while building previous-turn contexts.",
+                detail=(
+                    f"Flow graph edge `{edge.source_name} -> {edge.target_name}` is missing "
+                    "flow-root identity while building previous-turn contexts."
+                ),
                 path=session.root_flow.entrypoint_path,
             )
         predecessor_map.setdefault(target_key, set()).add(source_key)
@@ -645,6 +660,14 @@ def _field_path_text(field_path: tuple[str, ...]) -> str:
 
 
 def _emit_path_for_agent(emitted_dir: Path, agent_name: str, *, output_name: str) -> Path:
+    """Where one agent's Markdown lands inside an already-resolved emit dir.
+
+    Normally nests the output under a slug directory
+    (`<emitted_dir>/<slug>/<output_name>`). When `emitted_dir` already ends
+    in that slug — as it does for entrypoints authored inside a directory
+    named for the agent — the slug layer is dropped to avoid a doubled path
+    like `prompts/foo/foo/AGENTS.md`.
+    """
     slug = agent_slug(agent_name)
     if emitted_dir.parts and emitted_dir.parts[-1] == slug:
         return emitted_dir / output_name
@@ -675,6 +698,26 @@ def _build_runtime_emit_plan(
     output_root: Path,
     provider_root: ProvidedPromptRoot | None,
 ) -> RuntimeEmitPlan:
+    """Plan the output files for one concrete agent.
+
+    Two branches:
+
+    - **File-module agent.** The compiled Markdown lands at
+      `<output_root>/<entrypoint_relative_dir(target.entrypoint)>/<slug>/
+      <entrypoint_output_name(target.entrypoint)>` (with the slug-dedupe
+      rule from `_emit_path_for_agent`). No bundled files, no SOUL companion.
+
+    - **Runtime-package agent.** The package's own source path drives the
+      layout: `<output_root>/<entrypoint_relative_dir(source_path)>/
+      AGENTS.md`. Every other file under the package root (recursively) is
+      bundled at the same relative layout. A sibling `SOUL.prompt`, if
+      present, is recorded for later compilation — its `SOUL.md` lands next
+      to the `AGENTS.md`. Extra `.prompt` files inside the package are
+      rejected with E299 because runtime packages own exactly one entrypoint.
+
+    Raises E901 (internal compiler error) if a runtime package is missing
+    its package metadata, and E299 if it contains extra prompts.
+    """
     if runtime_root.unit.module_source_kind != "runtime_package":
         emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
         return RuntimeEmitPlan(

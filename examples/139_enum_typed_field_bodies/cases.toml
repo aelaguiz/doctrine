@@ -1,0 +1,81 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "typed row_schema entry renders the Valid values line in declared order"
+status = "active"
+kind = "render_declaration"
+declaration_kind = "document"
+declaration_name = "LessonPlanContract"
+assertion = "exact_lines"
+approx_ref = "ref/lesson_plan_contract/DOCUMENT.md"
+expected_lines = [
+  "## Lesson Plan Contract",
+  "",
+  "### Step Arc",
+  "",
+  "_Required \u00b7 table_",
+  "",
+  "_Row Schema_",
+  "- Step Role: Name the step's role in the arc.",
+  "  Valid values: introduce, practice, test, capstone.",
+  "",
+  "| Column | Meaning |",
+  "| --- | --- |",
+  "| Concept | Name the concept the step teaches. |",
+  "| Evidence | Name the evidence that proves the step landed. |",
+]
+
+[[cases]]
+name = "agent that references the typed document compiles and renders its outputs block"
+status = "active"
+kind = "render_contract"
+agent = "LessonPlanDemo"
+assertion = "exact_lines"
+approx_ref = "ref/lesson_plan_demo/AGENTS.md"
+expected_lines = [
+  "Keep Step Role values in sync with the Step Role vocabulary.",
+  "",
+  "## Plan",
+  "",
+  "Write the lesson plan.",
+  "",
+  "## Outputs",
+  "",
+  "### Lesson Plan File",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | File |",
+  "| Path | `lesson_root/LESSON_PLAN.md` |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Required |",
+  "| Structure | Lesson Plan Contract |",
+  "",
+  "#### Artifact Structure",
+  "",
+  "This artifact must follow the `Lesson Plan Contract` structure below.",
+  "",
+  "| Required Section | Kind | What it must do |",
+  "| --- | --- | --- |",
+  "| **Step Arc** | Table | Use the columns `Concept` and `Evidence`. |",
+  "",
+  "##### Step Arc Contract",
+  "",
+  "_Required \u00b7 table_",
+  "",
+  "| Column | Meaning |",
+  "| --- | --- |",
+  "| Concept | Name the concept the step teaches. |",
+  "| Evidence | Name the evidence that proves the step landed. |",
+]
+
+[[cases]]
+name = "row_schema entry typed against an unknown enum name fails loud with E320"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_enum_type_on_row_schema/AGENTS.prompt"
+agent = "BrokenLessonPlanDemo"
+exception_type = "CompileError"
+error_code = "E320"
+location_line = 10

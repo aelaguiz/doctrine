@@ -1,0 +1,21 @@
+# The concrete descendant binds the typed slot to a workflow, but the abstract
+# declared a document type. The compiler must fail with E538.
+
+document AccuracyPolicy: "Accuracy Policy"
+    section summary: "Summary"
+        "Check every fact against a cited source."
+
+
+workflow WrongFamilyWorkflow: "Wrong Family"
+    "Do the wrong-family work."
+
+
+abstract agent TypedPolicyReviewer:
+    role: "Review a draft section against a named typed policy."
+    abstract policy: AccuracyPolicy
+
+
+agent AccuracyReviewer[TypedPolicyReviewer]:
+    role: "Review draft sections against the accuracy policy."
+
+    policy: WrongFamilyWorkflow

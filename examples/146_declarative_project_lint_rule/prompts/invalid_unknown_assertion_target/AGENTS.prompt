@@ -1,0 +1,17 @@
+# A rule assertion names an agent target that does not exist.
+# The compiler must fail with RULE002.
+
+abstract agent UpstreamPoisoningInvariant:
+    role: "Shared invariant base."
+
+
+agent BriefComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the weekly brief."
+
+
+rule ComposersCheckUpstream: "Every composer must inherit the invariant"
+    scope:
+        role_class: Composer
+    assertions:
+        requires inherit UndeclaredInvariant
+    message: "Every composer must inherit UndeclaredInvariant."

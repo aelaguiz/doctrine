@@ -1,0 +1,26 @@
+enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+output AuditResponse: "Audit Response"
+    target: TurnResponse
+    shape: MarkdownDocument
+    requirement: Required
+
+
+skill BoundOutputSkill: "Bound Output Skill"
+    purpose: "Emit through the shared final_output slot."
+    package: "bound-output-package"
+
+
+agent AuditorAgent:
+    role: "Audit-mode skill binding must not emit to an output target."
+    outputs: "Outputs"
+        AuditResponse
+    final_output: AuditResponse
+    skills: "Skills"
+        skill shared: BoundOutputSkill
+            mode audit = SkillMode.audit as SkillMode
+            bind:
+                final_response: final_output

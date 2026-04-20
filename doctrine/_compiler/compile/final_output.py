@@ -17,6 +17,7 @@ from doctrine._compiler.resolved_types import (
     FinalOutputJsonShapeSummary,
     IndexedUnit,
     OutputDeclKey,
+    OutputSelectorDispatchContext,
     ResolvedRenderProfile,
     ReviewSemanticContext,
     RouteSemanticContext,
@@ -39,6 +40,7 @@ class CompileFinalOutputMixin:
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]],
         review_contract: CompiledReviewSpec | None = None,
         fallback_review_semantics: ReviewSemanticContext | None = None,
+        selectors_field: model.SelectorsField | None = None,
     ) -> CompiledFinalOutputSpec:
         owner_label = f"agent {agent_name} final_output"
         output_unit, output_decl = self._resolve_final_output_decl(
@@ -126,6 +128,7 @@ class CompileFinalOutputMixin:
             files_section=files_section,
             shape_item=shape_item,
         )
+        self._validate_output_declaration_structure(output_decl, unit=output_unit)
         self._validate_output_guard_sections(
             output_decl,
             unit=output_unit,
@@ -156,6 +159,16 @@ class CompileFinalOutputMixin:
             shape_item.value,
             unit=output_unit,
         )
+        selector_dispatch_context: OutputSelectorDispatchContext | None = None
+        if json_summary is not None:
+            selector_dispatch_context = self._build_output_selector_dispatch_context(
+                shape_decl=json_summary.shape_decl,
+                shape_unit=json_summary.shape_unit,
+                selectors_field=selectors_field,
+                agent_name=agent_name,
+                agent_unit=unit,
+                final_output_field_span=field.source_span,
+            )
         generated_schema_relpath = (
             self._generated_final_output_schema_relpath(output_decl.name)
             if json_summary is not None
@@ -174,6 +187,7 @@ class CompileFinalOutputMixin:
             route_semantics=route_semantics,
             render_profile=render_profile,
             explicit_render_profile=explicit_render_profile,
+            selector_dispatch_context=selector_dispatch_context,
         )
         return CompiledFinalOutputSpec(
             output_key=output_key,
@@ -207,6 +221,7 @@ class CompileFinalOutputMixin:
         route_semantics: RouteSemanticContext | None,
         render_profile: ResolvedRenderProfile | None,
         explicit_render_profile: ResolvedRenderProfile | None,
+        selector_dispatch_context: OutputSelectorDispatchContext | None = None,
     ) -> CompiledSection:
         format_label = self._final_output_format_label(
             output_decl,
@@ -343,9 +358,13 @@ class CompileFinalOutputMixin:
         )
 
         if json_summary is not None:
+            shape_extra_items = self._apply_output_selector_dispatch(
+                json_summary.extra_items,
+                context=selector_dispatch_context,
+            )
             body.extend(
                 self._compile_output_support_items(
-                    json_summary.extra_items,
+                    shape_extra_items,
                     unit=json_summary.shape_unit,
                     owner_label=f"output shape {json_summary.shape_decl.name}",
                     surface_label="final_output shape support",

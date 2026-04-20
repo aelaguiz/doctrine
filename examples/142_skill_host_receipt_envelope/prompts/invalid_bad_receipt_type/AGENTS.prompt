@@ -1,0 +1,8 @@
+skill ProducerBadReceiptTypeSkill: "Producer Bad Receipt Type Skill"
+    purpose: "Package declares a receipt field with an undeclared type."
+    package: "producer-bad-receipt-type-package"
+
+agent ProducerDemo:
+    role: "Run the producer package so E537 can fire."
+    skills: "Skills"
+        skill producer: ProducerBadReceiptTypeSkill

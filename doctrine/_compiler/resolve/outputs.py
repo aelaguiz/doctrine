@@ -4,6 +4,7 @@ import json
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -17,6 +18,10 @@ from doctrine._compiler.final_output_diagnostics import (
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.output_schema_diagnostics import output_schema_compile_error
+from doctrine._compiler.resolve.field_types import (
+    resolve_field_type_ref,
+    resolve_record_scalar_type_refs,
+)
 from doctrine._compiler.resolved_types import (
     AddressableNode,
     CompileError,
@@ -36,6 +41,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedIoSection,
     ResolvedOutputTargetDeliverySkill,
     ResolvedOutputTargetSpec,
+    ResolvedOutputTargetTypedAs,
     ResolvedRenderProfile,
     ReviewSemanticContext,
     RouteSemanticContext,
@@ -68,6 +74,84 @@ class ResolveOutputsMixin:
         key: str,
     ) -> object | None:
         return next((item for item in output_decl.items if self._output_item_key(item) == key), None)
+
+    def _resolve_output_item_type_refs(
+        self,
+        item: object,
+        *,
+        unit: IndexedUnit,
+    ) -> object:
+        # Walks an output-record item tree and fills in
+        # `RecordScalar.type_ref` by routing captured `type_name` through
+        # `resolve_field_type_ref`. Every field-shaped body in the language
+        # routes `type:` through that single entrypoint.
+        if isinstance(item, model.RecordScalar):
+            resolved_body = (
+                None
+                if item.body is None
+                else tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.body
+                )
+            )
+            type_ref = item.type_ref
+            if type_ref is None and item.type_name is not None:
+                type_ref = resolve_field_type_ref(
+                    item.type_name,
+                    span=item.type_source_span,
+                    unit=unit,
+                    lookup_enum=self._try_resolve_enum_decl,
+                )
+            return replace(item, body=resolved_body, type_ref=type_ref)
+        if isinstance(item, model.RecordSection):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        if isinstance(item, model.GuardedOutputSection):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        if isinstance(item, model.GuardedOutputScalar):
+            return replace(
+                item,
+                body=(
+                    None
+                    if item.body is None
+                    else tuple(
+                        self._resolve_output_item_type_refs(child, unit=unit)
+                        for child in item.body
+                    )
+                ),
+            )
+        if isinstance(item, model.RecordRef):
+            return replace(
+                item,
+                body=(
+                    None
+                    if item.body is None
+                    else tuple(
+                        self._resolve_output_item_type_refs(child, unit=unit)
+                        for child in item.body
+                    )
+                ),
+            )
+        if isinstance(item, model.OutputRecordCase):
+            return replace(
+                item,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in item.items
+                ),
+            )
+        return item
 
     def _output_shape_item_by_key(
         self,
@@ -307,6 +391,13 @@ class ResolveOutputsMixin:
                     parent_output=parent_output,
                     parent_label=parent_label,
                 )
+            resolved = replace(
+                resolved,
+                items=tuple(
+                    self._resolve_output_item_type_refs(child, unit=unit)
+                    for child in resolved.items
+                ),
+            )
             self._resolved_output_decl_cache[output_key] = resolved
             return resolved
         finally:
@@ -500,11 +591,22 @@ class ResolveOutputsMixin:
                 ),
             )
 
+        inherited_selector = (
+            output_shape_decl.selector
+            if output_shape_decl.selector is not None
+            else inherited_parent_output_shape.selector
+        )
+        typed_items = resolve_record_scalar_type_refs(
+            tuple(resolved_items),
+            unit=unit,
+            lookup_enum=self._try_resolve_enum_decl,
+        )
         return model.OutputShapeDecl(
             name=output_shape_decl.name,
             title=output_shape_decl.title,
-            items=tuple(resolved_items),
+            items=typed_items,
             parent_ref=None,
+            selector=inherited_selector,
             source_span=output_shape_decl.source_span,
         )
 
@@ -734,10 +836,15 @@ class ResolveOutputsMixin:
                 ),
             )
 
+        typed_items = resolve_record_scalar_type_refs(
+            tuple(resolved_items),
+            unit=unit,
+            lookup_enum=self._try_resolve_enum_decl,
+        )
         return model.OutputDecl(
             name=output_decl.name,
             title=output_decl.title,
-            items=tuple(resolved_items),
+            items=typed_items,
             schema=resolved_schema,
             structure=resolved_structure,
             render_profile_ref=resolved_render_profile,
@@ -893,6 +1000,9 @@ class ResolveOutputsMixin:
                 key=key,
                 value=item.value,
                 body=item.body,
+                type_ref=parent_item.type_ref,
+                type_name=parent_item.type_name,
+                type_source_span=parent_item.type_source_span,
                 source_span=item.source_span,
             )
 
@@ -1088,6 +1198,16 @@ class ResolveOutputsMixin:
         parent_unit: IndexedUnit,
         rebound_imported: bool,
     ) -> model.OutputShapeDecl:
+        selector = output_shape_decl.selector
+        if selector is not None:
+            selector = replace(
+                selector,
+                enum_ref=self._rebind_inherited_output_name_ref(
+                    selector.enum_ref,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
+            )
         return replace(
             output_shape_decl,
             items=tuple(
@@ -1099,6 +1219,7 @@ class ResolveOutputsMixin:
                 for item in output_shape_decl.items
             ),
             parent_ref=None,
+            selector=selector,
         )
 
     def _rebind_inherited_output_item(
@@ -1130,6 +1251,9 @@ class ResolveOutputsMixin:
                         for child in item.body
                     )
                 ),
+                type_ref=item.type_ref,
+                type_name=item.type_name,
+                type_source_span=item.type_source_span,
                 source_span=item.source_span,
             )
         if isinstance(item, model.RecordSection):
@@ -1219,7 +1343,47 @@ class ResolveOutputsMixin:
                 parent_unit=parent_unit,
                 rebound_imported=rebound_imported,
             )
+        if isinstance(item, model.ReviewRouteVia):
+            return item
+        if isinstance(item, model.OutputRecordCase):
+            return model.OutputRecordCase(
+                enum_member_ref=self._rebind_inherited_enum_member_ref(
+                    item.enum_member_ref,
+                    parent_unit=parent_unit,
+                    rebound_imported=rebound_imported,
+                ),
+                items=tuple(
+                    self._rebind_inherited_output_item(
+                        child,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
+                    for child in item.items
+                ),
+                source_span=item.source_span,
+            )
         return item
+
+    def _rebind_inherited_enum_member_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        parent_unit: IndexedUnit,
+        rebound_imported: bool,
+    ) -> model.NameRef:
+        if len(ref.module_parts) != 1:
+            return ref
+        enum_name = ref.module_parts[0]
+        enum_ref = model.NameRef(module_parts=(), declaration_name=enum_name)
+        if not self._inherited_output_ref_has_parent_decl(
+            enum_ref, parent_unit=parent_unit
+        ):
+            return ref
+        return model.NameRef(
+            module_parts=(*parent_unit.module_parts, enum_name),
+            declaration_name=ref.declaration_name,
+            rebound_imported=rebound_imported,
+        )
 
     def _rebind_inherited_output_scalar_value(
         self,
@@ -2680,11 +2844,73 @@ class ResolveOutputsMixin:
                 unit=unit,
             )
             delivery_skill = ResolvedOutputTargetDeliverySkill(title=skill_decl.title)
+        typed_as = self._resolve_output_target_typed_as(
+            decl,
+            unit=unit,
+            owner_label=owner_label,
+        )
         return ResolvedOutputTargetSpec(
             title=decl.title,
             required_keys=required_keys,
             optional_keys=optional_keys,
             delivery_skill=delivery_skill,
+            typed_as=typed_as,
+        )
+
+    def _resolve_output_target_typed_as(
+        self,
+        decl: model.OutputTargetDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> "ResolvedOutputTargetTypedAs | None":
+        ref = decl.typed_as
+        if ref is None:
+            return None
+        declarations = unit_declarations(unit)
+        if ref.declaration_name in declarations.documents_by_name and not ref.module_parts:
+            doc = declarations.documents_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="document", title=doc.title, declaration_name=doc.name
+            )
+        if ref.declaration_name in declarations.schemas_by_name and not ref.module_parts:
+            schema = declarations.schemas_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="schema", title=schema.title, declaration_name=schema.name
+            )
+        if ref.declaration_name in declarations.tables_by_name and not ref.module_parts:
+            table = declarations.tables_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="table", title=table.title, declaration_name=table.name
+            )
+        # Try cross-module resolution for each family before giving up.
+        for family, resolver in (
+            ("document", self._resolve_document_ref),
+            ("schema", self._resolve_schema_ref),
+            ("table", self._resolve_table_ref),
+        ):
+            try:
+                _target_unit, target_decl = resolver(ref, unit=unit)
+            except CompileError:
+                continue
+            return ResolvedOutputTargetTypedAs(
+                family=family,
+                title=target_decl.title,
+                declaration_name=target_decl.name,
+            )
+        raise compile_error(
+            code="E533",
+            summary="Typed output target references a non-document/schema/table entity",
+            detail=(
+                f"Output target `{decl.name}` declares `typed_as: {ref.declaration_name}`, "
+                "but that name does not resolve to a declared `document`, `schema`, or `table`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=decl.source_span,
+            hints=(
+                "Declare the typed identity as a `document`, `schema`, or `table`, then reference it by name.",
+                "Cross-package identities must import the entity first; only direct-module references are auto-picked-up.",
+            ),
         )
 
     def _resolve_outputs_decl(

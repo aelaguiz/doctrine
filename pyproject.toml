@@ -196,3 +196,8 @@ output_dir = "examples/123_skill_package_emit_documents_mixed_bundle/build"
 name = "example_124_skill_package_host_binding"
 entrypoint = "examples/124_skill_package_host_binding/prompts/skills/host_bound/SKILL.prompt"
 output_dir = "examples/124_skill_package_host_binding/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_142_skill_host_receipt_envelope"
+entrypoint = "examples/142_skill_host_receipt_envelope/prompts/skills/producer/SKILL.prompt"
+output_dir = "examples/142_skill_host_receipt_envelope/build"

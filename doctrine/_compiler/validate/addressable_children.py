@@ -9,6 +9,7 @@ from doctrine._compiler.resolved_types import (
     ReadableColumnsTarget,
     ReadableRowsTarget,
     ReadableSchemaTarget,
+    ReceiptBindingTarget,
     ResolvedAnalysisSection,
     ResolvedSchemaArtifact,
     ResolvedSchemaBody,
@@ -281,13 +282,37 @@ class ValidateAddressableChildrenMixin:
                 root_decl=node.root_decl,
             )
         if isinstance(target, ResolvedSkillEntry):
-            if not target.items:
-                return None
-            return self._record_items_to_addressable_children(
-                target.items,
-                unit=node.unit,
-                root_decl=node.root_decl,
-            )
+            children: dict[str, AddressableNode] = {}
+            if target.items:
+                children.update(
+                    self._record_items_to_addressable_children(
+                        target.items,
+                        unit=node.unit,
+                        root_decl=node.root_decl,
+                    )
+                )
+            if target.package_contract is not None:
+                for slot in target.package_contract.host_contract:
+                    if isinstance(slot, model.ReceiptHostSlot):
+                        children["receipt"] = AddressableNode(
+                            unit=node.unit,
+                            root_decl=node.root_decl,
+                            target=ReceiptBindingTarget(
+                                entry_key=target.key,
+                                slot=slot,
+                            ),
+                        )
+                        break
+            return children or None
+        if isinstance(target, ReceiptBindingTarget):
+            return {
+                field.key: AddressableNode(
+                    unit=node.unit,
+                    root_decl=node.root_decl,
+                    target=field,
+                )
+                for field in target.slot.fields
+            }
         if isinstance(target, SchemaFamilyTarget):
             return self._schema_family_items_to_addressable_children(
                 target.items,

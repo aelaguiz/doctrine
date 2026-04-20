@@ -366,9 +366,16 @@ class ReviewTransformerMixin:
         head = body[0]
         subject = body[1]
         contract = body[2]
-        checks = body[3]
-        on_accept = body[4]
-        on_reject = body[5]
+        if len(body) == 7:
+            gates_override = body[3]
+            checks = body[4]
+            on_accept = body[5]
+            on_reject = body[6]
+        else:
+            gates_override = None
+            checks = body[3]
+            on_accept = body[4]
+            on_reject = body[5]
         return _with_source_span(
             model.ReviewCase(
                 key=key,
@@ -379,9 +386,54 @@ class ReviewTransformerMixin:
                 checks=checks,
                 on_accept=on_accept,
                 on_reject=on_reject,
+                gates_override=gates_override,
             ),
             meta,
         )
+
+    @v_args(meta=True)
+    def review_case_gates_override_block(self, meta, items):
+        add_items: list = []
+        remove_items: list = []
+        modify_items: list = []
+        for kind, payload in items:
+            if kind == "add":
+                add_items.append(payload)
+            elif kind == "remove":
+                remove_items.append(payload)
+            elif kind == "modify":
+                modify_items.append(payload)
+        return _with_source_span(
+            model.ReviewCaseGatesOverride(
+                add=tuple(add_items),
+                remove=tuple(remove_items),
+                modify=tuple(modify_items),
+            ),
+            meta,
+        )
+
+    def review_case_gate_override_clause(self, items):
+        return items[0]
+
+    @v_args(meta=True, inline=True)
+    def review_case_gate_add(self, meta, key, title):
+        gate = _with_source_span(
+            model.SchemaGate(key=str(key), title=title, body=()),
+            meta,
+        )
+        return ("add", gate)
+
+    @v_args(meta=True, inline=True)
+    def review_case_gate_remove(self, meta, key):
+        return ("remove", str(key))
+
+    @v_args(meta=True, inline=True)
+    def review_case_gate_modify(self, meta, key, title):
+        gate = _with_source_span(
+            model.SchemaGate(key=str(key), title=title, body=()),
+            meta,
+        )
+        return ("modify", gate)
 
     @v_args(meta=True, inline=True)
     def review_case_when_stmt(self, meta, options):

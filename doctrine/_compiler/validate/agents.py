@@ -12,6 +12,7 @@ from doctrine._compiler.resolved_types import (
     CompileError,
     IndexedUnit,
     OutputDeclKey,
+    ResolvedSkillBindTarget,
     ResolvedWorkflowBody,
     ReviewContractGate,
     ReviewSemanticContext,
@@ -444,3 +445,233 @@ class ValidateAgentsMixin:
             if key == output_key:
                 return context
         return None
+
+    def _validate_skill_entry_mode(
+        self,
+        entry: "model.SkillEntry | model.OverrideSkillEntry",
+        *,
+        metadata_unit: IndexedUnit,
+        resolved_binds: dict[str, ResolvedSkillBindTarget] | None,
+    ) -> None:
+        mode = entry.mode
+        if mode is None:
+            return
+        try:
+            enum_unit, enum_decl = self._resolve_decl_ref(
+                mode.enum_ref,
+                unit=metadata_unit,
+                registry_name="enums_by_name",
+                missing_label="enum declaration",
+            )
+        except CompileError as exc:
+            raise compile_error(
+                code="E540",
+                summary="Skill-binding mode reference does not resolve",
+                detail=(
+                    f"Skill entry `{entry.key}` declares `mode {mode.name} ... as "
+                    f"{mode.enum_ref.declaration_name}`, but the target does not resolve "
+                    "to a declared enum."
+                ),
+                path=metadata_unit.prompt_file.source_path,
+                source_span=mode.source_span,
+                hints=(
+                    "Point `as` at a declared enum that is visible in this flow.",
+                    "If the enum lives in another flow, import it and ensure it is exported.",
+                ),
+            ) from exc
+        _ = enum_unit
+
+        if not any(member.key == mode.name for member in enum_decl.members):
+            raise compile_error(
+                code="E542",
+                summary="Skill package has no contract for the declared mode",
+                detail=(
+                    f"Skill entry `{entry.key}` declares mode `{mode.name}`, but enum "
+                    f"`{enum_decl.name}` declares no matching member."
+                ),
+                path=metadata_unit.prompt_file.source_path,
+                source_span=mode.source_span,
+                hints=(
+                    f"Add `{mode.name}` as a member of enum `{enum_decl.name}`, or use a "
+                    "member the enum declares.",
+                    "Each declared mode must name a contract variant the package honors.",
+                ),
+            )
+
+        if mode.name == "audit" and resolved_binds is not None:
+            emitting_families = {"output", "final_output"}
+            for bind_key, target in resolved_binds.items():
+                if target.family in emitting_families:
+                    raise compile_error(
+                        code="E541",
+                        summary="Audit-mode skill binding emits to an output target",
+                        detail=(
+                            f"Skill entry `{entry.key}` is declared `mode audit`, but "
+                            f"binds slot `{bind_key}` to a `{target.family}` host. "
+                            "Audit-mode bindings must not emit to output targets."
+                        ),
+                        path=metadata_unit.prompt_file.source_path,
+                        source_span=mode.source_span,
+                        hints=(
+                            "Audit-mode skills should read receipts and emit a verdict, "
+                            "not new output-target content.",
+                            "Move emission to a producer-mode skill entry on a different agent.",
+                        ),
+                    )
+
+    _TYPED_SLOT_FAMILY_REGISTRIES: tuple[tuple[str, str], ...] = (
+        ("document", "documents_by_name"),
+        ("schema", "schemas_by_name"),
+        ("table", "tables_by_name"),
+        ("enum", "enums_by_name"),
+        ("agent", "agents_by_name"),
+        ("workflow", "workflows_by_name"),
+    )
+
+    def _resolve_typed_slot_family(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+    ) -> str | None:
+        for family, registry_name in self._TYPED_SLOT_FAMILY_REGISTRIES:
+            try:
+                self._resolve_decl_ref(
+                    ref,
+                    unit=unit,
+                    registry_name=registry_name,
+                    missing_label=f"{family} declaration",
+                )
+            except CompileError:
+                continue
+            return family
+        return None
+
+    def _validate_typed_abstract_slot_binding(
+        self,
+        agent: model.Agent,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        typed_abstracts: dict[str, tuple[model.AuthoredSlotAbstract, str, IndexedUnit]] = {}
+        current_agent: model.Agent | None = agent
+        current_unit: IndexedUnit = unit
+        visited: set[tuple[str, str]] = set()
+        while current_agent is not None:
+            for field in current_agent.fields:
+                if not isinstance(field, model.AuthoredSlotAbstract):
+                    continue
+                if field.declared_type is None:
+                    continue
+                if field.key in typed_abstracts:
+                    continue
+                family = self._resolve_typed_slot_family(
+                    field.declared_type,
+                    unit=current_unit,
+                )
+                if family is None:
+                    raise compile_error(
+                        code="E539",
+                        summary="Typed abstract slot annotation references an unknown entity",
+                        detail=(
+                            f"Agent `{current_agent.name}` declares `abstract {field.key}: "
+                            f"{field.declared_type.declaration_name}`, but the annotation "
+                            "does not resolve to a declared typed entity."
+                        ),
+                        path=current_unit.prompt_file.source_path,
+                        source_span=field.declared_type.source_span or field.source_span,
+                        hints=(
+                            "Point the `:` annotation at a declared document, schema, "
+                            "table, enum, agent, or workflow.",
+                            "If the entity lives in another flow, import it and make sure "
+                            "it is exported.",
+                        ),
+                    )
+                typed_abstracts[field.key] = (field, family, current_unit)
+            if current_agent.parent_ref is None:
+                break
+            parent_key = (
+                "/".join(current_unit.module_parts),
+                current_agent.name,
+            )
+            if parent_key in visited:
+                break
+            visited.add(parent_key)
+            try:
+                current_unit, current_agent = self._resolve_parent_agent_decl(
+                    current_agent,
+                    unit=current_unit,
+                )
+            except CompileError:
+                break
+
+        if not typed_abstracts:
+            return
+
+        for field in agent.fields:
+            if not isinstance(
+                field,
+                (model.AuthoredSlotField, model.AuthoredSlotOverride),
+            ):
+                continue
+            typed = typed_abstracts.get(field.key)
+            if typed is None:
+                continue
+            abstract_field, declared_family, _abstract_unit = typed
+            value = field.value
+            if not isinstance(value, model.NameRef):
+                raise compile_error(
+                    code="E538",
+                    summary="Concrete agent binds typed abstract slot to a wrong-family entity",
+                    detail=(
+                        f"Agent `{agent.name}` binds typed abstract slot `{field.key}` "
+                        "with an inline block, but the abstract declares "
+                        f"`: {abstract_field.declared_type.declaration_name}`. Concrete "
+                        "descendants must bind this slot by name_ref to a declared "
+                        f"{declared_family} entity."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=field.source_span,
+                    hints=(
+                        f"Replace the inline block with a reference to a declared "
+                        f"{declared_family}.",
+                        "If the binding must be inline, drop the typed annotation on the "
+                        "abstract slot.",
+                    ),
+                )
+            bound_family = self._resolve_typed_slot_family(value, unit=unit)
+            if bound_family is None:
+                raise compile_error(
+                    code="E538",
+                    summary="Concrete agent binds typed abstract slot to a wrong-family entity",
+                    detail=(
+                        f"Agent `{agent.name}` binds typed abstract slot `{field.key}` to "
+                        f"`{value.declaration_name}`, but that name does not resolve to a "
+                        f"declared {declared_family} entity."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=value.source_span or field.source_span,
+                    hints=(
+                        f"Bind the slot to a declared {declared_family}.",
+                        "If the entity lives in another flow, import it and make sure it "
+                        "is exported.",
+                    ),
+                )
+            if bound_family != declared_family:
+                raise compile_error(
+                    code="E538",
+                    summary="Concrete agent binds typed abstract slot to a wrong-family entity",
+                    detail=(
+                        f"Agent `{agent.name}` binds typed abstract slot `{field.key}` to "
+                        f"`{value.declaration_name}` (a {bound_family}), but the abstract "
+                        f"declares `: {abstract_field.declared_type.declaration_name}` "
+                        f"(a {declared_family})."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=value.source_span or field.source_span,
+                    hints=(
+                        f"Bind the slot to a declared {declared_family} instead.",
+                        "Typed abstract slots require the concrete binding to match the "
+                        "declared family.",
+                    ),
+                )

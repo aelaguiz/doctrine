@@ -1,0 +1,23 @@
+{
+  "contract_version": 1,
+  "package": {
+    "name": "producer-package",
+    "title": "Producer Package"
+  },
+  "host_contract": {
+    "process_receipt": {
+      "family": "receipt",
+      "title": "Process Receipt",
+      "fields": {
+        "confidence": {
+          "type": "ConfidenceLevel"
+        },
+        "evidence": {
+          "type": "EvidenceRow",
+          "list": true
+        }
+      }
+    }
+  },
+  "artifacts": {}
+}

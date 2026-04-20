@@ -148,16 +148,6 @@ error_code = "E500"
 location_line = 16
 
 [[cases]]
-name = "final_output review_fields may not be repeated on the review carrier"
-status = "active"
-kind = "compile_fail"
-prompt = "prompts/invalid_final_output_review_fields_on_carrier/AGENTS.prompt"
-agent = "InvalidFinalOutputReviewFieldsOnCarrierDemo"
-exception_type = "CompileError"
-error_code = "E500"
-location_line = 88
-
-[[cases]]
 name = "split final_output route reads still need route.exists on blocked review branches"
 status = "active"
 kind = "compile_fail"

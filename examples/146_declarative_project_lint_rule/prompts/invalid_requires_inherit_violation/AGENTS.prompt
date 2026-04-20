@@ -1,0 +1,17 @@
+# A concrete composer-role agent does not inherit the required invariant.
+# The compiler must fail with RULE003.
+
+abstract agent UpstreamPoisoningInvariant:
+    role: "Every composer must first check upstream inputs for poisoning before drafting."
+
+
+agent BriefComposer:
+    role: "Compose the weekly brief without the upstream check."
+
+
+rule ComposersCheckUpstream: "Every composer must inherit the upstream-poisoning invariant"
+    scope:
+        role_class: Composer
+    assertions:
+        requires inherit UpstreamPoisoningInvariant
+    message: "Every composer must inherit UpstreamPoisoningInvariant."

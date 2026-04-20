@@ -1,0 +1,52 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "typed output target binds the downstream handoff by family"
+status = "active"
+kind = "render_contract"
+agent = "ReleaseNotePublisher"
+assertion = "exact_lines"
+expected_lines = [
+  "Publish release notes.",
+  "",
+  "## Outputs",
+  "",
+  "### Release Note",
+  "",
+  "| Contract | Value |",
+  "| --- | --- |",
+  "| Target | Release Note Handoff |",
+  "| Typed As | Release Note |",
+  "| Shape | Markdown Document |",
+  "| Requirement | Advisory |",
+  "| Structure | Release Note |",
+  "",
+  "Required Structure:",
+  "- Summary: Say what shipped.",
+  "- Rollback: Say how to roll this back.",
+  "",
+  "#### Standalone Read",
+  "",
+  "This note should stand on its own.",
+]
+
+[[cases]]
+name = "typed_as ref that resolves to an enum emits E533"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_not_typable/AGENTS.prompt"
+agent = "StrayHandoffDemo"
+exception_type = "CompileError"
+error_code = "E533"
+location_line = 6
+
+[[cases]]
+name = "output structure family mismatch with typed_as emits E534"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_family_mismatch/AGENTS.prompt"
+agent = "MismatchedHandoffDemo"
+exception_type = "CompileError"
+error_code = "E534"
+location_line = 16

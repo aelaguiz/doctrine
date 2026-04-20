@@ -1,0 +1,22 @@
+enum StrayEnum: "Stray Enum"
+    alpha: "alpha"
+    beta: "beta"
+
+
+output target StrayHandoff: "Stray Handoff"
+    typed_as: StrayEnum
+
+
+output StrayNote: "Stray Note"
+    target: StrayHandoff
+    shape: MarkdownDocument
+    requirement: Advisory
+
+    standalone_read: "Standalone Read"
+        "Nothing here."
+
+
+agent StrayHandoffDemo:
+    role: "Demo the invalid typed_as ref."
+    outputs: "Outputs"
+        StrayNote

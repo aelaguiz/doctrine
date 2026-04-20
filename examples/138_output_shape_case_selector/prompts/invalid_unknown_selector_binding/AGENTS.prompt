@@ -1,0 +1,41 @@
+enum WriterRole: "Writer Role"
+    producer: "Producer"
+    critic: "Critic"
+
+
+output schema WriterTurnSchema: "Writer Turn Schema"
+    field headline: "Headline"
+        type: string
+
+    example:
+        headline: "Draft ready for review"
+
+
+output shape WriterTurnJson: "Writer Turn JSON"
+    kind: JsonObject
+    schema: WriterTurnSchema
+
+    selector:
+        mode role = selectors.role as WriterRole
+
+    field_notes: "Field Notes"
+        case WriterRole.producer:
+            "Producer guidance."
+        case WriterRole.critic:
+            "Critic guidance."
+
+
+output WriterTurnResponse: "Writer Turn Response"
+    target: TurnResponse
+    shape: WriterTurnJson
+    requirement: Required
+
+
+agent WriterDemo:
+    role: "Draft the writer turn."
+    selectors:
+        role: WriterRole.producer
+        unknown: WriterRole.critic
+    outputs: "Outputs"
+        WriterTurnResponse
+    final_output: WriterTurnResponse

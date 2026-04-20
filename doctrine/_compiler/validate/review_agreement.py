@@ -482,6 +482,7 @@ class ValidateReviewAgreementMixin:
                 output_unit=output_unit,
                 field_path=next_owner_field_path,
                 owner_label=owner_label,
+                resolved_section_key=branch.section_key,
             )
         elif self._review_output_path_is_live(
             output_decl,
@@ -867,6 +868,7 @@ class ValidateReviewAgreementMixin:
                         output_unit=output_unit,
                         field_path=bound_path,
                         owner_label=owner_label,
+                        resolved_section_key=branch.section_key,
                     )
                     continue
 

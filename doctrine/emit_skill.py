@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
@@ -133,10 +134,7 @@ def render_skill_package_contract_json(compiled) -> str:
             "title": compiled.contract.package_title,
         },
         "host_contract": {
-            slot.key: {
-                "family": slot.family,
-                "title": slot.title,
-            }
+            slot.key: _render_host_slot(slot)
             for slot in compiled.contract.host_contract
         },
         "artifacts": {
@@ -149,6 +147,26 @@ def render_skill_package_contract_json(compiled) -> str:
         },
     }
     return json.dumps(payload, indent=2, sort_keys=False) + "\n"
+
+
+def _render_host_slot(slot) -> dict:
+    if isinstance(slot, model.ReceiptHostSlot):
+        return {
+            "family": slot.family,
+            "title": slot.title,
+            "fields": {field.key: _render_receipt_field(field) for field in slot.fields},
+        }
+    return {
+        "family": slot.family,
+        "title": slot.title,
+    }
+
+
+def _render_receipt_field(field) -> dict:
+    payload: dict = {"type": field.type_ref.declaration_name}
+    if field.list_element:
+        payload["list"] = True
+    return payload
 
 
 def _should_emit_skill_package_contract_json(compiled) -> bool:

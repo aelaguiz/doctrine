@@ -84,6 +84,134 @@ with `override`. This keeps output composition loud at authoring time and
 avoids implicit merge rules. Route fields, attachments, readable blocks, and
 trust surfaces all take part in the same composition.
 
+## Splitting Shared Rules From Role-Specific Turn Sequence
+
+A role-home slot like `how_to_take_a_turn:` often mixes two kinds of prose.
+One kind is always-on ledger and protocol rules that every concrete role
+should keep, such as "keep the ledger current" or "end with one clear
+handoff." The other kind is the role-specific turn sequence that one lane
+writes differently from the next. When a concrete role overrides the slot,
+the shared rules are lost.
+
+The recommended pattern is to split the slot in two named fields on the
+abstract role home:
+
+- `shared_rules:` carries the always-on generic rules. Concrete agents
+  almost always `inherit` it.
+- `how_to_take_a_turn:` carries the role-specific sequence. Concrete
+  agents are free to `override` it without losing the shared rules.
+
+This keeps the generic rules in one source of truth and keeps override
+cost bounded to the role-specific sequence. See
+[../examples/137_role_home_shared_rules_split/](../examples/137_role_home_shared_rules_split/)
+for a minimal example.
+
+## Binding Review Outcomes Via `review.on_*.route`
+
+When several critic agents share one output declaration for their review
+carrier, each critic's own review routes `on_reject` (and often
+`on_accept`) to a different producer. Doctrine's baseline structural
+check for the `next_owner:` field wants a literal `{{TargetAgent}}`
+interpolation that names the routed agent. On a shared carrier that
+constraint forks the prose per critic, which defeats the point of one
+shared output.
+
+The `via review.on_<section>.route` clause solves this. Inside a
+`next_owner:` field body it says "this field is bound to whichever
+agent the named review section resolves for its route." The clause
+emits nothing at render time, so the surrounding prose can stay
+layer-neutral ("Name the producer when the review routes back for
+rework."). One output declaration now cleanly backs any number of
+critics whose routes differ.
+
+The shape is a three-part dotted path on purpose. Today the only
+supported resolution after the section is `.route`. Future language
+moves can add peers like `.current_artifact` without re-parsing the
+grammar. `E317` fires when the named section does not match the
+branch that resolves the route, or when two `via` clauses appear in
+one override body.
+
+See
+[../examples/136_review_shared_route_binding/](../examples/136_review_shared_route_binding/)
+for a two-critic shared-carrier example.
+
+## Selector + Case Dispatch On Output Shapes
+
+A shared output shape such as a team's JSON turn contract often needs one
+body with role-specific lines: the producer reads slightly different field
+notes than the critic, and the critic reads slightly different notes than
+the composer. Without dispatch, authors either fall back to a
+lowest-common-denominator body, or they fork the shape into N near-identical
+per-role shapes that drift over time.
+
+The `selector:` block on `output shape` together with `case EnumType.member:`
+dispatch inside shape bodies lets one shared shape carry role-specific lines
+in place. The shape declares one selector field and its enum, bodies include
+`case EnumType.member:` blocks alongside shared prose, and each concrete
+agent binds the selector with a `selectors:` field. The compiler resolves
+the dispatch at compile time: each agent's emitted shape support only shows
+the lines that apply to its bound member, plus the shared prose that lives
+outside any case block.
+
+Dispatch happens at compile time on purpose. The agent's selector binding
+is author-time intent, not runtime state, so there is no reason for the
+runtime to carry conditional branches through the emitted Markdown.
+`E318` covers shape-side mistakes: a `case ...:` with no `selector:`, a
+`case` placed outside an output shape body, a selector that does not
+resolve to a closed enum, a case that selects a member of the wrong enum
+(including a same-named enum from a different imported flow), overlapping
+cases, or cases that are not exhaustive. `E319` covers agent-side
+mistakes: a final_output pointing at a selector-dispatched shape without
+the matching `selectors:` binding, the same selector bound twice, a
+binding whose key the shape does not declare, or a binding whose enum
+identity does not match the selector's resolved enum.
+
+See
+[../examples/138_output_shape_case_selector/](../examples/138_output_shape_case_selector/)
+for a three-role producer / critic / composer example.
+
+## One Canonical Form For Typed Field Bodies
+
+When a field's value comes from a small fixed vocabulary, the language
+ships exactly one canonical form: declare the enum once, then type the
+field with that name.
+
+```prompt
+enum StepRole: "Step Role"
+    introduce: "Introduce"
+    practice: "Practice"
+    test: "Test"
+    capstone: "Capstone"
+
+table step_arc: "Step Arc"
+    row_schema:
+        step_role: "Step Role"
+            type: StepRole
+            "Name the step's role in the arc."
+```
+
+Four surfaces accept the same `type: <EnumName>` form: output-schema
+fields, readable `row_schema` / `item_schema` entries, readable table
+columns, and record scalars. Every typed field renders the same
+`Valid values: ...` line in declared order. Typing against an unknown
+name fails loud with `E320`.
+
+Two prior forms that once appeared on output-schema fields are retired
+in 5.0. The inline `type: enum` with `values:` block and the legacy
+`type: string` with a sibling `enum:` block no longer parse; authors
+rewrite to the canonical form. The migration is mechanical: lift the
+member list to a new `enum X: "..."` decl, then write `type: X` on the
+field.
+
+Glossary and label nodes (`properties` items and `definitions` items)
+stay prose-only by design. They are name/description pairs, not
+field-shaped slots.
+
+See [../examples/139_enum_typed_field_bodies/](../examples/139_enum_typed_field_bodies/)
+for the canonical form on a `row_schema` entry, with `render_contract`
+and `compile_fail` cases that make the `Valid values:` rendering and the
+`E320` fail-loud behavior manifest-enforced.
+
 ## Skill Package Host Binding Design
 
 `host_contract:` lets a `skill package` declare the typed slots it needs
@@ -93,6 +221,17 @@ through `host:` refs. The design keeps package bodies reusable and keeps the
 typed link explicit, instead of repeating host IO prose across every inline
 skill bridge. `SKILL.contract.json` makes the same link machine-readable for
 harnesses that load the package.
+
+`receipt` host slots extend that contract to the other direction: the
+typed envelope the package emits on every run. Authors declare the receipt
+fields with their declared `enum`, `table`, `schema`, or `document` types,
+and downstream critics reference those fields through the skill binding
+(for example, `producer.receipt.confidence`) rather than restating the
+contract as prose. Receipt slots are not call-site bound; the package owns
+them. See [../examples/142_skill_host_receipt_envelope/](../examples/142_skill_host_receipt_envelope/)
+for the canonical shape with `render_contract`, `build_contract`, and
+`compile_fail` cases that make the typed `fields` rendering and the
+`E535`/`E537` fail-loud behavior manifest-enforced.
 
 ## Shipped Boundaries
 

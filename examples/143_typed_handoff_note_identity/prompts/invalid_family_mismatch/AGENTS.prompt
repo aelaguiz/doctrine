@@ -1,0 +1,28 @@
+document ReleaseNoteDocument: "Release Note"
+    section summary: "Summary"
+        "Say what shipped."
+
+
+document LedgerNoteDocument: "Ledger Note"
+    section summary: "Summary"
+        "Say what changed."
+
+
+output target MismatchedHandoff: "Mismatched Handoff"
+    typed_as: ReleaseNoteDocument
+
+
+output MismatchedNote: "Mismatched Note"
+    target: MismatchedHandoff
+    shape: MarkdownDocument
+    structure: LedgerNoteDocument
+    requirement: Advisory
+
+    standalone_read: "Standalone Read"
+        "Nothing here."
+
+
+agent MismatchedHandoffDemo:
+    role: "Demo the family mismatch."
+    outputs: "Outputs"
+        MismatchedNote

@@ -1,0 +1,22 @@
+enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+skill SharedSkill: "Shared Skill"
+    purpose: "Run the shared producer/audit package."
+    package: "shared-skill-package"
+
+
+agent ProducerAgent:
+    role: "Run the shared skill in producer mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode producer = SkillMode.producer as SkillMode
+
+
+agent AuditorAgent:
+    role: "Run the shared skill in audit mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode audit = SkillMode.audit as SkillMode

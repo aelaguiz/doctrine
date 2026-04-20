@@ -11,6 +11,7 @@ from doctrine._compiler.resolved_types import (
     ReadableColumnsTarget,
     ReadableRowsTarget,
     ReadableSchemaTarget,
+    ReceiptBindingTarget,
     ResolvedAnalysisSection,
     ResolvedRenderProfile,
     ResolvedSchemaArtifact,
@@ -121,6 +122,12 @@ class ValidateAddressableDisplayMixin:
             symbol = target.key
         elif isinstance(target, ResolvedSkillEntry):
             title = target.skill_decl.title
+            symbol = target.key
+        elif isinstance(target, ReceiptBindingTarget):
+            title = target.slot.title
+            symbol = "receipt"
+        elif isinstance(target, model.ReceiptField):
+            title = _humanize_key(target.key)
             symbol = target.key
         elif isinstance(target, ResolvedAnalysisSection):
             title = target.title

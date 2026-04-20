@@ -1,0 +1,116 @@
+End acceptance review with one JSON review carrier validated as the final response.
+
+## Acceptance Review
+
+Review subject: Draft Plan.
+Shared review contract: Plan Review Contract.
+
+### Contract Checks
+
+Accept only if The acceptance review contract passes.
+
+### If Accepted
+
+Current artifact: Draft Plan.
+
+Accepted plan goes to ReviewLead.
+
+### If Rejected
+
+Current artifact: Draft Plan.
+
+## Inputs
+
+### Draft Plan
+
+- Source: File
+- Path: `unit_root/DRAFT_PLAN.md`
+- Shape: Markdown Document
+- Requirement: Required
+
+## Final Output
+
+### Acceptance Review Response
+
+> **Final answer contract**
+> End the turn with one final assistant message that follows this schema.
+
+| Contract | Value |
+| --- | --- |
+| Message type | Final assistant message |
+| Format | Structured JSON |
+| Shape | Acceptance Review JSON |
+| Schema | Acceptance Review Schema |
+| Profile | OpenAIStructuredOutput |
+| Generated Schema | `schemas/acceptance_review_response.schema.json` |
+| Requirement | Required |
+
+#### Payload Fields
+
+| Field | Type | Required On Wire | Null Allowed | Meaning |
+| --- | --- | --- | --- | --- |
+| `verdict` | string | Yes | No | Review verdict. |
+| `reviewed_artifact` | string | Yes | No | Reviewed artifact name. |
+| `current_artifact` | string | Yes | Yes | Current artifact after review. |
+| `next_owner` | string | Yes | Yes | Next owner after review when one exists. |
+
+#### Example
+
+```json
+{
+  "verdict": "accept",
+  "reviewed_artifact": "Draft Plan",
+  "current_artifact": "Draft Plan",
+  "next_owner": "ReviewLead"
+}
+```
+
+- Kind: Json Object
+
+#### Field Notes
+
+Keep `next_owner` aligned with the routed review branch.
+
+#### Verdict
+
+State whether the plan passed review or asked for changes.
+
+#### Reviewed Artifact
+
+Name the reviewed artifact.
+
+#### Analysis Performed
+
+Summarize the review analysis.
+
+#### Output Contents That Matter
+
+State what the next owner should read first.
+
+#### Current Artifact
+
+Show this only when present(current_artifact).
+
+Name the artifact that remains current after review.
+
+#### Next Owner
+
+Show this only when present(next_owner).
+
+Name ReviewLead when the review accepts the plan.
+
+#### Failure Detail
+
+Show this only when verdict is changes requested.
+
+##### Failing Gates
+
+List exact failing gates in authored order.
+
+#### Trust Surface
+
+- Current Artifact
+
+#### Read on Its Own
+
+This review should stand on its own.

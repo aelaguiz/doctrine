@@ -1,0 +1,7 @@
+skill package ProducerEmptyReceiptPackage: "Producer Empty Receipt"
+    metadata:
+        name: "producer-empty-receipt-package"
+        description: "Receipt slot declared without fields should fail loud."
+    host_contract:
+        receipt process_receipt: "Process Receipt"
+    "Every run emits the process receipt."

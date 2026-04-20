@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import tempfile
 import textwrap
 import unittest
@@ -68,6 +69,61 @@ class CompilerBoundaryTests(unittest.TestCase):
         for name in leaked_names:
             self.assertNotIn(name, compiler_api.__all__)
             self.assertFalse(hasattr(compiler_api, name), name)
+
+    def test_public_resolved_exports_matches_resolved_types_import_block(self) -> None:
+        # `doctrine.compiler` re-exports resolved_types names via two lists that
+        # must agree: the `from doctrine._compiler.resolved_types import (...)`
+        # block at module top, and `_PUBLIC_RESOLVED_EXPORTS` (which `__all__`
+        # splats). Drift between them silently changes the public boundary —
+        # an imported-but-unexported name becomes an accidental private leak,
+        # and an exported-but-unimported name is an AttributeError on access.
+        # A within-list duplicate does not change the exported *set* but does
+        # indicate a hand-edit slip that will drift further over time. This
+        # test is the single safeguard: parse the source with `ast` so any
+        # future edit that breaks the invariant fails loud here.
+        source = Path(compiler_api.__file__).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+
+        imported_from_resolved_types: set[str] = set()
+        public_resolved_exports: list[str] | None = None
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module == "doctrine._compiler.resolved_types"
+            ):
+                imported_from_resolved_types.update(alias.name for alias in node.names)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if (
+                        isinstance(target, ast.Name)
+                        and target.id == "_PUBLIC_RESOLVED_EXPORTS"
+                        and isinstance(node.value, ast.List)
+                    ):
+                        public_resolved_exports = [
+                            element.value
+                            for element in node.value.elts
+                            if isinstance(element, ast.Constant)
+                            and isinstance(element.value, str)
+                        ]
+
+        self.assertIsNotNone(
+            public_resolved_exports,
+            "_PUBLIC_RESOLVED_EXPORTS list not found in doctrine/compiler.py",
+        )
+        duplicates = sorted(
+            {
+                name
+                for name in public_resolved_exports
+                if public_resolved_exports.count(name) > 1
+            }
+        )
+        self.assertEqual(duplicates, [], f"duplicate exports: {duplicates}")
+        self.assertEqual(
+            set(public_resolved_exports),
+            imported_from_resolved_types,
+            "drift between `from doctrine._compiler.resolved_types import (...)` "
+            "and `_PUBLIC_RESOLVED_EXPORTS`",
+        )
 
     def test_compile_agent_from_imported_runtime_package_unit(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

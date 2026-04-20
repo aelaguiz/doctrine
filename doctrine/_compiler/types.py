@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 import doctrine._model as model
 from doctrine._model.core import ProseLine, RenderProfileRule, RoleScalar
@@ -12,6 +12,9 @@ from doctrine._model.readable import (
     ReadableInlineSchemaData,
     ReadablePropertyItem,
 )
+
+if TYPE_CHECKING:
+    from doctrine._compiler.resolve.field_types import FieldTypeRef
 
 # Renderer and flow-renderer import this module directly because it is the
 # canonical owner for shared compiled data contracts.
@@ -91,6 +94,7 @@ class CompiledTableColumn:
     key: str
     title: str
     body: tuple[ProseLine, ...]
+    type_ref: "FieldTypeRef | None" = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -348,7 +352,7 @@ class CompiledSkillPackageContract:
     contract_version: int
     package_name: str
     package_title: str
-    host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+    host_contract: tuple[model.SkillPackageHostSlotItem, ...] = ()
     artifacts: tuple[CompiledSkillPackageArtifactContract, ...] = ()
 
 

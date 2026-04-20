@@ -1,20 +1,20 @@
+enum RepoStatus: "Repo Status"
+    ok: "Ok"
+    action_required: "Action Required"
+
+
 output schema RepoStatusSchema: "Repo Status Schema"
     field summary: "Summary"
         type: string
-        required
         note: "Short natural-language status."
 
     field status: "Status"
-        type: string
-        enum:
-            ok
-            action_required
-        required
+        type: RepoStatus
         note: "Current repo outcome."
 
     field next_step: "Next Step"
         type: string
-        optional
+        nullable
         note: "Null only when no follow-up is needed."
 
 
