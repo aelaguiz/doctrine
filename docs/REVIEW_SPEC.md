@@ -181,6 +181,38 @@ Important rules:
 - `fields:` may also bind `current_artifact` when reusable output logic needs
   `fields.current_artifact`
 
+A case may also adjust the shared contract's gate set through an inline
+`override gates:` block. The block sits between `contract:` and `checks:`,
+and each line is one of `add`, `remove`, or `modify`:
+
+```prompt
+full_path: "Full Path"
+    when ReviewMode.full_path
+    subject: DraftSpec
+    contract: SharedReviewContract
+    override gates:
+        remove clarity
+        add depth: "Depth"
+        modify completeness: "Completeness (full path)"
+    checks:
+        accept "The shared review contract passes." when contract.passes
+```
+
+Rules for `override gates:`:
+
+- `remove NAME`: `NAME` must name a gate the contract actually declares. A
+  mismatch fails loud with `E531`.
+- `add NAME: "Title"`: `NAME` must not already exist in the case's effective
+  gate set (contract gates minus `remove` entries). A collision fails loud
+  with `E532`.
+- `modify NAME: "Title"`: `NAME` must name a gate still in the effective set
+  after `remove` entries apply. A missing target fails loud with `E531`.
+  Declaring the same `modify` target twice in one case fails loud with `E532`.
+- Two cases may share one contract; the override block applies only to its
+  own case.
+- See `examples/141_review_case_gate_override/` for the positive proof and
+  the sibling invalid cases.
+
 ## Field Bindings
 
 `fields:` is a distinct inherited binding surface, not a loose config bag.

@@ -12,6 +12,7 @@ from doctrine._parser.parts import (
     OutputSchemaPart,
     OutputStructurePart,
     OutputTargetDeliverySkillPart,
+    OutputTargetTypedAsPart,
     RenderProfilePart,
     TrustSurfacePart,
     _body_prose_location,
@@ -656,6 +657,7 @@ class IoTransformerMixin:
                 title=title,
                 items=body[0],
                 delivery_skill_ref=body[1],
+                typed_as=body[2],
             ),
             meta,
         )
@@ -667,6 +669,7 @@ class IoTransformerMixin:
     def output_target_body(self, items):
         record_items: list[model.RecordItem] = []
         delivery_skill_ref: model.NameRef | None = None
+        typed_as_ref: model.NameRef | None = None
         for item in items:
             if isinstance(item, OutputTargetDeliverySkillPart):
                 if delivery_skill_ref is not None:
@@ -678,13 +681,28 @@ class IoTransformerMixin:
                     )
                 delivery_skill_ref = item.ref
                 continue
+            if isinstance(item, OutputTargetTypedAsPart):
+                if typed_as_ref is not None:
+                    raise TransformParseFailure(
+                        "Output target declarations may define `typed_as:` only once.",
+                        hints=("Keep exactly one typed identity per output target.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                typed_as_ref = item.ref
+                continue
             record_items.append(item)
-        return tuple(record_items), delivery_skill_ref
+        return tuple(record_items), delivery_skill_ref, typed_as_ref
 
     @v_args(meta=True, inline=True)
     def output_target_delivery_skill_stmt(self, meta, ref):
         line, column = _meta_line_column(meta)
         return OutputTargetDeliverySkillPart(ref=ref, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def output_target_typed_as_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return OutputTargetTypedAsPart(ref=ref, line=line, column=column)
 
     @v_args(meta=True, inline=True)
     def output_shape_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):

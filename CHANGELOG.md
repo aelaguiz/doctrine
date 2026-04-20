@@ -10,15 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Release kind: Breaking
 Release channel: stable
-Language version: 4.0 -> 5.0
+Language version: 4.0 -> 5.2
 Affected surfaces:
 - 4.0 -> 4.1 additive moves: review-driven agent carrier mode (`E500` now permits `final_output.review_fields:` on the single carrier output when the author opts in), the authored stdlib role-home pattern (splitting `shared_rules:` from `how_to_take_a_turn:` is now a shipped example), `via review.on_*.route` binding inside `next_owner:` output bodies (new compile code `E317`), `selector:` on `output shape` with `case EnumType.member:` dispatch plus agent-side `selectors:` binding (new compile codes `E318` and `E319`), and the numbered example corpus additions (`135_review_carrier_structured`, `136_review_shared_route_binding`, `137_role_home_shared_rules_split`, `138_output_shape_case_selector`).
 - 4.1 -> 5.0 breaking cut: the `output schema` field `type:` slot (the inline `type: enum` plus `values:` form and the legacy `type: string` plus `enum:` form are deleted), readable `row_schema` and `item_schema` entry bodies, readable table column bodies, and record-scalar bodies (all four surfaces now accept `type: <EnumName>` to name a declared `enum`), a new compile code `E320` for `type:` names that are neither a builtin primitive nor a resolvable `enum`, the renderer (now emits one `Valid values: ...` line per typed field under a unified helper), the JSON-schema lowering path (now appends `One of ...` after a field description when both a description and a closed vocabulary are present), six shipped examples that migrated from the deleted forms (`79/AGENTS.prompt`, `79/optional_no_example/AGENTS.prompt`, `79/invalid_invalid_example/AGENTS.prompt`, `85/AGENTS.prompt`, `90/AGENTS.prompt`, `121/AGENTS.prompt`), the new example `139_enum_typed_field_bodies`, and docs (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `AGENT_IO_DESIGN_NOTES.md`, `VERSIONING.md`, `COMPILER_ERRORS.md`, `examples/README.md`).
+- 5.0 -> 5.1 additive moves: per-case `override gates:` block inside a `review_family` case body (one shared `contract:` may now back several cases with `add NAME: "Title"`, `remove NAME`, and `modify NAME: "Title"` clauses; case `checks:` references resolve against the per-case effective gate set), two new compile codes `E531` (remove or modify of a gate the contract never declared) and `E532` (add or modify name collision), the new example `141_review_case_gate_override` with one positive `render_contract` case plus two `compile_fail` cases, the curated `doctrine-learn` reviews reference (new `Per-Case Gate Override` section), the curated `agent-linter` finding catalog (new `AL246 Per-Case Gate Delta Split Into Parallel Contracts` finding), the VSCode tmLanguage grammar (highlights `add` / `remove` / `modify` clauses), and docs (`LANGUAGE_REFERENCE.md`, `REVIEW_SPEC.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`).
+- 5.1 -> 5.2 additive moves: a typed `receipt` host-slot family on `skill package` `host_contract:` (author may declare `receipt <slot_key>: "Title"` with typed `<field_key>: <DeclaredType>` or `<field_key>: list[<DeclaredType>]` entries so the package owns the typed envelope it emits on every run), three new compile codes `E535` (empty receipt body or duplicate field key), `E536` (unresolved receipt field reference through a skill binding), and `E537` (receipt field type is not a declared `enum`/`table`/`schema`/`document`), receipt slots are exempt from the exact-once call-site bind requirement (the package owns them), `SKILL.contract.json` now carries each receipt slot with its typed `fields` map, the new example `142_skill_host_receipt_envelope` with a positive `render_contract` case, a `build_contract` case, and two `compile_fail` cases for `E535` and `E537`, the curated `doctrine-learn` skills reference (new `Typed Receipt Envelope` section), the curated `agent-linter` finding catalog (new `AL960 Process Evidence Emitted As Prose Not Typed Receipt` finding), the VSCode tmLanguage grammar (highlights the `receipt` host-slot keyword), and docs (`LANGUAGE_REFERENCE.md`, `LANGUAGE_DESIGN_NOTES.md`, `COMPILER_ERRORS.md`, `VERSIONING.md`, `AGENTS.md`, `examples/README.md`).
 Who must act: authors whose `.prompt` files use the inline `type: enum` plus `values:` form or the legacy `type: string` plus `enum:` form on any `output schema` field, and downstream tooling that parsed those syntactic forms.
 Who does not need to act: authors who already typed `output schema` fields with a declared `enum`, authors who only use builtin primitive `type:` values, authors using split-mode review carriers or existing role homes, and runtime consumers of emitted Markdown or emitted JSON schemas (the wire shape is preserved; only the rendered `Valid values:` line is new).
 Upgrade steps: (1) install the matching release from your package index; (2) for every `output schema` field that used `type: enum` plus `values:`, lift the member list into a new top-level `enum X: "..."` decl and rewrite the field body as `type: X`; (3) for every legacy `type: string` plus `enum:` field, do the same; (4) on any readable `row_schema` / `item_schema` entry, table column, or record scalar that previously listed a vocabulary as prose, declare the `enum` once and rewrite the body as `type: X`; (5) re-run `make verify-examples` and `make verify-diagnostics` and confirm `E320` fires only on truly unknown names.
 Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
-Support-surface version changes: Doctrine language 4.0 -> 5.0; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
+Support-surface version changes: Doctrine language 4.0 -> 5.2; package metadata unchanged until the next public release cuts; distribution name `doctrine-agents` unchanged.
 
 ### Added
 - Carrier-mode review-driven agents may now declare `final_output.review_fields:`
@@ -71,6 +73,61 @@ Support-surface version changes: Doctrine language 4.0 -> 5.0; package metadata 
   Declared Once, Referenced By Symbol" section pointing at the example,
   and the `agent-linter` finding catalog adds `AL245` for review gates
   authored as inline prose instead of typed contract gates.
+- A `review_family` case body may now declare an `override gates:` block
+  to carry a case-scoped gate delta against the shared review contract.
+  The block accepts `add NAME: "Title"`, `remove NAME`, and
+  `modify NAME: "Title"` clauses. The case `checks:` block still
+  references the same `contract.NAME` symbols, now resolved against the
+  per-case effective gate set. Two new compile codes fail loud on
+  authoring mistakes: `E531` for a `remove` or `modify` of a gate the
+  contract does not declare, and `E532` for an `add` (or duplicate
+  `modify`) that collides with a name the effective gate set already
+  carries. Existing programs without the block keep compiling unchanged.
+- Example `141_review_case_gate_override` proves the per-case override
+  pattern with one positive `render_contract` case (one shared review
+  contract drives a `quick_path` case unchanged and a `full_path` case
+  that removes one gate, adds another, and renames a third) plus two
+  `compile_fail` cases that fire `E531` and `E532`. The curated
+  `doctrine-learn` reviews reference now includes a `Per-Case Gate
+  Override` section pointing at the example, and the `agent-linter`
+  finding catalog adds `AL246 Per-Case Gate Delta Split Into Parallel
+  Contracts` for two or more review cases that share one
+  `review_family` and only differ in a small gate delta yet bind their
+  own near-duplicate contract instead of using the override block.
+- VSCode tmLanguage grammar now highlights the per-case gate override
+  clauses (`add NAME: "..."`, `remove NAME`, `modify NAME: "..."`).
+- `skill package` `host_contract:` now supports a typed `receipt`
+  host-slot family. Author `receipt <slot_key>: "Title"` inside
+  `host_contract:` with typed `<field_key>: <DeclaredType>` or
+  `<field_key>: list[<DeclaredType>]` entries so the package owns the
+  typed envelope it emits on every run. Receipt fields type with a
+  declared `enum`, `table`, `schema`, or `document`. Receipt slots are
+  exempt from the exact-once call-site bind requirement: the package
+  owns its receipt envelope, so consuming skill entries do not re-bind
+  receipt slots. Downstream consumers reference receipt fields through
+  the skill binding, e.g. `<skill_binding_key>.receipt.<field_key>`.
+  Three new compile codes fail loud on authoring mistakes: `E535` for
+  a receipt body declared without fields or with duplicate field keys,
+  `E536` for a dotted reference through a skill binding that names a
+  field the receipt host slot does not declare, and `E537` for a
+  receipt field typed with a name that is not a declared `enum`,
+  `table`, `schema`, or `document`. `SKILL.contract.json` now records
+  each receipt slot with its typed `fields` map so runtime hosts can
+  validate the emitted envelope. Existing packages without a `receipt`
+  slot keep compiling unchanged.
+- Example `142_skill_host_receipt_envelope` proves the typed receipt
+  envelope pattern with one positive `render_contract` case, one
+  `build_contract` case that exercises the typed `fields` map in
+  `SKILL.contract.json`, and two `compile_fail` cases that fire `E535`
+  (empty receipt body) and `E537` (receipt field typed with an
+  undeclared name). The curated `doctrine-learn` skills reference now
+  includes a `Typed Receipt Envelope` section pointing at the example,
+  and the `agent-linter` finding catalog adds
+  `AL960 Process Evidence Emitted As Prose Not Typed Receipt` for
+  skills that describe a run-by-run evidence envelope in prose instead
+  of a typed `receipt` slot.
+- VSCode tmLanguage grammar now highlights the `receipt` host-slot
+  keyword.
 
 ### Changed
 - `E500` semantics: was "final_output review_fields may not be repeated on

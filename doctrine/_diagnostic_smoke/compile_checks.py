@@ -24,6 +24,10 @@ from doctrine._diagnostic_smoke.fixtures import (
     _reserved_analysis_slot_source,
     _write_prompt,
 )
+from doctrine._diagnostic_smoke.fixtures_reviews import (
+    _review_case_gate_override_add_collision_source,
+    _review_case_gate_override_remove_missing_source,
+)
 
 
 def _expect_compile_diagnostic(
@@ -71,6 +75,8 @@ def run_compile_checks() -> None:
     _check_readable_table_requires_columns()
     _check_output_schema_owner_conflict_surfaces_as_parse_error()
     _check_output_schema_structure_conflict_surfaces_as_parse_error()
+    _check_review_case_gate_override_remove_missing_has_specific_code()
+    _check_review_case_gate_override_add_collision_has_specific_code()
 
 
 def _check_compile_missing_role_has_specific_code() -> None:
@@ -360,6 +366,36 @@ def _check_output_schema_owner_conflict_surfaces_as_parse_error() -> None:
             _expect("must_include" in str(exc), str(exc))
             return
         raise SmokeFailure("expected parse failure for output schema owner conflict, but parsing succeeded")
+
+
+def _check_review_case_gate_override_remove_missing_has_specific_code() -> None:
+    source = _review_case_gate_override_remove_missing_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "SelectedReviewFamilyDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E531", line=88)
+            return
+        raise SmokeFailure(
+            "expected compile failure for review case override removing an undeclared gate, but compilation succeeded"
+        )
+
+
+def _check_review_case_gate_override_add_collision_has_specific_code() -> None:
+    source = _review_case_gate_override_add_collision_source()
+    with TemporaryDirectory() as tmp_dir:
+        prompt_path = _write_prompt(tmp_dir, source)
+        prompt = parse_file(prompt_path)
+        try:
+            compile_prompt(prompt, "SelectedReviewFamilyDemo")
+        except Exception as exc:
+            _expect_compile_diagnostic(exc, code="E532", line=89)
+            return
+        raise SmokeFailure(
+            "expected compile failure for review case override adding a colliding gate, but compilation succeeded"
+        )
 
 
 def _check_output_schema_structure_conflict_surfaces_as_parse_error() -> None:

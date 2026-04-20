@@ -206,10 +206,18 @@ selector_block: "selector" ":" _NL _INDENT review_selector_stmt+ _DEDENT
 review_selector_stmt: "mode" CNAME "=" expr "as" name_ref _NL
 review_cases_block: "cases" ":" _NL _INDENT review_case_decl+ _DEDENT
 review_case_decl: CNAME ":" string _NL _INDENT review_case_body _DEDENT
-review_case_body: review_case_when_stmt review_case_subject_stmt review_case_contract_stmt review_case_checks review_case_on_accept review_case_on_reject
+review_case_body: review_case_when_stmt review_case_subject_stmt review_case_contract_stmt review_case_gates_override_block? review_case_checks review_case_on_accept review_case_on_reject
 review_case_when_stmt: "when" union_expr _NL
 review_case_subject_stmt: "subject" ":" artifact_subject_expr _NL
 review_case_contract_stmt: "contract" ":" review_contract_ref _NL
+// Sibling of schema_override_sections:397-400 — block-level override inside a review case.
+review_case_gates_override_block: "override" "gates" ":" _NL _INDENT review_case_gate_override_clause+ _DEDENT
+review_case_gate_override_clause: review_case_gate_add
+                                | review_case_gate_remove
+                                | review_case_gate_modify
+review_case_gate_add: "add" CNAME ":" string _NL
+review_case_gate_remove: "remove" CNAME _NL
+review_case_gate_modify: "modify" CNAME ":" string _NL
 review_case_checks: "checks" ":" _NL _INDENT pre_outcome_review_stmt+ _DEDENT
 review_case_on_accept: "on_accept" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
 review_case_on_reject: "on_reject" ":" _NL _INDENT outcome_review_stmt+ _DEDENT
@@ -702,8 +710,13 @@ input_structure_stmt: "structure" ":" name_ref _NL?
 
 output_target_body: output_target_body_line+
 output_target_body_line: output_target_delivery_skill_stmt
+                       | output_target_typed_as_stmt
                        | record_item
 output_target_delivery_skill_stmt: "delivery_skill" ":" name_ref _NL?
+// Sibling of `FieldTypeRef`'s nested-type shape (pattern propagation): names a
+// declared `document`, `schema`, or `table` so downstream agents can bind this
+// target as a typed input by family instead of reconstructing it from prose.
+output_target_typed_as_stmt: "typed_as" ":" name_ref _NL?
 
 output_body: output_body_line+
 output_body_line: output_record_item
@@ -896,8 +909,13 @@ package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDEN
 package_metadata_item: CNAME ":" string _NL?
 package_emit_block: "emit" ":" _NL _INDENT package_emit_item+ _DEDENT
 package_emit_item: string ":" name_ref _NL?
-package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot+ _DEDENT
+package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot_item+ _DEDENT
+?package_host_slot_item: package_host_slot
+                       | package_host_receipt_slot
 package_host_slot: package_host_slot_family CNAME ":" string _NL?
+// Closed enum on purpose. Adding a new family means adding a new shipped slot
+// kind here, a model variant in `_model/io.py`, parser wiring, validator
+// coverage, and the matching teaching surface; do not add open-ended values.
 package_host_slot_family: "input" -> package_host_slot_family_input
                          | "output" -> package_host_slot_family_output
                          | "document" -> package_host_slot_family_document
@@ -905,6 +923,11 @@ package_host_slot_family: "input" -> package_host_slot_family_input
                          | "schema" -> package_host_slot_family_schema
                          | "table" -> package_host_slot_family_table
                          | "final_output" -> package_host_slot_family_final_output
+package_host_receipt_slot: "receipt" CNAME ":" string _NL receipt_slot_body?
+receipt_slot_body: _INDENT receipt_field+ _DEDENT
+receipt_field: CNAME ":" receipt_field_type _NL?
+receipt_field_type: receipt_field_list_type | name_ref
+receipt_field_list_type: "list" "[" name_ref "]"
 
 record_readable_block: record_section_block
                      | readable_nonsection_block

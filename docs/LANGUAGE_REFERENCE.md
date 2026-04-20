@@ -423,6 +423,13 @@ Important rules:
   that reference fails loud with `E477`. See
   [REVIEW_SPEC.md](REVIEW_SPEC.md#review-contracts) and
   `examples/140_typed_gates_symbol_reference/` for proof.
+- A case inside `review_family cases:` may adjust the shared contract's gate
+  set through `override gates:` with `add`, `remove`, and `modify` lines.
+  Removing or modifying a gate that the contract does not declare fails loud
+  with `E531`; adding a gate name that already exists in the case's effective
+  gate set fails loud with `E532`. See
+  [REVIEW_SPEC.md](REVIEW_SPEC.md#core-review-configuration) and
+  `examples/141_review_case_gate_override/` for proof.
 
 ### Tables
 
@@ -733,7 +740,7 @@ Important rules:
   `{{host:slot_key.path.to.child}}` interpolation.
 - Emitted docs and bundled agent prompts use the same `host:` root anywhere
   that artifact kind already supports normal addressable refs.
-- The first cut supports these host-slot families:
+- The shipped host-slot families are:
   - `input`
   - `output`
   - `document`
@@ -741,6 +748,7 @@ Important rules:
   - `schema`
   - `table`
   - `final_output`
+  - `receipt`
 - Bind targets may point at:
   - `inputs:key`
   - `outputs:key`
@@ -748,9 +756,41 @@ Important rules:
   - `final_output`
   - ordinary declaration refs such as `SectionMap`
   - addressable child paths on those same roots
-- Every declared host slot must be bound exactly once.
+- Every declared host slot must be bound exactly once, except `receipt`
+  slots — the package owns the receipt contract itself, so receipt slots
+  are not bound at the call site.
 - Unknown slots, missing binds, extra binds, wrong families, and bad child
   paths fail loud.
+
+#### Receipt Host Slots
+
+Receipt slots let a skill package declare the typed receipt envelope it
+emits on every run. The typed fields are the contract — downstream critics
+can reference them by symbol without restating the prose.
+
+```prompt
+skill package ProducerPackage: "Producer Package"
+    metadata:
+        name: "producer-package"
+    host_contract:
+        receipt process_receipt: "Process Receipt"
+            confidence: ConfidenceLevel
+            evidence: list[EvidenceRow]
+    "Every run emits the process receipt."
+```
+
+Rules:
+
+- A `receipt` slot body must declare at least one typed field. Empty
+  receipts fail with `E535`.
+- Each field types its value with a declared `enum`, `table`, `schema`,
+  or `document`. Using an undeclared name fails with `E537`.
+- `list[Row]` marks a repeating field.
+- Critics and other consumers address receipt fields through the skill
+  binding: `skill_binding_key.receipt.field_key`. References that do not
+  resolve fail with `E536`.
+- `SKILL.contract.json` records each receipt slot with its typed
+  `fields` map so runtime hosts can validate the emitted envelope.
 - When a package has host-binding truth, `SKILL.contract.json` records the
   package host contract and the host paths used by each emitted prompt-authored
   artifact.

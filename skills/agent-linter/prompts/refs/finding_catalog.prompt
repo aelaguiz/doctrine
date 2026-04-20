@@ -11,11 +11,13 @@ document FindingCatalog: "Finding Catalog"
 | `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. | Move the reusable method into a skill. |
 | `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
 | `AL140` | Planning-Doc Scaffolding In Agent Body | The role body cites planning docs by path or rule ID, or carries authoring rationale. | Strip the citation and rule IDs; keep only the behavior. |
-| `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \| B \| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
+| `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \\| B \\| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
 | `AL210` | Repeated Method Should Become A Skill | Several agents carry the same decision method without a shared skill owner. | Extract the shared method into a skill. |
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
 | `AL230` | Semantic Duplicate Across Agents | Several targets say the same rule in different words. | Collapse the semantic copies behind one shared owner. |
 | `AL240` | Skill Hardcodes Invocation Inputs | A skill hardcodes changing subject, dataset, or case facts. | Keep the method in the skill and move changing facts into inputs or source reads. |
+| `AL245` | Gate Declared As Inline Prose | Review gate IDs appear as free-form prose on the review or in an output field body instead of as typed `contract.NAME` identities. | Declare the gates once on the review contract and reference them by `contract.NAME` in the review body and the same identities through Doctrine interpolation in authored prose. |
+| `AL246` | Per-Case Gate Delta Split Into Parallel Contracts | Two or more review cases share one `review_family` and differ only in a small gate delta, yet each case binds its own near-duplicate `contract:` workflow or schema. | Keep one shared contract and express the per-case delta through `override gates:` inside the case block. |
 | `AL250` | Skill Capabilities Pulled Into Agent Role | The role prose tells the turn how to call a script, tool, or hard requirement that a skill should own. | Move the procedure into the skill; have the agent reference the skill. |
 | `AL260` | Naked Script Or CLI Invocation In Role Prose | The role carries literal shell commands, exe paths, or flag lists as instructions. | Promote the invocation into a skill body and reference it. |
 | `AL270` | Parallel Workflows As Review Contracts | Several `workflow` declarations share the same gate slot keys and each is bound as a review `contract:`. | Collapse into one `review_family` with shared gates and per-case prose. |
@@ -52,7 +54,8 @@ document FindingCatalog: "Finding Catalog"
 | `AL920` | Compiler-Owned Semantics Restated In Prose | Prose restates verdicts, routing, or other semantics the compiler already owns. | Delete the prose copy and point at the declared surface. |
 | `AL930` | Skill Needs Host Contract | A bare `skill` imported across agents has prose naming host-owned slots. | Promote to `skill package` with `host_contract:` and `bind:` at each host. |
 | `AL940` | Role Prose Shadows Typed Skill Scope | Role prose enumerates verb allow/blocklists that a typed skill scope already owns. | Drop the prose list; cite the skill by name. |
-| `AL950` | Inlined Vocabulary Should Be An Enum-Typed Field | A fixed set of values is listed as prose (for example `A \| B \| C`) instead of a declared `enum` typed onto a field. | Declare `enum X: "..."` once, then write `type: X` on the field. |
+| `AL950` | Inlined Vocabulary Should Be An Enum-Typed Field | A fixed set of values is listed as prose (for example `A \\| B \\| C`) instead of a declared `enum` typed onto a field. | Declare `enum X: "..."` once, then write `type: X` on the field. |
+| `AL960` | Process Evidence Emitted As Prose Not Typed Receipt | A skill's body or emitted artifact describes a run-by-run evidence envelope in prose rather than declaring a typed `receipt` host slot. | Promote the skill to a `skill package` and declare `receipt <slot>:` in `host_contract:` with typed fields; let critics bind the receipt by symbol. |
 """
 
     section full_calibration: "Full Calibration"
@@ -132,6 +135,25 @@ document FindingCatalog: "Finding Catalog"
             "Default fix: Keep the method in the skill and move changing facts into inputs or source reads."
             "Good: `Read the supplied founder application and the supplied source set.`"
             "Bad: `Read Maria Santos's application and Contrail's billing commits.`"
+
+        section al245: "`AL245` Gate Declared As Inline Prose"
+            "What it means: Review gate IDs appear as free-form prose on the review body or inside an output field body instead of as typed `contract.NAME` identities."
+            "Why it matters: Typed gates are declared once on the `contract:` (either a `workflow` or a `schema`) and exported as `contract.NAME` symbols. Inline prose drifts from the contract, loses `E477` protection, and splits the gate taxonomy across surfaces."
+            "Default severity: `high`. Gate drift breaks per-gate routing and failing-gate truth."
+            "Default fix: Declare the gates once on the review contract. Reference them by symbol in the review body as `reject contract.NAME when ...` and `accept \"...\" when contract.passes`. Interpolate the same `contract.NAME` identities through the Doctrine interpolation root inside authored prose. A typo anywhere in the chain fails loud with `E477`."
+            "Good: `reject contract.audience_named when DraftBrief.audience_missing` in the review body; the failing-gates prose then interpolates the same `contract.audience_named` and `contract.next_action_clear` identities so the taxonomy stays single-sourced."
+            "Bad: A prose line on the review or output that says `List gates like 'audience_named' or 'next_action_clear' when they fail.` duplicating the contract."
+            "See also: `examples/140_typed_gates_symbol_reference`, `examples/57_schema_review_contracts`, `examples/45_review_contract_gate_export_and_exact_failures`, and `AL450` when a multi-gate contract is collapsed into one rollup check."
+
+        section al246: "`AL246` Per-Case Gate Delta Split Into Parallel Contracts"
+            "What it means: Two or more review cases inside the same `review_family` differ only in a small gate delta, but each case binds its own near-duplicate `contract:` workflow or schema instead of sharing one contract with a per-case override."
+            "Why it matters: Parallel contracts duplicate the gate taxonomy. One change has to land in every copy, and the per-case difference gets buried under boilerplate. The shared contract should stay the source of truth and only the delta should live on the case."
+            "Default severity: `medium`. `high` when three or more cases each carry their own near-duplicate contract for what is really one gate family."
+            "Default fix: Keep one shared `contract:` on the review or on each case and express the per-case delta with `override gates:` inside the case block. Use `add NAME: \"Title\"`, `remove NAME`, or `modify NAME: \"Title\"` so the contract owns the base taxonomy and each case owns only its own delta."
+            "Shared owner: Almost always required."
+            "Good: `Two cases in DraftReviewFamily share SharedReviewContract; the full-path case adds `override gates:` with `remove clarity`, `add depth: \"Depth\"`, `modify completeness: \"Completeness (full path)\"`.`"
+            "Bad: `QuickPathReviewContract` and `FullPathReviewContract` declare almost the same gate slots, each bound to a different case in the same family."
+            "See also: `examples/141_review_case_gate_override`, `references/reviews.md` section `per_case_gate_override`, and `AL270` when the duplicate contracts are also leaking into separate critic agents."
 
         section al250: "`AL250` Skill Capabilities Pulled Into Agent Role"
             "What it means: The role prose tells the turn how to call a specific script, tool, or CLI. A `skill` exists for the job (or should exist), but the procedure is being restated on the agent."
@@ -421,6 +443,14 @@ document FindingCatalog: "Finding Catalog"
             "Good: `type: StepRole` on the `step_role` field, backed by `enum StepRole: \"Step Role\"` with members `introduce`, `practice`, `test`, `capstone`."
             "Bad: `step_role values are introduce | practice | test | capstone` written in the role body, plus `step_role_in_vocabulary` as a separate critic gate."
             "See also: `AL200` for the duplicate-rule framing, and `examples/139_enum_typed_field_bodies/` for the canonical form."
+
+        section al960: "`AL960` Process Evidence Emitted As Prose Not Typed Receipt"
+            "What it means: A skill's body, `use_when:` prose, or emitted artifact describes a run-by-run evidence envelope (confidence, sources, checks, receipts) in prose rather than declaring a typed `receipt` host slot on a `skill package`."
+            "Why it matters: The prose envelope and any downstream critic gate will drift. A typed `receipt` host slot makes the envelope the contract and lets critics bind fields by symbol."
+            "Default fix: Promote the skill to a `skill package` and declare `receipt <slot>:` inside `host_contract:` with one typed field per envelope part, backed by declared `enum`, `table`, `schema`, or `document` entries. Delete the prose copy."
+            "Good: `receipt process_receipt:` with `confidence: ConfidenceLevel` and `evidence: list[EvidenceRow]` on the package; the critic references `producer.receipt.confidence` by symbol."
+            "Bad: A skill body that says `always emit a short note about your confidence and a pipe-delimited list of the sources you checked.`"
+            "See also: `AL930` for host-binding framing, and `examples/142_skill_host_receipt_envelope/` for the canonical form."
 
     section severity: "Severity"
         bullets levels:

@@ -542,9 +542,17 @@ class CompileOutputsMixin:
                 source_span=target_item.source_span or decl.source_span,
             )
         target_spec = self._resolve_output_target_spec(target_item.value, unit=unit)
+        self._validate_output_target_downstream_family_match(
+            decl,
+            unit=unit,
+            target_item=target_item,
+            target_spec=target_spec,
+        )
         rows: list[tuple[str, str]] = [("Target", target_spec.title)]
         if target_spec.delivery_skill is not None:
             rows.append(("Delivered Via", f"`{target_spec.delivery_skill.title}`"))
+        if target_spec.typed_as is not None:
+            rows.append(("Typed As", target_spec.typed_as.title))
         rows.extend(
             self._compile_output_config_rows(
                 target_item.body or (),
@@ -584,6 +592,60 @@ class CompileOutputsMixin:
             _document_unit, document_decl = self._resolve_document_ref(decl.structure_ref, unit=unit)
             rows.append(("Structure", document_decl.title))
         return tuple(rows)
+
+    def _validate_output_target_downstream_family_match(
+        self,
+        decl: model.OutputDecl,
+        *,
+        unit: IndexedUnit,
+        target_item: model.RecordScalar,
+        target_spec,
+    ) -> None:
+        typed_as = target_spec.typed_as
+        if typed_as is None:
+            return
+        # Compare the typed_as family with the output's own structure/schema binding.
+        # A mismatch means the downstream typed identity does not line up with what
+        # this output actually carries.
+        mismatches: list[tuple[str, str, str]] = []
+        if decl.structure_ref is not None and typed_as.family != "document":
+            mismatches.append(
+                ("document", typed_as.family, decl.structure_ref.declaration_name)
+            )
+        if decl.schema_ref is not None and typed_as.family != "schema":
+            mismatches.append(
+                ("schema", typed_as.family, decl.schema_ref.declaration_name)
+            )
+        if decl.structure_ref is not None and typed_as.family == "document":
+            if decl.structure_ref.declaration_name != typed_as.declaration_name:
+                mismatches.append(
+                    ("document", "document", decl.structure_ref.declaration_name)
+                )
+        if decl.schema_ref is not None and typed_as.family == "schema":
+            if decl.schema_ref.declaration_name != typed_as.declaration_name:
+                mismatches.append(
+                    ("schema", "schema", decl.schema_ref.declaration_name)
+                )
+        if not mismatches:
+            return
+        local_family, typed_family, local_name = mismatches[0]
+        detail_local = f"`{local_family}: {local_name}`"
+        raise output_compile_error(
+            code="E534",
+            summary="Downstream input family does not match typed output target family",
+            detail=(
+                f"Output `{decl.name}` uses a typed output target with "
+                f"`typed_as: {typed_as.declaration_name}` (family `{typed_family}`), "
+                f"but the output declares {detail_local}. The typed identity must "
+                "match the family and declaration of the output's own structure."
+            ),
+            unit=unit,
+            source_span=target_item.source_span or decl.source_span,
+            hints=(
+                "Align the output's `structure:` / `schema:` ref with the target's `typed_as:` entity, "
+                "or drop `typed_as:` if the output does not carry a typed identity.",
+            ),
+        )
 
     def _compile_output_config_rows(
         self,

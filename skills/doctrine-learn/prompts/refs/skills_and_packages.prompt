@@ -245,9 +245,11 @@ agent BoundDemo:
             "`package:`, `host_contract:`, and `bind:` do not render into Markdown."
             "When host-binding truth exists, Doctrine emits a `SKILL.contract.json` sidecar beside `SKILL.md`."
 
-        """Supported host-slot families today: `input`, `output`, `document`, `analysis`, `schema`, `table`, `final_output`.
+        """Supported host-slot families today: `input`, `output`, `document`, `analysis`, `schema`, `table`, `final_output`, `receipt`.
 
 Bind targets may use `inputs:key`, `outputs:key`, `analysis`, `final_output`, ordinary declaration refs (`SectionMap`), or addressable child paths on those roots.
+
+Every declared host slot must be bound exactly once by each consuming skill entry, except `receipt` slots — the package owns its receipt envelope itself, so receipt slots are not bound at the call site.
 
 See `examples/124_skill_package_host_binding/` for the whole `host_contract:` + `bind:` + `host:` flow including the `SKILL.contract.json` sidecar and the fail-loud counter cases.
 
@@ -256,6 +258,29 @@ sections ("Scope And Receipts", "Final Response") or uses imperative write
 targets ("cite into", "emit into"). The coupling is invisible to the
 compiler, so drift is free. Promote the decl to a `skill package` with
 `host_contract:` and bind the slots at each host. See `AL930`."""
+
+    section typed_receipt_envelope: "Typed Receipt Envelope"
+        """Use a `receipt` host slot when the package should own the typed envelope it emits on every run. The typed fields are the contract — downstream critics reference them through the skill binding instead of restating the shape as prose."""
+        code:
+            language: prompt
+            text: """skill package ProducerPackage: "Producer Package"
+    metadata:
+        name: "producer-package"
+    host_contract:
+        receipt process_receipt: "Process Receipt"
+            confidence: ConfidenceLevel
+            evidence: list[EvidenceRow]
+    "Every run emits the process receipt."
+"""
+        "Rules:"
+        bullets receipt_rules:
+            "A `receipt` slot body must declare at least one typed field. Empty receipts fail with `E535`."
+            "Each field types its value with a declared `enum`, `table`, `schema`, or `document`. Using an undeclared name fails with `E537`."
+            "`list[Row]` marks a repeating field."
+            "Critics reference receipt fields through the skill binding: `skill_binding_key.receipt.field_key`. Bad field names fail with `E536`."
+            "`SKILL.contract.json` records each receipt slot with its typed `fields` map so runtime hosts can validate the emitted envelope."
+
+        "See `examples/142_skill_host_receipt_envelope/` for the canonical receipt-envelope shape including the `build_contract` proof and the `E535` / `E537` fail-loud counter cases."
 
     section install_tree_and_emit: "Install Tree And Emit"
         "Run the emitter from the repo root to build one package tree:"

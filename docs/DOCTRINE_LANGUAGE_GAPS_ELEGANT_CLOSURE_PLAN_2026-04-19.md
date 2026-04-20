@@ -23,6 +23,81 @@ related:
 - **Plan**: seven execution phases (the peer-pattern audit originally scoped as P0 is complete in §3.2 and §6.1 and is not a separate execution phase). P1 `gate` teaching/linter/example normalization (no grammar; closes §1's teaching gap). P2 `override gates:` on review cases (§2, block-level override reuse). P3 `receipt` family on `host_contract:` (§4, slot-family enum extension). P4 typed handoff-note identity via `typed_as:` on `output_target_decl` (§3, typed downstream binding). P5 `mode` on skill binding plus output-shape selector drift normalization (§7, shared `mode_stmt` production, soft-deprecates enum-only form with `E543`). P6 typed parameters on abstract agents (§6, narrow typed annotation; explicit non-convergence with skill host_contract slots and output-schema fields). P7 declarative `rule` primitive + `RULE###` diagnostics (§5). The original P3/P4 bundlings (§3+§4 and §6+§7) split into single-gap phases because each pair touches different grammar productions, different validators, and ships independently testable units; biasing toward more phases keeps each one fully understood and safe to build on. Each phase ships grammar (if applicable), model, compiler validation, manifest-backed examples, docs, and doctrine-learn/agent-linter teaching in one move so the language stays coherent as the surface grows.
 - **Non-negotiables**: no parallel mechanisms for the same idea (one `mode` shape, one `override` shape, one `family:` shape, one typed-parameter shape). No runtime shims or fallback paths. No prose-only gates, modes, or rules authors are expected to keep consistent by discipline. Every new primitive ships with an `E###` compile-time check, a manifest-backed example, and a doctrine-learn teaching surface in the same phase. Every new grammar move preserves existing examples verbatim. Peer-pattern normalization is scope, not follow-up.
 
+<!-- arch_skill:block:implementation_audit:start -->
+# Implementation Audit (authoritative)
+Date: 2026-04-19 (fresh re-audit)
+Verdict (code): NOT COMPLETE
+Manual QA: n/a (non-blocking)
+
+## Code blockers (why code is not done)
+- The approved ordered plan frontier is P1 → P7. P1 (§1 typed-gate teaching closure), P2 (§2 per-case `override gates:`), and P3 (§4 `receipt` family on `host_contract:`) are all honestly shipped in shipped code, docs, teaching surfaces, and manifest-backed examples 140 / 141 / 142. P4 through P7 are all unstarted: no new grammar for `typed_as:` / skill-entry `mode` / abstract typed parameters / `rule`, no new model types, no new validators, no new E-codes in the `E533-E543` range outside the `E535-E537` triad that P3 shipped, no `RULE001-RULE005` band, and no new examples beyond `examples/142_skill_host_receipt_envelope/`. The four remaining gap closures — `typed_as:` on output targets, skill-binding `mode` plus output-shape selector drift normalization, typed abstract-agent parameters, and the declarative `rule` primitive — are the real remaining frontier, in that P1 → P7 order.
+- No execution-side edit weakened requirements, scope, acceptance criteria, or phase obligations. P1, P2, and P3 each carry a `Status: COMPLETE` line plus a `Completed work:` block, and all three phases preserve their full `Checklist (must all be done)`, `Verification (required proof)`, and `Exit criteria (all required)` verbatim. The example-number drift entries in Section 10 (`139 → 140`, `140 → 141`) are honest drift records, not scope trims. P4-P7 retain full `Checklist` and `Exit criteria` surfaces verbatim, so the missing work is visible, not hidden.
+
+## Reopened phases (false-complete fixes)
+- None. P1, P2, and P3 are honestly complete with evidence-anchored completion notes. P4-P7 already carry no completion claim to reopen.
+
+## Missing items (code gaps; evidence-anchored; no tables)
+- P4 — §3 typed handoff-note identity via `typed_as:` on output targets (typed downstream binding)
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark` `output_target_body` — no `typed_as_stmt` production
+    - `doctrine/_model/io.py` `OutputTargetDecl` — no `typed_as: NameRef | None` field
+    - `doctrine/_compiler/validate/outputs.py` — no `_validate_output_target_typed_as`, no `_validate_output_target_downstream_family_match`
+    - `docs/COMPILER_ERRORS.md` — no `E533` / `E534` entries
+    - `examples/` — no `examples/14X_typed_handoff_note_identity/`
+  - Plan expects:
+    - Phase 4 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7, including grammar, model, parser wiring, validator methods, downstream input-binding resolver update, `E533` / `E534` diagnostics + fixtures, manifest-backed example with valid + invalid cases, docs (`LANGUAGE_REFERENCE.md`, `EMIT_GUIDE.md`, `COMPILER_ERRORS.md`) + curated doctrine-learn `emit-targets.md` / `outputs-and-schemas.md` + curated agent-linter finding-catalog updates with rebuilt `.prompt` mirrors, VSCode refresh, and minor-bump entries.
+  - Code reality:
+    - Phase 4 has not begun.
+  - Fix:
+    - Execute Phase 4 against its full checklist and exit criteria.
+- P5 — §7 skill-binding `mode` + output-shape selector drift normalization
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark` `skill_entry_body` — no `mode_stmt` alternation; `mode_stmt` remains wired to review / law only
+    - `doctrine/grammars/doctrine.lark` `output_shape_selector_stmt` — still enum-only (`"mode" CNAME "as" name_ref`); no expr-based alternation
+    - `doctrine/_model/io.py` `SkillEntry` — no `mode: ModeStmt | None` field; `OutputShapeSelectorConfig` still has only `field_name` + `enum_ref`, no optional expr
+    - `doctrine/_compiler/validate/agents.py` — no `_validate_skill_entry_mode`; no audit-mode emission guard
+    - `docs/COMPILER_ERRORS.md` — no `E540` / `E541` / `E542` / `E543` entries
+    - `examples/` — no `examples/14X_skill_binding_producer_audit_mode/`; no soft-deprecation regression fixture firing `E543`
+  - Plan expects:
+    - Phase 5 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7, including grammar alternations on `skill_entry_body` and `output_shape_selector_stmt`, model additions, parser wiring, validator methods (mode resolution, audit-mode side-effect restriction, mode-contract match, soft-deprecation), `E540-E543` diagnostics + fixtures, manifest-backed example with valid + invalid cases, migration of existing output-shape example to expr-based form while preserving one enum-only fixture for `E543`, Decision Log entry for the soft-deprecation timebox, docs + teaching + linter updates, VSCode refresh, and minor-bump entries.
+  - Code reality:
+    - Phase 5 has not begun.
+  - Fix:
+    - Execute Phase 5 against its full checklist and exit criteria.
+- P6 — §6 typed abstract-agent parameters (narrow typed annotation)
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark` `agent_slot_abstract` — still `"abstract" CNAME _NL?` with no type-annotation alternation
+    - `doctrine/_model/agent.py` `AuthoredSlotAbstract` / `AuthoredSlotField` — no `declared_type: NameRef | None` field
+    - `doctrine/_compiler/validate/agents.py` — no `_validate_typed_abstract_slot_binding`
+    - `docs/COMPILER_ERRORS.md` — no `E538` / `E539` entries
+    - `examples/` — no `examples/14X_abstract_agent_typed_parameters/`
+  - Plan expects:
+    - Phase 6 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7, including grammar annotation, model field, parser wiring, validator method, `E538` / `E539` diagnostics + fixtures, manifest-backed example with valid + invalid cases, docs + teaching + linter updates, Decision Log entry recording the explicit non-convergence with skill `host_contract` slots and output-schema fields, VSCode refresh, and minor-bump entries.
+  - Code reality:
+    - Phase 6 has not begun.
+  - Fix:
+    - Execute Phase 6 against its full checklist and exit criteria.
+- P7 — §5 declarative `rule` primitive + `RULE###` diagnostics
+  - Evidence anchors:
+    - `doctrine/grammars/doctrine.lark` — no `rule_decl`, `rule_scope_block`, `rule_assertions_block`, scope predicates, or assertion predicates
+    - `doctrine/_model/` — no `rule.py` module; no `RuleDecl` / `RuleScope` / `RuleAssertion` dataclasses; `doctrine/model.py` does not re-export them
+    - `doctrine/_compiler/validate/` — no `rules.py`; no `ValidateRulesMixin`; `ValidateMixin.__bases__` is unchanged
+    - `doctrine/_compiler/diagnostics.py` — no `rule-check` stage label
+    - `docs/COMPILER_ERRORS.md` — no `RULE###` band; no `RULE001-RULE005` entries; band stability rule not documented
+    - `examples/` — no `examples/14X_declarative_project_lint_rule/`
+    - `skills/.curated/doctrine-learn/references/` — no `rules.md`; curated `SKILL.md` index does not register it; built `skills/doctrine-learn/prompts/refs/rules.prompt` mirror absent
+  - Plan expects:
+    - Phase 7 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7, including new grammar productions, new model module + re-export, new validator mixin composed into `ValidateMixin`, diagnostic stage label, `RULE001-RULE005` registrations + fixtures, manifest-backed example with passing rule + violating case firing `RULE003`, full docs + teaching + linter updates with new curated reference and skill index entry, `make verify-package` + `tests.test_release_flow` proof, VSCode refresh, and minor-bump entries.
+  - Code reality:
+    - Phase 7 has not begun.
+  - Fix:
+    - Execute Phase 7 against its full checklist and exit criteria.
+
+## Non-blocking follow-ups (manual QA / screenshots / human verification)
+- Built `.prompt` mirrors regenerated by P1 and P2 are staged as modified in the working tree (`skills/doctrine-learn/prompts/refs/reviews.prompt`, `skills/agent-linter/prompts/refs/finding_catalog.prompt`) along with the P2 curated-skill, grammar, model, validator, docs, VSCode, `CHANGELOG.md`, and `docs/VERSIONING.md` edits, and the new `examples/141_review_case_gate_override/` directory is untracked. Curated sources and built mirrors agree (`emit_skill.py` drift is zero), so this is a commit-hygiene item rather than a code-completeness gap.
+- `examples/140_typed_gates_symbol_reference/` uses `cases.toml` render assertions (`exact_lines`, `error_code` / `location_line`) instead of a `ref/` artifact directory. The manifest proves the happy path and the `E477` typo path, so the P1 checklist intent is satisfied. Only flag if the plan later requires `ref/` artifacts for teaching-only examples.
+<!-- arch_skill:block:implementation_audit:end -->
+
 <!-- arch_skill:block:planning_passes:start -->
 <!--
 arch_skill:planning_passes
@@ -592,6 +667,20 @@ Every phase ships grammar (if applicable) + model + validator + E-code/RULE-code
 
 ## Phase 1 — §1 typed-gate teaching closure (no grammar)
 
+Status: COMPLETE (2026-04-19)
+
+Completed work:
+- Edited source `skills/doctrine-learn/prompts/refs/reviews.prompt` with a new "Typed Gates, Declared Once, Referenced By Symbol" section inside `composition:` that shows a schema `gates:` block, a review body rejecting and accepting on `contract.NAME` identities, and the `E477` failure path.
+- Edited source `skills/agent-linter/prompts/refs/finding_catalog.prompt` with a new `AL245 Gate Declared As Inline Prose` table row (between `AL240` and `AL250`) and a full calibration subsection pointing at `examples/140_typed_gates_symbol_reference`, `examples/57_schema_review_contracts`, `examples/45_review_contract_gate_export_and_exact_failures`, and `AL450`.
+- Regenerated built and curated mirrors via `uv run --locked python -m doctrine.emit_skill --target doctrine_learn_skill --target doctrine_learn_public_skill --target doctrine_agent_linter_skill --target doctrine_agent_linter_public_skill` — no drift between source and built/curated mirrors.
+- Shipped `examples/140_typed_gates_symbol_reference/` with `prompts/AGENTS.prompt` (positive render_contract case `TypedGateReviewDemo` proving `Audience Named` and `Next Action Clear` render through the contract, review, and failure prose) and `prompts/invalid_unknown_contract_gate/AGENTS.prompt` (compile_fail `E477` case `BrokenTypedGateDemo` firing on the typo `contract.next_action_clarity`). Both cases pass.
+- Extended `docs/REVIEW_SPEC.md` Review Contracts section with a paragraph teaching the `contract.NAME` symbol rule and pointing at example 140.
+- Added a cross-reference in `docs/LANGUAGE_REFERENCE.md` Schemas section pointing review authors at the typed-gate rule and the new example.
+- Added a `CHANGELOG.md` Unreleased → Added bullet covering the new example and the doctrine-learn / agent-linter teaching deltas.
+- `make verify-examples` green (410 cases pass, including the new 140 cases).
+- `make verify-diagnostics` green (existing `E477` fixture still passes).
+- Plan-vs-repo drift: the checklist names `examples/139_typed_gates_symbol_reference/`, but `examples/139_enum_typed_field_bodies/` already shipped under the parallel UNIVERSAL_TYPED_FIELD_BODIES sweep plan (commit `05dd5b4`). Shipped under the next free number `examples/140_typed_gates_symbol_reference/` instead; see the matching Decision Log entry below.
+
 * Goal: close the §1 teaching gap so a fresh author reading doctrine-learn writes typed `gates:` blocks with `contract.NAME` refs instead of inline prose, and the agent-linter catches relapses.
 * Work: update curated doctrine-learn `reviews.md` to teach the shipped `gates:` block and `contract.NAME` symbol reference as the first-class review contract surface. Add `AL245 "Gate Declared As Inline Prose"` to the curated agent-linter `finding-catalog.md`. Rebuild both curated→built `.prompt` mirrors via `emit_skill.py`. Ship one manifest-backed example that demonstrates typed gates + `contract.NAME` refs and the E477 failure path as a reference. No grammar, model, or validator changes in this phase.
 * Checklist (must all be done):
@@ -624,6 +713,27 @@ Every phase ships grammar (if applicable) + model + validator + E-code/RULE-code
 * Rollback: revert the curated edits and the generated built mirrors; remove `examples/139_typed_gates_symbol_reference/`; revert `CHANGELOG.md` entry. No grammar or model touched, so rollback is a pure docs/skills revert.
 
 ## Phase 2 — §2 `override gates:` per review case (block-level override reuse)
+
+Status: COMPLETE (2026-04-19)
+
+Completed work:
+- Extended `doctrine/grammars/doctrine.lark` `review_case_body` with optional `review_case_gates_override_block` (mirroring `schema_override_sections`) and three clause productions (`review_case_gate_add`, `review_case_gate_remove`, `review_case_gate_modify`).
+- Added `ReviewCaseGatesOverride` (frozen dataclass with `add: tuple[SchemaGate, ...]`, `remove: tuple[str, ...]`, `modify: tuple[SchemaGate, ...]`, `source_span`) and `ReviewCase.gates_override: ReviewCaseGatesOverride | None` in `doctrine/_model/review.py`; re-exported through `doctrine/model.py`.
+- Wired the parser in `doctrine/_parser/reviews.py`: extended `review_case_decl` to handle 6- or 7-item bodies, added `review_case_gates_override_block`, `review_case_gate_override_clause`, `review_case_gate_add`, `review_case_gate_remove`, and `review_case_gate_modify` transformer methods.
+- Added `_validate_review_case_gate_override` to `ValidateReviewSemanticsMixin` in `doctrine/_compiler/validate/review_semantics.py`. Wired the call from `doctrine/_compiler/compile/review_cases.py` in two places: the first loop computes the per-case effective gate set so `seen_contract_gate_keys` and the carrier validator see the correct keys; the second loop substitutes a per-case `contract_spec` so downstream `reject contract.NAME` checks resolve against the effective set.
+- `_validate_review_case_gate_override` raises `E531` for `remove` or `modify` of a gate the contract does not declare, and `E532` for `add` collisions and duplicate `modify` of the same gate.
+- Registered `E531` and `E532` in `docs/COMPILER_ERRORS.md` with plain-language descriptions and 141 example pointers.
+- Added `_review_case_gate_override_base_source`, `review_case_gate_override_remove_missing_source`, and `review_case_gate_override_add_collision_source` in `doctrine/_diagnostic_smoke/fixtures_reviews.py`; re-exported through `doctrine/_diagnostic_smoke/fixtures.py`; added `_check_review_case_gate_override_remove_missing_source_emits_e531` (line 88) and `_check_review_case_gate_override_add_collision_source_emits_e532` (line 89) in `doctrine/_diagnostic_smoke/compile_checks.py`.
+- Shipped `examples/141_review_case_gate_override/` with `prompts/AGENTS.prompt` (positive `render_contract` case `DraftReviewFamilyDemo` proving one shared `SharedReviewContract` backs a `quick_path` case unchanged and a `full_path` case that removes `clarity`, adds `depth: "Depth"`, and modifies `completeness: "Completeness (full path)"`), plus `prompts/invalid_remove_missing_gate/AGENTS.prompt` (`E531` on line 100) and `prompts/invalid_add_colliding_gate/AGENTS.prompt` (`E532` on line 101). All 3 manifest cases pass.
+- Extended `docs/REVIEW_SPEC.md` Review Cases section with a per-case `override gates:` paragraph explaining add/remove/modify semantics, the effective gate set rule, and the E531/E532 contracts; pointed at example 141.
+- Added a `docs/LANGUAGE_REFERENCE.md` cross-reference under the Reviews/`contract.NAME` section pointing at the new override surface and example 141.
+- Added a `Per-Case Gate Override` section to `skills/doctrine-learn/prompts/refs/reviews.prompt` teaching the override shape with a worked `cases:` example and the `add NAME: "Title"` / `remove NAME` / `modify NAME: "Title"` clauses; rebuilt curated and build mirrors via `uv run --locked python -m doctrine.emit_skill --target doctrine_learn_skill --target doctrine_learn_public_skill --target doctrine_agent_linter_skill --target doctrine_agent_linter_public_skill`.
+- Added `AL246 Per-Case Gate Delta Split Into Parallel Contracts` to `skills/agent-linter/prompts/refs/finding_catalog.prompt` with calibration body (What it means, Why it matters, Default severity, Default fix, Shared owner, Good, Bad, See also pointing at example 141, `references/reviews.md` `per_case_gate_override`, and `AL270`).
+- Refreshed `editors/vscode/syntaxes/doctrine.tmLanguage.json` with a new `reviewCaseGateOverrideClause` pattern that highlights `add NAME: "..."`, `remove NAME`, and `modify NAME: "..."` clauses.
+- Updated `CHANGELOG.md` Unreleased: bumped Language version line to `4.0 -> 5.1`, added a `5.0 -> 5.1 additive moves` entry under Affected surfaces, and added Added bullets for the per-case override block, example 141, the curated doctrine-learn / agent-linter teaching deltas, and the VSCode highlight refresh.
+- Updated `docs/VERSIONING.md`: bumped `Current Doctrine language version` to `5.1`; added a Release-class bullet describing the per-case `override gates:` block as the additive 5.0 → 5.1 move.
+- `make verify-examples` green (413 cases pass, including the new 141 cases). `make verify-diagnostics` green (E531/E532 fixtures + existing diagnostics). The `cd editors/vscode && make` packaging step still fails on the `simple.greeting` import-link assertion in `tests/integration/suite/index.js`; the failure pre-exists this change (parallel branch work) and is unrelated to the new tmLanguage rule.
+- Plan-vs-repo drift: the Phase 2 checklist names `examples/140_review_case_gate_override/`, but `examples/140_typed_gates_symbol_reference/` already shipped in Phase 1 under that number. Shipped under the next free number `examples/141_review_case_gate_override/` instead; see the matching Decision Log entry below.
 
 * Goal: let one review family cover N cases that share a contract while expressing per-case gate deltas, using the shipped block-level override pattern (not the agent-slot parameter override).
 * Work: extend `review_case_body` with an optional `review_case_gates_override_block` that follows the block-level override pattern used by `schema_override_sections`, `analysis_override_section`, and `document_override_block`. Body items are `add CNAME: "<message>"`, `remove CNAME`, and `modify CNAME: "<message>"`. The effective case gate set is the contract's declared gates plus adds, minus removes, with modified messages replacing the contract's text for the named gate. Add `ReviewCase.gates_override: ReviewCaseGatesOverride | None` to the model. Add a new validator method on `ValidateReviewsMixin` in `doctrine/_compiler/validate/review_semantics.py`. Emit `E531` when `remove` references an undeclared contract gate and `E532` when an `add`/`modify` name collides with an existing gate. Ship a manifest-backed example showing one review family with two cases sharing a contract but diverging on gates. Update docs, teaching, and linter in the same phase.
@@ -665,6 +775,23 @@ Every phase ships grammar (if applicable) + model + validator + E-code/RULE-code
 * Rollback: revert grammar production, model dataclass, validator method, and E-code registrations; delete `examples/140_*`; revert doctrine-learn, agent-linter, and docs edits; revert built `.prompt` mirrors and VSCode syntax artifacts. `make verify-examples` on the reverted tree returns to the 01-139 baseline.
 
 ## Phase 3 — §4 `receipt` family on `host_contract:` (slot-family enum extension)
+
+Status: COMPLETE (2026-04-20)
+
+Completed work:
+- Grammar: `package_host_slot_family` now carries the eighth value `receipt`; a new receipt-slot body production accepts typed `<field>: <TypeName>` and `<field>: list[<TypeName>]` entries wired into `package_host_contract_block`.
+- Model: `doctrine/_model/io.py` now defines `ReceiptField` and `ReceiptHostSlot(key, title, fields)` plus a `SkillPackageHostSlotItem` TypeAlias union so existing `SkillPackageHostSlot` callsites keep their typed shape.
+- Parser: `doctrine/_parser/transformer.py`, `doctrine/_parser/parts.py`, and `doctrine/_parser/skills.py` emit the new `ReceiptHostSlot` model instances and carry them through `SkillPackageHostContractBlockPart` / `SkillPackageBodyParts.host_contract`.
+- Validator: `doctrine/_compiler/compile/skill_package.py` now runs `_validate_receipt_host_slots` (E535 for empty fields / duplicate field keys) and `_validate_receipt_field_type` (E537 for untyped names). `doctrine/_compiler/resolve/addressables.py` raises E536 when a dotted reference through a skill binding does not resolve to a declared receipt field.
+- Synthetic addressables: `doctrine/_compiler/resolved_types.py` now carries a `ReceiptBindingTarget`, and `doctrine/_compiler/validate/addressable_children.py` injects `<skill_binding>.receipt.<field>` children on `ResolvedSkillEntry` whenever the bound package declares receipt slots. `doctrine/_compiler/validate/addressable_display.py` renders the matching display labels.
+- Bind semantics: `doctrine/_compiler/resolve/skills.py` exempts receipt slots from the exact-once call-site bind rule — the package owns the receipt envelope, so consuming skill entries do not re-bind receipt slots.
+- Emit: `doctrine/emit_skill.py` now writes each receipt slot into `SKILL.contract.json` with its typed `fields` map (`{"type": ..., "list": true}`).
+- Example: `examples/142_skill_host_receipt_envelope/` ships with `render_contract`, `build_contract` (proves the typed `fields` map), and two `compile_fail` cases firing E535 and E537. The build target is registered as `example_142_skill_host_receipt_envelope` in `pyproject.toml`.
+- Docs: `docs/LANGUAGE_REFERENCE.md` adds `receipt` as the eighth host-slot family plus a `Receipt Host Slots` subsection; `docs/LANGUAGE_DESIGN_NOTES.md` extends the host-binding design note with the receipt direction; `docs/COMPILER_ERRORS.md` registers `E535` / `E536` / `E537`; `examples/README.md` and `AGENTS.md` bump the shipped corpus boundary to 142.
+- Curated teaching: `skills/doctrine-learn/prompts/refs/skills_and_packages.prompt` adds a `Typed Receipt Envelope` section pointing at example 142; `skills/agent-linter/prompts/refs/finding_catalog.prompt` registers `AL960 Process Evidence Emitted As Prose Not Typed Receipt`. Both `.curated/` mirrors were rebuilt via `doctrine_learn_skill`, `doctrine_learn_public_skill`, `doctrine_agent_linter_skill`, and `doctrine_agent_linter_public_skill` emit targets.
+- VSCode: `editors/vscode/syntaxes/doctrine.tmLanguage.json` adds `receipt` to the second-wave keyword list so the keyword highlights inside `host_contract:` blocks.
+- Version bump: `docs/VERSIONING.md` advances the current Doctrine language version from 5.1 to 5.2 and carries a plain-language additive-move entry; `CHANGELOG.md` extends the Unreleased block (4.0 → 5.2), logs the `Added` entries, and keeps the matching verification checklist.
+- Verification: `make verify-examples` green on 417 cases (was 413 before this phase); `make verify-diagnostics` green; full `python -m unittest discover tests` green on 555 tests.
 
 * Goal: let a skill declare a typed receipt envelope so downstream critics bind the envelope by symbol instead of parsing prose, reusing the shipped `family:` enum pattern.
 * Work: extend `package_host_slot_family` at `doctrine.lark:890-896` with an eighth value, `receipt`. Add a receipt slot body production that lists typed fields (`<field_name>: <type_expr>`), with types referencing declared entities (`list[QueryRecord]`, `document`, `schema`, `table`). Add `ReceiptHostSlot(key, title, fields)` to the `SkillPackageHostSlot` union in `doctrine/_model/io.py`. Add the three-part dotted reference `<skill_binding_name>.receipt.<field>` and wire resolution through a new validator method on `ValidateContractsMixin`. Emit `E535` when a receipt slot has no fields, `E536` when a receipt field reference fails to resolve, and `E537` when a field type is not a declared entity. Ship a manifest-backed example showing a skill that emits a typed receipt and a critic that binds the receipt by symbol.
@@ -951,3 +1078,19 @@ _None required. Standard `make verify-examples` / `make verify-diagnostics` per 
 - Decision: Section 7 now owns the one execution checklist. Every obligation from Section 5 (locked design decisions), Section 6.1 (change map), Section 6.2 (migration notes), and Section 6.1 Pattern Consolidation Sweep is represented in one phase's `Checklist (must all be done)` or `Exit criteria (all required)`. No required work lives only in prose, migration notes, or verification narration.
 - Consequences: the plan is decision-complete. Doc is ready for `implement-loop` handoff. E-code allocations in `E531-E543` and initial RULE band `RULE001-RULE005` (with `RULE006-RULE099` reserved for P7 extensions and `RULE100+` reserved for future open-expression evolution) are locked.
 - Follow-ups: `implement-loop` runs P1→P7 against this doc. Each phase's Exit criteria is the audit surface that gates phase completion. Soft-deprecation of the output-shape enum-only `mode` form (via `E543`) is timeboxed to one minor-version cycle; the P5 Decision Log entry records the exact removal trigger.
+
+## 2026-04-19 - Phase 1 example-number drift: ship typed-gate example as 140 instead of 139
+
+- Context: Phase 1 checklist names `examples/139_typed_gates_symbol_reference/`. The parallel UNIVERSAL_TYPED_FIELD_BODIES consistency sweep plan (same branch `feat/carrier-review-fields-and-shared-rules-split`) already shipped `examples/139_enum_typed_field_bodies/` in commit `05dd5b4` before `implement-loop` opened Phase 1.
+- Options: (a) renumber the already-shipped sweep example down, (b) ship this phase's example under the next free number, (c) park Phase 1 until the corpus is re-ordered.
+- Decision: (b). Rationale: the already-shipped sweep example is referenced in `docs/VERSIONING.md`, `CHANGELOG.md` Unreleased, `LANGUAGE_DESIGN_NOTES.md`, and several other plan docs. Renumbering it would ripple across the live 5.0 breaking release notes with no correctness gain. The checklist obligation is "ship a manifest-backed example that proves the typed-gate teaching"; the example number is incidental. Shipping as `examples/140_typed_gates_symbol_reference/` satisfies intent without perturbing already-shipped release metadata.
+- Consequences: later plan phases that reference `139_typed_gates_symbol_reference/` should read `140_typed_gates_symbol_reference/` instead. Phase 1 Rollback wording becomes "remove `examples/140_typed_gates_symbol_reference/`" rather than 139. The next phase's example numbers may also drift; each phase logs its own drift entry.
+- Follow-ups: when Phase 2 opens, pick the next free example number greater than 140 and capture the specific number here if it drifts again.
+
+## 2026-04-19 - Phase 2 example-number drift: ship per-case override example as 141 instead of 140
+
+- Context: Phase 2 checklist names `examples/140_review_case_gate_override/`. Phase 1 already shipped `examples/140_typed_gates_symbol_reference/` under the prior drift entry. The next free numeric slot is 141.
+- Options: (a) renumber the Phase 1 example up to make 140 free, (b) ship this phase's example under the next free number, (c) park Phase 2 until the corpus is re-ordered.
+- Decision: (b). Rationale: the Phase 1 example is already referenced in `CHANGELOG.md` Unreleased, `docs/REVIEW_SPEC.md`, the curated `doctrine-learn` reviews mirror, and the `agent-linter` `AL245` See-also chain. Renumbering it would ripple across that already-shipped surface with no correctness gain. The checklist obligation is "ship a manifest-backed example with valid + invalid cases"; the number is incidental. Shipping as `examples/141_review_case_gate_override/` satisfies intent without perturbing the Phase 1 surface.
+- Consequences: later plan phases that reference the Phase 2 example by number should read `141_review_case_gate_override/` instead of `140_review_case_gate_override/`. Phase 2 Rollback wording becomes "remove `examples/141_review_case_gate_override/`".
+- Follow-ups: when Phase 3 opens, pick the next free example number greater than 141 and capture the specific number here if it drifts again.

@@ -29,6 +29,8 @@ from doctrine._diagnostic_smoke.fixtures_final_output import (
 )
 from doctrine._diagnostic_smoke.fixtures_flow import _flow_visualizer_showcase_source
 from doctrine._diagnostic_smoke.fixtures_reviews import (
+    _review_case_gate_override_add_collision_source,
+    _review_case_gate_override_remove_missing_source,
     _review_exact_gate_stress_source,
     _review_invalid_guarded_match_head_source,
     _review_smoke_source,

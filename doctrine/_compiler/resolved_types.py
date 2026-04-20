@@ -192,6 +192,12 @@ class ResolvedSkillBindTarget:
     path: tuple[str, ...] = ()
 
 
+@dataclass(slots=True, frozen=True)
+class ReceiptBindingTarget:
+    entry_key: str
+    slot: model.ReceiptHostSlot
+
+
 ResolvedSkillsSectionBodyItem: TypeAlias = model.ProseLine | ResolvedSkillEntry
 
 
@@ -465,7 +471,7 @@ class SkillPackageHostCompileContext:
     package_unit: IndexedUnit
     package_decl: model.SkillPackageDecl
     package_id: str
-    host_slots_by_key: dict[str, model.SkillPackageHostSlot]
+    host_slots_by_key: dict[str, model.SkillPackageHostSlotItem]
     artifacts: dict[str, SkillPackageHostArtifactState] = dataclass_field(default_factory=dict)
     current_artifact_path: str | None = None
     current_artifact_kind: str | None = None
@@ -770,12 +776,20 @@ class ResolvedOutputTargetDeliverySkill:
 
 
 @dataclass(slots=True, frozen=True)
+class ResolvedOutputTargetTypedAs:
+    family: str  # one of "document" | "schema" | "table"
+    title: str
+    declaration_name: str
+
+
+@dataclass(slots=True, frozen=True)
 class ResolvedOutputTargetSpec:
     # Output targets carry delivery metadata, so they stay separate from input-source config specs.
     title: str
     required_keys: dict[str, str]
     optional_keys: dict[str, str]
     delivery_skill: ResolvedOutputTargetDeliverySkill | None = None
+    typed_as: ResolvedOutputTargetTypedAs | None = None
 
 
 @dataclass(slots=True, frozen=True)

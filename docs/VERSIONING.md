@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 5.0
+Current Doctrine language version: 5.2
 
 ## The Version Lines
 
@@ -186,6 +186,29 @@ Every public release uses one release class.
   unknown name fails loud with `E320`. Advances the language line from
   `4.0` / `4.1` to `5.0`. Glossary and label nodes (`properties` items,
   `definitions` items) stay prose-only by design.
+- Adding a per-case `override gates:` block inside a `review_family` case
+  body is an `additive` language move. One `review` contract may now back
+  several cases that need slightly different gate sets without forking the
+  contract. The block accepts `add NAME: "Title"`, `remove NAME`, and
+  `modify NAME: "Title"` clauses, and the case still references the same
+  `contract.NAME` symbols inside `checks:` (now resolved against the
+  per-case effective gate set). Removing or modifying a gate the contract
+  does not declare fails loud with `E531`; adding a name that already
+  exists fails loud with `E532`. Existing programs without the block keep
+  compiling unchanged. Advances the language line from `5.0` to `5.1`.
+- Adding a typed `receipt` host-slot family to `host_contract:` is one
+  backward-compatible language move. A skill package may now declare
+  `receipt <slot_key>: "Title"` with typed `<field_key>: <DeclaredType>`
+  entries (or `<field_key>: list[<DeclaredType>]`) so the package owns the
+  typed envelope it emits on every run. Receipt slots are not call-site
+  bound; the package owns them. Downstream consumers may reference fields
+  through the skill binding at `<skill_binding_key>.receipt.<field_key>`.
+  Empty receipt bodies fail loud with `E535`, unresolved receipt field
+  references fail with `E536`, and untyped field names fail with `E537`.
+  `SKILL.contract.json` now carries each receipt slot with its typed
+  `fields` map so runtime hosts can validate the emitted envelope.
+  Existing programs without a `receipt` slot keep compiling unchanged.
+  Advances the language line from `5.1` to `5.2`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

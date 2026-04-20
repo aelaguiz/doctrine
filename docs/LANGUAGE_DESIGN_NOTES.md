@@ -222,6 +222,17 @@ typed link explicit, instead of repeating host IO prose across every inline
 skill bridge. `SKILL.contract.json` makes the same link machine-readable for
 harnesses that load the package.
 
+`receipt` host slots extend that contract to the other direction: the
+typed envelope the package emits on every run. Authors declare the receipt
+fields with their declared `enum`, `table`, `schema`, or `document` types,
+and downstream critics reference those fields through the skill binding
+(for example, `producer.receipt.confidence`) rather than restating the
+contract as prose. Receipt slots are not call-site bound; the package owns
+them. See [../examples/142_skill_host_receipt_envelope/](../examples/142_skill_host_receipt_envelope/)
+for the canonical shape with `render_contract`, `build_contract`, and
+`compile_fail` cases that make the typed `fields` rendering and the
+`E535`/`E537` fail-loud behavior manifest-enforced.
+
 ## Shipped Boundaries
 
 Doctrine's current shipped surface is proven across the numbered corpus listed

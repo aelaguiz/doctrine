@@ -53,6 +53,13 @@ class OutputTargetDeliverySkillPart:
 
 
 @dataclass(slots=True, frozen=True)
+class OutputTargetTypedAsPart:
+    ref: model.NameRef
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class OutputBodyParts:
     items: tuple[model.OutputAuthoredItem, ...]
     schema: model.OutputSchemaConfig | None
@@ -217,7 +224,7 @@ class SkillPackageEmitBlockPart:
 
 @dataclass(slots=True, frozen=True)
 class SkillPackageHostContractBlockPart:
-    slots: tuple[model.SkillPackageHostSlot, ...]
+    slots: tuple[model.SkillPackageHostSlotItem, ...]
     line: int | None = None
     column: int | None = None
 
@@ -227,7 +234,7 @@ class SkillPackageBodyParts:
     items: tuple[model.RecordItem, ...]
     metadata: model.SkillPackageMetadata
     emit_entries: tuple[model.SkillPackageEmitEntry, ...]
-    host_contract: tuple[model.SkillPackageHostSlot, ...]
+    host_contract: tuple[model.SkillPackageHostSlotItem, ...]
 
 
 @dataclass(slots=True, frozen=True)

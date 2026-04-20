@@ -1121,6 +1121,7 @@ class ResolveReviewsMixin:
                             ),
                             source_span=case.on_reject.source_span,
                         ),
+                        gates_override=case.gates_override,
                         source_span=case.source_span,
                     )
                     for case in item.cases

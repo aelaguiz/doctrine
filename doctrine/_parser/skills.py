@@ -268,7 +268,7 @@ class SkillsTransformerMixin:
         record_items: list[model.RecordItem] = []
         metadata = model.SkillPackageMetadata()
         emit_entries: tuple[model.SkillPackageEmitEntry, ...] = ()
-        host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+        host_contract: tuple[model.SkillPackageHostSlotItem, ...] = ()
         seen_metadata = False
         seen_emit = False
         seen_host_contract = False
@@ -368,6 +368,41 @@ class SkillsTransformerMixin:
             model.SkillPackageHostSlot(key=key, family=family, title=title),
             meta,
         )
+
+    @v_args(meta=True, inline=True)
+    def package_host_receipt_slot(self, meta, key, title, fields=None):
+        field_tuple: tuple[model.ReceiptField, ...] = (
+            tuple(fields) if fields is not None else ()
+        )
+        return _with_source_span(
+            model.ReceiptHostSlot(key=key, title=title, fields=field_tuple),
+            meta,
+        )
+
+    def receipt_slot_body(self, items):
+        return tuple(items)
+
+    @v_args(meta=True, inline=True)
+    def receipt_field(self, meta, key, type_value):
+        type_ref, list_element = type_value
+        return _with_source_span(
+            model.ReceiptField(
+                key=key,
+                type_ref=type_ref,
+                list_element=list_element,
+            ),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def receipt_field_type(self, value):
+        if isinstance(value, tuple):
+            return value
+        return (value, False)
+
+    @v_args(inline=True)
+    def receipt_field_list_type(self, name_ref):
+        return (name_ref, True)
 
     def package_host_slot_family_input(self, _children):
         return "input"

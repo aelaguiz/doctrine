@@ -4,6 +4,7 @@ import json
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -40,6 +41,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedIoSection,
     ResolvedOutputTargetDeliverySkill,
     ResolvedOutputTargetSpec,
+    ResolvedOutputTargetTypedAs,
     ResolvedRenderProfile,
     ReviewSemanticContext,
     RouteSemanticContext,
@@ -2842,11 +2844,73 @@ class ResolveOutputsMixin:
                 unit=unit,
             )
             delivery_skill = ResolvedOutputTargetDeliverySkill(title=skill_decl.title)
+        typed_as = self._resolve_output_target_typed_as(
+            decl,
+            unit=unit,
+            owner_label=owner_label,
+        )
         return ResolvedOutputTargetSpec(
             title=decl.title,
             required_keys=required_keys,
             optional_keys=optional_keys,
             delivery_skill=delivery_skill,
+            typed_as=typed_as,
+        )
+
+    def _resolve_output_target_typed_as(
+        self,
+        decl: model.OutputTargetDecl,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> "ResolvedOutputTargetTypedAs | None":
+        ref = decl.typed_as
+        if ref is None:
+            return None
+        declarations = unit_declarations(unit)
+        if ref.declaration_name in declarations.documents_by_name and not ref.module_parts:
+            doc = declarations.documents_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="document", title=doc.title, declaration_name=doc.name
+            )
+        if ref.declaration_name in declarations.schemas_by_name and not ref.module_parts:
+            schema = declarations.schemas_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="schema", title=schema.title, declaration_name=schema.name
+            )
+        if ref.declaration_name in declarations.tables_by_name and not ref.module_parts:
+            table = declarations.tables_by_name[ref.declaration_name]
+            return ResolvedOutputTargetTypedAs(
+                family="table", title=table.title, declaration_name=table.name
+            )
+        # Try cross-module resolution for each family before giving up.
+        for family, resolver in (
+            ("document", self._resolve_document_ref),
+            ("schema", self._resolve_schema_ref),
+            ("table", self._resolve_table_ref),
+        ):
+            try:
+                _target_unit, target_decl = resolver(ref, unit=unit)
+            except CompileError:
+                continue
+            return ResolvedOutputTargetTypedAs(
+                family=family,
+                title=target_decl.title,
+                declaration_name=target_decl.name,
+            )
+        raise compile_error(
+            code="E533",
+            summary="Typed output target references a non-document/schema/table entity",
+            detail=(
+                f"Output target `{decl.name}` declares `typed_as: {ref.declaration_name}`, "
+                "but that name does not resolve to a declared `document`, `schema`, or `table`."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=decl.source_span,
+            hints=(
+                "Declare the typed identity as a `document`, `schema`, or `table`, then reference it by name.",
+                "Cross-package identities must import the entity first; only direct-module references are auto-picked-up.",
+            ),
         )
 
     def _resolve_outputs_decl(

@@ -290,6 +290,106 @@ class ValidateReviewSemanticsMixin:
             )
         return tuple(gates)
 
+    def _validate_review_case_gate_override(
+        self,
+        case: model.ReviewCase,
+        contract_spec: ReviewContractSpec,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+    ) -> tuple[ReviewContractGate, ...]:
+        override = case.gates_override
+        contract_gate_by_key: dict[str, ReviewContractGate] = {
+            g.key: g for g in contract_spec.gates
+        }
+        if override is None:
+            return contract_spec.gates
+
+        effective: dict[str, ReviewContractGate] = dict(contract_gate_by_key)
+
+        # E531: `remove` name must reference a declared contract gate.
+        for remove_key in override.remove:
+            if remove_key not in effective:
+                raise review_compile_error(
+                    code="E531",
+                    summary="Gate removed from review case is not declared in the contract",
+                    detail=(
+                        f"Review case `{case.key}` in {owner_label} removes gate "
+                        f"`{remove_key}`, but that gate is not declared by the case's contract."
+                    ),
+                    unit=unit,
+                    source_span=override.source_span or case.source_span,
+                    hints=(
+                        "Remove gates that the contract actually declares, or drop the `remove` line.",
+                    ),
+                )
+            del effective[remove_key]
+
+        # E532: `add` must not collide with an existing effective gate.
+        for add_gate in override.add:
+            if add_gate.key in effective:
+                raise review_compile_error(
+                    code="E532",
+                    summary="Gate added or modified in review case collides with an existing name",
+                    detail=(
+                        f"Review case `{case.key}` in {owner_label} adds gate "
+                        f"`{add_gate.key}`, but that name is already declared in the case's "
+                        "effective gate set."
+                    ),
+                    unit=unit,
+                    source_span=add_gate.source_span or override.source_span or case.source_span,
+                    hints=(
+                        "Pick a unique gate name, or use `modify` to change the message of an existing gate.",
+                    ),
+                )
+            effective[add_gate.key] = ReviewContractGate(
+                key=add_gate.key,
+                title=add_gate.title,
+                unit=unit,
+                source_span=add_gate.source_span,
+            )
+
+        # E531/E532: `modify` must target an existing effective gate and must not
+        # collide with another `modify` entry on the same case.
+        seen_modify: set[str] = set()
+        for modify_gate in override.modify:
+            if modify_gate.key in seen_modify:
+                raise review_compile_error(
+                    code="E532",
+                    summary="Gate added or modified in review case collides with an existing name",
+                    detail=(
+                        f"Review case `{case.key}` in {owner_label} modifies gate "
+                        f"`{modify_gate.key}` more than once."
+                    ),
+                    unit=unit,
+                    source_span=modify_gate.source_span or override.source_span or case.source_span,
+                    hints=("Keep at most one `modify` line per gate name in a review case.",),
+                )
+            seen_modify.add(modify_gate.key)
+            if modify_gate.key not in effective:
+                raise review_compile_error(
+                    code="E531",
+                    summary="Gate removed from review case is not declared in the contract",
+                    detail=(
+                        f"Review case `{case.key}` in {owner_label} modifies gate "
+                        f"`{modify_gate.key}`, but that gate is not declared by the case's "
+                        "contract (after `remove` entries apply)."
+                    ),
+                    unit=unit,
+                    source_span=modify_gate.source_span or override.source_span or case.source_span,
+                    hints=(
+                        "Use `add` for new gates; reserve `modify` for gates the contract declares.",
+                    ),
+                )
+            effective[modify_gate.key] = ReviewContractGate(
+                key=modify_gate.key,
+                title=modify_gate.title,
+                unit=unit,
+                source_span=modify_gate.source_span,
+            )
+
+        return tuple(effective.values())
+
     def _review_output_path_is_live(
         self,
         output_decl: model.OutputDecl,

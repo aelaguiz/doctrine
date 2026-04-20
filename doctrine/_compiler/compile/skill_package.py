@@ -311,12 +311,109 @@ class CompileSkillPackageMixin:
             content=render_markdown(compiled_agent).encode("utf-8"),
         )
 
+    def _validate_receipt_host_slots(
+        self,
+        decl: model.SkillPackageDecl,
+        *,
+        unit: IndexedUnit,
+    ) -> None:
+        for slot in decl.host_contract:
+            if not isinstance(slot, model.ReceiptHostSlot):
+                continue
+            if not slot.fields:
+                raise package_compile_error(
+                    code="E535",
+                    summary="Receipt slot declared without fields",
+                    detail=(
+                        f"Skill package `{decl.name}` declares receipt host slot "
+                        f"`{slot.key}` without any typed fields. Receipt slots must "
+                        "list at least one typed field so downstream agents can bind "
+                        "receipt values by symbol."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=slot.source_span,
+                    hints=(
+                        "Add at least one `<field>: <TypeName>` entry inside the "
+                        "receipt slot body, or drop the receipt slot if the skill does "
+                        "not emit a typed receipt envelope.",
+                    ),
+                )
+            seen_field_keys: set[str] = set()
+            for field in slot.fields:
+                if field.key in seen_field_keys:
+                    raise package_compile_error(
+                        code="E535",
+                        summary="Receipt slot declared without fields",
+                        detail=(
+                            f"Skill package `{decl.name}` declares receipt host slot "
+                            f"`{slot.key}` with duplicate field `{field.key}`."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=field.source_span or slot.source_span,
+                        hints=(
+                            "Use a unique key for each receipt field.",
+                        ),
+                    )
+                seen_field_keys.add(field.key)
+                self._validate_receipt_field_type(
+                    field,
+                    decl=decl,
+                    slot=slot,
+                    unit=unit,
+                )
+
+    def _validate_receipt_field_type(
+        self,
+        field: model.ReceiptField,
+        *,
+        decl: model.SkillPackageDecl,
+        slot: model.ReceiptHostSlot,
+        unit: IndexedUnit,
+    ) -> None:
+        from doctrine._compiler.indexing import unit_declarations
+
+        type_ref = field.type_ref
+        lookup_targets = self._decl_lookup_targets(type_ref, unit=unit)
+        for lookup_target in lookup_targets:
+            declarations = unit_declarations(lookup_target.unit)
+            name = lookup_target.declaration_name
+            if (
+                name in declarations.schemas_by_name
+                or name in declarations.tables_by_name
+                or name in declarations.enums_by_name
+                or name in declarations.documents_by_name
+            ):
+                return
+        dotted = (
+            ".".join((*type_ref.module_parts, type_ref.declaration_name))
+            if type_ref.module_parts
+            else type_ref.declaration_name
+        )
+        raise package_compile_error(
+            code="E537",
+            summary="Receipt field type is not a declared entity",
+            detail=(
+                f"Skill package `{decl.name}` declares receipt host slot "
+                f"`{slot.key}` field `{field.key}` with type `{dotted}`, but "
+                "that name does not resolve to a declared schema, table, enum, "
+                "or document in this prompt."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=field.source_span or slot.source_span,
+            hints=(
+                "Receipt field types must be declared entities such as a "
+                "`schema`, `table`, `enum`, or `document` the compiler already "
+                "knows. Declare the type or point at the correct name.",
+            ),
+        )
+
     def _compile_skill_package_decl(
         self,
         decl: model.SkillPackageDecl,
         *,
         unit: IndexedUnit,
     ) -> CompiledSkillPackage:
+        self._validate_receipt_host_slots(decl, unit=unit)
         frontmatter: list[tuple[str, str]] = [("name", decl.metadata.name or decl.name)]
         if decl.metadata.description is not None:
             frontmatter.append(("description", decl.metadata.description))

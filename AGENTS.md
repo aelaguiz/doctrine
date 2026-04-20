@@ -56,7 +56,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/138_output_shape_case_selector`.
+- The current shipped corpus covers `examples/01_hello_world` through `examples/142_skill_host_receipt_envelope`.
 
 ## Authoring Rules
 

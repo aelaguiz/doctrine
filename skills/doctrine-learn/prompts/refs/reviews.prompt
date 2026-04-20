@@ -189,6 +189,69 @@ uses named `gates:` items that export as gate identities such as
 least one section. Schema contracts keep the same `contract.passes` and
 `contract.failed_gates` semantic surface a workflow contract exports."""
 
+        section typed_gates: "Typed Gates, Declared Once, Referenced By Symbol"
+            """A review contract declares every gate exactly once — either as the
+first-level keyed sections of a `workflow` or as the named `gates:` items of a
+`schema`. The review body then references those gates by symbol as
+`contract.NAME`. The same `contract.NAME` identities may also be interpolated
+inside authored prose through the Doctrine interpolation root. There is no
+second surface where gates are listed as inline prose."""
+            code:
+                language: prompt-fragment
+                text: """schema BriefReviewContract: "Brief Review Contract"
+    gates:
+        audience_named: "Audience Named"
+            "Confirm the reviewed brief names the audience."
+        next_action_clear: "Next Action Clear"
+            "Confirm the reviewed brief names the next action."
+
+
+review BriefReview: "Brief Review"
+    subject: DraftBrief
+    contract: BriefReviewContract
+    comment_output: BriefReviewComment
+
+    contract_gate_checks: "Contract Gate Checks"
+        reject contract.audience_named when DraftBrief.audience_missing
+        reject contract.next_action_clear when DraftBrief.next_action_missing
+        accept "The typed review contract passes." when contract.passes
+"""
+            """A typo in a `contract.NAME` reference fails loud with `E477` on the
+unresolved symbol. That includes `reject contract.<typo>`, `accept "..." when
+contract.<typo>`, and a typed-gate interpolation whose symbol is unknown. See
+`examples/140_typed_gates_symbol_reference` for the positive proof and the
+sibling invalid case, and `examples/57_schema_review_contracts` for a
+schema-backed contract shape. `AL245` fires when a review authors gate names
+as free-form prose instead of typed contract gate identities."""
+
+        section per_case_gate_override: "Per-Case Gate Override"
+            """A `review_family` case may share one contract with its siblings and still
+carry a case-scoped gate delta. The case declares an `override gates:` block
+between `contract:` and `checks:`. Each line is `add`, `remove`, or `modify`.
+Prefer this shape to splitting one contract into N near-duplicates when all
+the cases want is a small per-case gate delta."""
+            code:
+                language: prompt-fragment
+                text: """cases:
+    full_path: "Full Path"
+        when ReviewMode.full_path
+        subject: DraftSpec
+        contract: SharedReviewContract
+        override gates:
+            remove clarity
+            add depth: "Depth"
+            modify completeness: "Completeness (full path)"
+        checks:
+            accept "The shared review contract passes." when contract.passes
+"""
+            """`remove NAME` must target a gate the contract declares (or the compiler
+fires `E531`). `add NAME: "Title"` must not collide with the effective gate
+set (or the compiler fires `E532`). `modify NAME: "Title"` must target a gate
+still in the effective set after `remove` entries apply; a missing target
+fires `E531`, and duplicate `modify` on the same name fires `E532`. See
+`examples/141_review_case_gate_override` for the positive proof and the
+sibling invalid cases."""
+
     section review_driven_final_output: "Review-Driven final_output"
         """On a review-driven agent, `final_output:` may either reuse the review's
 `comment_output:` or point at another emitted `TurnResponse`. `comment_output`

@@ -248,6 +248,7 @@ class OutputTargetDecl:
     title: str
     items: tuple[RecordItem, ...]
     delivery_skill_ref: NameRef | None = None
+    typed_as: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -471,13 +472,36 @@ class SkillPackageHostSlot:
 
 
 @_dataclass(slots=True, frozen=True)
+class ReceiptField:
+    key: str
+    type_ref: NameRef
+    list_element: bool = False
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ReceiptHostSlot:
+    key: str
+    title: str
+    fields: tuple[ReceiptField, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+    @property
+    def family(self) -> str:
+        return "receipt"
+
+
+SkillPackageHostSlotItem: _TypeAlias = SkillPackageHostSlot | ReceiptHostSlot
+
+
+@_dataclass(slots=True, frozen=True)
 class SkillPackageDecl:
     name: str
     title: str
     items: tuple[RecordItem, ...]
     metadata: SkillPackageMetadata
     emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
-    host_contract: tuple[SkillPackageHostSlot, ...] = ()
+    host_contract: tuple[SkillPackageHostSlotItem, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

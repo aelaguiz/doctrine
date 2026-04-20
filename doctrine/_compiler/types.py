@@ -352,7 +352,7 @@ class CompiledSkillPackageContract:
     contract_version: int
     package_name: str
     package_title: str
-    host_contract: tuple[model.SkillPackageHostSlot, ...] = ()
+    host_contract: tuple[model.SkillPackageHostSlotItem, ...] = ()
     artifacts: tuple[CompiledSkillPackageArtifactContract, ...] = ()
 
 

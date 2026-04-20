@@ -257,6 +257,11 @@ Stability rules:
 | `E528` | Release tag signing is not configured | Doctrine could not find the git signing key needed for signed public tags. |
 | `E529` | GitHub release command failed | GitHub draft or publish release commands failed. |
 | `E530` | Release package metadata version is missing or does not match | `pyproject.toml` is missing a usable `[project].version`, or that version does not match the requested public release's package version. |
+| `E531` | Review case override removes or modifies a gate that the contract does not declare | A review case's `override gates:` block tries to `remove` or `modify` a gate name that the case's contract does not declare (or that a prior `remove` already deleted). |
+| `E532` | Review case override adds or modifies a gate that collides with an existing name | A review case's `override gates:` block tries to `add` a gate name that is already declared by the contract (after `remove` entries apply), or declares the same `modify` target twice. |
+| `E535` | Receipt host slot must declare at least one typed field | A `receipt` host slot in a skill package's `host_contract:` was declared without fields, or declared two fields that share the same key. |
+| `E536` | Receipt field reference does not resolve | A dotted addressable reference through a skill binding's receipt slot names a field the receipt host slot does not declare. |
+| `E537` | Receipt field type is not a declared entity | A `receipt` host slot field was typed with a name that is not a declared `schema`, `table`, `enum`, or `document` in scope. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

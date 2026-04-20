@@ -648,7 +648,11 @@ class ResolveSkillsMixin:
         package_contract: CompiledSkillPackageContract,
         agent_context: ActiveSkillBindAgentContext,
     ) -> None:
-        slot_map = {slot.key: slot for slot in package_contract.host_contract}
+        slot_map = {
+            slot.key: slot
+            for slot in package_contract.host_contract
+            if not isinstance(slot, model.ReceiptHostSlot)
+        }
         bind_map = {bind.key: bind for bind in entry.binds}
 
         if not slot_map:

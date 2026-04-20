@@ -263,7 +263,13 @@ class CompileReviewCasesMixin:
                 unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
             )
-            for gate in contract_spec.gates:
+            effective_gates = self._validate_review_case_gate_override(
+                case,
+                contract_spec,
+                unit=unit,
+                owner_label=owner_label,
+            )
+            for gate in effective_gates:
                 if gate.key in seen_contract_gate_keys:
                     continue
                 seen_contract_gate_keys.add(gate.key)
@@ -315,6 +321,18 @@ class CompileReviewCasesMixin:
                 unit=unit,
                 owner_label=f"{owner_label}.cases.{case.key}",
             )
+            if case.gates_override is not None:
+                effective_case_gates = self._validate_review_case_gate_override(
+                    case,
+                    contract_spec,
+                    unit=unit,
+                    owner_label=owner_label,
+                )
+                contract_spec = ReviewContractSpec(
+                    kind=contract_spec.kind,
+                    title=contract_spec.title,
+                    gates=effective_case_gates,
+                )
             case_checks = model.ReviewSection(
                 key=f"{case.key}_checks",
                 title="Checks",
