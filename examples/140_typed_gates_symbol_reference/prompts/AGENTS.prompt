@@ -1,0 +1,99 @@
+# This example proves typed gates. The review contract is a schema with a
+# typed `gates:` block. The review body rejects and accepts on exported
+# `contract.NAME` identities. The emitted failure prose references the same
+# identities by symbol. A typo anywhere in the symbol chain fails loud with
+# `E477` — see the sibling invalid case.
+
+schema BriefReviewContract: "Brief Review Contract"
+    sections:
+        summary: "Summary"
+            "Summarize the reviewed brief."
+
+    gates:
+        audience_named: "Audience Named"
+            "Confirm the reviewed brief names the audience."
+
+        next_action_clear: "Next Action Clear"
+            "Confirm the reviewed brief names the next action."
+
+
+input DraftBrief: "Draft Brief"
+    source: File
+        path: "brief_root/DRAFT_BRIEF.md"
+    shape: MarkdownDocument
+    requirement: Required
+    audience_missing: "Audience Missing"
+    next_action_missing: "Next Action Missing"
+
+
+agent ReviewLead:
+    role: "Own accepted brief follow-up."
+    workflow: "Follow Up"
+        "Take the accepted brief to the next step."
+
+
+agent BriefAuthor:
+    role: "Repair rejected brief defects."
+    workflow: "Revise"
+        "Revise the same brief when review requests changes."
+
+
+output BriefReviewComment: "Brief Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State the review verdict."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact."
+
+    analysis_performed: "Analysis Performed"
+        "Summarize the review analysis."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "State what the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name {{ReviewLead}} when accepted and {{BriefAuthor}} when rejected."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "List exact failing gates, including {{contract.audience_named}} and {{contract.next_action_clear}} when they fail."
+
+
+review BriefReview: "Brief Review"
+    subject: DraftBrief
+    contract: BriefReviewContract
+    comment_output: BriefReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+
+    contract_gate_checks: "Contract Gate Checks"
+        reject contract.audience_named when DraftBrief.audience_missing
+        reject contract.next_action_clear when DraftBrief.next_action_missing
+        accept "The typed review contract passes." when contract.passes
+
+    on_accept: "If Accepted"
+        current none
+        route "Accepted brief goes to ReviewLead." -> ReviewLead
+
+    on_reject: "If Rejected"
+        current none
+        route "Rejected brief goes to BriefAuthor." -> BriefAuthor
+
+
+agent TypedGateReviewDemo:
+    role: "Keep typed gate identities visible across the contract, the review, and the failure prose."
+    review: BriefReview
+    inputs: "Inputs"
+        DraftBrief
+    outputs: "Outputs"
+        BriefReviewComment

@@ -418,7 +418,11 @@ Important rules:
   `BuildSurfaceSchema:sections.summary.title`,
   `BuildSurfaceSchema:artifacts.manifest_file.title`, and
   `BuildSurfaceSchema:groups.downstream_rebuild.title`.
-- `review contract:` may point at either a `workflow` or a `schema`.
+- `review contract:` may point at either a `workflow` or a `schema`. Review
+  bodies reference contract gates by symbol as `contract.NAME`, and a typo in
+  that reference fails loud with `E477`. See
+  [REVIEW_SPEC.md](REVIEW_SPEC.md#review-contracts) and
+  `examples/140_typed_gates_symbol_reference/` for proof.
 
 ### Tables
 

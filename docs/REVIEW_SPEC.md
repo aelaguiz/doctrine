@@ -103,6 +103,13 @@ Workflow contracts may use ordinary workflow prose, composition, and
 inheritance. Schema contracts use `sections:` and optional `gates:`. Neither
 contract surface is the place for operational route or currentness semantics.
 
+Gates are declared once on the contract and referenced by symbol from the
+review body (`reject contract.clarity when ...`) and from authored prose
+(`{{contract.clarity}}`). A typo in a `contract.NAME` reference fails loud
+with `E477` on the unresolved symbol. See
+`examples/140_typed_gates_symbol_reference/` for the positive proof and the
+sibling invalid case.
+
 ## Core Review Configuration
 
 A concrete review declares:

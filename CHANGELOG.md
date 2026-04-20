@@ -62,6 +62,15 @@ Support-surface version changes: Doctrine language 4.0 -> 5.0; package metadata 
   that share one output declaration but emit role-specific field notes,
   plus compile-fail fixtures for `E318` (non-exhaustive cases and
   `case` without `selector:`) and `E319` (missing agent binding).
+- Example `140_typed_gates_symbol_reference` proves the typed-gate
+  teaching loop: a schema contract with a typed `gates:` block, a review
+  body that rejects and accepts on `contract.NAME` identities, failing-
+  gate prose that interpolates the same `contract.NAME` symbols, and a
+  sibling `compile_fail` case that fires `E477` on a typo. The curated
+  `doctrine-learn` reviews reference now includes a "Typed Gates,
+  Declared Once, Referenced By Symbol" section pointing at the example,
+  and the `agent-linter` finding catalog adds `AL245` for review gates
+  authored as inline prose instead of typed contract gates.
 
 ### Changed
 - `E500` semantics: was "final_output review_fields may not be repeated on

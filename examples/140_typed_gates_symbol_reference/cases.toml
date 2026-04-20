@@ -1,0 +1,81 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "typed review gates stay visible across contract, review, and failure prose"
+status = "active"
+kind = "render_contract"
+agent = "TypedGateReviewDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep typed gate identities visible across the contract, the review, and the failure prose.",
+  "",
+  "## Brief Review",
+  "",
+  "Review subject: Draft Brief.",
+  "Shared review contract: Brief Review Contract.",
+  "",
+  "### Contract Gate Checks",
+  "",
+  "Reject: Audience Named.",
+  "",
+  "Reject: Next Action Clear.",
+  "",
+  "Accept only if The typed review contract passes.",
+  "",
+  "### If Accepted",
+  "",
+  "No artifact is current for this outcome.",
+  "",
+  "Accepted brief goes to ReviewLead.",
+  "",
+  "### If Rejected",
+  "",
+  "No artifact is current for this outcome.",
+  "",
+  "Rejected brief goes to BriefAuthor.",
+  "",
+  "## Inputs",
+  "",
+  "### Draft Brief",
+  "",
+  "- Source: File",
+  "- Path: `brief_root/DRAFT_BRIEF.md`",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "- Audience Missing: `Audience Missing`",
+  "- Next Action Missing: `Next Action Missing`",
+  "",
+  "## Outputs",
+  "",
+  "### Brief Review Comment",
+  "",
+  "- Target: Turn Response",
+  "- Shape: Comment",
+  "- Requirement: Required",
+  "",
+  "- Verdict: State the review verdict.",
+  "- Reviewed Artifact: Name the reviewed artifact.",
+  "- Analysis Performed: Summarize the review analysis.",
+  "- Output Contents That Matter: State what the next owner should read first.",
+  "- Next Owner: Name ReviewLead when accepted and BriefAuthor when rejected.",
+  "",
+  "#### Failure Detail",
+  "",
+  "Show this only when verdict is changes requested.",
+  "",
+  "##### Failing Gates",
+  "",
+  "List exact failing gates, including Audience Named and Next Action Clear when they fail.",
+]
+
+[[cases]]
+name = "contract gate refs must name exported review-contract gates"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_contract_gate/AGENTS.prompt"
+agent = "BrokenTypedGateDemo"
+exception_type = "CompileError"
+error_code = "E477"
+location_line = 77
