@@ -25,56 +25,39 @@ related:
 
 <!-- arch_skill:block:implementation_audit:start -->
 # Implementation Audit (authoritative)
-Date: 2026-04-19 (fresh re-audit, replaces prior block)
-Verdict (code): NOT COMPLETE
+Date: 2026-04-20 (fresh re-audit, replaces prior 2026-04-19 block)
+Verdict (code): COMPLETE
 Manual QA: n/a (non-blocking)
 
 ## Code blockers (why code is not done)
-- The approved ordered plan frontier is P1 → P7. P1 (§1 typed-gate teaching closure), P2 (§2 per-case `override gates:`), P3 (§4 `receipt` family on `host_contract:`), P4 (§3 typed handoff-note identity via `typed_as:`), and P5 (§7 skill-binding `mode` + output-shape selector drift normalization) are all honestly shipped in grammar, model, validators, diagnostics, manifest-backed examples 140 / 141 / 142 / 143 / 144, docs, and curated teaching surfaces. P6 (§6 typed abstract-agent parameters) and P7 (§5 declarative `rule` primitive + `RULE###` band) are unstarted and constitute the real remaining frontier, in P6 → P7 order.
-- No execution-side edit weakened requirements, scope, acceptance criteria, or phase obligations. P1–P5 each retain their full `Checklist (must all be done)`, `Verification (required proof)`, and `Exit criteria (all required)` surfaces verbatim and each carry a `Status: COMPLETE` line plus an evidence-anchored `Completed work:` block. The two example-number drift entries in Section 10 (139 → 140, 140 → 141) and the P5 decision to ship `E543` as fatal (Doctrine has no warning channel) are recorded as deliberate Decision Log entries, not silent scope trims. P6 and P7 keep their full planning surfaces visible with no completion claim, so the missing work is explicit.
+- None. Every phase in the approved P1 → P7 ordered frontier is honestly shipped with grammar (where applicable), model, parser wiring, validators, diagnostic codes + smoke fixtures, a manifest-backed example, docs + curated teaching + agent-linter updates, rebuilt `.prompt` mirrors, VSCode syntax refresh, CHANGELOG / VERSIONING entries, and the Decision Log entries the plan required. No execution-side plan edit weakened requirements, scope, acceptance criteria, or phase obligations — each phase's `Checklist (must all be done)`, `Verification (required proof)`, and `Exit criteria (all required)` stay verbatim and are met by an evidence-anchored `Completed work:` block.
 
 ## Reopened phases (false-complete fixes)
-- None. P1–P5 are honestly complete with evidence-anchored `Completed work:` blocks. P6–P7 carry no completion claim to reopen.
+- None. All seven phases hold up against their authoritative phase-exit surfaces.
 
 ## Missing items (code gaps; evidence-anchored; no tables)
-- Remaining frontier: Phase 6 (§6 typed abstract-agent parameters) then Phase 7 (§5 declarative `rule` primitive + `RULE###` diagnostics). `implement-loop` must execute both phases in order against their full `Checklist (must all be done)` and `Exit criteria (all required)` surfaces in Section 7.
-- Phase 6 (typed abstract-agent parameters)
-  - Evidence anchors:
-    - `doctrine/grammars/doctrine.lark:140` — `agent_slot_abstract: "abstract" CNAME _NL?` has no optional `: name_ref` annotation.
-    - `doctrine/_model/agent.py` — `AuthoredSlotField` / `AuthoredSlotAbstract` carry no `declared_type: NameRef | None` field.
-    - `doctrine/_compiler/validate/agents.py` — no `_validate_typed_abstract_slot_binding` method.
-    - `docs/COMPILER_ERRORS.md` — no `E538` / `E539` rows (next free codes in the P6 band).
-    - `examples/` — no `examples/145_abstract_agent_typed_parameters/` (next free monotone slot after shipped 144).
-    - `skills/.curated/doctrine-learn/references/agents-and-workflows.md` — no typed-parameter teaching; built mirror unchanged.
-    - `skills/.curated/agent-linter/references/finding-catalog.md` — no AL-finding for "N near-duplicate concrete agents that could share an abstract with typed parameters."
-    - Section 10 Decision Log — no entry recording the explicit non-convergence with skill `host_contract` slots and output-schema fields.
-  - Plan expects:
-    - Phase 6 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7: grammar annotation, `AuthoredSlotField.declared_type`, parser wiring, `_validate_typed_abstract_slot_binding`, `E538` / `E539` diagnostics + fixtures, manifest-backed example with valid + invalid cases, `docs/LANGUAGE_REFERENCE.md` + `docs/COMPILER_ERRORS.md` + curated doctrine-learn `agents-and-workflows.md` + curated agent-linter finding, rebuilt `.prompt` mirrors, VSCode keyword refresh, Decision Log non-convergence entry, `CHANGELOG.md` + `docs/VERSIONING.md` minor-bump entries.
-  - Code reality:
-    - Phase 6 has not begun.
-  - Fix:
-    - Execute Phase 6 against its full checklist and exit criteria.
-- Phase 7 (declarative `rule` primitive + `RULE###` diagnostics)
-  - Evidence anchors:
-    - `doctrine/grammars/doctrine.lark` — no `rule_decl`, `rule_scope_block`, `rule_assertions_block`, scope predicates, or assertion predicates; `rule` is still reserved only as an editor keyword.
-    - `doctrine/_model/rule.py` — file absent; `RuleDecl` / `RuleScope` / `RuleAssertion` not defined; `doctrine/model.py` does not re-export them.
-    - `doctrine/_compiler/validate/rules.py` — file absent; no `ValidateRulesMixin`; `ValidateMixin.__bases__` unchanged.
-    - `doctrine/_compiler/diagnostics.py` — no `rule-check` stage label.
-    - `docs/COMPILER_ERRORS.md` — no `RULE###` band; no `RULE001-RULE005` entries; band stability rule not documented alongside the E-code band.
-    - `examples/` — no `examples/145_declarative_project_lint_rule/` (or next free slot after Phase 6 ships).
-    - `skills/.curated/doctrine-learn/references/rules.md` — file absent; curated `SKILL.md` index does not register it; built `skills/doctrine-learn/prompts/refs/rules.prompt` mirror absent.
-    - `skills/.curated/agent-linter/references/finding-catalog.md` — no AL-finding for "project lacks an enforcement rule for this inheritance invariant."
-  - Plan expects:
-    - Phase 7 full `Checklist (must all be done)` and `Exit criteria (all required)` in Section 7: new grammar productions following the canonical typed-entity shape, closed scope + assertion predicate sets, new model module with `doctrine/model.py` re-export, new validator mixin composed into `ValidateMixin`, `rule-check` diagnostic stage label, `RULE001-RULE005` registrations with fixtures, manifest-backed example with passing rule + case firing `RULE003`, full docs + teaching + linter updates with the new curated reference and skill index entry, `make verify-package` + `tests.test_release_flow` proof, VSCode keyword refresh for `scope` / `assertions` / `requires` / `forbids`, `CHANGELOG.md` + `docs/VERSIONING.md` minor-bump entries naming the `RULE###` band's stability rule.
-  - Code reality:
-    - Phase 7 has not begun.
-  - Fix:
-    - Execute Phase 7 against its full checklist and exit criteria.
+- None.
 
-## Non-blocking follow-ups (manual QA / screenshots / human verification)
-- `AGENTS.md:59` still says the shipped corpus covers "`examples/01_hello_world` through `examples/142_skill_host_receipt_envelope`", but examples 143 and 144 shipped under P4 and P5. `docs/DOCTRINE_LANGUAGE_GAPS_ELEGANT_CLOSURE_PLAN_2026-04-19_WORKLOG.md` is untracked. These are docs-consolidation items for `arch-docs` after P6/P7 land; neither P4 nor P5 listed them in their `Checklist` or `Exit criteria`, so they are not code-completeness gaps against this plan.
-- Several P1–P5 working-tree edits (built `.prompt` mirrors, curated references, grammar, models, validators, VSCode syntax, `CHANGELOG.md`, `docs/VERSIONING.md`, new `examples/141-144/`) remain staged or untracked per `git status`. Curated sources and built mirrors agree (`emit_skill.py` drift is zero), so this is commit hygiene, not a code-completeness gap.
-- `examples/140_typed_gates_symbol_reference/` proves P1 via `cases.toml` assertions (`error_code` / `location_line`) rather than a `ref/` artifact directory. The manifest still covers the happy path and the `E477` typo case, so the P1 checklist intent is satisfied. Only re-flag if a later plan specifically requires `ref/` artifacts for teaching-only examples.
+## Verification signals (fresh run, 2026-04-20)
+- `make verify-examples` — 437 PASS cases across `examples/01_hello_world` through `examples/146_declarative_project_lint_rule` (includes the seven new shipped examples 140–146).
+- `make verify-diagnostics` — green; all new smoke fixtures are present and passing at `doctrine/_diagnostic_smoke/compile_checks.py`:405 (E531), :420 (E532), :450 (E533), :465 (E534), :480 (E540), :495 (E541), :510 (E542), :525 (E543), :540 (E538), :555 (E539), and the `RULE001`–`RULE005` checks at :575, :597, :619, :641, :663.
+- `make verify-package` — green.
+- `uv run --locked python -m unittest tests.test_release_flow` — green.
+
+## Per-phase evidence anchors (code reality matches plan)
+- Phase 1 (§1 typed-gate teaching closure): `skills/.curated/doctrine-learn/references/reviews.md` + built `skills/doctrine-learn/prompts/refs/reviews.prompt`; `AL245` in curated + built `agent-linter/references/finding-catalog.md`; `examples/140_typed_gates_symbol_reference/` shipped with happy path + `E477` typo case; `docs/REVIEW_SPEC.md` + `docs/LANGUAGE_REFERENCE.md` cross-reference; `CHANGELOG.md` Unreleased entry.
+- Phase 2 (§2 per-case `override gates:`): grammar `review_case_gates_override_block` in `doctrine/grammars/doctrine.lark`; model `ReviewCaseGatesOverride` in `doctrine/_model/review.py`; validator `_validate_review_case_gate_override` in `doctrine/_compiler/validate/review_semantics.py`; `E531`/`E532` in `docs/COMPILER_ERRORS.md`; `examples/141_review_case_gate_override/` ships three manifest cases.
+- Phase 3 (§4 `receipt` family on `host_contract:`): `package_host_slot_family` adds `receipt`; `ReceiptField` + `ReceiptHostSlot` in `doctrine/_model/io.py`; receipt validation in `doctrine/_compiler/compile/skill_package.py` + synthetic addressables in `doctrine/_compiler/resolve/addressables.py`; `E535`/`E536`/`E537` in `docs/COMPILER_ERRORS.md`; `examples/142_skill_host_receipt_envelope/` ships.
+- Phase 4 (§3 typed handoff-note identity via `typed_as:`): `output_target_typed_as_stmt` grammar + `OutputTargetDecl.typed_as` in `doctrine/_model/io.py`; resolver + validator in `doctrine/_compiler/resolve/outputs.py` and `doctrine/_compiler/compile/outputs.py`; `E533`/`E534` in `docs/COMPILER_ERRORS.md`; `examples/143_typed_handoff_note_identity/` ships; Decision Log records the 142 → 143 example-number drift and the local-scope E534 rationale.
+- Phase 5 (§7 skill-binding `mode` + `output_shape_selector_stmt` normalization): `skill_entry_body` reuses `mode_stmt`; `output_shape_selector_stmt` accepts both forms with fatal `E543` on enum-only; `E540`/`E541`/`E542`/`E543` registered; `examples/144_skill_binding_producer_audit_mode/` ships with producer + audit cases and the `invalid_enum_only_selector/` fixture; `examples/138_output_shape_case_selector/` migrated to the expr-based form; Section 10 Decision Log entry `2026-04-19 - Normalize output_shape_selector_stmt…` records the soft-deprecation timebox and the E543-as-fatal architectural call.
+- Phase 6 (§6 typed abstract-agent parameters): grammar annotation on `agent_slot_abstract` and `AuthoredSlotAbstract.declared_type: NameRef | None` in `doctrine/_model/agent.py`; `_validate_typed_abstract_slot_binding` in `doctrine/_compiler/validate/agents.py` plus `ResolvedTypedAgentSlot` in `doctrine/_compiler/resolved_types.py`; `E538`/`E539` in `docs/COMPILER_ERRORS.md`; `examples/145_abstract_agent_typed_parameters/` ships with wrong-family and unresolved-annotation fixtures; Section 10 Decision Log entry `2026-04-19 - Typed abstract-agent parameters stay narrow…` records the explicit non-convergence with skill `host_contract` slots and output-schema fields; `AL285` added to the curated agent-linter finding catalog.
+- Phase 7 (§5 declarative `rule` primitive + `RULE###` band): new `rule_decl` with closed `scope:` + `assertions:` + `message:` productions in `doctrine/grammars/doctrine.lark`; `doctrine/_model/rule.py` ships with `doctrine/model.py` re-export; `ValidateRulesMixin` composed into `ValidateMixin`; `RULE001`–`RULE005` registered in `docs/COMPILER_ERRORS.md` with the `RULE006-RULE099` closed-predicate reservation and `RULE100+` open-expression reservation; `examples/146_declarative_project_lint_rule/` ships a happy path plus one `compile_fail` per RULE code; `skills/.curated/doctrine-learn/references/rules.md` is registered in the `SKILL.md` index and the built `rules.prompt` mirror is in place; `AL990` added to the agent-linter catalog; Section 10 Decision Log entry `2026-04-20 - Rule primitive ships with a closed predicate surface…` records the closed-predicate + RULE-band scope and the deliberate reuse of the `stage="compile"` label in place of a dedicated `rule-check` stage.
+
+## Non-blocking follow-ups (for `arch-docs`; not code-completeness against this plan)
+- `AGENTS.md:59` still says the shipped corpus covers "`examples/01_hello_world` through `examples/142_skill_host_receipt_envelope`". Examples 143–146 shipped under P4–P7. Not in any phase's `Checklist` or `Exit criteria`; belongs to `arch-docs` corpus-boundary refresh.
+- Phase 6 shipped as `examples/145_abstract_agent_typed_parameters/` (plan named 144) and Phase 7 shipped as `examples/146_declarative_project_lint_rule/` (plan named 145). Both drifts are acknowledged inline in the phase `Completed work:` blocks, but the P1/P2 drift-logging pattern (dedicated Section 10 entries) was not followed for P6/P7. Plan-hygiene for `arch-docs`, not a code-completeness gap.
+- `docs/DOCTRINE_LANGUAGE_GAPS_ELEGANT_CLOSURE_PLAN_2026-04-19_WORKLOG.md` tracks execution truth through the end of P7. Retirement or promotion of the plan + worklog pair belongs to `arch-docs`.
+- `examples/140_typed_gates_symbol_reference/` proves P1 via `cases.toml` assertions (`error_code` / `location_line`) rather than a `ref/` artifact directory. The manifest still covers both cases the plan required. Not a gap.
 <!-- arch_skill:block:implementation_audit:end -->
 
 <!-- arch_skill:block:planning_passes:start -->
