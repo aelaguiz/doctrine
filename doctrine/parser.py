@@ -14,6 +14,7 @@ from doctrine._parser.io import IoTransformerMixin
 from doctrine._parser.parts import _name_ref_from_dotted_name, _source_span_from_meta, _with_source_span
 from doctrine._parser.readables import ReadableNodeTransformerMixin
 from doctrine._parser.reviews import ReviewTransformerMixin
+from doctrine._parser.rules import RuleTransformerMixin
 from doctrine._parser.runtime import (
     build_lark_parser as _build_lark_parser,
     parse_file as _parse_file,
@@ -41,6 +42,7 @@ class ToAst(
     ExpressionTransformerMixin,
     IoTransformerMixin,
     ReviewTransformerMixin,
+    RuleTransformerMixin,
     SkillsTransformerMixin,
     WorkflowTransformerMixin,
     ReadableNodeTransformerMixin,

@@ -213,6 +213,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                 detail=f"Agent `{agent_name}` is marked abstract and cannot render output directly.",
                 hints=("Render a concrete child agent instead.",),
             )
+        self._validate_all_rules_in_flow(self.session.flow_for_unit(unit))
         return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(

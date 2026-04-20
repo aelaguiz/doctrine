@@ -30,8 +30,11 @@ class WorkflowTransformerMixin:
         )
 
     @v_args(meta=True, inline=True)
-    def agent_slot_abstract(self, meta, key):
-        return _with_source_span(model.AuthoredSlotAbstract(key=key), meta)
+    def agent_slot_abstract(self, meta, key, declared_type=None):
+        return _with_source_span(
+            model.AuthoredSlotAbstract(key=key, declared_type=declared_type),
+            meta,
+        )
 
     @v_args(meta=True, inline=True)
     def agent_slot_inherit(self, meta, key):

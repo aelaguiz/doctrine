@@ -15,7 +15,7 @@ from doctrine._model.core import (
     SourceSpan,
 )
 from doctrine._model.io import RecordItem
-from doctrine._model.law import LawBody
+from doctrine._model.law import LawBody, ModeStmt
 from doctrine._model.readable import ReadableBlock
 from doctrine._model.readable import ReadableOverrideBlock
 
@@ -59,6 +59,7 @@ class SkillEntry:
     target: NameRef
     items: tuple[RecordItem, ...] = ()
     binds: tuple["SkillEntryBind", ...] = ()
+    mode: ModeStmt | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -79,6 +80,7 @@ class OverrideSkillEntry:
     target: NameRef
     items: tuple[RecordItem, ...] = ()
     binds: tuple["SkillEntryBind", ...] = ()
+    mode: ModeStmt | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

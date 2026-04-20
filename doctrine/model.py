@@ -187,6 +187,20 @@ from doctrine._model.readable import (
     ReadableTableUseData,
     TableDecl,
 )
+from doctrine._model.rule import (
+    AgentTagPredicate,
+    FileTreePredicate,
+    FlowPredicate,
+    ForbidsBindAssertion,
+    RequiresDeclareAssertion,
+    RequiresInheritAssertion,
+    RoleClassPredicate,
+    RuleAssertion,
+    RuleAssertionKind,
+    RuleDecl,
+    RuleScope,
+    RuleScopePredicate,
+)
 from doctrine._model.review import (
     ContractGateRef,
     ReviewAcceptStmt,

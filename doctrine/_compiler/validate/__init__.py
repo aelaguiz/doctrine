@@ -27,6 +27,7 @@ from doctrine._compiler.validate.readables import ValidateReadablesMixin
 from doctrine._compiler.validate.reviews import ValidateReviewsMixin
 from doctrine._compiler.validate.route_semantics import ValidateRouteSemanticsMixin
 from doctrine._compiler.validate.routes import ValidateRoutesMixin
+from doctrine._compiler.validate.rules import ValidateRulesMixin
 from doctrine._compiler.validate.schema_helpers import ValidateSchemaHelpersMixin
 
 
@@ -44,6 +45,7 @@ class ValidateMixin(
     ValidateAddressableChildrenMixin,
     ValidateAddressableDisplayMixin,
     ValidateLawPathsMixin,
+    ValidateRulesMixin,
 ):
     """Validation, review, and route helper boundary for CompilationContext."""
 

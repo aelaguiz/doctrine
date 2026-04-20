@@ -1,0 +1,17 @@
+# A rule scope predicate names a flow agent that does not exist.
+# The compiler must fail with RULE001.
+
+abstract agent UpstreamPoisoningInvariant:
+    role: "Shared invariant base."
+
+
+agent BriefComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the weekly brief."
+
+
+rule ComposersCheckUpstream: "Every composer must inherit the invariant"
+    scope:
+        flow: MissingFlowAgent
+    assertions:
+        requires inherit UpstreamPoisoningInvariant
+    message: "Every composer must inherit UpstreamPoisoningInvariant."

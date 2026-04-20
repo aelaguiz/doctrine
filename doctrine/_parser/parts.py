@@ -248,6 +248,7 @@ class SkillEntryBindBlockPart:
 class SkillEntryBodyParts:
     items: tuple[model.RecordItem, ...]
     binds: tuple[model.SkillEntryBind, ...]
+    mode: model.ModeStmt | None = None
 
 
 @dataclass(slots=True, frozen=True)

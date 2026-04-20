@@ -22,6 +22,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL260` | Naked Script Or CLI Invocation In Role Prose | The role carries literal shell commands, exe paths, or flag lists as instructions. | Promote the invocation into a skill body and reference it. |
 | `AL270` | Parallel Workflows As Review Contracts | Several `workflow` declarations share the same gate slot keys and each is bound as a review `contract:`. | Collapse into one `review_family` with shared gates and per-case prose. |
 | `AL280` | Agent Skeleton Duplication | Several concrete agents restate the same declaration scaffold (`inputs`, `skills`, `outputs`, `output schema/shape`). | Hoist the shared scaffold into an `abstract agent` base. |
+| `AL285` | Near-Duplicate Agents Differ Only By Typed Entity Reference | Two or more concrete agents share one abstract parent and differ only in one slot value that names a declared entity (document, schema, table, enum, agent, or workflow). The abstract marks that slot `abstract <slot_key>` with no type, so any family could bind and the constraint lives in prose. | Narrow the abstract slot to `abstract <slot_key>: TypedEntity`. Concrete children then bind by `name_ref` of that family, and `E538` / `E539` catch wrong-family or unresolved bindings at compile time. |
 | `AL300` | Runtime Boundary Leak | The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration. | Remove runtime ownership from the prompt. |
 | `AL310` | Shadow Control Plane | Prose creates a second source of truth that competes with a typed surface. | Delete the shadow surface and keep one canonical owner. |
 | `AL320` | Host-Namespace Jargon Without Grounding | Prose uses harness-specific verbs, paths, or env vars without grounding. | Replace private jargon with neutral language or a shared grounded owner. |
@@ -56,6 +57,8 @@ document FindingCatalog: "Finding Catalog"
 | `AL940` | Role Prose Shadows Typed Skill Scope | Role prose enumerates verb allow/blocklists that a typed skill scope already owns. | Drop the prose list; cite the skill by name. |
 | `AL950` | Inlined Vocabulary Should Be An Enum-Typed Field | A fixed set of values is listed as prose (for example `A \\| B \\| C`) instead of a declared `enum` typed onto a field. | Declare `enum X: "..."` once, then write `type: X` on the field. |
 | `AL960` | Process Evidence Emitted As Prose Not Typed Receipt | A skill's body or emitted artifact describes a run-by-run evidence envelope in prose rather than declaring a typed `receipt` host slot. | Promote the skill to a `skill package` and declare `receipt <slot>:` in `host_contract:` with typed fields; let critics bind the receipt by symbol. |
+| `AL970` | Critic Re-Invokes Producer Skill Instead Of Binding Audit Mode | A critic uses a separate or duplicated skill to audit the producer's work instead of binding the shared skill with `mode audit = SkillMode.audit as SkillMode`. | Share one skill across producer and auditor and declare the critic's bind with `mode audit = ...`. |
+| `AL980` | Output-Shape Selector Uses Deprecated Enum-Only Mode Form | A selector on an output shape still uses the old `mode role as WriterRole` enum-only form instead of the canonical `mode role = WriterRole.<case> as WriterRole` expr form. | Rewrite each selector to the expr-based form so the compiler can validate the picked case against the enum. |
 """
 
     section full_calibration: "Full Calibration"
@@ -192,6 +195,16 @@ document FindingCatalog: "Finding Catalog"
             "Good: `One abstract LensWardenBase carries the inputs, skills, outputs, and schema. Each concrete warden overrides only workflow, role, and the per-layer route.`"
             "Bad: Four warden files that each restate the same six imports, the same `inputs`, the same `skills`, the same `output schema`, and the same `outputs` struct."
             "See also: `references/authoring-patterns.md` section `agent_skeleton_duplication`."
+
+        section al285: "`AL285` Near-Duplicate Agents Differ Only By Typed Entity Reference"
+            "What it means: Two or more concrete agents share one abstract parent and differ only in a single slot value that names a declared entity (a document, schema, table, enum, agent, or workflow). The abstract parent marks that slot as `abstract <slot_key>` with no type annotation, so any family could bind there and the real type constraint survives only as prose."
+            "Why it matters: The abstract slot should carry the real type. Without the annotation, a wrong-family binding (for example a workflow bound where a document was intended) compiles cleanly and the mistake only shows up at runtime. Untyped abstract slots also hide the pattern from the compiler, so refactors cannot rely on `E538` / `E539` to catch drift."
+            "Default severity: `medium`. `high` when three or more concrete agents share the same slot and bind different declared entities."
+            "Default fix: Narrow the abstract slot to `abstract <slot_key>: TypedEntity` where `TypedEntity` is the declared family (document, schema, table, enum, agent, or workflow). Each concrete child then binds `<slot_key>: <NameRef>` of that family. `E538` fires when a concrete binds to the wrong family or with an inline block. `E539` fires when the annotation names an unknown entity."
+            "Shared owner: Almost always required."
+            "Good: `abstract TypedPolicyReviewer carries `abstract policy: AccuracyPolicy`. AccuracyReviewer binds `policy: AccuracyPolicy` and ToneReviewer binds `policy: TonePolicy`. Both bindings are typed by the abstract.`"
+            "Bad: `abstract PolicyReviewer carries `abstract policy` and a prose comment saying `must be a policy document`. Two concretes bind `policy: AccuracyPolicy` and `policy: SomeWorkflow` and nothing fails loud.`"
+            "See also: `AL280` when the shared scaffold itself is the problem, and `examples/145_abstract_agent_typed_parameters/` for the canonical form."
 
         section al300: "`AL300` Runtime Boundary Leak"
             "What it means: The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration."
@@ -451,6 +464,22 @@ document FindingCatalog: "Finding Catalog"
             "Good: `receipt process_receipt:` with `confidence: ConfidenceLevel` and `evidence: list[EvidenceRow]` on the package; the critic references `producer.receipt.confidence` by symbol."
             "Bad: A skill body that says `always emit a short note about your confidence and a pipe-delimited list of the sources you checked.`"
             "See also: `AL930` for host-binding framing, and `examples/142_skill_host_receipt_envelope/` for the canonical form."
+
+        section al970: "`AL970` Critic Re-Invokes Producer Skill Instead Of Binding Audit Mode"
+            "What it means: A critic agent's `skills:` block declares its own copy of the producer's skill, or imports the same skill and lets the runtime guess intent, instead of binding the shared skill with `mode audit = <Enum>.audit as <Enum>` so producer and audit uses of the same capability stay compile-time distinguishable."
+            "Why it matters: The producer and audit copies drift. The critic's role prose often restates the producer's prose to compensate. A mode-tagged binding keeps one skill, one package, and one contract while still letting the compiler reject audit-mode side effects (audit bindings cannot emit to `output` or `final_output` host slots; `E541` fails loud)."
+            "Default fix: Declare one `enum SkillMode` with `producer` and `audit` members. Keep one `skill SharedSkill` declaration. On the producer agent, tag the binding `mode producer = SkillMode.producer as SkillMode`. On the critic agent, tag it `mode audit = SkillMode.audit as SkillMode` and leave any output-family host slots unbound."
+            "Good: One `SharedSkill` declaration, a producer agent with `mode producer = SkillMode.producer as SkillMode`, and a critic agent with `mode audit = SkillMode.audit as SkillMode`."
+            "Bad: Two near-duplicate skill declarations (`ProducerSharedSkill` and `CriticSharedSkill`) that point at the same package, or one skill used by both agents with no mode tag so the compiler cannot tell producer from audit."
+            "See also: `AL900` for skill-scope framing, and `examples/144_skill_binding_producer_audit_mode/` for the canonical form."
+
+        section al980: "`AL980` Output-Shape Selector Uses Deprecated Enum-Only Mode Form"
+            "What it means: An `output shape` `selector:` block still uses the enum-only shorthand `mode <field> as <Enum>` instead of the canonical expr-based `mode <name> = expr as <Enum>` production shared with review cases, law matchers, and skill-binding modes."
+            "Why it matters: The enum-only shorthand is soft-deprecated. The compiler now raises `E543` when it appears, and the form will be removed at the next minor language bump. Keeping one `mode_stmt` production across every dispatching surface also keeps authoring mental model small."
+            "Default fix: Rewrite every `mode <field> as <Enum>` selector statement as `mode <name> = selectors.<field> as <Enum>` (or the corresponding expr for the selector source)."
+            "Good: `mode role = selectors.role as WriterRole`"
+            "Bad: `mode role as WriterRole`"
+            "See also: `examples/138_output_shape_case_selector/` for the migrated canonical form and `examples/144_skill_binding_producer_audit_mode/prompts/invalid_enum_only_selector/` for the preserved `E543` regression fixture."
 
     section severity: "Severity"
         bullets levels:

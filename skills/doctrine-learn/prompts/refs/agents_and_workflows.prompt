@@ -53,6 +53,10 @@ and may carry a title."""
   same authored order."""
             "`override read_first: NewWorkflow` replaces an inherited slot in place."
             "`abstract <slot_key>` marks a slot a concrete child must define directly."
+            """`abstract <slot_key>: TypedEntity` narrows the slot to one typed family
+  (document, schema, table, enum, agent, or workflow). Concrete children bind by
+  name reference to that family. E538 and E539 catch wrong-family or unresolved
+  annotations at compile time."""
 
         "See `examples/07_handoffs` for a concrete-agent-with-inheritance example."
 

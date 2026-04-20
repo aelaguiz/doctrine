@@ -259,6 +259,7 @@ OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOve
 class OutputShapeSelectorConfig:
     field_name: str
     enum_ref: NameRef
+    expr: Expr | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

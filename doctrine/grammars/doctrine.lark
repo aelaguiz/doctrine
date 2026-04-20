@@ -40,6 +40,7 @@ prompt_file: _NL* declaration+ _NL*
                        | skill_package_decl
                        | skill_decl
                        | enum_decl
+                       | rule_decl
                        | abstract_agent
                        | agent
 
@@ -78,6 +79,29 @@ output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DED
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
+
+// Top-level `rule` declaration. The P7 predicate set is deliberately closed;
+// the `RULE100+` diagnostic band is reserved for future open-expression
+// evolution. Do not widen this grammar without a Decision Log entry.
+rule_decl: "rule" CNAME ":" string _NL _INDENT rule_body _DEDENT
+rule_body: rule_scope_block rule_assertions_block rule_message
+rule_scope_block: "scope" ":" _NL _INDENT rule_scope_predicate+ _DEDENT
+?rule_scope_predicate: agent_tag_predicate
+                     | flow_predicate
+                     | role_class_predicate
+                     | file_tree_predicate
+agent_tag_predicate: "agent_tag" ":" CNAME _NL
+flow_predicate: "flow" ":" name_ref _NL
+role_class_predicate: "role_class" ":" CNAME _NL
+file_tree_predicate: "file_tree" ":" string _NL
+rule_assertions_block: "assertions" ":" _NL _INDENT rule_assertion+ _DEDENT
+?rule_assertion: requires_inherit_assertion
+               | forbids_bind_assertion
+               | requires_declare_assertion
+requires_inherit_assertion: "requires" "inherit" name_ref _NL
+forbids_bind_assertion: "forbids" "bind" name_ref _NL
+requires_declare_assertion: "requires" "declare" CNAME _NL
+rule_message: "message" ":" string _NL
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
@@ -137,7 +161,11 @@ review_grouped_inherit_keys: [review_item_key ("," review_item_key)* ","?]
 schema_grouped_inherit_keys: [CNAME ("," CNAME)* ","?]
 
 agent_slot_field: CNAME ":" slot_value _NL slot_body?
-agent_slot_abstract: "abstract" CNAME _NL?
+// `abstract` carries an optional typed annotation (`: <name_ref>`) that is deliberately
+// narrower than skill `host_contract` family typing — concrete descendants must bind the
+// slot to a name_ref of the declared family, but this does not converge the agent-slot,
+// skill-host-slot, and output-schema-field shapes. See §10 Decision Log 2026-04-19.
+agent_slot_abstract: "abstract" CNAME (":" name_ref)? _NL?
 agent_slot_inherit: "inherit" CNAME _NL? -> agent_slot_inherit
                   | "inherit" "{" grouped_inherit_keys "}" _NL? -> agent_slot_inherit_group
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
@@ -675,7 +703,10 @@ skills_inherit: "inherit" CNAME _NL? -> skills_inherit
 skills_override_section: "override" CNAME ":" string? _NL _INDENT skills_section_body _DEDENT
 skills_override_entry: "override" CNAME ":" name_ref _NL skill_entry_body?
 skill_entry_body: _INDENT skill_entry_body_line+ _DEDENT
+// `mode_stmt` is the canonical mode production shared with review cases and
+// law matchers (pattern propagation).
 skill_entry_body_line: skill_entry_bind_block
+                     | mode_stmt
                      | record_item
 skill_entry_bind_block: "bind" ":" _NL _INDENT skill_entry_bind_item+ _DEDENT
 skill_entry_bind_item: CNAME ":" skill_entry_bind_target _NL?
@@ -758,7 +789,10 @@ output_shape_body_line: output_shape_schema_item
 output_shape_schema_item: "schema" ":" name_ref _NL?
 output_shape_override_schema_item: "override" "schema" ":" name_ref _NL?
 output_shape_selector_block: "selector" ":" _NL _INDENT output_shape_selector_stmt+ _DEDENT
-output_shape_selector_stmt: "mode" CNAME "as" name_ref _NL
+// Accepts both the shipped enum-only form (soft-deprecated under `E543`) and
+// the canonical expr-based form shared with review cases and law matchers.
+output_shape_selector_stmt: "mode" CNAME "as" name_ref _NL                 -> output_shape_selector_enum_stmt
+                          | "mode" CNAME "=" expr "as" name_ref _NL        -> output_shape_selector_expr_stmt
 
 output_schema_body: output_schema_body_line+
 ?output_schema_body_line: output_schema_field

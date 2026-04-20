@@ -1,0 +1,17 @@
+# A concrete composer inherits a forbidden retired ancestor.
+# The compiler must fail with RULE004.
+
+abstract agent LegacyComposerBase:
+    role: "Retired composer base that should no longer be used."
+
+
+agent BriefComposer[LegacyComposerBase]:
+    role: "Compose the weekly brief using the retired base."
+
+
+rule NoLegacyComposerBase: "Composers must not inherit LegacyComposerBase"
+    scope:
+        role_class: Composer
+    assertions:
+        forbids bind LegacyComposerBase
+    message: "LegacyComposerBase is retired. Inherit the shared invariant directly instead."

@@ -166,12 +166,14 @@ class SkillsTransformerMixin:
     def skill_entry(self, meta, key, target, body=None):
         items = tuple() if body is None else body.items
         binds = tuple() if body is None else body.binds
+        mode = None if body is None else body.mode
         return _with_source_span(
             model.SkillEntry(
                 key=key,
                 target=target,
                 items=items,
                 binds=binds,
+                mode=mode,
             ),
             meta,
         )
@@ -188,12 +190,14 @@ class SkillsTransformerMixin:
     def skills_override_entry(self, meta, key, target, body=None):
         items = tuple() if body is None else body.items
         binds = tuple() if body is None else body.binds
+        mode = None if body is None else body.mode
         return _with_source_span(
             model.OverrideSkillEntry(
                 key=key,
                 target=target,
                 items=items,
                 binds=binds,
+                mode=mode,
             ),
             meta,
         )
@@ -244,6 +248,7 @@ class SkillsTransformerMixin:
     def skill_entry_body(self, items):
         record_items: list[model.RecordItem] = []
         binds: tuple[model.SkillEntryBind, ...] = ()
+        mode: model.ModeStmt | None = None
         seen_bind = False
         for item in items:
             if isinstance(item, SkillEntryBindBlockPart):
@@ -257,8 +262,20 @@ class SkillsTransformerMixin:
                 binds = self._skill_entry_binds(item.binds)
                 seen_bind = True
                 continue
+            if isinstance(item, model.ModeStmt):
+                if mode is not None:
+                    line = item.source_span.line if item.source_span is not None else None
+                    column = item.source_span.column if item.source_span is not None else None
+                    raise TransformParseFailure(
+                        "Skill entries may declare `mode` only once.",
+                        hints=("Keep exactly one `mode <CNAME> = <expr> as <Enum>` line per skill entry.",),
+                        line=line,
+                        column=column,
+                    )
+                mode = item
+                continue
             record_items.append(item)
-        return SkillEntryBodyParts(items=tuple(record_items), binds=binds)
+        return SkillEntryBodyParts(items=tuple(record_items), binds=binds, mode=mode)
 
     @v_args(inline=True)
     def skill_entry_body_line(self, value):

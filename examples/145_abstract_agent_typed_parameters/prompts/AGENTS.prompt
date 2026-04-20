@@ -1,0 +1,32 @@
+# This example shows the typed abstract-agent parameter feature.
+# - an abstract agent may annotate an `abstract` slot with `: <TypedEntityRef>`
+# - concrete descendants bind the slot to a `name_ref` of the declared family
+# - the compiler checks family match at compile time (E538 / E539)
+
+document AccuracyPolicy: "Accuracy Policy"
+    section summary: "Summary"
+        "Check every fact against a cited source."
+        "Return weak or unsourced claims honestly."
+
+
+document TonePolicy: "Tone Policy"
+    section summary: "Summary"
+        "Keep the tone direct and plain."
+        "Avoid hedging or filler prose."
+
+
+abstract agent TypedPolicyReviewer:
+    role: "Review a draft section against a named typed policy."
+    abstract policy: AccuracyPolicy
+
+
+agent AccuracyReviewer[TypedPolicyReviewer]:
+    role: "Review draft sections against the accuracy policy."
+
+    policy: AccuracyPolicy
+
+
+agent ToneReviewer[TypedPolicyReviewer]:
+    role: "Review draft sections against the tone policy."
+
+    policy: TonePolicy

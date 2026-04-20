@@ -16,7 +16,7 @@ export output shape ParentWriterTurnJson: "Parent Writer Turn JSON"
     schema: WriterTurnSchema
 
     selector:
-        mode role as WriterRole
+        mode role = selectors.role as WriterRole
 
     field_notes: "Field Notes"
         "Always ground the headline in today's work."

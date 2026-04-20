@@ -28,6 +28,23 @@ class CompileOutputSelectorsMixin:
     ) -> OutputSelectorDispatchContext | None:
         self._validate_output_shape_declaration_structure(shape_decl, unit=shape_unit)
         selector = shape_decl.selector
+        if selector is not None and selector.expr is None:
+            raise final_output_compile_error(
+                code="E543",
+                summary="Deprecated enum-only output-shape mode form",
+                detail=(
+                    f"Output shape `{shape_decl.name}` uses the enum-only `mode "
+                    f"{selector.field_name} as ...` selector form, which is "
+                    "soft-deprecated."
+                ),
+                unit=shape_unit,
+                source_span=selector.source_span or shape_decl.source_span,
+                hints=(
+                    "Use the expr-based `mode <name> = <expr> as <Enum>` form "
+                    "shared with review cases and law matchers.",
+                    "The enum-only form will be removed at the next minor language bump.",
+                ),
+            )
         if selector is None:
             if _shape_items_contain_case(shape_decl.items):
                 raise final_output_compile_error(

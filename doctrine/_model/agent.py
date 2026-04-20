@@ -20,6 +20,7 @@ class AuthoredSlotField:
 @_dataclass(slots=True, frozen=True)
 class AuthoredSlotAbstract:
     key: str
+    declared_type: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

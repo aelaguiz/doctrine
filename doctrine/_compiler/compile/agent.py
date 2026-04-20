@@ -32,6 +32,7 @@ from doctrine._compiler.resolved_types import (
     OutputDeclKey,
     ResolvedAbstractAgentSlot,
     ResolvedAgentSlot,
+    ResolvedTypedAgentSlot,
     ResolvedIoBody,
     ResolvedPreviousTurnInputSpec,
     ResolvedSkillEntry,
@@ -49,6 +50,7 @@ class CompileAgentMixin:
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
         self._enforce_legacy_role_workflow_order(agent, unit=unit)
+        self._validate_typed_abstract_slot_binding(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
         agent_key = self._flow_agent_key(unit, agent.name)
@@ -100,6 +102,11 @@ class CompileAgentMixin:
                 slot.key: slot.body
                 for slot in resolved_slot_states
                 if isinstance(slot, ResolvedAgentSlot)
+            }
+            typed_slot_keys = {
+                slot.key
+                for slot in resolved_slot_states
+                if isinstance(slot, ResolvedTypedAgentSlot)
             }
             has_workflow_slot = "workflow" in resolved_slots
             workflow_field = next(
@@ -244,6 +251,8 @@ class CompileAgentMixin:
                         model.AuthoredSlotOverride,
                     ),
                 ):
+                    if field.key in typed_slot_keys:
+                        continue
                     slot_body = resolved_slots.get(field.key)
                     if slot_body is None:
                         raise compile_error(

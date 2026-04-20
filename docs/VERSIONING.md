@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 5.2
+Current Doctrine language version: 5.6
 
 ## The Version Lines
 
@@ -209,6 +209,66 @@ Every public release uses one release class.
   `fields` map so runtime hosts can validate the emitted envelope.
   Existing programs without a `receipt` slot keep compiling unchanged.
   Advances the language line from `5.1` to `5.2`.
+- Adding `typed_as:` to `output target` bodies is one backward-compatible
+  language move. A custom `output target` may now point at a declared
+  `document`, `schema`, or `table` so the target carries the handoff-note
+  family identity. Consuming outputs may then omit a redundant
+  `structure:` or `schema:` line, or state the matching family for
+  clarity. The emitted output contract gains one `Typed As` row
+  immediately after `Target`. Typed targets whose ref does not resolve
+  to a `document`, `schema`, or `table` fail loud with `E533`. If a
+  downstream output's own `structure:` or `schema:` names a family that
+  disagrees with the target's `typed_as:` family, the compiler raises
+  `E534`. Existing programs without `typed_as:` keep compiling unchanged.
+  Advances the language line from `5.2` to `5.3`.
+- Adding a canonical `mode CNAME = expr as <Enum>` statement on skill
+  entries and normalizing `output shape` `selector:` to the same
+  production is one backward-compatible language move. Skill entries
+  now distinguish producer and audit uses of the same skill with the
+  same `mode_stmt` grammar production that review cases, law matchers,
+  and output-shape selectors already share. Three new compile codes
+  fail loud on authoring mistakes: `E540` for a mode `as` target that
+  does not resolve to a declared enum, `E541` for an audit-mode skill
+  entry that binds to an `output` or `final_output` host slot, and
+  `E542` for a `CNAME` that is not a member of the declared enum. The
+  enum-only `output shape` selector form (`mode CNAME as <Enum>`) is
+  soft-deprecated with `E543`. **Timebox:** the enum-only form will be
+  removed at the next minor language bump (language 5.4 → 5.5).
+  Existing programs that already use the expr-based form — every
+  shipped use in review cases, law matchers, and existing `mode`
+  statements — keep compiling unchanged. Advances the language line
+  from `5.3` to `5.4`.
+- Adding an optional `: <TypedEntityRef>` annotation on `abstract`
+  authored-agent slots is one backward-compatible language move. An
+  abstract agent may now narrow an abstract slot to a specific
+  declared family (`document`, `schema`, `table`, `enum`, `agent`, or
+  `workflow`). Concrete descendants must bind the slot to a `name_ref`
+  of the declared family. The compiler raises `E538` when a concrete
+  binds the slot with the wrong family or an inline workflow block,
+  and `E539` when the annotation fails to resolve. The annotation is
+  deliberately narrower than skill `host_contract` family typing and
+  output-schema field typing; the three shapes stay distinct. Existing
+  untyped abstract slots keep compiling unchanged. Advances the
+  language line from `5.4` to `5.5`.
+- Adding the declarative top-level `rule` primitive is one
+  backward-compatible language move. A `rule` declaration lints the
+  authored agent graph at compile time through a closed `scope:`
+  predicate set (`agent_tag: <CNAME>`, `flow: <NameRef>`,
+  `role_class: <CNAME>`, `file_tree: <STRING>`) and a closed
+  `assertions:` predicate set (`requires inherit <NameRef>`,
+  `forbids bind <NameRef>`, `requires declare <CNAME>`). Rule-check
+  diagnostics live in their own `RULE###` band so they stay visibly
+  distinct from the `E###` codes. The shipped codes are `RULE001`
+  (scope predicate target does not resolve), `RULE002` (assertion
+  target does not resolve), `RULE003` (scoped agent fails
+  `requires inherit`), `RULE004` (scoped agent violates
+  `forbids bind`), and `RULE005` (scoped agent fails
+  `requires declare`). **RULE-band stability rule:** codes `RULE006`
+  through `RULE099` are reserved for future extensions of this
+  closed-predicate surface, and codes `RULE100` and above are reserved
+  for any future open-expression-language evolution of the rule
+  primitive. Existing programs that declare no `rule` keep compiling
+  unchanged. Advances the language line from `5.5` to `5.6`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

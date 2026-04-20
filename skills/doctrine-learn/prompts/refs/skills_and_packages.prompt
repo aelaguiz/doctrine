@@ -282,6 +282,41 @@ compiler, so drift is free. Promote the decl to a `skill package` with
 
         "See `examples/142_skill_host_receipt_envelope/` for the canonical receipt-envelope shape including the `build_contract` proof and the `E535` / `E537` fail-loud counter cases."
 
+    section skill_binding_mode: "Skill Binding Mode"
+        """A skill entry may carry a canonical `mode CNAME = expr as <Enum>` statement. This is the same `mode_stmt` production shared with review cases, law matchers, and output-shape selectors — one mode concept for every surface that dispatches by enum. Use it to distinguish producer and audit uses of the same skill without authoring parallel skill declarations."""
+        code:
+            language: prompt
+            text: """enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+skill SharedSkill: "Shared Skill"
+    purpose: "Run the shared producer/audit package."
+    package: "shared-skill-package"
+
+
+agent ProducerAgent:
+    role: "Run the shared skill in producer mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode producer = SkillMode.producer as SkillMode
+
+
+agent AuditorAgent:
+    role: "Run the shared skill in audit mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode audit = SkillMode.audit as SkillMode
+"""
+        "Rules:"
+        bullets mode_rules:
+            "The `CNAME` after `mode` must be one of the declared enum's members. Unknown names fail with `E542`."
+            "The `name_ref` after `as` must resolve to a declared enum. Unresolved targets fail with `E540`."
+            "An audit-mode skill entry (`mode audit = ...`) must not `bind:` to an `output` or `final_output` host slot. Audit stays read-only; a binding that tries to emit fails with `E541`."
+
+        "See `examples/144_skill_binding_producer_audit_mode/` for the canonical producer/audit pattern plus fail-loud counter cases for `E540`, `E541`, `E542`, and the deprecated enum-only output-shape selector form `E543`."
+
     section install_tree_and_emit: "Install Tree And Emit"
         "Run the emitter from the repo root to build one package tree:"
         code:

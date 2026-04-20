@@ -54,7 +54,7 @@ const TOP_LEVEL_FIELD_REF_RE = new RegExp(
   `^\\s*(analysis|decision|skills|inputs|outputs|final_output)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const KEYED_DECL_REF_RE = new RegExp(
-  `^\\s*(source|target|shape|schema|structure|render_profile|output|route|delivery_skill)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
+  `^\\s*(source|target|shape|schema|structure|render_profile|output|route|delivery_skill|typed_as)\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
 );
 const AGENT_SLOT_REF_RE = new RegExp(
   `^\\s*(${IDENTIFIER_PATTERN})\\s*:\\s*(${DOTTED_NAME_PATTERN})\\s*$`,
@@ -1465,6 +1465,28 @@ function collectRecordBodySites(document, lineText, lineNumber, container) {
           outputRef,
           range: createLastMatchRange(lineText, lineNumber, keyedRef[2]),
           routeFieldName: keyedRef[2],
+        });
+      }
+      return sites;
+    }
+
+    if (
+      keyedRef[1] === "typed_as"
+      && declarationKind === DECLARATION_KIND.OUTPUT_TARGET
+    ) {
+      const range = createLastMatchRange(lineText, lineNumber, keyedRef[2]);
+      const ref = parseNameRef(keyedRef[2]);
+      for (const kind of [
+        DECLARATION_KIND.DOCUMENT,
+        DECLARATION_KIND.SCHEMA_DECL,
+        DECLARATION_KIND.TABLE,
+      ]) {
+        sites.push({
+          type: "directDeclRef",
+          declarationKind: kind,
+          range,
+          ref,
+          requireConcrete: false,
         });
       }
       return sites;

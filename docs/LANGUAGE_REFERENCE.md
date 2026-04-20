@@ -89,6 +89,13 @@ Important rules:
   `route`.
 - `abstract <slot_key>` marks an authored slot that concrete children must
   define directly.
+- `abstract <slot_key>: <TypedEntityRef>` narrows the slot to a declared
+  `document`, `schema`, `table`, `enum`, `agent`, or `workflow`. Each concrete
+  descendant must bind the slot to a `name_ref` of the same family. The
+  compiler rejects wrong-family bindings with `E538` and unresolvable
+  annotations with `E539`. The annotation is deliberately narrower than
+  skill `host_contract` family typing and output-schema field typing; the
+  three shapes remain distinct.
 - `inherit <slot_key>` keeps an inherited authored slot unchanged.
 - `inherit {slot_a, slot_b}` is grouped parser sugar for repeated inherited
   slot accounting in the same authored order.
@@ -795,6 +802,48 @@ Rules:
   package host contract and the host paths used by each emitted prompt-authored
   artifact.
 
+#### Skill Binding Mode
+
+A skill entry may tag itself with a `mode` statement. This is the canonical
+`mode CNAME = expr as name_ref` production shared with review cases, law
+matchers, and output-shape selectors. The mode keeps producer and audit uses
+of the same skill compile-time distinguishable.
+
+```prompt
+enum SkillMode: "Skill Mode"
+    producer: "Producer"
+    audit: "Audit"
+
+
+skill SharedSkill: "Shared Skill"
+    purpose: "Run the shared producer/audit package."
+    package: "shared-skill-package"
+
+
+agent ProducerAgent:
+    role: "Run the shared skill in producer mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode producer = SkillMode.producer as SkillMode
+
+
+agent AuditorAgent:
+    role: "Run the shared skill in audit mode."
+    skills: "Skills"
+        skill shared: SharedSkill
+            mode audit = SkillMode.audit as SkillMode
+```
+
+Rules:
+
+- The `CNAME` after `mode` must be one of the declared enum's members.
+  Unknown names fail with `E542`.
+- The `name_ref` after `as` must resolve to a declared enum. Unresolved
+  targets fail with `E540`.
+- A skill entry tagged with `mode audit = ...` must not `bind:` to an
+  `output` or `final_output` host slot. Audit-mode bindings stay read-only
+  and fail with `E541` if they try to emit.
+
 ## Inputs And Outputs
 
 Doctrine makes turn contracts explicit.
@@ -896,9 +945,22 @@ Important rules:
 - Custom targets can be declared with `output target`.
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.
+- A custom `output target` may also declare `typed_as:` pointing at a
+  `document`, `schema`, or `table`. That makes the target carry the handoff
+  note's family identity. `typed_as:` referencing any other entity kind fails
+  loud with `E533`. If a downstream `output` that uses the target also sets
+  `structure:` or `schema:`, the family must match the target's `typed_as:`
+  family or the compiler raises `E534`. See
+  `examples/143_typed_handoff_note_identity/` for the canonical form.
 - Output shapes can be named with `output shape`.
-- An `output shape` may declare a `selector:` block naming one or more keys
-  with `key as EnumType`. Each key must resolve to a closed enum.
+- An `output shape` may declare a `selector:` block. Each selector statement
+  uses the canonical expr-based `mode CNAME = expr as EnumType` production,
+  the same one shared with review cases, law matchers, and skill-binding
+  modes. `expr` is usually the selector field access, e.g.
+  `mode role = selectors.role as WriterRole`. The enum-only shorthand
+  `mode CNAME as EnumType` is soft-deprecated and fails with `E543`; it
+  will be removed at the next minor bump. Each `as` target must resolve to
+  a closed enum.
 - Inside a shape with a `selector:`, body items may use `case EnumType.member:`
   blocks for per-case content. Cases must cover every enum member exactly once
   and must not overlap. `case` outside a shape body, or without a `selector:`,
@@ -1081,6 +1143,36 @@ The emitted output contract starts like this:
 | Ledger ID | `current-ledger` |
 | Shape | Markdown Document |
 | Requirement | Advisory |
+```
+
+Typed handoff-note target example:
+
+```prompt
+document ReleaseNoteDocument: "Release Note"
+    section summary: "Summary"
+        "Say what shipped."
+
+output target ReleaseNoteHandoff: "Release Note Handoff"
+    typed_as: ReleaseNoteDocument
+
+output ReleaseNote: "Release Note"
+    target: ReleaseNoteHandoff
+    shape: MarkdownDocument
+    requirement: Advisory
+    structure: ReleaseNoteDocument
+```
+
+The emitted contract carries a `Typed As` row so downstream readers see the
+bound family directly:
+
+```md
+| Contract | Value |
+| --- | --- |
+| Target | Release Note Handoff |
+| Typed As | Release Note |
+| Shape | Markdown Document |
+| Requirement | Advisory |
+| Structure | Release Note |
 ```
 
 ### Output Inheritance
@@ -1363,6 +1455,61 @@ The shipped expression surface supports:
 
 Those expressions are used in `when`, `match`, guarded output items,
 workflow law, and review semantics.
+
+## Project Rules
+
+Doctrine ships a declarative `rule` primitive that a project uses to lint its
+own agent graph. A `rule` lives at the top of a prompt file and runs during
+compile. If the rule matches a concrete agent and the agent violates an
+assertion, the compiler raises a `RULE###` diagnostic (see
+[`COMPILER_ERRORS.md`](./COMPILER_ERRORS.md)).
+
+The shape is:
+
+```doctrine
+rule <RuleName>: "Human-readable rule headline"
+    scope:
+        <scope predicate>
+    assertions:
+        <assertion predicate>
+    message: "Plain-English explanation shown when the rule fires."
+```
+
+The shipped predicate set is closed. Scope predicates select which concrete
+agents the rule evaluates against:
+
+- `agent_tag: <CNAME>` — the agent whose name equals `<CNAME>` exactly
+- `flow: <NameRef>` — every agent whose ancestor chain transitively includes
+  the named flow or ancestor
+- `role_class: <CNAME>` — every agent whose name ends with the `<CNAME>`
+  suffix
+- `file_tree: <STRING>` — every agent whose prompt file path matches the
+  glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root
+
+Multiple scope predicates combine with OR semantics: an agent matches the
+rule when at least one predicate matches.
+
+Assertions say what scoped agents must or must not do:
+
+- `requires inherit <NameRef>` — the scoped agent must transitively inherit
+  from `<NameRef>`. If the target agent is not declared, the compiler raises
+  `RULE002`. If a scoped agent fails the check, it raises `RULE003`.
+- `forbids bind <NameRef>` — the scoped agent must not transitively inherit
+  from `<NameRef>`. Unknown target raises `RULE002`. Violations raise
+  `RULE004`.
+- `requires declare <CNAME>` — the scoped agent (or one of its declared
+  ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`.
+
+The `flow: <NameRef>` scope predicate also requires its target to resolve. If
+it does not, the compiler raises `RULE001`.
+
+The `message:` body is surfaced back to the author when the rule fires. Use it
+to explain the invariant in plain English so a downstream author can read the
+diagnostic alone and know what to fix.
+
+See [`../examples/146_declarative_project_lint_rule`](../examples/146_declarative_project_lint_rule)
+for the manifest-backed teaching example that covers all five shipped
+`RULE###` codes.
 
 ## Markdown Emission
 

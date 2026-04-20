@@ -1,0 +1,7 @@
+skill package BoundOutputPackage: "Bound Output Package"
+    metadata:
+        name: "bound-output-package"
+        description: "Emit through a host-bound final_output slot."
+    host_contract:
+        final_output final_response: "Final Response"
+    "Emit through {{host:final_response}}."

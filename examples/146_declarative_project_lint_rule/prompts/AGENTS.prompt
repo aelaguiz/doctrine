@@ -1,0 +1,23 @@
+# This example shows the declarative `rule` primitive.
+# - a top-level `rule` scopes a scoped invariant across the agent graph
+# - scope predicates narrow the check to matching agents
+# - assertions fail loudly at compile time with RULE001-RULE005
+
+abstract agent UpstreamPoisoningInvariant:
+    role: "Every composer must first check upstream inputs for poisoning before drafting."
+
+
+agent BriefComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the weekly brief after checking upstream inputs."
+
+
+agent NotesComposer[UpstreamPoisoningInvariant]:
+    role: "Compose the meeting notes after checking upstream inputs."
+
+
+rule ComposersCheckUpstream: "Every composer must inherit the upstream-poisoning invariant"
+    scope:
+        role_class: Composer
+    assertions:
+        requires inherit UpstreamPoisoningInvariant
+    message: "Every composer must inherit UpstreamPoisoningInvariant so upstream prose is checked once, not N times."

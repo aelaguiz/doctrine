@@ -181,6 +181,7 @@ class ResolvedSkillEntry:
     package_unit: IndexedUnit | None = None
     package_decl: model.SkillPackageDecl | None = None
     package_contract: CompiledSkillPackageContract | None = None
+    mode: model.ModeStmt | None = None
     source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
 
 
@@ -758,9 +759,19 @@ class ResolvedAgentSlot:
 @dataclass(slots=True, frozen=True)
 class ResolvedAbstractAgentSlot:
     key: str
+    declared_type: model.NameRef | None = None
 
 
-ResolvedAgentSlotState = ResolvedAgentSlot | ResolvedAbstractAgentSlot
+@dataclass(slots=True, frozen=True)
+class ResolvedTypedAgentSlot:
+    key: str
+    family: str
+    entity_ref: model.NameRef
+
+
+ResolvedAgentSlotState = (
+    ResolvedAgentSlot | ResolvedAbstractAgentSlot | ResolvedTypedAgentSlot
+)
 
 
 @dataclass(slots=True, frozen=True)

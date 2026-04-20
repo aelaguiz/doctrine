@@ -259,9 +259,17 @@ Stability rules:
 | `E530` | Release package metadata version is missing or does not match | `pyproject.toml` is missing a usable `[project].version`, or that version does not match the requested public release's package version. |
 | `E531` | Review case override removes or modifies a gate that the contract does not declare | A review case's `override gates:` block tries to `remove` or `modify` a gate name that the case's contract does not declare (or that a prior `remove` already deleted). |
 | `E532` | Review case override adds or modifies a gate that collides with an existing name | A review case's `override gates:` block tries to `add` a gate name that is already declared by the contract (after `remove` entries apply), or declares the same `modify` target twice. |
+| `E533` | Typed output target references a non-document/schema/table entity | An `output target`'s `typed_as:` ref resolved to an entity kind other than `document`, `schema`, or `table`. |
+| `E534` | Downstream structure family does not match typed output target family | An `output` declaration's `structure:` or `schema:` points at an entity whose family does not match the target's `typed_as:` family. |
 | `E535` | Receipt host slot must declare at least one typed field | A `receipt` host slot in a skill package's `host_contract:` was declared without fields, or declared two fields that share the same key. |
 | `E536` | Receipt field reference does not resolve | A dotted addressable reference through a skill binding's receipt slot names a field the receipt host slot does not declare. |
 | `E537` | Receipt field type is not a declared entity | A `receipt` host slot field was typed with a name that is not a declared `schema`, `table`, `enum`, or `document` in scope. |
+| `E538` | Concrete agent binds typed abstract slot to a wrong-family entity | A concrete agent binds a typed abstract slot to a `name_ref` whose entity family does not match the abstract declaration, or binds the slot with an inline workflow block instead of a `name_ref`. |
+| `E539` | Typed abstract slot annotation references an unknown entity | An `abstract` slot declaration's `: <TypedEntityRef>` annotation does not resolve to a declared `document`, `schema`, `table`, `enum`, `agent`, or `workflow`. |
+| `E540` | Skill-binding mode reference does not resolve | A skill entry's `mode CNAME = expr as <Enum>` targets an enum name that does not resolve in scope. |
+| `E541` | Audit-mode skill binding emits to an output target | A skill entry tagged with `mode audit = ...` bound its skill to a host slot in the `output` or `final_output` family. Audit-mode bindings must stay read-only. |
+| `E542` | Skill package has no contract for the declared mode | A skill entry's `mode CNAME = ...` names a mode whose `CNAME` is not a member of the declared enum. |
+| `E543` | Deprecated enum-only output-shape mode form | An output shape's `selector:` still uses the enum-only `mode CNAME as <Enum>` form. Use the expr-based `mode CNAME = expr as <Enum>` form; the enum-only form will be removed at the next minor bump. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes
@@ -269,6 +277,28 @@ Stability rules:
 | Code | Summary | Notes |
 | --- | --- | --- |
 | `E901` | Internal compiler error | The compiler hit an invariant failure or unsupported internal state. Treat this as a compiler bug. |
+
+### Rule-check codes
+
+The `RULE###` band covers diagnostics raised by the declarative `rule` primitive
+described in [`LANGUAGE_REFERENCE.md`](./LANGUAGE_REFERENCE.md). Rule checks run
+during compile and share the same error envelope as the `E###` codes.
+
+| Code | Summary | Notes |
+| --- | --- | --- |
+| `RULE001` | Rule declaration references an unknown scope predicate target | A rule's `scope:` predicate names a `flow: <agent>` whose target agent is not declared in the prompt graph. |
+| `RULE002` | Rule assertion target does not resolve | A rule's `assertions:` block references an agent (for `requires inherit` or `forbids bind`) that is not declared in the prompt graph. |
+| `RULE003` | Scoped agent fails `requires inherit` assertion | A concrete agent that matches the rule's `scope:` predicates does not inherit the required ancestor named in `requires inherit`. |
+| `RULE004` | Scoped agent violates `forbids bind` assertion | A concrete agent that matches the rule's `scope:` predicates inherits from an ancestor that the rule forbids via `forbids bind`. |
+| `RULE005` | Scoped agent fails `requires declare` assertion | A concrete agent that matches the rule's `scope:` predicates does not declare (or inherit) the slot named in `requires declare`. |
+
+The rule primitive ships a closed predicate set: scope predicates are limited to
+`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`, and
+`file_tree: <STRING>`; assertions are limited to `requires inherit <NameRef>`,
+`forbids bind <NameRef>`, and `requires declare <CNAME>`. Codes `RULE006` through
+`RULE099` are reserved for future extensions of this closed-predicate surface.
+Codes `RULE100` and above are reserved for any future open-expression-language
+evolution of the rule primitive.
 
 ## Example
 

@@ -379,9 +379,20 @@ class IoTransformerMixin:
         return items[0]
 
     @v_args(meta=True, inline=True)
-    def output_shape_selector_stmt(self, meta, field_name, enum_ref):
+    def output_shape_selector_enum_stmt(self, meta, field_name, enum_ref):
         return _with_source_span(
             model.OutputShapeSelectorConfig(field_name=field_name, enum_ref=enum_ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def output_shape_selector_expr_stmt(self, meta, field_name, expr, enum_ref):
+        return _with_source_span(
+            model.OutputShapeSelectorConfig(
+                field_name=field_name,
+                enum_ref=enum_ref,
+                expr=expr,
+            ),
             meta,
         )
 

@@ -34,6 +34,12 @@
       "include": "#renderProfileRule"
     },
     {
+      "include": "#ruleDeclaration"
+    },
+    {
+      "include": "#ruleKeyword"
+    },
+    {
       "include": "#workflow"
     },
     {
@@ -501,6 +507,24 @@
           "name": "support.type.render-profile-mode.doctrine entity.name.type.doctrine"
         }
       }
+    },
+    "ruleDeclaration": {
+      "match": "^(\\s*)(rule)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.declaration.doctrine"
+        },
+        "4": {
+          "name": "entity.name.type.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        }
+      }
+    },
+    "ruleKeyword": {
+      "match": "\\b(scope|assertions|requires|forbids|agent_tag|role_class|file_tree|declare|message)\\b",
+      "name": "keyword.control.doctrine"
     },
     "workflow": {
       "match": "^(\\s*)(workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(\\[)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\]))?(\\s*)(:)",
@@ -1262,7 +1286,7 @@
     },
     "secondWaveKeyword": {
       "name": "keyword.control.doctrine",
-      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items|bind|emit|host_contract|receipt)\\b"
+      "match": "\\b(prove|derive|classify|compare|defend|from|against|using|render_profile|decision|candidates|minimum|rank|rank_by|required|rejects|candidate_pool|kept|rejected|sequencing_proof|winner_reasons|choose|one|winner|sections|artifacts|groups|ref|advisory|optional|item_schema|row_schema|columns|rows|notes|kind|language|text|src|alt|caption|facts|handoff_output|guarded|routes|selector|cases|checks|policy|start_from|allow|if|unless|field|def|type|const|enum|format|pattern|items|any_of|variant|example|null|nullable|values|delivery_skill|typed_as|min_length|max_length|minimum|maximum|exclusive_minimum|exclusive_maximum|multiple_of|min_items|max_items|bind|emit|host_contract|receipt)\\b"
     },
     "routeSemanticRef": {
       "match": "\\b(route)(\\.)(exists|next_owner(?:\\.(?:key|title))?|label|summary|choice(?:\\.(?:key|title|wire))?)\\b",
@@ -1307,13 +1331,19 @@
       }
     },
     "abstractField": {
-      "match": "^(\\s*)(abstract)(\\s+)([A-Za-z_][A-Za-z0-9_]*)\\s*$",
+      "match": "^(\\s*)(abstract)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(?:(\\s*)(:)(\\s*)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.control.doctrine"
         },
         "4": {
           "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
+        },
+        "8": {
+          "name": "entity.name.type.reference.doctrine entity.name.type.doctrine support.type.reference.doctrine"
         }
       }
     },

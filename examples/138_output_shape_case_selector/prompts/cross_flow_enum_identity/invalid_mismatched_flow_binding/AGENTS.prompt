@@ -15,7 +15,7 @@ output shape WriterTurnJson: "Writer Turn JSON"
     schema: WriterTurnSchema
 
     selector:
-        mode role as mod_a.WriterRole
+        mode role = selectors.role as mod_a.WriterRole
 
     field_notes: "Field Notes"
         case mod_a.WriterRole.producer:

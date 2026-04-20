@@ -1,0 +1,67 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "brief composer passes the declarative rule check"
+status = "active"
+kind = "render_contract"
+agent = "BriefComposer"
+assertion = "exact_lines"
+expected_lines = [
+  "Compose the weekly brief after checking upstream inputs.",
+]
+
+[[cases]]
+name = "notes composer also passes the same declarative rule check"
+status = "active"
+kind = "render_contract"
+agent = "NotesComposer"
+assertion = "exact_lines"
+expected_lines = [
+  "Compose the meeting notes after checking upstream inputs.",
+]
+
+[[cases]]
+name = "scoped composer missing required inheritance emits RULE003"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_requires_inherit_violation/AGENTS.prompt"
+agent = "BriefComposer"
+exception_type = "CompileError"
+error_code = "RULE003"
+
+[[cases]]
+name = "scoped composer inheriting a forbidden ancestor emits RULE004"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_forbids_bind_violation/AGENTS.prompt"
+agent = "BriefComposer"
+exception_type = "CompileError"
+error_code = "RULE004"
+
+[[cases]]
+name = "scoped composer missing the required slot declaration emits RULE005"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_requires_declare_violation/AGENTS.prompt"
+agent = "BriefComposer"
+exception_type = "CompileError"
+error_code = "RULE005"
+
+[[cases]]
+name = "rule scope referencing an unknown flow agent emits RULE001"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_scope_target/AGENTS.prompt"
+agent = "BriefComposer"
+exception_type = "CompileError"
+error_code = "RULE001"
+
+[[cases]]
+name = "rule assertion referencing an unknown agent emits RULE002"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_assertion_target/AGENTS.prompt"
+agent = "BriefComposer"
+exception_type = "CompileError"
+error_code = "RULE002"
