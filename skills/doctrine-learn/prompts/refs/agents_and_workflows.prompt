@@ -36,6 +36,13 @@ and may carry a title."""
   on its own."""
             """Every concrete agent needs a `role`. Scalar `role: "..."` opens the doc.
   Titled `role: "Title"` with a body emits a headed section."""
+            """The role body is flat prose: indented lines with emphasis keywords and
+  interpolation, no titled subsections. When a role wants multiple titled
+  sections, each section becomes a typed slot on the agent (`your_job`,
+  `workflow_core`, or any authored slot key) pointed at a `workflow`
+  declaration with titled children. Doctrine renders one heading per typed
+  slot, not per `##` inside a role string. See
+  `references/authoring-patterns.md` section `role_home_law`."""
             """A concrete agent may declare a title after the key: `agent Writer: "Writer"`.
   Bare readable refs default to that title. The long form `Ref:key` inside an
   interpolation keeps the structural name."""

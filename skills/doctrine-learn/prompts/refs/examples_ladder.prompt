@@ -38,7 +38,8 @@ find each other."""
             """`examples/11_skills_and_tools` — first-class `skill` declarations and
   role-side skill references."""
             """`examples/12_role_home_composition` — shared role homes built from
-  reusable parts."""
+  reusable parts. The same typed-slot idiom also shows how one agent
+  can publish a multi-part role rendered as titled sections."""
             """`examples/23_first_class_io_blocks` — reusable top-level `inputs` and
   `outputs` blocks."""
             """`examples/24_io_block_inheritance` — inheritance and patching for IO
