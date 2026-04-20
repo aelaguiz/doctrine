@@ -1,0 +1,8 @@
+skill package ProducerBadReceiptTypePackage: "Producer Bad Receipt Type"
+    metadata:
+        name: "producer-bad-receipt-type-package"
+        description: "Receipt field type must be a declared entity."
+    host_contract:
+        receipt process_receipt: "Process Receipt"
+            evidence_url: UndeclaredType
+    "Every run emits the process receipt."

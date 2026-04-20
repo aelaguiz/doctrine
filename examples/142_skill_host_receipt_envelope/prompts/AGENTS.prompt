@@ -1,0 +1,8 @@
+skill ProducerSkill: "Producer Skill"
+    purpose: "Produce a typed receipt envelope."
+    package: "producer-package"
+
+agent ProducerDemo:
+    role: "Run the producer package and emit its typed receipt envelope."
+    skills: "Skills"
+        skill producer: ProducerSkill

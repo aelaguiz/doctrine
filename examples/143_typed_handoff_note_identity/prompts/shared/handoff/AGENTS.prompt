@@ -1,0 +1,10 @@
+export document ReleaseNoteDocument: "Release Note"
+    section summary: "Summary"
+        "Say what shipped."
+
+    section rollback: "Rollback"
+        "Say how to roll this back."
+
+
+export output target ReleaseNoteHandoff: "Release Note Handoff"
+    typed_as: ReleaseNoteDocument

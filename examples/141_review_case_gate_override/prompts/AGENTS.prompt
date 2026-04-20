@@ -1,0 +1,125 @@
+# This example proves `override gates:` inside a review case. One review
+# family ships a single shared contract. Each case keeps one subject, and
+# the second case uses `override gates:` to add, remove, and modify gates
+# relative to the shared contract. The validator fires `E531` when a case
+# removes or modifies an undeclared gate and `E532` when a case adds a
+# gate name that already exists — see the sibling invalid cases.
+
+enum ReviewMode: "Review Mode"
+    quick_path: "quick-path"
+    full_path: "full-path"
+
+
+input DraftSpec: "Draft Spec"
+    source: File
+        path: "draft_root/DRAFT_SPEC.md"
+    shape: MarkdownDocument
+    requirement: Required
+
+
+input ReviewFacts: "Review Facts"
+    source: Prompt
+    shape: JsonObject
+    requirement: Required
+
+
+workflow SharedReviewContract: "Shared Review Contract"
+    completeness: "Completeness"
+        "Confirm the draft covers the required sections."
+
+    clarity: "Clarity"
+        "Confirm the draft reads clearly."
+
+
+agent RevisionOwner:
+    role: "Own the next revision pass after review."
+    workflow: "Revise"
+        "Take the current draft to the next revision step."
+
+
+output SelectedReviewComment: "Selected Review Comment"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+    verdict: "Verdict"
+        "State the review verdict."
+
+    reviewed_artifact: "Reviewed Artifact"
+        "Name the reviewed artifact this review judged."
+
+    analysis_performed: "Analysis Performed"
+        "Sum up the review work that led to the verdict."
+
+    output_contents_that_matter: "Output Contents That Matter"
+        "Sum up the parts of the draft the next owner should read first."
+
+    next_owner: "Next Owner"
+        "Name {{RevisionOwner}} as the next owner."
+
+    current_artifact: "Current Artifact"
+        "Name the artifact that is current in the selected review mode."
+
+    failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+        failing_gates: "Failing Gates"
+            "Name the failing review gates in authored order."
+
+    trust_surface:
+        current_artifact
+
+
+review_family DraftReviewFamily: "Draft Review"
+    comment_output: SelectedReviewComment
+
+    fields:
+        verdict: verdict
+        reviewed_artifact: reviewed_artifact
+        analysis: analysis_performed
+        readback: output_contents_that_matter
+        failing_gates: failure_detail.failing_gates
+        next_owner: next_owner
+        current_artifact: current_artifact
+
+    selector:
+        mode selected_mode = ReviewFacts.selected_mode as ReviewMode
+
+    cases:
+        quick_path: "Quick Path"
+            when ReviewMode.quick_path
+            subject: DraftSpec
+            contract: SharedReviewContract
+            checks:
+                accept "The shared review contract passes." when contract.passes
+            on_accept:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Accepted quick path draft goes to RevisionOwner." -> RevisionOwner
+            on_reject:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Rejected quick path draft goes to RevisionOwner." -> RevisionOwner
+
+        full_path: "Full Path"
+            when ReviewMode.full_path
+            subject: DraftSpec
+            contract: SharedReviewContract
+            override gates:
+                remove clarity
+                add depth: "Depth"
+                modify completeness: "Completeness (full path)"
+            checks:
+                accept "The shared review contract passes." when contract.passes
+            on_accept:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Accepted full path draft goes to RevisionOwner." -> RevisionOwner
+            on_reject:
+                current artifact DraftSpec via SelectedReviewComment.current_artifact
+                route "Rejected full path draft goes to RevisionOwner." -> RevisionOwner
+
+
+agent DraftReviewFamilyDemo:
+    role: "Ship one review contract and split gates per case with override gates."
+    review: DraftReviewFamily
+    inputs: "Inputs"
+        DraftSpec
+        ReviewFacts
+    outputs: "Outputs"
+        SelectedReviewComment
