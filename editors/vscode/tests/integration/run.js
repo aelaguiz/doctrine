@@ -121,7 +121,7 @@ async function resolveVSCodeExecutablePath({ extensionDevelopmentPath, repoCache
 
   const configuredCachePath = process.env[CACHE_PATH_ENV]
     ? path.resolve(process.env[CACHE_PATH_ENV])
-    : makeTempDir("doctrine-vscode-test-");
+    : repoCachePath;
   const cachePath = ensureDir(configuredCachePath);
   seedCacheFromLocalInstall(cachePath, [repoCachePath]);
 
