@@ -1,0 +1,62 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ResearchReviewKit",
+    "title": "Research Review Kit"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "research-review-kit",
+    "root": "examples/122_skill_package_emit_documents/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "819fd4e85793e5896f05a7866c3e06b9e6941c85ea7778949a98ab37fcfd74c2"
+    },
+    {
+      "path": "refs/query_patterns.prompt",
+      "kind": "prompt",
+      "sha256": "28b0497bfa9e7ed19952fabb3583c53f30ccea716b1964a96d043db6fb95d03c"
+    },
+    {
+      "path": "refs/receipts_template.prompt",
+      "kind": "prompt",
+      "sha256": "5e186adf0a25ffebd87d6ea73c8a6247278d4a5ae8f6f4d93b88f30ee39ca3ae"
+    },
+    {
+      "path": "refs/runtime_and_commands.prompt",
+      "kind": "prompt",
+      "sha256": "b002ce4a4c67ba690a82ed8e323d80031a97afee1694900baf2fe38888fb40b9"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "22c8ba10b89ba4151ac872e0d1efd8e532c9ad4eef7219368c590016e0592ffd"
+    },
+    {
+      "path": "references/query-patterns.md",
+      "kind": "file",
+      "sha256": "dae42b4fefaa17d41d860a160191ae8bf655432f1cc9654e7f5107503dbcd781"
+    },
+    {
+      "path": "references/receipts-template.md",
+      "kind": "file",
+      "sha256": "74b1fa39971aad3d3b98245536a76c47fc14026038b3a4a425a55260ce44d485"
+    },
+    {
+      "path": "references/runtime-and-commands.md",
+      "kind": "file",
+      "sha256": "c72da85359453719ff5d7f4b383b88e5fa9f6f01e61deab3f2127aa2cfb4dda6"
+    }
+  ],
+  "source_tree_sha256": "5bc2aeb71876d9ebe482f6dbe62d0cc588df9b9e837c7b470756e7ccc47ecc62",
+  "output_tree_sha256": "1c8374fdf854ec8d6239d5f791ac52fbcdc8b2ea43edaa5bc3129d38a7f45617"
+}

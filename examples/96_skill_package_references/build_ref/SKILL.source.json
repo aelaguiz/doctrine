@@ -1,0 +1,42 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "LayoutChecklist",
+    "title": "Layout Checklist"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "layout-checklist",
+    "root": "examples/96_skill_package_references/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "eaf4e1c3959980c437f3dd444b045dc19e6f1c3d7fdd695423a80fcc8fd6ba02"
+    },
+    {
+      "path": "references/checklist.md",
+      "kind": "package_file",
+      "sha256": "5c6513fe58a444f9d5c54fc1ca5f2e1d8bc250a2e2c15f2668f18dd65183183f"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "ae9169d38311e0b0c85db1db0e06dbe4b6ac02993bf96f4a98d2e3c6043aa120"
+    },
+    {
+      "path": "references/checklist.md",
+      "kind": "file",
+      "sha256": "5c6513fe58a444f9d5c54fc1ca5f2e1d8bc250a2e2c15f2668f18dd65183183f"
+    }
+  ],
+  "source_tree_sha256": "025846f7cceabeb5d117cecc6552b5a3ff82a308e1640a8327b97eadf53cb572",
+  "output_tree_sha256": "e601e0b8e8de5bde64cb4026f5f4a236d2ff263853efef5cf53e78f7db7b466e"
+}

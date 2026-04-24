@@ -1,7 +1,7 @@
 document ExamplesLadder: "Examples Ladder"
     """Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `146_declarative_project_lint_rule`. It is
+from `01_hello_world` through `149_external_skill_source_target`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -168,9 +168,17 @@ document belongs and stop forcing documents where typed gates belong."""
             """`examples/124_skill_package_host_binding` — the focused host-binding
   proof for `package:`, `host_contract:`, `bind:`, `host:`, and
   `SKILL.contract.json`."""
+            """`examples/147_skill_package_source_receipt` — every skill package
+  emits `SKILL.source.json` with hashed source inputs and outputs."""
+            """`examples/148_skill_package_tracked_sources` — `source.track:` can
+  include source-only files outside the emitted package tree."""
+            """`examples/149_external_skill_source_target` — a downstream emit
+  target can name an upstream `source_root`, stable `source_id`, and optional
+  `lock_file`."""
 
         """After this rung, you can ship a reusable package that carries
-documents, bundled agents, and typed host slots without drift."""
+documents, bundled agents, typed host slots, and source receipts without
+silent drift."""
 
     section eighth_rung: "Eighth Rung — Runtime Packages"
         "One short rung for the thin build-handle pattern."

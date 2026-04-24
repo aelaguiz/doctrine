@@ -13,6 +13,9 @@ from doctrine._parser.parts import (
     SkillPackageHostContractBlockPart,
     SkillPackageMetadataBlockPart,
     SkillPackageMetadataFieldPart,
+    SkillPackageSourceBlockPart,
+    SkillPackageSourceIdPart,
+    SkillPackageSourceTrackBlockPart,
     SkillsBodyParts,
     _body_prose_location,
     _body_prose_value,
@@ -87,6 +90,7 @@ class SkillsTransformerMixin:
                 title=title,
                 items=body.items,
                 metadata=body.metadata,
+                source=body.source,
                 emit_entries=body.emit_entries,
                 host_contract=body.host_contract,
             ),
@@ -284,9 +288,11 @@ class SkillsTransformerMixin:
     def skill_package_body(self, items):
         record_items: list[model.RecordItem] = []
         metadata = model.SkillPackageMetadata()
+        source = model.SkillPackageSource()
         emit_entries: tuple[model.SkillPackageEmitEntry, ...] = ()
         host_contract: tuple[model.SkillPackageHostSlotItem, ...] = ()
         seen_metadata = False
+        seen_source = False
         seen_emit = False
         seen_host_contract = False
         for item in items:
@@ -300,6 +306,17 @@ class SkillsTransformerMixin:
                     )
                 metadata = self._skill_package_metadata(item.fields)
                 seen_metadata = True
+                continue
+            if isinstance(item, SkillPackageSourceBlockPart):
+                if seen_source:
+                    raise TransformParseFailure(
+                        "Skill packages may define `source:` only once.",
+                        hints=("Keep exactly one `source:` block per skill package.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                source = self._skill_package_source(item.items)
+                seen_source = True
                 continue
             if isinstance(item, SkillPackageEmitBlockPart):
                 if seen_emit:
@@ -327,8 +344,43 @@ class SkillsTransformerMixin:
         return SkillPackageBodyParts(
             items=tuple(record_items),
             metadata=metadata,
+            source=source,
             emit_entries=emit_entries,
             host_contract=host_contract,
+        )
+
+    def _skill_package_source(
+        self,
+        items: tuple[SkillPackageSourceIdPart | SkillPackageSourceTrackBlockPart, ...],
+    ) -> model.SkillPackageSource:
+        source_id: str | None = None
+        tracked_paths: tuple[model.SkillPackageTrackedSource, ...] = ()
+        seen_track = False
+        for item in items:
+            if isinstance(item, SkillPackageSourceIdPart):
+                if source_id is not None:
+                    raise TransformParseFailure(
+                        "Skill package `source:` may define `id:` only once.",
+                        hints=("Keep one stable source id per skill package.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                source_id = item.value
+                continue
+            if isinstance(item, SkillPackageSourceTrackBlockPart):
+                if seen_track:
+                    raise TransformParseFailure(
+                        "Skill package `source:` may define `track:` only once.",
+                        hints=("Keep one `track:` list per skill package.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                tracked_paths = item.tracked_paths
+                seen_track = True
+                continue
+        return model.SkillPackageSource(
+            source_id=source_id,
+            tracked_paths=tracked_paths,
         )
 
     @v_args(inline=True)
@@ -367,6 +419,36 @@ class SkillsTransformerMixin:
     def package_emit_item(self, meta, path, ref):
         return _with_source_span(
             model.SkillPackageEmitEntry(path=path, ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def package_source_block(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return SkillPackageSourceBlockPart(
+            items=tuple(items),
+            line=line,
+            column=column,
+        )
+
+    @v_args(meta=True, inline=True)
+    def package_source_id_item(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return SkillPackageSourceIdPart(value=value, line=line, column=column)
+
+    @v_args(meta=True)
+    def package_source_track_block(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return SkillPackageSourceTrackBlockPart(
+            tracked_paths=tuple(items),
+            line=line,
+            column=column,
+        )
+
+    @v_args(meta=True, inline=True)
+    def package_source_track_item(self, meta, path):
+        return _with_source_span(
+            model.SkillPackageTrackedSource(path=path),
             meta,
         )
 

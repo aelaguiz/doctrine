@@ -507,6 +507,10 @@ output_dir = "build"
         )
         _expect(skill_path.is_file(), f"missing emitted SKILL.md: {skill_path}")
         _expect(
+            (root / "build" / "skills" / "demo_package" / "SKILL.source.json").is_file(),
+            "missing emitted SKILL.source.json",
+        )
+        _expect(
             not (root / "build" / "skills" / "demo_package" / "SKILL.contract.json").exists(),
             "did not expect SKILL.contract.json for a package with no host-binding truth",
         )
@@ -574,6 +578,10 @@ output_dir = "build"
             not (root / "build" / "skills" / "emitted_docs" / "SKILL.contract.json").exists(),
             "did not expect SKILL.contract.json for a package with no host-binding truth",
         )
+        _expect(
+            (root / "build" / "skills" / "emitted_docs" / "SKILL.source.json").is_file(),
+            "missing emitted SKILL.source.json",
+        )
         _expect(query_patterns_path.is_file(), f"missing emitted companion doc: {query_patterns_path}")
         _expect(receipts_path.is_file(), f"missing emitted companion doc: {receipts_path}")
 
@@ -630,6 +638,10 @@ output_dir = "build"
         _expect(
             not (root / "build" / "skills" / "mixed_agents" / "SKILL.contract.json").exists(),
             "did not expect SKILL.contract.json for a package with no host-binding truth",
+        )
+        _expect(
+            (root / "build" / "skills" / "mixed_agents" / "SKILL.source.json").is_file(),
+            "missing emitted SKILL.source.json",
         )
         _expect(reviewer_path.is_file(), f"missing compiled bundled agent file: {reviewer_path}")
         _expect(metadata_path.is_file(), f"missing bundled runtime metadata file: {metadata_path}")
@@ -693,6 +705,10 @@ output_dir = "build"
         _expect(exit_code == 0, f"expected exit code 0, got {exit_code}")
         contract_path = root / "build" / "skills" / "host_bound" / "SKILL.contract.json"
         _expect(contract_path.is_file(), f"missing emitted SKILL.contract.json: {contract_path}")
+        _expect(
+            (root / "build" / "skills" / "host_bound" / "SKILL.source.json").is_file(),
+            "missing emitted SKILL.source.json",
+        )
         payload = json.loads(contract_path.read_text(encoding="utf-8"))
         _expect(payload["package"]["name"] == "host-bound", str(payload))
         _expect(

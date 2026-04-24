@@ -168,6 +168,15 @@ class ToAst(
     def dotted_name(self, items):
         return tuple(items)
 
+    def field_key_source(self, _items):
+        return "source"
+
+    def field_key_id(self, _items):
+        return "id"
+
+    def field_key_track(self, _items):
+        return "track"
+
     @v_args(meta=True, inline=True)
     def name_ref(self, meta, dotted_name):
         parts = tuple(dotted_name)

@@ -1,0 +1,67 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "HostBoundSkillPackage",
+    "title": "Host Bound Skill"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "host-bound-skill",
+    "root": "examples/124_skill_package_host_binding/prompts/skills/host_bound",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "fa1d6faada9cf60ba91c4e7e0a2ee0cccaa781285831e8c8329e615758129194"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "package_file",
+      "sha256": "baee35dbcf8c43de5b8225af803d1b4d50e4c49fdd5dfe8801dd922da53b207a"
+    },
+    {
+      "path": "agents/reviewer.prompt",
+      "kind": "prompt",
+      "sha256": "1690bb2ec3ea307ab52260bafe092cf86b9a73049a7b8d3f055022250542e579"
+    },
+    {
+      "path": "refs/query_patterns.prompt",
+      "kind": "prompt",
+      "sha256": "b8436821359f48eb9e403863e14f4c2ff2222d161c0a43cf3f5e41e44bfeee85"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.contract.json",
+      "kind": "host_contract",
+      "sha256": "1b7a48d79cde33c13037c85526359d91633236af5139199291068984facee9f4"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "66cddd6594508c78857f63604757e0c4c85919bf0f3d4acb1fbffb2b49d9cdff"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "file",
+      "sha256": "baee35dbcf8c43de5b8225af803d1b4d50e4c49fdd5dfe8801dd922da53b207a"
+    },
+    {
+      "path": "agents/reviewer.md",
+      "kind": "agent",
+      "sha256": "4888f6b4e6fc12d000ff71b42540bac7d45b108012db67041f3e57f91d99c40e"
+    },
+    {
+      "path": "references/query-patterns.md",
+      "kind": "document",
+      "sha256": "4337227fbb9bea3a73cbccd6f2c7d5824e2847b133fb0c89022de62eebc406b7"
+    }
+  ],
+  "source_tree_sha256": "1494b6ad31dccf741c249c1fe20b1214b4d61d3f237f624be99c48641e7a1489",
+  "output_tree_sha256": "3a9c5e8c5266fc35a6907316717337f02a929c50382d2313ce9875a6d31bf088"
+}

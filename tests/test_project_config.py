@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import textwrap
 import unittest
+import shutil
 from pathlib import Path
 
 from doctrine.diagnostics import EmitError
@@ -302,6 +303,101 @@ class ProjectConfigTests(unittest.TestCase):
 
             self.assertEqual(exc_info.exception.code, "E521")
             self.assertIn("outside the target project root", str(exc_info.exception))
+
+    def test_emit_targets_allow_external_entrypoint_with_source_root_and_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            outside = root.parent / f"{root.name}_outside"
+            try:
+                (outside / "prompts" / "skills" / "external").mkdir(parents=True)
+                entrypoint = outside / "prompts" / "skills" / "external" / "SKILL.prompt"
+                entrypoint.write_text(
+                    """skill package ExternalSkill: "External Skill"\n    "Build from upstream source."\n"""
+                )
+                pyproject = root / "pyproject.toml"
+                pyproject.write_text(
+                    textwrap.dedent(
+                        f"""\
+                        [tool.doctrine.emit]
+
+                        [[tool.doctrine.emit.targets]]
+                        name = "external"
+                        entrypoint = "../{outside.name}/prompts/skills/external/SKILL.prompt"
+                        output_dir = "build"
+                        source_root = "../{outside.name}"
+                        source_id = "example.external"
+                        lock_file = "doctrine.skill.lock"
+                        """
+                    )
+                )
+
+                targets = load_emit_targets(pyproject)
+
+                self.assertEqual(targets["external"].entrypoint, entrypoint.resolve())
+                self.assertEqual(targets["external"].source_root, outside.resolve())
+                self.assertEqual(targets["external"].source_id, "example.external")
+                self.assertEqual(targets["external"].lock_file, root / "doctrine.skill.lock")
+            finally:
+                if outside.exists():
+                    shutil.rmtree(outside)
+
+    def test_emit_targets_reject_source_root_without_source_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "demo"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                """skill package Demo: "Demo"\n    "Demo."\n"""
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/demo/SKILL.prompt"
+                    output_dir = "build"
+                    source_root = "."
+                    """
+                )
+            )
+
+            with self.assertRaises(EmitError) as exc_info:
+                load_emit_targets(pyproject)
+
+            self.assertEqual(exc_info.exception.code, "E551")
+            self.assertIn("without `source_id`", str(exc_info.exception))
+
+    def test_emit_targets_reject_lock_file_inside_emitted_skill_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "demo"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                """skill package Demo: "Demo"\n    "Demo."\n"""
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/demo/SKILL.prompt"
+                    output_dir = "build"
+                    lock_file = "build/skills/demo/doctrine.skill.lock"
+                    """
+                )
+            )
+
+            with self.assertRaises(EmitError) as exc_info:
+                load_emit_targets(pyproject)
+
+            self.assertEqual(exc_info.exception.code, "E553")
+            self.assertIn("inside the emitted skill tree", str(exc_info.exception))
 
     def test_direct_emit_target_rejects_output_dir_outside_project_root(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

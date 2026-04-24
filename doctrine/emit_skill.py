@@ -22,6 +22,12 @@ from doctrine.emit_common import (
 )
 from doctrine.parser import parse_file
 from doctrine.renderer import render_readable_block
+from doctrine.skill_source_receipts import (
+    SOURCE_RECEIPT_FILE_NAME,
+    build_skill_source_receipt_payload,
+    render_skill_source_receipt_json,
+    update_skill_lock,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,6 +79,7 @@ def emit_target_skill(
     target: EmitTarget,
     *,
     output_dir_override: Path | None = None,
+    update_lock: bool = True,
 ) -> tuple[Path, ...]:
     ensure_supported_entrypoint(
         target.entrypoint,
@@ -95,11 +102,13 @@ def emit_target_skill(
             f"emit target `{target.name}`",
             location=path_location(target.entrypoint),
         )
+    package_decl = _target_skill_package_decl(session)
 
     output_root = (output_dir_override or target.output_dir).resolve()
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
     markdown_path = emitted_dir / entrypoint_output_name(target.entrypoint)
     contract_path = emitted_dir / "SKILL.contract.json"
+    source_receipt_path = emitted_dir / SOURCE_RECEIPT_FILE_NAME
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
     markdown_path.write_text(render_skill_package_markdown(compiled), encoding="utf-8")
     emitted_paths: list[Path] = [markdown_path]
@@ -111,6 +120,25 @@ def emit_target_skill(
         bundled_path.parent.mkdir(parents=True, exist_ok=True)
         bundled_path.write_bytes(bundled_file.content)
         emitted_paths.append(bundled_path)
+    source_receipt_payload = build_skill_source_receipt_payload(
+        target=target,
+        compiled=compiled,
+        package_decl=package_decl,
+        session=session,
+        emitted_dir=emitted_dir,
+        emitted_paths=tuple(emitted_paths),
+    )
+    source_receipt_path.write_text(
+        render_skill_source_receipt_json(source_receipt_payload),
+        encoding="utf-8",
+    )
+    emitted_paths.append(source_receipt_path)
+    if update_lock and output_dir_override is None:
+        update_skill_lock(
+            target=target,
+            receipt_payload=source_receipt_payload,
+            receipt_path=source_receipt_path,
+        )
     return tuple(emitted_paths)
 
 
@@ -171,6 +199,18 @@ def _render_receipt_field(field) -> dict:
 
 def _should_emit_skill_package_contract_json(compiled) -> bool:
     return bool(compiled.contract.host_contract or compiled.contract.artifacts)
+
+
+def _target_skill_package_decl(session: CompilationSession) -> model.SkillPackageDecl:
+    packages = tuple(session.root_flow.skill_packages_by_name.values())
+    if len(packages) != 1:
+        raise emit_error(
+            "E558",
+            "Emit target must resolve one skill package",
+            "emit_skill expected the entrypoint to compile exactly one skill package.",
+            location=path_location(session.root_flow.entrypoint_path),
+        )
+    return packages[0]
 
 
 if __name__ == "__main__":

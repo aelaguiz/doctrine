@@ -108,9 +108,17 @@ to copy."""
 
 - I need a reusable package I can ship as a real tree.
   Use `skill package` with `SKILL.prompt`. Bundle agents, references, and
-  scripts from the source-root model.
+  scripts from the source-root model. Re-emit so `SKILL.source.json` proves
+  the source and output hashes.
   See `examples/95_skill_package_minimal` and
-  `examples/100_skill_package_bundled_agents`.
+  `examples/147_skill_package_source_receipt`.
+
+- I need a downstream repo to consume an upstream skill without copying
+  authored truth.
+  Put `source_root`, `source_id`, and optional `lock_file` on the downstream
+  emit target. Run `python -m doctrine.verify_skill_receipts --target ...`
+  before the runtime trusts the emitted skill.
+  See `examples/149_external_skill_source_target`.
 
 - I need a package that reads host facts.
   Declare `host_contract:` once on the package. Point the inline skill at

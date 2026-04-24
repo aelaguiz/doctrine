@@ -896,22 +896,22 @@ review_outcome_section: "on_accept" -> review_outcome_accept
                       | "on_reject" -> review_outcome_reject
 review_route_resolution: "route" -> review_route_resolution_route
 
-output_override_guarded_section: "override" CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
-output_override_guarded_scalar_item: "override" CNAME ":" string "when" expr _NL output_record_item_body?
-                                  | "override" CNAME ":" path_ref "when" expr _NL output_record_item_body?
-                                  | "override" CNAME ":" name_ref "when" expr _NL output_record_item_body?
+output_override_guarded_section: "override" field_key ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+output_override_guarded_scalar_item: "override" field_key ":" string "when" expr _NL output_record_item_body?
+                                  | "override" field_key ":" path_ref "when" expr _NL output_record_item_body?
+                                  | "override" field_key ":" name_ref "when" expr _NL output_record_item_body?
 
-guarded_output_section: CNAME ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
-guarded_output_scalar_item: CNAME ":" string "when" expr _NL output_record_item_body?
-                         | CNAME ":" path_ref "when" expr _NL output_record_item_body?
-                         | CNAME ":" name_ref "when" expr _NL output_record_item_body?
+guarded_output_section: field_key ":" string "when" expr ":" _NL _INDENT output_record_body _DEDENT
+guarded_output_scalar_item: field_key ":" string "when" expr _NL output_record_item_body?
+                         | field_key ":" path_ref "when" expr _NL output_record_item_body?
+                         | field_key ":" name_ref "when" expr _NL output_record_item_body?
 output_record_body: output_record_item+
-output_override_keyed_item: "override" CNAME ":" string _NL output_record_item_body?
-                         | "override" CNAME ":" path_ref _NL output_record_item_body?
-                         | "override" CNAME ":" name_ref _NL output_record_item_body?
-output_record_keyed_item: CNAME ":" string _NL output_record_keyed_scalar_body?       -> output_record_keyed_scalar_item
-                      | CNAME ":" path_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
-                      | CNAME ":" name_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
+output_override_keyed_item: "override" field_key ":" string _NL output_record_item_body?
+                         | "override" field_key ":" path_ref _NL output_record_item_body?
+                         | "override" field_key ":" name_ref _NL output_record_item_body?
+output_record_keyed_item: field_key ":" string _NL output_record_keyed_scalar_body?       -> output_record_keyed_scalar_item
+                      | field_key ":" path_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
+                      | field_key ":" name_ref _NL output_record_item_body?                -> output_record_keyed_ref_item
 output_record_ref_item: name_ref _NL output_record_item_body?
 output_record_item_body: _INDENT output_record_body _DEDENT
 output_record_keyed_scalar_body: _INDENT output_record_keyed_scalar_body_line+ _DEDENT
@@ -936,11 +936,18 @@ skill_package_link_stmt: "package" ":" string _NL?
 
 skill_package_body: skill_package_item+
 ?skill_package_item: package_metadata_block
+                   | package_source_block
                    | package_emit_block
                    | package_host_contract_block
-                   | record_item
+                   | package_record_item
 package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
 package_metadata_item: CNAME ":" string _NL?
+package_source_block: "source" ":" _NL _INDENT package_source_item+ _DEDENT
+?package_source_item: package_source_id_item
+                    | package_source_track_block
+package_source_id_item: "id" ":" string _NL?
+package_source_track_block: "track" ":" _NL _INDENT package_source_track_item+ _DEDENT
+package_source_track_item: string _NL?
 package_emit_block: "emit" ":" _NL _INDENT package_emit_item+ _DEDENT
 package_emit_item: string ":" name_ref _NL?
 package_host_contract_block: "host_contract" ":" _NL _INDENT package_host_slot_item+ _DEDENT
@@ -975,9 +982,16 @@ output_override_readable_block: output_override_section_block
 output_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT output_record_body _DEDENT
 
 record_text: prose_line _NL?
-record_keyed_item: CNAME ":" string _NL record_keyed_scalar_body?                -> record_keyed_scalar_item
-                 | CNAME ":" path_ref _NL record_item_body?                      -> record_keyed_ref_item
-                 | CNAME ":" name_ref _NL record_item_body?                      -> record_keyed_ref_item
+record_keyed_item: field_key ":" string _NL record_keyed_scalar_body?                -> record_keyed_scalar_item
+                 | field_key ":" path_ref _NL record_item_body?                      -> record_keyed_ref_item
+                 | field_key ":" name_ref _NL record_item_body?                      -> record_keyed_ref_item
+?package_record_item: record_text
+                    | record_readable_block
+                    | package_record_keyed_item
+                    | record_ref_item
+package_record_keyed_item: CNAME ":" string _NL record_keyed_scalar_body?                -> record_keyed_scalar_item
+                         | CNAME ":" path_ref _NL record_item_body?                      -> record_keyed_ref_item
+                         | CNAME ":" name_ref _NL record_item_body?                      -> record_keyed_ref_item
 record_ref_item: name_ref _NL record_item_body?
 record_item_body: _INDENT record_body _DEDENT
 record_keyed_scalar_body: _INDENT record_keyed_scalar_body_line+ _DEDENT
@@ -1101,6 +1115,10 @@ name_ref: dotted_name
 import_path: absolute_import_path
 absolute_import_path: dotted_name
 dotted_name: CNAME ("." CNAME)*
+?field_key: CNAME
+          | "source" -> field_key_source
+          | "id" -> field_key_id
+          | "track" -> field_key_track
 
 block_lines: prose_line (_NL prose_line)* _NL?
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import re
 import subprocess
 import tempfile
@@ -11,6 +12,7 @@ from pathlib import Path
 from doctrine.diagnostics import CompileError
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_skill import emit_target_skill
+from doctrine.verify_skill_receipts import verify_target_skill_receipt
 
 
 class EmitSkillTests(unittest.TestCase):
@@ -29,6 +31,7 @@ class EmitSkillTests(unittest.TestCase):
 
             expected_paths = (
                 output_dir / "SKILL.md",
+                output_dir / "SKILL.source.json",
                 output_dir / "agents" / "openai.yaml",
                 output_dir / "references" / "audit-method.md",
                 output_dir / "references" / "error-handling.md",
@@ -63,6 +66,7 @@ class EmitSkillTests(unittest.TestCase):
 
             expected_paths = (
                 output_dir / "SKILL.md",
+                output_dir / "SKILL.source.json",
                 output_dir / "agents" / "openai.yaml",
                 output_dir / "references" / "agents-and-workflows.md",
                 output_dir / "references" / "authoring-patterns.md",
@@ -205,10 +209,12 @@ class EmitSkillTests(unittest.TestCase):
             skill_path = root / "build" / "skills" / "mixed_agents" / "SKILL.md"
             reviewer_path = root / "build" / "skills" / "mixed_agents" / "agents" / "reviewer.md"
             metadata_path = root / "build" / "skills" / "mixed_agents" / "agents" / "openai.yaml"
+            receipt_path = root / "build" / "skills" / "mixed_agents" / "SKILL.source.json"
             self.assertEqual(emitted[0], skill_path)
-            self.assertCountEqual(emitted[1:], (reviewer_path, metadata_path))
+            self.assertCountEqual(emitted[1:], (reviewer_path, metadata_path, receipt_path))
             self.assertTrue(skill_path.is_file())
             self.assertFalse((skill_path.parent / "SKILL.contract.json").exists())
+            self.assertTrue(receipt_path.is_file())
             self.assertTrue(reviewer_path.is_file())
             self.assertTrue(metadata_path.is_file())
             self.assertEqual(metadata_path.read_text(encoding="utf-8"), runtime_metadata)
@@ -309,6 +315,7 @@ class EmitSkillTests(unittest.TestCase):
             reviewer_path = root / "build" / "skills" / "emitted_docs" / "agents" / "reviewer.md"
             metadata_path = root / "build" / "skills" / "emitted_docs" / "agents" / "openai.yaml"
             helper_path = root / "build" / "skills" / "emitted_docs" / "scripts" / "helper.py"
+            receipt_path = root / "build" / "skills" / "emitted_docs" / "SKILL.source.json"
 
             self.assertEqual(emitted[0], skill_path)
             self.assertCountEqual(
@@ -319,6 +326,7 @@ class EmitSkillTests(unittest.TestCase):
                     reviewer_path,
                     metadata_path,
                     helper_path,
+                    receipt_path,
                 ),
             )
             self.assertFalse((skill_path.parent / "SKILL.contract.json").exists())
@@ -332,6 +340,225 @@ class EmitSkillTests(unittest.TestCase):
             )
             self.assertEqual(metadata_path.read_text(encoding="utf-8"), runtime_metadata)
             self.assertEqual(helper_path.read_text(encoding="utf-8"), helper_script)
+
+    def test_emit_skill_writes_source_receipt_for_plain_package(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "receipt_demo"
+            prompts.mkdir(parents=True)
+            tracked_dir = root / "tracked"
+            tracked_dir.mkdir()
+            (tracked_dir / "catalog.txt").write_text("lesson catalog\n", encoding="utf-8")
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package ReceiptDemo: "Receipt Demo"
+                        metadata:
+                            name: "receipt-demo"
+                        source:
+                            id: "example.receipt-demo"
+                            track:
+                                "tracked"
+                        "Keep the emitted tree tied to its source."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/receipt_demo/SKILL.prompt"
+                    output_dir = "build"
+                    source_root = "."
+                    source_id = "example.receipt-demo"
+                    lock_file = "doctrine.skill.lock"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target_skill(target)
+
+            receipt_path = root / "build" / "skills" / "receipt_demo" / "SKILL.source.json"
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            input_paths = {entry["path"] for entry in receipt["inputs"]}
+            output_paths = {entry["path"] for entry in receipt["outputs"]}
+
+            self.assertEqual(receipt["receipt_version"], 1)
+            self.assertEqual(receipt["source"]["id"], "example.receipt-demo")
+            self.assertIn("prompts/skills/receipt_demo/SKILL.prompt", input_paths)
+            self.assertIn("tracked/catalog.txt", input_paths)
+            self.assertEqual(output_paths, {"SKILL.md"})
+            self.assertTrue(receipt["source_tree_sha256"])
+            self.assertTrue(receipt["output_tree_sha256"])
+
+            lock_text = (root / "doctrine.skill.lock").read_text(encoding="utf-8")
+            self.assertIn('[target."demo"]', lock_text)
+            self.assertIn(receipt["source_tree_sha256"], lock_text)
+
+    def test_verify_skill_receipts_reports_current_stale_and_edited(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "verify_demo"
+            prompts.mkdir(parents=True)
+            skill_prompt = prompts / "SKILL.prompt"
+            skill_prompt.write_text(
+                textwrap.dedent(
+                    """\
+                    skill package VerifyDemo: "Verify Demo"
+                        metadata:
+                            name: "verify-demo"
+                        "Keep receipts honest."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/verify_demo/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target_skill(target)
+
+            current = verify_target_skill_receipt(target)
+            self.assertEqual(current.status, "current")
+
+            receipt_path = root / "build" / "skills" / "verify_demo" / "SKILL.source.json"
+            receipt_payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt_payload["source"]["id"] = "edited.source"
+            receipt_path.write_text(json.dumps(receipt_payload, indent=2) + "\n", encoding="utf-8")
+            edited_receipt = verify_target_skill_receipt(target)
+            self.assertEqual(edited_receipt.status, "stale_source")
+
+            emit_target_skill(target)
+            skill_prompt.write_text(
+                textwrap.dedent(
+                    """\
+                    skill package VerifyDemo: "Verify Demo"
+                        metadata:
+                            name: "verify-demo"
+                        "The source changed."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            stale = verify_target_skill_receipt(target)
+            self.assertEqual(stale.status, "stale_source")
+
+            emit_target_skill(target)
+            emitted_skill = root / "build" / "skills" / "verify_demo" / "SKILL.md"
+            emitted_skill.write_text(emitted_skill.read_text(encoding="utf-8") + "\nEdited.\n", encoding="utf-8")
+            edited = verify_target_skill_receipt(target)
+            self.assertEqual(edited.status, "edited_artifact")
+
+    def test_verify_skill_receipts_reports_unexpected_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "verify_extra"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package VerifyExtra: "Verify Extra"
+                        metadata:
+                            name: "verify-extra"
+                        "Keep outputs closed."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/verify_extra/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target_skill(target)
+            extra_path = root / "build" / "skills" / "verify_extra" / "extra.md"
+            extra_path.write_text("extra\n", encoding="utf-8")
+
+            result = verify_target_skill_receipt(target)
+
+            self.assertEqual(result.status, "unexpected_artifact")
+
+    def test_verify_skill_receipts_tracks_bundled_source_receipt_named_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "nested_receipt_name"
+            (prompts / "references").mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package NestedReceiptName: "Nested Receipt Name"
+                        metadata:
+                            name: "nested-receipt-name"
+                        "A nested file can share the receipt basename."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            nested_receipt_named_file = prompts / "references" / "SKILL.source.json"
+            nested_receipt_named_file.write_text('{"kind":"sample"}\n', encoding="utf-8")
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/nested_receipt_name/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target_skill(target)
+
+            receipt_path = root / "build" / "skills" / "nested_receipt_name" / "SKILL.source.json"
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            output_paths = {entry["path"] for entry in receipt["outputs"]}
+            self.assertIn("references/SKILL.source.json", output_paths)
+
+            emitted_nested_file = (
+                root
+                / "build"
+                / "skills"
+                / "nested_receipt_name"
+                / "references"
+                / "SKILL.source.json"
+            )
+            emitted_nested_file.write_text('{"kind":"edited"}\n', encoding="utf-8")
+
+            result = verify_target_skill_receipt(target)
+
+            self.assertEqual(result.status, "edited_artifact")
 
     def test_emit_skill_preserves_binary_assets_byte_for_byte(self) -> None:
         # This protects the user-visible outcome where skill packages can ship
@@ -419,6 +646,43 @@ class EmitSkillTests(unittest.TestCase):
                 emit_target_skill(load_emit_targets(pyproject)["demo"])
 
         self.assertIn("SKILL.contract.json", str(ctx.exception))
+
+    def test_emit_skill_reserves_source_receipt_path_for_bundled_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "reserved_source_path"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package ReservedSourcePath: "Reserved Source Path"
+                        metadata:
+                            name: "reserved-source-path"
+                        "The receipt path is compiler-owned."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "SKILL.source.json").write_text("{}", encoding="utf-8")
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/reserved_source_path/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                emit_target_skill(load_emit_targets(pyproject)["demo"])
+
+        self.assertIn("SKILL.source.json", str(ctx.exception))
 
     def test_emit_skill_reserves_contract_path_for_host_bound_emitted_docs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

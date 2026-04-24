@@ -274,6 +274,9 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `140_typed_gates_symbol_reference` | Review contracts may type a gate with a declared `schema` / `table` / `enum` / `document` and the renderer emits a `Symbol: <Name>` line so the gate points at the canonical typed contract instead of restating it as prose. |
 | `141_review_case_gate_override` | A review case may carry its own `override gates:` block (`add`, `remove`, `modify`) so one case can diverge from its contract's gate list without forking the whole contract. |
 | `142_skill_host_receipt_envelope` | A skill package may declare a typed `receipt` host slot in `host_contract:` so the package owns the typed envelope it emits on every run; fields type with declared `enum`, `table`, `schema`, or `document` entries, critics reference fields through the skill binding, and the envelope lands in `SKILL.contract.json` for runtime hosts. |
+| `147_skill_package_source_receipt` | Every skill package emits `SKILL.source.json` with hashed source inputs and emitted outputs. |
+| `148_skill_package_tracked_sources` | `source.track:` can include source-only files outside the emitted package tree when the target names a wider `source_root`. |
+| `149_external_skill_source_target` | A downstream emit target can name an upstream `source_root`, stable `source_id`, and optional `lock_file` while keeping emitted output in the downstream tree. |
 
 ## Useful Commands
 
@@ -300,6 +303,7 @@ uv run --locked python -m doctrine.emit_skill --target example_100_skill_package
 uv run --locked python -m doctrine.emit_skill --target example_122_skill_package_emit_documents
 uv run --locked python -m doctrine.emit_skill --target example_123_skill_package_emit_documents_mixed_bundle
 uv run --locked python -m doctrine.emit_skill --target example_124_skill_package_host_binding
+uv run --locked python -m doctrine.emit_skill --target example_149_external_skill_source_target
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```
@@ -310,6 +314,8 @@ example. Its `build_ref/` tree includes compiled Markdown and
 Examples `95` through `103` are the canonical checked-in skill-package gallery.
 Their `build_ref/` trees are expected emitted package proof, not public
 authoring input.
+Examples `147` through `149` prove `SKILL.source.json`, tracked source-only
+inputs, external `source_root`, and optional skill locks.
 Example `124_skill_package_host_binding` is the focused host-binding proof for
 `package:`, `host_contract:`, `bind:`, `host:`, and `SKILL.contract.json`.
 Example `115_runtime_agent_packages` is the canonical checked-in runtime-package

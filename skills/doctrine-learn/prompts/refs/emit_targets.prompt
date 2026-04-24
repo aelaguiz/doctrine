@@ -38,6 +38,11 @@ output_dir = "examples/07_handoffs/build"
   under a `prompts/` tree."""
             """`output_dir`: the root directory for emitted artifacts. Must not
   already exist as a file."""
+        "Skill targets may also use optional source-receipt fields:"
+        bullets optional_fields:
+            "`source_root`: the upstream source tree for an external skill source."
+            "`source_id`: the stable id for that external source tree. Required with `source_root`."
+            "`lock_file`: the generated receipt lock file inside the downstream project."
 
         "Rules the compiler enforces:"
         bullets rules:
@@ -47,8 +52,11 @@ output_dir = "examples/07_handoffs/build"
             "`emit_skill` accepts `SKILL.prompt`."
             """`emit_flow` accepts `AGENTS.prompt` or `SOUL.prompt`, not
   `SKILL.prompt`."""
-            """`entrypoint` and `output_dir` both stay inside the target project
-  root."""
+            """`entrypoint` stays inside the target project root unless the target
+  declares both `source_root` and `source_id`."""
+            "`source_root` must be an existing directory, and the entrypoint must stay inside it."
+            """`output_dir` and `lock_file` stay inside the target project root.
+`lock_file` must stay outside the emitted skill tree."""
 
         """Add one stanza per emitted artifact tree. Do not share one target
 across two entrypoints."""
@@ -91,7 +99,7 @@ reviewable graph of inputs, agents, outputs, and route edges."""
 
         section skill_package_target: "Skill Package Target"
             """Compiles a `SKILL.prompt` into a `SKILL.md` tree plus any bundled peer
-files:"""
+files and a `SKILL.source.json` receipt:"""
             code:
                 language: toml
                 text: """[[tool.doctrine.emit.targets]]
@@ -102,6 +110,33 @@ output_dir = "examples/122_skill_package_emit_documents/build"
             """Shipped proof lives at
 `/Users/aelaguiz/workspace/doctrine/examples/122_skill_package_emit_documents/`.
 Run with `doctrine.emit_skill`."""
+
+        section external_skill_source_target: "External Skill Source Target"
+            """Use this when a downstream repo emits a local runtime copy from an
+upstream skill source tree. The downstream repo owns output. The upstream
+tree owns source."""
+            code:
+                language: toml
+                text: """[[tool.doctrine.emit.targets]]
+name = "external_skill"
+entrypoint = "../upstream/prompts/SKILL.prompt"
+output_dir = "skills/external"
+source_root = "../upstream"
+source_id = "upstream.external-skill"
+lock_file = "doctrine.skill.lock"
+"""
+            "Rules:"
+            bullets rules:
+                "`source_id` is required when `source_root` is set."
+                "The entrypoint may be outside the downstream project root, but it must stay inside `source_root`."
+                "`output_dir` and `lock_file` still stay inside the downstream project root."
+                "`lock_file` must stay outside the emitted skill tree."
+                "`emit_skill` updates the lock file when one is configured."
+                "Run `python -m doctrine.verify_skill_receipts --target external_skill` in CI."
+
+            "Shipped proof:"
+            bullets proof:
+                "`/Users/aelaguiz/workspace/doctrine/examples/149_external_skill_source_target/`"
 
     section dual_emit_pattern: "Dual Emit Pattern For First-Party Skills"
         """First-party skills in this repo ship two targets: one local `build/`
@@ -243,6 +278,34 @@ Shipped proof:"""
             bullets proof:
                 "`/Users/aelaguiz/workspace/doctrine/examples/124_skill_package_host_binding/`"
 
+        section skill_source_json: "`SKILL.source.json`"
+            """`emit_skill` writes this sidecar for every skill package. It records
+the source id, source root, entrypoint, hashed source inputs, hashed emitted
+outputs, a source tree hash, and an output tree hash."""
+
+            "Use it as a build receipt. Do not put host-binding truth there."
+            "Verify it with:"
+            code:
+                language: bash
+                text: """uv run --locked python -m doctrine.verify_skill_receipts --target <target-name>
+"""
+            "Verifier statuses:"
+            bullets statuses:
+                "`current`"
+                "`missing_receipt`"
+                "`stale_source`"
+                "`edited_artifact`"
+                "`unexpected_artifact`"
+                "`foreign_package`"
+                "`lock_out_of_date`"
+                "`receipt_lock_mismatch`"
+                "`unsupported_receipt_version`"
+
+            "Shipped proof:"
+            bullets proof:
+                "`/Users/aelaguiz/workspace/doctrine/examples/147_skill_package_source_receipt/`"
+                "`/Users/aelaguiz/workspace/doctrine/examples/148_skill_package_tracked_sources/`"
+
     section schema_validator_cli: "Schema Validator CLI"
         "Validate any emitted schema file with:"
         code:
@@ -261,9 +324,9 @@ not silently prefer one root. Fix the duplicate at the source."""
     section pitfalls: "Pitfalls"
         bullets items:
             "Do not hand-edit `build/` or `.curated/` trees. Re-emit instead."
-            """Do not author a file at `SKILL.md`, `AGENTS.md`, `SOUL.md`, or
-  `SKILL.contract.json` paths. The compiler owns these."""
-            "Do not place the entrypoint outside the target project root."
+            """Do not author a file at `SKILL.md`, `AGENTS.md`, `SOUL.md`,
+  `SKILL.source.json`, or `SKILL.contract.json` paths. The compiler owns these."""
+            "Do not place the entrypoint outside the target project root unless the target names `source_root` and `source_id`."
             "Do not place `output_dir` outside the target project root."
             """Do not drop extra `.prompt` files under a runtime package root. They
   fail loud."""

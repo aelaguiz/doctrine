@@ -127,6 +127,8 @@ from doctrine._model.io import (
     SkillPackageHostSlotItem,
     SkillPackageLink,
     SkillPackageMetadata,
+    SkillPackageSource,
+    SkillPackageTrackedSource,
     TrustSurfaceItem,
 )
 from doctrine._model.law import (

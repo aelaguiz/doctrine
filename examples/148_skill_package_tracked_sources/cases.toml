@@ -1,0 +1,9 @@
+schema_version = 1
+default_prompt = "prompts/SKILL.prompt"
+
+[[cases]]
+name = "skill package tracks source-only directory"
+status = "active"
+kind = "build_contract"
+build_target = "example_148_skill_package_tracked_sources"
+

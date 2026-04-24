@@ -1,0 +1,37 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ExternalSourceSkill",
+    "title": "External Source Skill"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "examples.external-source-skill",
+    "root": "examples/149_external_skill_source_target/upstream",
+    "entrypoint": "prompts/SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "content/source-note.md",
+      "kind": "tracked",
+      "sha256": "650317507723f2cbe8e2e6818fe0ccfcc05a99a32ebe64530f6c09764323191c"
+    },
+    {
+      "path": "prompts/SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "afaf40e00f6ecdfc5f0a43fe2382e0951f8f38bf33f823462bbb25e77f8de376"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "6071560d446c3de7ed0ec36806dba576a1cef7b94a27637dd20882683b4a586e"
+    }
+  ],
+  "source_tree_sha256": "64bfa22866bb3f64b965039f3c3bcc7d917b2eb16d1eda6a9309197e7182110d",
+  "output_tree_sha256": "b78cce98b59056bb368c55a1a1081cfb8f30f2be9f63c6ef1ffd368d332c33fd"
+}
