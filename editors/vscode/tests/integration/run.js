@@ -220,7 +220,9 @@ async function main() {
       : stageExtension(sourceExtensionDevelopmentPath);
     const extensionTestsPath = path.join(
       sourceExtensionDevelopmentPath,
-      "tests/integration/suite/index.js",
+      packagedVsixPath
+        ? "tests/integration/suite/packaged-smoke.js"
+        : "tests/integration/suite/index.js",
     );
     const launchContext = makeLaunchContext({
       disableExtensions: !packagedVsixPath,
