@@ -28,6 +28,21 @@ from doctrine._compiler.workflow_diagnostics import (
 class ValidateAgentsMixin:
     """Agent-specific validation helpers for ValidateMixin."""
 
+    def _review_semantic_field_bindings(
+        self,
+        fields: model.ReviewFieldsConfig | None,
+    ) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        field_bindings: list[tuple[str, tuple[str, ...]]] = []
+        seen_bindings: set[str] = set()
+        if fields is None:
+            return ()
+        for binding in fields.bindings:
+            if binding.semantic_field in seen_bindings:
+                continue
+            seen_bindings.add(binding.semantic_field)
+            field_bindings.append((binding.semantic_field, binding.field_path))
+        return tuple(field_bindings)
+
     def _agent_slot_source_span(
         self,
         agent: model.Agent,
@@ -59,7 +74,7 @@ class ValidateAgentsMixin:
         *,
         unit: IndexedUnit,
     ) -> frozenset[tuple[OutputDeclKey, ReviewSemanticContext]]:
-        output_contexts: set[tuple[OutputDeclKey, ReviewSemanticContext]] = set()
+        output_contexts: dict[OutputDeclKey, ReviewSemanticContext] = {}
         for field in agent.fields:
             if not isinstance(field, model.ReviewField):
                 continue
@@ -109,27 +124,44 @@ class ValidateAgentsMixin:
                     ).gates
                 except CompileError:
                     contract_gates = ()
-            field_bindings: list[tuple[str, tuple[str, ...]]] = []
-            seen_bindings: set[str] = set()
-            if resolved.fields is not None:
-                for binding in resolved.fields.bindings:
-                    if binding.semantic_field in seen_bindings:
-                        continue
-                    seen_bindings.add(binding.semantic_field)
-                    field_bindings.append((binding.semantic_field, binding.field_path))
-            output_contexts.add(
-                (
-                    (output_unit.module_parts, output_decl.name),
-                    ReviewSemanticContext(
-                        review_module_parts=review_unit.module_parts,
-                        output_module_parts=output_unit.module_parts,
-                        output_name=output_decl.name,
-                        field_bindings=tuple(field_bindings),
-                        contract_gates=contract_gates,
-                    ),
+            output_contexts[(output_unit.module_parts, output_decl.name)] = (
+                ReviewSemanticContext(
+                    review_module_parts=review_unit.module_parts,
+                    output_module_parts=output_unit.module_parts,
+                    output_name=output_decl.name,
+                    field_bindings=self._review_semantic_field_bindings(resolved.fields),
+                    contract_gates=contract_gates,
                 )
             )
-        return frozenset(output_contexts)
+            final_output_field = next(
+                (
+                    candidate
+                    for candidate in agent.fields
+                    if isinstance(candidate, model.FinalOutputField)
+                    and candidate.review_fields is not None
+                ),
+                None,
+            )
+            if final_output_field is None:
+                continue
+            final_output_unit, final_output_decl = self._resolve_final_output_decl(
+                final_output_field.value,
+                unit=unit,
+                owner_label=f"agent {agent.name} final_output",
+                source_span=final_output_field.source_span,
+            )
+            output_contexts[(final_output_unit.module_parts, final_output_decl.name)] = (
+                ReviewSemanticContext(
+                    review_module_parts=review_unit.module_parts,
+                    output_module_parts=final_output_unit.module_parts,
+                    output_name=final_output_decl.name,
+                    field_bindings=self._review_semantic_field_bindings(
+                        final_output_field.review_fields
+                    ),
+                    contract_gates=contract_gates,
+                )
+            )
+        return frozenset(output_contexts.items())
 
     def _review_output_context_for_key(
         self,

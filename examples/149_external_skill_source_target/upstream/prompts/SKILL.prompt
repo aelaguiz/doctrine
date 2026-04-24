@@ -1,0 +1,10 @@
+skill package ExternalSourceSkill: "External Source Skill"
+    metadata:
+        name: "external-source-skill"
+        description: "Build from a named source root."
+    source:
+        id: "examples.external-source-skill"
+        track:
+            "content/source-note.md"
+    "Trust the emitted skill only when the receipt is current."
+

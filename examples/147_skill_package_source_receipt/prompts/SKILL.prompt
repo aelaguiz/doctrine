@@ -1,0 +1,10 @@
+skill package ReceiptBackedSkill: "Receipt Backed Skill"
+    metadata:
+        name: "receipt-backed-skill"
+        description: "Emit a source receipt beside the skill."
+    source:
+        id: "examples.receipt-backed-skill"
+        track:
+            "facts/source-map.md"
+    "Use the source receipt before trusting a copied skill tree."
+

@@ -70,11 +70,13 @@ The emitted tree is:
 
 ```text
 build/
-`-- SKILL.md
+|-- SKILL.md
+`-- SKILL.source.json
 ```
 
 `SKILL.md` starts with YAML frontmatter from `metadata:` and then renders the
 package body as ordinary Doctrine-authored Markdown.
+`SKILL.source.json` records the source files and emitted files by hash.
 
 ## Source-Root Model
 
@@ -117,6 +119,7 @@ build/
 |-- SKILL.md
 |-- references/
 |   `-- checklist.md
+|-- SKILL.source.json
 `-- scripts/
     `-- greet.py
 ```
@@ -144,6 +147,70 @@ Important rules:
 - Duplicate metadata fields fail loudly.
 - If `name` is omitted, emitted frontmatter falls back to the package
   declaration key.
+
+## Source Receipts
+
+Every skill package emits `SKILL.source.json`.
+The receipt proves which source files built the emitted tree.
+
+Use `source:` when the package needs a stable source id or extra tracked
+inputs:
+
+```prompt
+skill package TrackedSourceSkill: "Tracked Source Skill"
+    metadata:
+        name: "tracked-source-skill"
+    source:
+        id: "examples.tracked-source-skill"
+        track:
+            "domain"
+    "Use the tracked source before you judge this skill."
+```
+
+Rules:
+
+- `source:` is optional and may appear at most once.
+- `id:` gives the package a stable source id.
+- Target `source_id` wins when it is set. Otherwise the receipt uses package
+  `source.id`, then `metadata.name`, then the package key.
+- `track:` lists extra files or directories that affect the skill.
+- Tracked paths are relative to the receipt source root.
+- Tracked paths must stay inside that source root.
+- Missing tracked paths fail loud during `emit_skill`.
+
+Use target-level `source_root` when a downstream repo emits from an upstream
+source tree:
+
+```toml
+[[tool.doctrine.emit.targets]]
+name = "external_skill"
+entrypoint = "../upstream/prompts/SKILL.prompt"
+output_dir = "skills/external"
+source_root = "../upstream"
+source_id = "upstream.external-skill"
+lock_file = "doctrine.skill.lock"
+```
+
+Rules:
+
+- Without `source_root`, the entrypoint must stay inside the project root.
+- With `source_root`, the entrypoint may live outside the project root, but it
+  must stay inside `source_root`.
+- `source_id` is required when `source_root` is set.
+- `output_dir` and `lock_file` still stay inside the project root.
+- `lock_file` must stay outside the emitted skill tree.
+- `emit_skill` updates `lock_file` when it is configured.
+
+Verify an emitted tree:
+
+```bash
+uv run --locked python -m doctrine.verify_skill_receipts --target external_skill
+```
+
+The verifier reports `current`, `missing_receipt`, `stale_source`,
+`edited_artifact`, `unexpected_artifact`, `foreign_package`,
+`lock_out_of_date`, `receipt_lock_mismatch`, or
+`unsupported_receipt_version`.
 
 ## Emitted Documents
 
@@ -200,17 +267,18 @@ working exemplars. `skills/agent-linter/prompts/SKILL.prompt` and
 `skills/doctrine-learn/prompts/SKILL.prompt` each keep many sibling `.prompt`
 reference files under `prompts/refs/`, use bare same-flow refs in the package
 entrypoint, and emit the whole reference bundle through one `emit:` block. The
-checked-in install trees under
-`skills/.curated/<name>/references/` are verifier-owned proof; the authored
-truth lives in `prompts/refs/*.prompt`.
+generated install trees under `skills/.curated/<name>/references/` are install
+artifacts for `npx skills add .`; the authored truth lives in
+`prompts/refs/*.prompt`.
 
 ## Bundled Files
 
-Doctrine currently owns three package output behaviors:
+Doctrine currently owns five package output behaviors:
 
 - explicit emitted docs from `emit:`
 - ordinary bundled files
 - bundled agent prompts
+- one source receipt sidecar at `SKILL.source.json`
 - one package contract sidecar at `SKILL.contract.json` when the package has
   host-binding truth
 
@@ -270,6 +338,8 @@ Important rules:
 - `package:`, `host_contract:`, and `bind:` do not render into Markdown.
 - When the package has host-binding truth, `SKILL.contract.json` records the
   host contract and the host paths used by prompt-authored emitted artifacts.
+- `SKILL.source.json` is separate. It always records the source and output
+  hashes for the emitted package tree.
 - Package ids come from `metadata.name` when it is present. Otherwise Doctrine
   falls back to the `skill package` declaration key.
 - Doctrine first checks visible package ids, then other `SKILL.prompt`

@@ -1,7 +1,7 @@
 document SkillsAndPackages: "Skills And Packages"
     """This reference teaches the two skill surfaces that ship: inline `skill` declarations and first-class `skill package` entrypoints. Reach for these when an agent needs reusable capability that lives outside its role prose.
 
-Use an inline `skill` for a capability that stays inside one `AGENTS.prompt` or `SOUL.prompt`. Use a `skill package` when Doctrine should emit a real package tree with `SKILL.md`, bundled references, scripts, runtime metadata, plugin metadata, or bundled agents.
+Use an inline `skill` for a capability that stays inside one `AGENTS.prompt` or `SOUL.prompt`. Use a `skill package` when Doctrine should emit a real package tree with `SKILL.md`, `SKILL.source.json`, bundled references, scripts, runtime metadata, plugin metadata, or bundled agents.
 
 Doctrine also ships a separate runtime package surface under `AGENTS.prompt`. That emits `AGENTS.md`, not `SKILL.md`. Do not mix the two. See `references/imports-and-refs.md` for runtime packages."""
 
@@ -68,6 +68,31 @@ Minimal entrypoint:"""
                 "Duplicate metadata fields fail loud."
                 "If `name` is omitted, the emitter falls back to the declaration key for frontmatter."
 
+        section source_receipts: "Source Receipts"
+            """Every `skill package` emits `SKILL.source.json`. Treat it like a build receipt: it proves which source files built the emitted tree. It is not the runtime host contract."""
+            code:
+                language: prompt
+                text: """skill package TrackedSourceSkill: "Tracked Source Skill"
+    metadata:
+        name: "tracked-source-skill"
+    source:
+        id: "examples.tracked-source-skill"
+        track:
+            "domain"
+    "Use the tracked source before you judge this skill."
+"""
+            "Rules:"
+            bullets rules:
+                "`source:` is optional and may appear at most once."
+                "`id:` gives the package a stable source id."
+                "Target `source_id` wins when it is set. Otherwise the receipt uses package `source.id`, then `metadata.name`, then the package key."
+                "`track:` names extra files or directories that affect the skill."
+                "Tracked paths are relative to the receipt source root."
+                "Tracked paths must stay inside that source root."
+                "Missing tracked paths fail loud during `emit_skill`."
+
+            "Use `examples/147_skill_package_source_receipt/` for the smallest receipt proof and `examples/148_skill_package_tracked_sources/` for source-only tracked files."
+
         section named_sections: "Named Sections"
             "A `skill package` body follows the same shape as an inline `skill`. These named sections are all optional, but each one earns a clear job:"
             bullets sections:
@@ -97,11 +122,12 @@ The entrypoint at `skills/agent-linter/prompts/SKILL.prompt` is the working temp
 A `reference_map` section helps a thin harness decide which reference to open first. Give every reference one trigger line."""
 
     section bundled_files: "Bundled Files"
-        "Three emit behaviors ship today:"
+        "Five emit behaviors ship today:"
         bullets behaviors:
             "`emit:` entries turn `document` declarations into companion Markdown files"
             "ordinary bundled files copy through byte for byte"
             "`.prompt` files under `agents/` compile to Markdown agent companions"
+            "`SKILL.source.json` is emitted for every package as the source receipt"
             "`SKILL.contract.json` is emitted when the package has host-binding truth"
 
         section ordinary_bundled_files: "Ordinary Bundled Files"
@@ -139,6 +165,7 @@ Shipping examples:"""
                 language: text
                 text: """build/
 |-- SKILL.md
+|-- SKILL.source.json
 `-- agents/
     |-- cold_reviewer.md
     |-- openai.yaml
@@ -243,6 +270,7 @@ agent BoundDemo:
             "The root `SKILL.prompt` body uses `host:slot` interpolation expressions."
             "Emitted docs and bundled agent prompts use the same `host:` root."
             "`package:`, `host_contract:`, and `bind:` do not render into Markdown."
+            "`SKILL.source.json` still emits separately as the source receipt."
             "When host-binding truth exists, Doctrine emits a `SKILL.contract.json` sidecar beside `SKILL.md`."
 
         """Supported host-slot families today: `input`, `output`, `document`, `analysis`, `schema`, `table`, `final_output`, `receipt`.
@@ -331,6 +359,24 @@ name = "example_95_skill_package_minimal"
 entrypoint = "examples/95_skill_package_minimal/prompts/SKILL.prompt"
 output_dir = "examples/95_skill_package_minimal/build"
 """
+        "For a downstream repo that emits from an upstream source tree, add `source_root`, `source_id`, and optionally `lock_file`:"
+        code:
+            language: toml
+            text: """[[tool.doctrine.emit.targets]]
+name = "external_skill"
+entrypoint = "../upstream/prompts/SKILL.prompt"
+output_dir = "skills/external"
+source_root = "../upstream"
+source_id = "upstream.external-skill"
+lock_file = "doctrine.skill.lock"
+"""
+        "Then verify the emitted tree before a runtime trusts it:"
+        code:
+            language: bash
+            text: """uv run --locked python -m doctrine.verify_skill_receipts --target external_skill
+"""
+        "The verifier reports `current`, `missing_receipt`, `stale_source`, `edited_artifact`, `unexpected_artifact`, `foreign_package`, `lock_out_of_date`, `receipt_lock_mismatch`, or `unsupported_receipt_version`."
+        "See `examples/149_external_skill_source_target/` for the canonical external-source target shape."
         "For a first-party repo skill, the curated install tree lives at `skills/.curated/<name>/`. The harness installs from there. See the existing `agent-linter` entries in `pyproject.toml` for the pattern."
 
     section working_templates_in_this_repo: "Working Templates In This Repo"
@@ -343,6 +389,7 @@ output_dir = "examples/95_skill_package_minimal/build"
             "Do not model a runtime home with `SKILL.prompt`. Runtime homes live under `AGENTS.prompt`."
             "Do not dump every reference into the root `SKILL.prompt`. Keep the root short and point at references by relative link."
             "Do not use `emit:` paths that escape the package source root or skip `.md`. Both fail loud."
+            "Do not hand-edit `SKILL.source.json`. Re-emit and verify instead."
             "Do not bind `host_contract:` slots from two places. Each slot must be bound exactly once by each consuming skill entry."
             "Do not commit `build/` as shipped truth. It is verifier-owned proof. Curated install trees go under `skills/.curated/<name>/`."
             "Do not collide a bundled file with an `emit:` path or a compiled bundled-agent file. The emitter rejects collisions."

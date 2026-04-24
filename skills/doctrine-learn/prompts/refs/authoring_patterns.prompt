@@ -97,11 +97,28 @@ to copy."""
   See `examples/11_skills_and_tools` and
   `examples/21_first_class_skills_blocks`.
 
+- I need one agent's role to render as several titled sections.
+  Keep `role:` to a one-sentence headline. Introduce typed agent slots
+  (`your_job`, `workflow_core`, or any authored slot key) and point each
+  at a `workflow` declaration with titled children. Doctrine renders one
+  heading per typed slot, not per `##` inside a role string. The same
+  typed-slot idiom works whether the slots live on one agent or are
+  shared across siblings.
+  See `examples/12_role_home_composition`.
+
 - I need a reusable package I can ship as a real tree.
   Use `skill package` with `SKILL.prompt`. Bundle agents, references, and
-  scripts from the source-root model.
+  scripts from the source-root model. Re-emit so `SKILL.source.json` proves
+  the source and output hashes.
   See `examples/95_skill_package_minimal` and
-  `examples/100_skill_package_bundled_agents`.
+  `examples/147_skill_package_source_receipt`.
+
+- I need a downstream repo to consume an upstream skill without copying
+  authored truth.
+  Put `source_root`, `source_id`, and optional `lock_file` on the downstream
+  emit target. Run `python -m doctrine.verify_skill_receipts --target ...`
+  before the runtime trusts the emitted skill.
+  See `examples/149_external_skill_source_target`.
 
 - I need a package that reads host facts.
   Declare `host_contract:` once on the package. Point the inline skill at
@@ -235,6 +252,10 @@ should land once."""
                 """Put shared read order, turn discipline, handoff discipline, and note
   discipline in one inherited role home."""
                 "Keep each role file about that role's job."
+                """The same typed-slot idiom lets one agent publish a multi-part role.
+  The agent is its own role home: each authored slot renders as one
+  titled section. Keep `role:` to a one-sentence headline and push the
+  rest into typed slots, whether or not siblings share them."""
 
             """See `examples/12_role_home_composition` and
 `examples/37_law_reuse_and_patching`."""
@@ -482,6 +503,67 @@ buried under boilerplate."""
   `examples/25_abstract_agent_io_override`, and the abstract-agent
   rules in `references/agents-and-workflows.md`."""
                 "Cross-link: `agent-linter` finding `AL280`."
+
+        section role_as_markdown_tree: "P11. Role Body As Markdown Section Tree"
+            """A multiline `role:` string holds its own section tree: markdown
+headings (`##` / `###`), a numbered section list, or similar structure
+written inside the string. The internal sections are invisible to the
+compiler. They cannot be inherited, overridden, shared with siblings, or
+targeted by `review`. The string is one opaque lump from Doctrine's
+point of view."""
+
+            bullets items:
+                """Trigger: the `role:` value is a multiline or triple-quoted string
+  whose content contains two or more authored section headings, or a
+  numbered section list acting as headings."""
+                """Fix: keep `role:` to a one-sentence headline. For each internal
+  heading, introduce a typed agent slot (`your_job`, `workflow_core`,
+  or any authored slot key) that points at a `workflow` declaration
+  with titled children. Doctrine then renders one heading per typed
+  slot, each section becomes independently inheritable, and the
+  compiler can see the structure. See `examples/12_role_home_composition`
+  and `section role_home_law` above."""
+                "Cross-link: `agent-linter` finding `AL150`."
+
+        section intra_agent_duplication: "P12. Role Prose Restates Own Workflow"
+            """The same rule, prohibition, or step list is stated in this agent's
+`role:` body and also in the same agent's `how_to_take_a_turn`,
+`workflow:`, or `review:` surface. The two copies are not inherited
+from a shared declaration; they are two hand-written statements of the
+same rule in one agent file. Two hand-written owners drift, and the
+role copy burns always-on budget for no new truth."""
+
+            bullets items:
+                """Trigger: a rule, prohibition, or step list appears verbatim or as
+  a close paraphrase in both `role:` and another authored slot on the
+  same agent, without an `inherit` or shared workflow tying them
+  together."""
+                """Fix: pick one owner. If the rule is procedure, keep it in the
+  workflow slot and strip the role copy. If the rule is an enforced
+  invariant, keep the review gate and strip the prose. Do not copy
+  from one surface into another "for safety"; trust the surface that
+  already loads when the rule is needed."""
+                "Cross-link: `agent-linter` finding `AL290`."
+
+        section review_gate_restatement: "P13. Role Prose Restates A Review Gate"
+            """Role or workflow prose states a hard prohibition or invariant that a
+declared `review` gate on the same agent, or a review bound to the
+same work, already enforces mechanically. The prose paraphrases the
+gate's predicate in English. The review is the fail-loud surface;
+restating the rule in prose signals the author does not trust the
+gate to carry it. The prose copy drifts the moment a gate is renamed
+or merged."""
+
+            bullets items:
+                """Trigger: role or workflow prose states a prohibition that a
+  declared `review` `gate` on the same agent or bound contract already
+  owns."""
+                """Fix: delete the prose restatement. Trust the review. If the prose
+  really needs to mention the gate for reader orientation, cite it by
+  its `contract.NAME` identity through interpolation instead of
+  paraphrasing the predicate. See `references/reviews.md` section
+  `per_gate_checks` for the typed-gate vocabulary."""
+                "Cross-link: `agent-linter` finding `AL925`."
 
     section split_file: "When To Split A File"
         """The AGENTS.md rule: if a functional code file grows past about 500 lines,

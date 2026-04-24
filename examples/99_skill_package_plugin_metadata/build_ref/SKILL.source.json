@@ -1,0 +1,62 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "PluginMetadataPackage",
+    "title": "Plugin Metadata Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "plugin-metadata-package",
+    "root": "examples/99_skill_package_plugin_metadata/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": ".app.json",
+      "kind": "package_file",
+      "sha256": "0870a0bd5de6d439478c510777327ff2fe1f7f92d8f520e0dafe2dfafd83a304"
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "kind": "package_file",
+      "sha256": "9a475a245b87134908ccf25d0430c1abf24ad0282ab71e9a9062a9be0e25da5f"
+    },
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "5a139c237efa9a776e6e327ef29ba741d5d68eb7f6638506c1ebba05fedcbb8f"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "package_file",
+      "sha256": "ad8c849d3520eca83f85ae2ea6da9b03861b58369dd90ed9730020a132510761"
+    }
+  ],
+  "outputs": [
+    {
+      "path": ".app.json",
+      "kind": "file",
+      "sha256": "0870a0bd5de6d439478c510777327ff2fe1f7f92d8f520e0dafe2dfafd83a304"
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "kind": "file",
+      "sha256": "9a475a245b87134908ccf25d0430c1abf24ad0282ab71e9a9062a9be0e25da5f"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "0a9e1b7e488e285631ca6c78aa30eac1d0cf12a16c5b7ed0a5d8f417e58285cb"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "file",
+      "sha256": "ad8c849d3520eca83f85ae2ea6da9b03861b58369dd90ed9730020a132510761"
+    }
+  ],
+  "source_tree_sha256": "2150e665e0323a2aa8004c081d506653ae52b66384b426a2e0f579dbfa36bdbb",
+  "output_tree_sha256": "c060a2c7ba17775733c5a13b61d76aff293cf74e02ace713dcf36f99e89da906"
+}

@@ -1,0 +1,9 @@
+schema_version = 1
+default_prompt = "upstream/prompts/SKILL.prompt"
+
+[[cases]]
+name = "external skill source target emits receipt"
+status = "active"
+kind = "build_contract"
+build_target = "example_149_external_skill_source_target"
+

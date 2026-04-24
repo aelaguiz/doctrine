@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doctrine-agents"
-version = "5.0.0"
+version = "5.1.0"
 description = "Typed DSL and compiler for reusable AI agent instructions and workflows that compile to AGENTS.md."
 readme = "README.md"
 license = "MIT"
@@ -201,3 +201,23 @@ output_dir = "examples/124_skill_package_host_binding/build"
 name = "example_142_skill_host_receipt_envelope"
 entrypoint = "examples/142_skill_host_receipt_envelope/prompts/skills/producer/SKILL.prompt"
 output_dir = "examples/142_skill_host_receipt_envelope/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_147_skill_package_source_receipt"
+entrypoint = "examples/147_skill_package_source_receipt/prompts/SKILL.prompt"
+output_dir = "examples/147_skill_package_source_receipt/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_148_skill_package_tracked_sources"
+entrypoint = "examples/148_skill_package_tracked_sources/prompts/SKILL.prompt"
+output_dir = "examples/148_skill_package_tracked_sources/build"
+source_root = "examples/148_skill_package_tracked_sources"
+source_id = "examples.tracked-source-skill"
+
+[[tool.doctrine.emit.targets]]
+name = "example_149_external_skill_source_target"
+entrypoint = "examples/149_external_skill_source_target/upstream/prompts/SKILL.prompt"
+output_dir = "examples/149_external_skill_source_target/consumer/build"
+source_root = "examples/149_external_skill_source_target/upstream"
+source_id = "examples.external-source-skill"
+lock_file = "examples/149_external_skill_source_target/consumer/doctrine.skill.lock"

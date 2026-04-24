@@ -1836,6 +1836,7 @@ class ResolveOutputsMixin:
             )
         example_item = self._output_schema_example_item(
             schema_decl,
+            unit=schema_unit,
             owner_label=f"output schema {schema_decl.name}",
         )
         example_value = None if example_item is None else example_item.value
@@ -3491,22 +3492,19 @@ class ResolveOutputsMixin:
         surface_label: str,
         source_span: model.SourceSpan | None = None,
     ) -> AddressableNode:
-        current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
-        for segment in path:
-            children = self._get_addressable_children(current_node)
-            if children is None or segment not in children:
-                raise output_schema_compile_error(
-                    code="E299",
-                    summary="Unknown output schema field",
-                    detail=(
-                        f"Unknown output schema field on {surface_label} in {owner_label}: "
-                        f"{decl.name}.{'.'.join(path)}"
-                    ),
-                    unit=unit,
-                    source_span=source_span,
-                )
-            current_node = children[segment]
-        return current_node
+        node = self._try_resolve_output_schema_field_node(decl, path=path, unit=unit)
+        if node is not None:
+            return node
+        raise output_schema_compile_error(
+            code="E299",
+            summary="Unknown output schema field",
+            detail=(
+                f"Unknown output schema field on {surface_label} in {owner_label}: "
+                f"{decl.name}.{'.'.join(path)}"
+            ),
+            unit=unit,
+            source_span=source_span,
+        )
 
     def _resolve_output_schema_route_choice_identity(
         self,
@@ -3516,38 +3514,55 @@ class ResolveOutputsMixin:
     ) -> tuple[tuple[str, ...], str, str, model.OutputSchemaRouteChoice] | None:
         if not isinstance(expr, model.ExprRef) or len(expr.parts) < 3:
             return None
-        schema_ref = model.NameRef(
-            module_parts=tuple(expr.parts[:-3]),
-            declaration_name=expr.parts[-3],
-        )
-        try:
-            lookup_unit, schema_decl = self._resolve_decl_ref(
-                schema_ref,
-                unit=unit,
-                registry_name="output_schemas_by_name",
-                missing_label="output schema declaration",
+        choice_key = expr.parts[-1]
+        for schema_part_count in range(len(expr.parts) - 2, 0, -1):
+            schema_ref = model.NameRef(
+                module_parts=tuple(expr.parts[: schema_part_count - 1]),
+                declaration_name=expr.parts[schema_part_count - 1],
             )
-        except CompileError:
-            return None
-        resolved_decl = self._resolve_output_schema_decl_body(schema_decl, unit=lookup_unit)
-        field = next(
-            (
-                item
-                for item in resolved_decl.items
-                if isinstance(item, model.OutputSchemaRouteField) and item.key == expr.parts[-2]
-            ),
-            None,
-        )
-        if field is None:
-            return None
-        choice = next(
-            (
-                item
-                for item in field.items
-                if isinstance(item, model.OutputSchemaRouteChoice) and item.key == expr.parts[-1]
-            ),
-            None,
-        )
-        if choice is None:
-            return None
-        return (lookup_unit.module_parts, resolved_decl.name, field.key, choice)
+            field_path = tuple(expr.parts[schema_part_count:-1])
+            if not field_path:
+                continue
+            try:
+                lookup_unit, schema_decl = self._resolve_decl_ref(
+                    schema_ref,
+                    unit=unit,
+                    registry_name="output_schemas_by_name",
+                    missing_label="output schema declaration",
+                )
+            except CompileError:
+                continue
+            resolved_decl = self._resolve_output_schema_decl_body(schema_decl, unit=lookup_unit)
+            route_node = self._try_resolve_output_schema_field_node(
+                resolved_decl,
+                path=field_path,
+                unit=lookup_unit,
+            )
+            if route_node is None or not isinstance(route_node.target, model.OutputSchemaRouteField):
+                continue
+            choice = next(
+                (
+                    item
+                    for item in route_node.target.items
+                    if isinstance(item, model.OutputSchemaRouteChoice) and item.key == choice_key
+                ),
+                None,
+            )
+            if choice is not None:
+                return (lookup_unit.module_parts, resolved_decl.name, route_node.target.key, choice)
+        return None
+
+    def _try_resolve_output_schema_field_node(
+        self,
+        decl: model.OutputSchemaDecl,
+        *,
+        path: tuple[str, ...],
+        unit: IndexedUnit,
+    ) -> AddressableNode | None:
+        current_node = AddressableNode(unit=unit, root_decl=decl, target=decl)
+        for segment in path:
+            children = self._get_addressable_children(current_node)
+            if children is None or segment not in children:
+                return None
+            current_node = children[segment]
+        return current_node

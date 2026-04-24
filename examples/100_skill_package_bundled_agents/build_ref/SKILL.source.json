@@ -1,0 +1,62 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "BundledAgentsPackage",
+    "title": "Bundled Agents Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "bundled-agents-package",
+    "root": "examples/100_skill_package_bundled_agents/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "ddba28b73d23f6773a360607ce930d764bd796803d0a994bec22b7c84f19ed1d"
+    },
+    {
+      "path": "agents/cold_reviewer.prompt",
+      "kind": "prompt",
+      "sha256": "dce90e02ea8e60060b94d015ce8b2e84ef79399df3248e881acaa9c161fc1361"
+    },
+    {
+      "path": "agents/escalation_router.prompt",
+      "kind": "prompt",
+      "sha256": "ee8dce92c88e122a02a4d306fb443210161aae615fda37dfcffb64a84c735c74"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "package_file",
+      "sha256": "a0e30c8822bb946ccd0feff6b6f2eec19a092cdf76195fb0b51fe0b7490f6521"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "094b273024bc952a8266c733a046df3dcd21f805b7664acdd7a87ef2d5bfba87"
+    },
+    {
+      "path": "agents/cold_reviewer.md",
+      "kind": "file",
+      "sha256": "58153a53b615a21b8f56f0360c06fc2f841bd8a081d04a13e2cc418a2e4b1853"
+    },
+    {
+      "path": "agents/escalation_router.md",
+      "kind": "file",
+      "sha256": "1e7de1f7c5755a6d7a4969a56b726608ab0f64d609f3036bc01176a47d81ed64"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "file",
+      "sha256": "a0e30c8822bb946ccd0feff6b6f2eec19a092cdf76195fb0b51fe0b7490f6521"
+    }
+  ],
+  "source_tree_sha256": "93d028a78017f5167e2b82f1ed788de32673a6866a2234c6181662a86bafc7b3",
+  "output_tree_sha256": "f37275d8aa16020f54114c8c447856ecb344973c779103e63b46670e9bb559b5"
+}

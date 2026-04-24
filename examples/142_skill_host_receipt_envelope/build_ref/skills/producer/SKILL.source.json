@@ -1,0 +1,37 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ProducerPackage",
+    "title": "Producer Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "producer-package",
+    "root": "examples/142_skill_host_receipt_envelope/prompts/skills/producer",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "1646d1f0a8fc659d116ab8619900fbe830b41ef016527051877b47c99a4cada7"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.contract.json",
+      "kind": "host_contract",
+      "sha256": "d0aa6ad2cebd111af09a6305530811744030af6c6a2f03668dbdb28e20890cf8"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "7ac7960b94c8e5d441f0fe77c6a5e697a8f73b65362936319b7b4f9a7f512d9c"
+    }
+  ],
+  "source_tree_sha256": "4823f50c52215e5981ee38ec54c3e4febfd9c02aec93e691318d85bb0fac293d",
+  "output_tree_sha256": "15d46fcf6cebbb15f556be32abad1110f35b39322e2000a23ea91ea0c91604f7"
+}

@@ -1,0 +1,52 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "GreetingScripts",
+    "title": "Greeting Scripts"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "greeting-scripts",
+    "root": "examples/97_skill_package_scripts/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "496054875f97e5c6b6bc85365919c4261510d19ad05a659be68cadd77fd2fdf3"
+    },
+    {
+      "path": "scripts/greet.py",
+      "kind": "package_file",
+      "sha256": "7d180e1afb7777ad22495996b5c0d3fa3cf8df9e420f400e2dc7782dcfaec91b"
+    },
+    {
+      "path": "scripts/greet.ts",
+      "kind": "package_file",
+      "sha256": "ddadb22209a4466c1f4c6075e56c0317cfe9a29fed48c6dacdb3241447368efc"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "b14e841c0e8c8047137383bdecb1ec444ab9345b890947debc65efaa3e45e4c5"
+    },
+    {
+      "path": "scripts/greet.py",
+      "kind": "file",
+      "sha256": "7d180e1afb7777ad22495996b5c0d3fa3cf8df9e420f400e2dc7782dcfaec91b"
+    },
+    {
+      "path": "scripts/greet.ts",
+      "kind": "file",
+      "sha256": "ddadb22209a4466c1f4c6075e56c0317cfe9a29fed48c6dacdb3241447368efc"
+    }
+  ],
+  "source_tree_sha256": "e117123935f418ce24bb394b85ee3a8ded79ad406337a36698f368c47bc1eddc",
+  "output_tree_sha256": "c0cd5aa7b766246586209cfa1b7b2dc262a8b9bccb3a928e2404565a6fb1a268"
+}

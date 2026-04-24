@@ -76,6 +76,9 @@ class EmitTarget:
     entrypoint: Path
     output_dir: Path
     project_config: ProjectConfig
+    source_id: str | None = None
+    source_root: Path | None = None
+    lock_file: Path | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -212,16 +215,59 @@ def load_emit_targets(
                 location=path_location(config_path),
             )
 
+        source_id = optional_str(raw_target, "source_id", label=f"emit target {name}")
+        raw_source_root = optional_str(
+            raw_target,
+            "source_root",
+            label=f"emit target {name}",
+        )
+        source_root: Path | None = None
+        if raw_source_root is not None:
+            source_root = resolve_config_path(config_dir, raw_source_root)
+            if not source_root.is_dir():
+                raise emit_error(
+                    "E550",
+                    "Emit target source_root must be a directory",
+                    f"Emit target `{name}` source_root must be an existing directory: `{source_root}`.",
+                    location=path_location(source_root),
+                    hints=("Point `source_root` at the upstream source tree.",),
+                )
+            if not source_id:
+                raise emit_error(
+                    "E551",
+                    "Emit target source_root needs source_id",
+                    f"Emit target `{name}` declares `source_root` without `source_id`.",
+                    location=path_location(config_path),
+                    hints=("Add a stable `source_id` for this external skill source.",),
+                )
+        elif source_id:
+            raise emit_error(
+                "E551",
+                "Emit target source_id needs source_root",
+                f"Emit target `{name}` declares `source_id` without `source_root`.",
+                location=path_location(config_path),
+                hints=("Add `source_root`, or move the id into the skill package `source:` block.",),
+            )
+
         entrypoint = resolve_config_file(
             config_dir,
             require_str(raw_target, "entrypoint", label=f"emit target {name}"),
             label=f"emit target {name} entrypoint",
         )
-        _validate_entrypoint_within_project_root(
-            entrypoint,
-            project_root=project_config.config_dir,
-            detail_prefix=f"Emit target `{name}` entrypoint",
-        )
+        if source_root is None:
+            _validate_entrypoint_within_project_root(
+                entrypoint,
+                project_root=project_config.config_dir,
+                detail_prefix=f"Emit target `{name}` entrypoint",
+            )
+        else:
+            _validate_path_within_root(
+                candidate_path=entrypoint,
+                root=source_root,
+                detail_prefix=f"Emit target `{name}` entrypoint",
+                code="E552",
+                summary="Emit target entrypoint must stay within source_root",
+            )
         ensure_supported_entrypoint(
             entrypoint,
             allowed_entrypoints=SUPPORTED_ENTRYPOINTS,
@@ -245,11 +291,38 @@ def load_emit_targets(
             detail_prefix=f"Emit target `{name}` output_dir",
         )
 
+        raw_lock_file = optional_str(raw_target, "lock_file", label=f"emit target {name}")
+        lock_file: Path | None = None
+        if raw_lock_file is not None:
+            lock_file = resolve_config_path(config_dir, raw_lock_file)
+            if lock_file.is_dir():
+                raise emit_error(
+                    "E553",
+                    "Emit target lock_file must be a file path",
+                    f"Emit target `{name}` lock_file is a directory: `{lock_file}`.",
+                    location=path_location(lock_file),
+                )
+            _validate_output_dir_within_project_root(
+                lock_file.parent,
+                project_root=project_config.config_dir,
+                detail_prefix=f"Emit target `{name}` lock_file",
+            )
+            _validate_path_outside_root(
+                candidate_path=lock_file,
+                root=output_dir / entrypoint_relative_dir(entrypoint),
+                detail_prefix=f"Emit target `{name}` lock_file",
+                code="E553",
+                summary="Emit target lock_file must stay outside the emitted skill tree",
+            )
+
         targets[name] = EmitTarget(
             name=name,
             entrypoint=entrypoint,
             output_dir=output_dir,
             project_config=project_config,
+            source_id=source_id,
+            source_root=source_root,
+            lock_file=lock_file,
         )
 
     return targets
@@ -564,6 +637,54 @@ def _validate_path_within_project_root(
         ) from exc
 
 
+def _validate_path_within_root(
+    *,
+    candidate_path: Path,
+    root: Path,
+    detail_prefix: str,
+    code: str,
+    summary: str,
+) -> None:
+    resolved_candidate_path = candidate_path.resolve()
+    resolved_root = root.resolve()
+    try:
+        resolved_candidate_path.relative_to(resolved_root)
+    except ValueError as exc:
+        raise emit_error(
+            code,
+            summary,
+            f"{detail_prefix} resolves outside the configured root: "
+            f"`{display_path(resolved_candidate_path)}` is not under "
+            f"`{display_path(resolved_root)}`.",
+            location=path_location(candidate_path),
+        ) from exc
+
+
+def _validate_path_outside_root(
+    *,
+    candidate_path: Path,
+    root: Path,
+    detail_prefix: str,
+    code: str,
+    summary: str,
+) -> None:
+    resolved_candidate_path = candidate_path.resolve()
+    resolved_root = root.resolve()
+    try:
+        resolved_candidate_path.relative_to(resolved_root)
+    except ValueError:
+        return
+    raise emit_error(
+        code,
+        summary,
+        f"{detail_prefix} resolves inside the emitted skill tree: "
+        f"`{display_path(resolved_candidate_path)}` is under "
+        f"`{display_path(resolved_root)}`.",
+        location=path_location(candidate_path),
+        hints=("Write the lock file beside the build directory or in another project-owned path.",),
+    )
+
+
 def name_slug(name: str) -> str:
     return CAMEL_BOUNDARY_RE.sub("_", name).lower()
 
@@ -602,6 +723,19 @@ def require_str(raw: dict[str, object], key: str, *, label: str) -> str:
     return value
 
 
+def optional_str(raw: dict[str, object], key: str, *, label: str) -> str | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise emit_error(
+            "E513",
+            "Emit config value must be a string",
+            f"{label}.{key} must be a string.",
+        )
+    return value
+
+
 def display_path(path: Path) -> str:
     try:
         return str(path.relative_to(REPO_ROOT))
@@ -616,6 +750,7 @@ def emit_error(
     *,
     location: DiagnosticLocation | None = None,
     hints: tuple[str, ...] = (),
+    cause: str | None = None,
 ) -> EmitError:
     return EmitError.from_parts(
         code=code,
@@ -623,4 +758,5 @@ def emit_error(
         detail=detail,
         location=location,
         hints=hints,
+        cause=cause,
     )

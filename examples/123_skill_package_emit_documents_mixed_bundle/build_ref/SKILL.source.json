@@ -1,0 +1,82 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "MixedResearchReviewKit",
+    "title": "Mixed Research Review Kit"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "mixed-research-review-kit",
+    "root": "examples/123_skill_package_emit_documents_mixed_bundle/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "81949c7583843d4528ee6374b3def171a60809bf9bd0250e69cd1146799eb554"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "package_file",
+      "sha256": "09e08bf47dd18bfc3962fb2845dbc098f59fd0ab07275b8e033e238201f08eb6"
+    },
+    {
+      "path": "agents/reviewer.prompt",
+      "kind": "prompt",
+      "sha256": "d2cb46860e874337833e82f4ffd0eb912f09406058675af746c7bef60b7e0d0d"
+    },
+    {
+      "path": "refs/query_patterns.prompt",
+      "kind": "prompt",
+      "sha256": "fb34af72bdbf68392c0dfe486df0a9dd9de217f0045e257248fd9ab7e0765fad"
+    },
+    {
+      "path": "refs/receipts_template.prompt",
+      "kind": "prompt",
+      "sha256": "b81cb08bc23a20ed2d677b3688e991fd6b6a68c3446196ea98ed69de7d7c098e"
+    },
+    {
+      "path": "scripts/review_helper.py",
+      "kind": "package_file",
+      "sha256": "4407dd6fa50ce113cfd7bac69adb329130e5b03b76fdc555e0b1b69d5ca97055"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "7bce436cabab59103a4925e5ed3125392192e0a940c7a17d33b91b06a9f754bb"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "file",
+      "sha256": "09e08bf47dd18bfc3962fb2845dbc098f59fd0ab07275b8e033e238201f08eb6"
+    },
+    {
+      "path": "agents/reviewer.md",
+      "kind": "file",
+      "sha256": "5439994702663f95e3d3d48a79235b6ac61fd4bb29a963b785dd163e749e4420"
+    },
+    {
+      "path": "references/query-patterns.md",
+      "kind": "file",
+      "sha256": "a5840d4e569bf1f3bc898af45e5334bba407175c3de7de68e3f6367a31368902"
+    },
+    {
+      "path": "references/receipts-template.md",
+      "kind": "file",
+      "sha256": "f7d89f0eeb33819b8914cda12cdb7b9ec778c35068046bc0ad04fcf9f1707858"
+    },
+    {
+      "path": "scripts/review_helper.py",
+      "kind": "file",
+      "sha256": "4407dd6fa50ce113cfd7bac69adb329130e5b03b76fdc555e0b1b69d5ca97055"
+    }
+  ],
+  "source_tree_sha256": "28bc698ef5c91b0d8a5ec7271661ae3e3c93fd4475120d7aa7d58f80ebffadb0",
+  "output_tree_sha256": "c4f058674efde65aad2fe726d8a9e024e8685fe3d04858d53e0f91e44b8585f4"
+}

@@ -1,0 +1,42 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "RuntimeMetadataPackage",
+    "title": "Runtime Metadata Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "runtime-metadata-package",
+    "root": "examples/98_skill_package_runtime_metadata/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "be93f0dae7ab7b544e6f415cfb3d0461f02a0f273a823db481bb2ed2b00bc984"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "package_file",
+      "sha256": "ecda521ad7ad3f889bbae6f5ef76b626693c144a2b4196e962dbfe462d501c90"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "43d7bf2085375dcc078b9d9fed2d2a7f8f35655cd86a45525601e7a6167cf043"
+    },
+    {
+      "path": "agents/openai.yaml",
+      "kind": "file",
+      "sha256": "ecda521ad7ad3f889bbae6f5ef76b626693c144a2b4196e962dbfe462d501c90"
+    }
+  ],
+  "source_tree_sha256": "8058c83017e7b8474f28bfea566f01a4410af2fb997817daea2ab13a547dcfd4",
+  "output_tree_sha256": "a43c820395d099cc708b279ff17207dbdf2b977c64d7be8b66776620685aa8fe"
+}

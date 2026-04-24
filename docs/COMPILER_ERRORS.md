@@ -270,6 +270,15 @@ Stability rules:
 | `E541` | Audit-mode skill binding emits to an output target | A skill entry tagged with `mode audit = ...` bound its skill to a host slot in the `output` or `final_output` family. Audit-mode bindings must stay read-only. |
 | `E542` | Skill package has no contract for the declared mode | A skill entry's `mode CNAME = ...` names a mode whose `CNAME` is not a member of the declared enum. |
 | `E543` | Deprecated enum-only output-shape mode form | An output shape's `selector:` still uses the enum-only `mode CNAME as <Enum>` form. Use the expr-based `mode CNAME = expr as <Enum>` form; the enum-only form will be removed at the next minor bump. |
+| `E550` | Emit target `source_root` must be a directory | A configured skill emit target declares `source_root`, but the path is not an existing directory. |
+| `E551` | Emit target source id/root pair is incomplete | A configured skill emit target declares `source_root` without `source_id`, or `source_id` without `source_root`. |
+| `E552` | Emit target entrypoint must stay within `source_root` | A configured skill emit target uses external source mode, but its entrypoint is outside the configured source root. |
+| `E553` | Emit target `lock_file` path is invalid | A configured skill emit target points `lock_file` at a directory or places it inside the emitted skill tree. |
+| `E554` | Missing skill source receipt or tracked source path | Receipt verification could not find `SKILL.source.json`, or `emit_skill` could not find a tracked source path. |
+| `E555` | Invalid skill source receipt | `SKILL.source.json` exists, but it is not a JSON object. |
+| `E556` | Invalid tracked source path | A `source.track:` path is absolute, uses `..`, uses backslashes, or leaves the receipt source root. |
+| `E557` | Invalid skill lock file | A configured `lock_file` exists, but it is not valid TOML or does not use the expected target table shape. |
+| `E558` | Emit target must resolve one skill package | `emit_skill` reached an internal mismatch after compilation and could not identify exactly one package declaration for the receipt. |
 | `E599` | Emit failure | Generic fallback emit code when the failure does not fit a narrower shipped emit code yet. |
 
 ### Internal codes

@@ -233,6 +233,31 @@ for the canonical shape with `render_contract`, `build_contract`, and
 `compile_fail` cases that make the typed `fields` rendering and the
 `E535`/`E537` fail-loud behavior manifest-enforced.
 
+## Skill Package Source Receipt Design
+
+`SKILL.source.json` is a build receipt, not a host contract.
+That split is deliberate. `SKILL.contract.json` describes runtime binding
+truth. `SKILL.source.json` describes source freshness.
+
+This follows the shape used by package managers and build systems:
+a source graph, content hashes, an emitted artifact set, and an optional lock.
+The emitted package tree can be copied downstream, but the copy is not the
+source of truth. The source remains the `SKILL.prompt` tree, plus any tracked
+files named by `source.track:` or by a target `source_root`.
+
+The receipt is always emitted so every skill package has one cheap proof path.
+The lock file is optional because not every repo needs a checked dependency
+state. When a downstream repo does need it, `lock_file` keeps the expected
+source and output hashes in the consumer repo, while `source_root` and
+`source_id` point back to the upstream source tree.
+
+See
+[../examples/147_skill_package_source_receipt/](../examples/147_skill_package_source_receipt/),
+[../examples/148_skill_package_tracked_sources/](../examples/148_skill_package_tracked_sources/),
+and
+[../examples/149_external_skill_source_target/](../examples/149_external_skill_source_target/)
+for the receipt, tracked-source, and external-source target shapes.
+
 ## Shipped Boundaries
 
 Doctrine's current shipped surface is proven across the numbered corpus listed

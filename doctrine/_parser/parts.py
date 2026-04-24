@@ -223,6 +223,27 @@ class SkillPackageEmitBlockPart:
 
 
 @dataclass(slots=True, frozen=True)
+class SkillPackageSourceIdPart:
+    value: str
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageSourceTrackBlockPart:
+    tracked_paths: tuple[model.SkillPackageTrackedSource, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class SkillPackageSourceBlockPart:
+    items: tuple[SkillPackageSourceIdPart | SkillPackageSourceTrackBlockPart, ...]
+    line: int | None = None
+    column: int | None = None
+
+
+@dataclass(slots=True, frozen=True)
 class SkillPackageHostContractBlockPart:
     slots: tuple[model.SkillPackageHostSlotItem, ...]
     line: int | None = None
@@ -233,6 +254,7 @@ class SkillPackageHostContractBlockPart:
 class SkillPackageBodyParts:
     items: tuple[model.RecordItem, ...]
     metadata: model.SkillPackageMetadata
+    source: model.SkillPackageSource
     emit_entries: tuple[model.SkillPackageEmitEntry, ...]
     host_contract: tuple[model.SkillPackageHostSlotItem, ...]
 
@@ -524,6 +546,9 @@ __all__ = [
     "SkillPackageMetadataFieldPart",
     "SkillPackageMetadataBlockPart",
     "SkillPackageEmitBlockPart",
+    "SkillPackageSourceIdPart",
+    "SkillPackageSourceTrackBlockPart",
+    "SkillPackageSourceBlockPart",
     "SkillPackageHostContractBlockPart",
     "SkillPackageBodyParts",
     "SchemaBodyParts",

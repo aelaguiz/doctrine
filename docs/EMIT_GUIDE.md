@@ -13,7 +13,8 @@ pipeline:
   file that machine consumers should load for payload shape.
 - `doctrine.emit_skill` writes compiled `SKILL.md` package trees, explicit
   emitted `.md` companion docs from `emit:`, bundled source-root companion
-  files, and, for host-bound packages, one `SKILL.contract.json` sidecar for
+  files, and one `SKILL.source.json` receipt for source freshness. For
+  host-bound packages, it also writes one `SKILL.contract.json` sidecar for
   package host-binding metadata.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
@@ -87,6 +88,9 @@ Each target field has one job:
 - `name`: the stable CLI handle you pass to `--target`
 - `entrypoint`: the Doctrine source file to compile
 - `output_dir`: the root directory where emitted artifacts land
+- `source_root`: optional source tree for an external skill source
+- `source_id`: stable id for that external skill source
+- `lock_file`: optional generated lock file for skill receipts
 
 Important rules:
 
@@ -99,7 +103,13 @@ Important rules:
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
   the subdirectory beneath that `prompts/` root.
 - In configured target mode, `entrypoint` must stay within the target project
-  root.
+  root unless the target also declares `source_root` and `source_id`.
+- `source_root` lets a downstream repo emit a skill from an upstream source
+  tree. The entrypoint must stay inside that source root.
+- `source_id` is required when `source_root` is set. It gives the receipt a
+  stable source name.
+- `lock_file`, when present, must stay inside the target project root.
+- `lock_file` must stay outside the emitted skill tree.
 - `output_dir` must resolve to a directory path, not an existing file.
 - In configured target mode, `output_dir` must stay within the target project
   root.
@@ -252,8 +262,23 @@ Useful CLI rules:
 ## Skill Package Sidecars
 
 `emit_skill` always writes `SKILL.md`.
+It also always writes `SKILL.source.json`.
 It also writes `SKILL.contract.json` when the package has host-binding truth
 through `host_contract:` or referenced `host:` paths.
+
+`SKILL.source.json` is the source receipt. It records:
+
+- the package name and title
+- the Doctrine language version that wrote the receipt
+- the source id, source root, and entrypoint
+- each hashed input file
+- each hashed emitted output file, except the receipt itself
+- one source tree hash
+- one output tree hash
+
+Use the receipt to prove that a copied skill tree still matches the current
+source. It is not a runtime contract. Do not place host-slot or tool-call
+rules there.
 
 `SKILL.contract.json` is the machine-readable sidecar for skill-package truth.
 Today it records:
@@ -262,8 +287,18 @@ Today it records:
 - the package host contract
 - the host paths used by each prompt-authored emitted artifact
 
-That sidecar is part of the public emitted skill-package surface.
-Do not author a real source file at that path.
+Both sidecars are part of the public emitted skill-package surface.
+Do not author real source files at `SKILL.source.json` or
+`SKILL.contract.json`.
+
+Verify receipts in CI:
+
+```bash
+uv run --locked python -m doctrine.verify_skill_receipts --target <target-name>
+```
+
+When a target has `lock_file`, `emit_skill` updates that lock entry. The
+verify command then checks the emitted receipt and the lock entry together.
 
 ## Quick Start Without A Named Target
 

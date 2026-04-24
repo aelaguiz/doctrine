@@ -17,19 +17,22 @@ teaches you how to avoid them; it does not explain a specific error code.
 
 ## Install
 
-Use one line:
+Generate the public install tree, then install it:
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_learn_public_skill
 npx skills add .
 ```
 
-Run that from the Doctrine repo root.
-That installs the checked-in `doctrine-learn` skill from this repo.
+Run those from the Doctrine repo root.
+The first command writes `skills/.curated/doctrine-learn/`.
+The second command installs that generated tree.
 If the CLI asks where to install it, pick the agent you use.
 
 Want a no-prompt Codex install?
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_learn_public_skill
 npx skills add . -g -a codex -y
 ```
 
@@ -56,11 +59,13 @@ loadable references that the skill's `reference_map` routes to on demand:
 - `references/documents-and-tables.md`: `document`, `table`, readable lists,
   and `render_profile`.
 - `references/skills-and-packages.md`: `skill`, `skill package`,
-  `SKILL.prompt`, `host_contract:`, `bind:`, and `emit:` companions.
+  `SKILL.prompt`, `source:`, `SKILL.source.json`, `host_contract:`,
+  `bind:`, and `emit:` companions.
 - `references/imports-and-refs.md`: module and symbol imports, addressable
   refs, `self:`, grouped `inherit { ... }`, and multi-root resolution.
-- `references/emit-targets.md`: `pyproject.toml` emit targets, `emit_flow`,
-  `emit_skill`, runtime packages, and `final_output.contract.json`.
+- `references/emit-targets.md`: `pyproject.toml` emit targets, `source_root`,
+  `lock_file`, `emit_flow`, `emit_skill`, runtime packages,
+  `SKILL.source.json`, and `final_output.contract.json`.
 - `references/authoring-patterns.md`: the task-first chooser and the
   anti-patterns to avoid.
 - `references/examples-ladder.md`: the numbered corpus as a learning path.
@@ -69,7 +74,7 @@ loadable references that the skill's `reference_map` routes to on demand:
 
 Every claim the skill makes about a construct cites at least one real
 example path from the shipped corpus (`examples/01_hello_world` through
-`examples/146_declarative_project_lint_rule`). No invented snippets.
+`examples/149_external_skill_source_target`). No invented snippets.
 
 ## How To Use It
 

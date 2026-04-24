@@ -14,19 +14,22 @@ The compiler still owns parse, type, route, and emit failures.
 
 ## Install
 
-Use one line:
+Generate the public install tree, then install it:
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
 npx skills add .
 ```
 
-Run that from the Doctrine repo root.
-That installs the checked-in `agent-linter` skill from this repo.
+Run those from the Doctrine repo root.
+The first command writes `skills/.curated/agent-linter/`.
+The second command installs that generated tree.
 If the CLI asks where to install it, pick the agent you use.
 
 Want a no-prompt Codex install?
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
 npx skills add . -g -a codex -y
 ```
 

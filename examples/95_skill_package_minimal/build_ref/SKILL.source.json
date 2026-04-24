@@ -1,0 +1,32 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "GreetingSkill",
+    "title": "Greeting Skill"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "greeting-skill",
+    "root": "examples/95_skill_package_minimal/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "b8fe623c79789f686246c978a1292f1c32533d4ef3f819ea218eb633c7915710"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "1ad124f89f3478c7b4e12e8109e28561ffb3c5b2fbbb948f4e10310d88f472f1"
+    }
+  ],
+  "source_tree_sha256": "74dd2af0b1ad5544185b39f448235c78500375d1e323ec304a85ad211a2ea41e",
+  "output_tree_sha256": "6e82210ecdf8e5d9d1f19205f2236713713d847f51a3d5d9b139cd429b0ce18d"
+}
