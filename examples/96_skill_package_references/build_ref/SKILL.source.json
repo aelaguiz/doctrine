@@ -6,7 +6,7 @@
   },
   "doctrine": {
     "language_version": "5.7",
-    "package_version": "5.0.0"
+    "package_version": "5.1.0"
   },
   "source": {
     "id": "layout-checklist",
