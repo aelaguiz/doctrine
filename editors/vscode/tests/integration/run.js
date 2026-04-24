@@ -138,15 +138,41 @@ function isRetriableStartupAbort(error) {
   return String(error).includes("SIGABRT");
 }
 
+function writeTestUserSettings(userDataDir) {
+  const userDir = ensureDir(path.join(userDataDir, "User"));
+  fs.writeFileSync(
+    path.join(userDir, "settings.json"),
+    `${JSON.stringify(
+      {
+        "extensions.autoCheckUpdates": false,
+        "extensions.autoUpdate": false,
+        "extensions.ignoreRecommendations": true,
+        "security.workspace.trust.enabled": false,
+        "security.workspace.trust.startupPrompt": "never",
+        "telemetry.telemetryLevel": "off",
+        "update.mode": "none",
+        "workbench.startupEditor": "none",
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
 function makeLaunchContext({ disableExtensions }) {
   const workspaceDir = makeTempDir("doctrine-vscode-workspace-");
   const userDataDir = makeTempDir("doctrine-vscode-user-");
   const extensionsDir = makeTempDir("doctrine-vscode-ext-");
+  writeTestUserSettings(userDataDir);
   const launchArgs = [
     workspaceDir,
     `--user-data-dir=${userDataDir}`,
     `--extensions-dir=${extensionsDir}`,
+    "--disable-chromium-sandbox",
     "--disable-gpu",
+    "--disable-workspace-trust",
+    "--skip-release-notes",
+    "--skip-welcome",
     "--use-mock-keychain",
   ];
   if (disableExtensions) {
@@ -187,7 +213,7 @@ function installPackagedVsix(vscodeExecutablePath, vsixPath, launchContext) {
     "--force",
     `--extensions-dir=${launchContext.extensionsDir}`,
     `--user-data-dir=${launchContext.userDataDir}`,
-    "--no-sandbox",
+    "--disable-chromium-sandbox",
     "--disable-gpu",
     "--use-mock-keychain",
   ]);
