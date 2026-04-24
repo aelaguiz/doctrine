@@ -7,6 +7,6 @@
     "@terrastruct/d2": "0.1.33"
   },
   "devDependencies": {
-    "skills": "1.5.0"
+    "skills": "1.5.1"
   }
 }
