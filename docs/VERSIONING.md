@@ -3,7 +3,7 @@
 This file is the canonical home for Doctrine versioning, release rules, and
 breaking-change guidance.
 
-Current Doctrine language version: 5.6
+Current Doctrine language version: 5.7
 
 ## The Version Lines
 
@@ -82,11 +82,14 @@ Doctrine also ships narrower version lines.
   surface.
 - Emitted skill-package trees from `emit_skill` are part of the public
   surface when Doctrine ships first-party `SKILL.prompt` bundles.
+- Emitted `SKILL.source.json` files are part of that public surface. They
+  prove the source and output hashes for an emitted skill-package tree.
 - When present, emitted `SKILL.contract.json` files are also part of that
   public skill-package surface.
-- Checked-in public install trees such as `skills/.curated/agent-linter/`
-  are also part of the public surface when this repo is used as an
-  `npx skills` source.
+- Generated public install trees such as `skills/.curated/agent-linter/`
+  are part of the public surface when this repo is used as an `npx skills`
+  source. They are build artifacts. The `.prompt` sources and emit targets
+  own the shipped truth.
 - For structured final outputs, emitted
   `schemas/<output-slug>.schema.json` files are also part of the public
   surface for payload wire shape.
@@ -269,6 +272,17 @@ Every public release uses one release class.
   for any future open-expression-language evolution of the rule
   primitive. Existing programs that declare no `rule` keep compiling
   unchanged. Advances the language line from `5.5` to `5.6`.
+- Adding skill-package source receipts is one backward-compatible language
+  move. `skill package` may now declare `source:` with `id:` and `track:`
+  entries. `emit_skill` always emits `SKILL.source.json` beside `SKILL.md`.
+  Configured skill emit targets may declare `source_root`, `source_id`, and
+  `lock_file` so a downstream repo can emit from a named upstream source tree
+  and verify freshness later. The new verifier command checks receipts for
+  `current`, `missing_receipt`, `stale_source`, `edited_artifact`,
+  `unexpected_artifact`, `foreign_package`, `lock_out_of_date`,
+  `receipt_lock_mismatch`, and `unsupported_receipt_version`. Existing skill
+  packages keep compiling; they now gain a receipt sidecar. Advances the
+  language line from `5.6` to `5.7`.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

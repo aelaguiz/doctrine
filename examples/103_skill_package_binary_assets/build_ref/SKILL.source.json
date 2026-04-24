@@ -1,0 +1,42 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "BinaryAssetsPackage",
+    "title": "Binary Assets Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "binary-assets-package",
+    "root": "examples/103_skill_package_binary_assets/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "0fdc65bc0c2df5b6ed0a360cc26c6dcbd8efbaeb5e9e2a083c0aa3193afd96ac"
+    },
+    {
+      "path": "assets/icon.png",
+      "kind": "package_file",
+      "sha256": "f5e069df193adb8ce64823aa40bc06067f37412883bd2dbf3b0cd4b68d88b2a6"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "dcc2abed0c2bc8cddf1eb5e9ee423728d1c2ee1a4cb5915cf404837b5e540f8b"
+    },
+    {
+      "path": "assets/icon.png",
+      "kind": "file",
+      "sha256": "f5e069df193adb8ce64823aa40bc06067f37412883bd2dbf3b0cd4b68d88b2a6"
+    }
+  ],
+  "source_tree_sha256": "6f097e611ef6002b01de9b701f2e131537645ddac4974de76348d51f1b21ca47",
+  "output_tree_sha256": "8f64833ac4e697b4fa13ead0b7e1d737eab9176f26ef12206e29d609ac2f712f"
+}

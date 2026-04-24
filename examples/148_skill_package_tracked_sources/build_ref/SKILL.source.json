@@ -1,0 +1,37 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "TrackedSourceSkill",
+    "title": "Tracked Source Skill"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "examples.tracked-source-skill",
+    "root": "examples/148_skill_package_tracked_sources",
+    "entrypoint": "prompts/SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "domain/catalog.md",
+      "kind": "tracked",
+      "sha256": "0c4a9d1938083ee8661809632a2e38d210c9afd6db667553afb2491f5515ca2a"
+    },
+    {
+      "path": "prompts/SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "afe0f4c53bc72dcd5355b900b96b7c920819aadfbfc0c1e55be1ebc6eec81f0a"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "0235df8e2a232894822dda9fcc528b54eec3f63bee07e2a2946f21e0ec153049"
+    }
+  ],
+  "source_tree_sha256": "f1131f216e0cd853da1e275dad40c946094408e415049f18ddb3503ae7431712",
+  "output_tree_sha256": "769d08b2b9067c2cf0d77ae070684c8b01a883ede603f85ea09565f3db1eb51a"
+}

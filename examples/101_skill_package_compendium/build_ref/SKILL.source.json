@@ -1,0 +1,52 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ReleaseCompendium",
+    "title": "Release Compendium"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "release-compendium",
+    "root": "examples/101_skill_package_compendium/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "35af00abdece5c1be77bfb7abe3dba75a7982143e55f0bc8528346783c6de107"
+    },
+    {
+      "path": "references/checklists.md",
+      "kind": "package_file",
+      "sha256": "01bcd690ce4ecd88d95a73ca8263dde284ccf4e3ef5f47c60c7c9f42c6acbc04"
+    },
+    {
+      "path": "references/rubric.md",
+      "kind": "package_file",
+      "sha256": "525c7a6bae9edd3644c4af03f6607bb19ffc170eec25873ea0cba4d934d071b6"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "0c618fdc209b9d4f18ae5d1c30bb8f36e31b12bc817a5e73537b5d3ebfeecb42"
+    },
+    {
+      "path": "references/checklists.md",
+      "kind": "file",
+      "sha256": "01bcd690ce4ecd88d95a73ca8263dde284ccf4e3ef5f47c60c7c9f42c6acbc04"
+    },
+    {
+      "path": "references/rubric.md",
+      "kind": "file",
+      "sha256": "525c7a6bae9edd3644c4af03f6607bb19ffc170eec25873ea0cba4d934d071b6"
+    }
+  ],
+  "source_tree_sha256": "19812bbda19bc8a71c1f65ed15d2d3a54753d192875ee4ed143b805792141a81",
+  "output_tree_sha256": "2540a2faece0ff7321eb2439debcc369545f8b0d9c983f09138c9fcd2aed1460"
+}

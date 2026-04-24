@@ -655,6 +655,10 @@ skill package GreetingSkill: "Greeting Skill"
         description: "Write short, friendly greetings that sound human."
         version: "1.0.0"
         license: "MIT"
+    source:
+        id: "examples.greeting-skill"
+        track:
+            "domain"
     emit:
         "references/query-patterns.md": QueryPatterns
     "Write short, friendly greetings that fit the current conversation."
@@ -668,6 +672,8 @@ Important rules:
   by other readable markdown-bearing surfaces.
 - `metadata:` currently accepts `name`, `description`, `version`, and
   `license`.
+- `source:` is optional. It may declare `id:` and a `track:` list of extra
+  source files or directories.
 - `emit:` is optional. Use it when a package should emit extra `.md` files
   from prompt-authored `document` declarations.
 - Each `emit:` entry is `"relative/path.md": DocumentRef`.
@@ -681,6 +687,7 @@ Important rules:
 - Use absolute imports from the package source root only when you cross into a
   different nested flow, such as a bundled runtime home under `agents/.../`.
 - `SKILL.prompt` compiles to `SKILL.md`.
+- `emit_skill` always writes `SKILL.source.json` beside `SKILL.md`.
 - host-bound skill packages also emit `SKILL.contract.json` beside
   `SKILL.md`.
 - `emit:` writes extra `.md` files under the package-relative paths you name.
@@ -695,10 +702,51 @@ Important rules:
   package-local module and a repo-wide prompt module with the same dotted
   path.
 - Reserved-path and case-collision errors fail loudly. `SKILL.md` is
-  compiler-owned output, not an authored source file.
+  compiler-owned output, not an authored source file. `SKILL.source.json`
+  and `SKILL.contract.json` are also compiler-owned output paths.
 - Use inline `skill` and `skills` when the capability only needs reusable
   semantics inside agent doctrine. Use `skill package` when Doctrine should
   author and emit the package tree itself.
+
+### Package Source Receipts
+
+`SKILL.source.json` is a build receipt for the emitted package tree.
+It is not a runtime host contract.
+
+The receipt records:
+
+- the package name and title
+- the Doctrine language version
+- the source id, source root, and entrypoint
+- hashed input files
+- hashed output files, excluding the receipt itself
+- one source tree hash
+- one output tree hash
+
+The source id comes from target `source_id`, then package `source.id`, then
+`metadata.name`, then the package key.
+
+`source.track:` lists extra files or directories that affect the package.
+Tracked paths are relative to the receipt source root. Missing paths and
+paths that leave the source root fail loud during `emit_skill`.
+
+An emit target may also declare `source_root`, `source_id`, and `lock_file`.
+Use that shape when a downstream repo emits a skill from an upstream source
+tree. With `source_root`, the entrypoint may live outside the downstream
+project root, but it must stay inside `source_root`. The output directory and
+lock file still stay inside the downstream project root. The lock file must
+stay outside the emitted skill tree.
+
+Use this verifier in CI:
+
+```bash
+uv run --locked python -m doctrine.verify_skill_receipts --target <target-name>
+```
+
+The verifier reports `current`, `missing_receipt`, `stale_source`,
+`edited_artifact`, `unexpected_artifact`, `foreign_package`,
+`lock_out_of_date`, `receipt_lock_mismatch`, or
+`unsupported_receipt_version`.
 
 ### Package Host Binding
 

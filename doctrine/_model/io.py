@@ -459,6 +459,18 @@ class SkillPackageEmitEntry:
 
 
 @_dataclass(slots=True, frozen=True)
+class SkillPackageTrackedSource:
+    path: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillPackageSource:
+    source_id: str | None = None
+    tracked_paths: tuple[SkillPackageTrackedSource, ...] = ()
+
+
+@_dataclass(slots=True, frozen=True)
 class SkillPackageLink:
     package_id: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
@@ -501,6 +513,7 @@ class SkillPackageDecl:
     title: str
     items: tuple[RecordItem, ...]
     metadata: SkillPackageMetadata
+    source: SkillPackageSource = _field(default_factory=SkillPackageSource)
     emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
     host_contract: tuple[SkillPackageHostSlotItem, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)

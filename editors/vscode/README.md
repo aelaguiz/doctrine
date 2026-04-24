@@ -110,8 +110,8 @@ That writes `doctrine-language-<generated-version>.vsix` into `editors/vscode/`.
 
 `make` installs the extension's npm dependencies if needed, runs the grammar
 tests, runs the extension-host navigation tests, runs the Lark-alignment
-validator, runs one packaged VSIX smoke pass in an isolated host, and packages
-the final VSIX.
+validator, packages the VSIX, and runs one packaged VSIX smoke pass in an
+isolated host.
 Each packaging run stamps a fresh semver version without editing
 `package.json`.
 Reinstalling the newest VSIX upgrades the local editor copy cleanly.

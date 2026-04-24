@@ -149,6 +149,45 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
         with self.assertRaises(ParseError):
             parse_text(form_b_source)
 
+    def test_duplicate_output_schema_example_reports_compile_diagnostic(self) -> None:
+        # `example:` is optional proof for a structured final output. If an
+        # author writes it twice, Doctrine must fail with a source diagnostic
+        # instead of leaking an internal Python error through the compiler.
+        error = self._compile_error(
+            """
+            output schema Payload: "Payload"
+                field summary: "Summary"
+                    type: string
+
+                example:
+                    summary: "one"
+
+                example:
+                    summary: "two"
+
+            output shape PayloadJson: "Payload JSON"
+                kind: JsonObject
+                schema: Payload
+
+            output FinalReply: "Final Reply"
+                target: TurnResponse
+                shape: PayloadJson
+                requirement: Required
+
+            agent Demo:
+                role: "Answer plainly."
+                workflow: "Reply"
+                    "Reply and stop."
+                outputs: "Outputs"
+                    FinalReply
+                final_output: FinalReply
+            """,
+            agent_name="Demo",
+        )
+
+        self.assertEqual(error.code, "E299")
+        self.assertIn("Duplicate output schema example", str(error))
+
     def test_parser_builds_route_field_nodes_and_route_choices(self) -> None:
         prompt = parse_text(
             textwrap.dedent(

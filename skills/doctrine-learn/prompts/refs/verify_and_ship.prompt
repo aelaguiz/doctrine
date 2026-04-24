@@ -170,7 +170,7 @@ Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution n
             """Do not commit emitted `build/` drift without re-running the matching
   emit command."""
             """Do not hand-edit emitted Markdown, `schemas/*.schema.json`,
-  `final_output.contract.json`, or `SKILL.contract.json`. Edit the
+  `final_output.contract.json`, `SKILL.source.json`, or `SKILL.contract.json`. Edit the
   source `.prompt`, then re-emit."""
             "Do not skip `make verify-examples` before a public release."
 

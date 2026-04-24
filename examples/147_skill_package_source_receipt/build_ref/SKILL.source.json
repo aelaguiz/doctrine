@@ -1,0 +1,42 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ReceiptBackedSkill",
+    "title": "Receipt Backed Skill"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "examples.receipt-backed-skill",
+    "root": "examples/147_skill_package_source_receipt/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "f6e5da62f3f4e82a8690cc28d3129161208f765fda23cedde1792eee3b203821"
+    },
+    {
+      "path": "facts/source-map.md",
+      "kind": "tracked",
+      "sha256": "aa234c5e3453d29c919160cd92416ef0ca149a3ade08fea7927650e682ad35f9"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "a38b87f1b7ecfa123ad2d2a7e53b5b459d871b35eaf98082f3119e74db139e35"
+    },
+    {
+      "path": "facts/source-map.md",
+      "kind": "file",
+      "sha256": "aa234c5e3453d29c919160cd92416ef0ca149a3ade08fea7927650e682ad35f9"
+    }
+  ],
+  "source_tree_sha256": "a970b97dd1a33fc95e2912cd5cfbd3ffeead00d69ea57481180d8d0277072c71",
+  "output_tree_sha256": "92281e7dfd09ee7133bc58da60430676890e3d6dcf8498f0cabf45bada3f1636"
+}

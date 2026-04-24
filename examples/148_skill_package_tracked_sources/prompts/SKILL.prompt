@@ -1,0 +1,9 @@
+skill package TrackedSourceSkill: "Tracked Source Skill"
+    metadata:
+        name: "tracked-source-skill"
+        description: "Track source files that are not emitted."
+    source:
+        id: "examples.tracked-source-skill"
+        track:
+            "domain"
+    "Use the tracked domain notes before you judge the emitted skill."

@@ -29,11 +29,12 @@ for repo setup and proof commands.
   and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, explicit `emit:` document companions, source-root package
-  bundles, `emit_skill`, and the package example gallery
+  bundles, `SKILL.source.json`, `emit_skill`, and the package example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
   Markdown, emit structured-output schema files, emit final-output, review,
-  and route metadata, generate runtime-package and skill-package trees,
-  generate workflow flow diagrams, and troubleshoot emit failures
+  and route metadata, generate runtime-package and skill-package trees, verify
+  skill source receipts, generate workflow flow diagrams, and troubleshoot emit
+  failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 

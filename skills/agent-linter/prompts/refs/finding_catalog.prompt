@@ -8,9 +8,10 @@ document FindingCatalog: "Finding Catalog"
 | --- | --- | --- | --- |
 | `AL100` | Oversized Always-On Context | The role home carries too much always-on text, or new local bulk does not buy clearer loading, stronger reuse, or exact truth. | Move deep reference material into a shared skill, module, or docs index. |
 | `AL110` | Pasted Reference Instead Of Pointer | Long reference text is pasted where a shared pointer should exist. | Replace the pasted block with a pointer to one shared source. |
-| `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. | Move the reusable method into a skill. |
+| `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. A per-case decision taxonomy (if field X is populated, install rule Y; if Z appears, install rule W) is the canonical shape. | Move the reusable method into a skill. |
 | `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
 | `AL140` | Planning-Doc Scaffolding In Agent Body | The role body cites planning docs by path or rule ID, or carries authoring rationale. | Strip the citation and rule IDs; keep only the behavior. |
+| `AL150` | Role Body Carries Markdown Section Tree | The `role:` value is a multiline string holding markdown headings (`##` / `###`) or a numbered section list, instead of typed workflow slots on the agent. The string's internal sections are invisible to the compiler. | Keep `role:` to a one-sentence headline. Move each internal heading into a typed agent slot (`your_job`, `workflow_core`, or any authored slot key) pointed at a `workflow` with titled children. |
 | `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \\| B \\| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
 | `AL210` | Repeated Method Should Become A Skill | Several agents carry the same decision method without a shared skill owner. | Extract the shared method into a skill. |
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
@@ -23,6 +24,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL270` | Parallel Workflows As Review Contracts | Several `workflow` declarations share the same gate slot keys and each is bound as a review `contract:`. | Collapse into one `review_family` with shared gates and per-case prose. |
 | `AL280` | Agent Skeleton Duplication | Several concrete agents restate the same declaration scaffold (`inputs`, `skills`, `outputs`, `output schema/shape`). | Hoist the shared scaffold into an `abstract agent` base. |
 | `AL285` | Near-Duplicate Agents Differ Only By Typed Entity Reference | Two or more concrete agents share one abstract parent and differ only in one slot value that names a declared entity (document, schema, table, enum, agent, or workflow). The abstract marks that slot `abstract <slot_key>` with no type, so any family could bind and the constraint lives in prose. | Narrow the abstract slot to `abstract <slot_key>: TypedEntity`. Concrete children then bind by `name_ref` of that family, and `E538` / `E539` catch wrong-family or unresolved bindings at compile time. |
+| `AL290` | Intra-Agent Rule Duplication | The same rule, prohibition, or step list is stated in this agent's `role:` body and also in the same agent's `how_to_take_a_turn`, `workflow:`, or `review:` surface. The two copies are not inherited from a shared declaration. | Pick one owner. If the rule is procedure, keep the workflow step and strip the role copy. If the rule is an enforced invariant, keep the review gate and strip the prose. |
 | `AL300` | Runtime Boundary Leak | The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration. | Remove runtime ownership from the prompt. |
 | `AL310` | Shadow Control Plane | Prose creates a second source of truth that competes with a typed surface. | Delete the shadow surface and keep one canonical owner. |
 | `AL320` | Host-Namespace Jargon Without Grounding | Prose uses harness-specific verbs, paths, or env vars without grounding. | Replace private jargon with neutral language or a shared grounded owner. |
@@ -53,6 +55,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL900` | Skill Too Broad | One skill mixes several unrelated jobs or reads like a handbook. | Split the skill by job and keep one repeatable method per skill. |
 | `AL910` | Shared Law Trapped In Local Text | One local role carries a rule that should be shared by many roles. | Lift the shared law into a shared module or skill. |
 | `AL920` | Compiler-Owned Semantics Restated In Prose | Prose restates verdicts, routing, or other semantics the compiler already owns. | Delete the prose copy and point at the declared surface. |
+| `AL925` | Review-Gate Policy Restated In Prose | Role or workflow prose states a hard prohibition or invariant that a declared `review` gate on the same agent, or bound to the same work, already enforces mechanically. | Delete the prose restatement and trust the review. If the prose must mention the gate, cite it by `contract.NAME` instead of paraphrasing the predicate. |
 | `AL930` | Skill Needs Host Contract | A bare `skill` imported across agents has prose naming host-owned slots. | Promote to `skill package` with `host_contract:` and `bind:` at each host. |
 | `AL940` | Role Prose Shadows Typed Skill Scope | Role prose enumerates verb allow/blocklists that a typed skill scope already owns. | Drop the prose list; cite the skill by name. |
 | `AL950` | Inlined Vocabulary Should Be An Enum-Typed Field | A fixed set of values is listed as prose (for example `A \\| B \\| C`) instead of a declared `enum` typed onto a field. | Declare `enum X: "..."` once, then write `type: X` on the field. |
@@ -78,11 +81,12 @@ document FindingCatalog: "Finding Catalog"
             "Bad: `Here are the full 18 summary rules copied into this role home again.`"
 
         section al120: "`AL120` Deep Procedure In The Role Home"
-            "What it means: A reusable method is taught inline instead of through a skill."
+            "What it means: A reusable method is taught inline instead of through a skill. A per-case decision taxonomy (if field X is populated, install rule Y; if entry Z appears, install rule W) is the canonical shape. A taxonomy that enumerates several decision branches with matching rule installs belongs in a skill body, not inline in the role."
             "Why it matters: The role home gets fat and the method cannot be reused cleanly. The added bulk did not buy reusable leverage."
             "Default fix: Move the method into a skill."
             "Good: `Use the InterviewSynthesis skill after you read the transcript.`"
             "Bad: `Step 1 read, step 2 cluster, step 3 compare, step 4 score, step 5 write...`"
+            "Bad: `If the draft has a title, install a rename check. If the draft owns citations, install a source check. If the draft appears in an index, install an index-sync check...` — a per-case decision taxonomy with four or more branches inline on the role."
 
         section al130: "`AL130` Dead Inherited Section"
             "What it means: Inherited text is present but not used."
@@ -99,6 +103,15 @@ document FindingCatalog: "Finding Catalog"
             "Good: `Install each rule through the lens skill.`"
             "Bad: `Per rule L3-A1 in docs/CURRICULUM_L3_IMPLEMENTATION_2026-04-18.md, install each rule through the lens skill. The rationale for this rule is that the curriculum plan requires...`"
             "See also: `references/authoring-patterns.md` section `planning_doc_scaffolding`."
+
+        section al150: "`AL150` Role Body Carries Markdown Section Tree"
+            "What it means: The `role:` value is a multiline string that holds markdown headings (`##` / `###`), a numbered section list, or a similar section tree inside the string. The string's internal sections are invisible to the compiler: they cannot be inherited, overridden, shared with sibling agents, or targeted by `review`."
+            "Why it matters: Doctrine renders one heading per typed slot on the agent, not per `##` inside a string. A section tree hidden in a role string burns always-on budget, loses composition, and drifts when a sibling agent tries to share the same structure. Every `##` inside the string is a slot the compiler could have been owning."
+            "Default severity: `high` on always-on role prose when three or more internal sections are hidden inside one string. `medium` when one or two. Size alone is AL100's job; this finding fires on shape."
+            "Default fix: Keep `role:` to a one-sentence headline. For each internal heading, introduce a typed agent slot (`your_job`, `workflow_core`, or a custom authored slot key) pointed at a `workflow` declaration with titled children. The rendered role then emits one heading per typed slot, each section becomes independently inheritable, and the compiler can see the structure."
+            "Good: `role: \"Plan the revision pass.\"` plus `your_job: RevisionJob` and `standards: RevisionStandards`, where each slot names a workflow."
+            "Bad: `role: \"\"\"## Identity\\nYou are the reviewer.\\n\\n## Scope\\nReview only the draft.\\n\\n## Output discipline\\nReturn one comment.\"\"\"` — three authored sections buried inside one string."
+            "See also: `references/authoring-patterns.md` section `role_home_law` and the anti-pattern section `role_as_markdown_tree`; `examples/12_role_home_composition` for the typed-slot idiom applied to one or many agents."
 
         section al200: "`AL200` Duplicate Rule Across Agents"
             "What it means: The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A | B | C`) and repeated on several roles, or repeated once on a role and again as a critic gate check, is a canonical shape of this finding."
@@ -206,6 +219,15 @@ document FindingCatalog: "Finding Catalog"
             "Good: `abstract TypedPolicyReviewer carries `abstract policy: AccuracyPolicy`. AccuracyReviewer binds `policy: AccuracyPolicy` and ToneReviewer binds `policy: TonePolicy`. Both bindings are typed by the abstract.`"
             "Bad: `abstract PolicyReviewer carries `abstract policy` and a prose comment saying `must be a policy document`. Two concretes bind `policy: AccuracyPolicy` and `policy: SomeWorkflow` and nothing fails loud.`"
             "See also: `AL280` when the shared scaffold itself is the problem, and `examples/145_abstract_agent_typed_parameters/` for the canonical form."
+
+        section al290: "`AL290` Intra-Agent Rule Duplication"
+            "What it means: The same rule, prohibition, or step list is stated in this agent's `role:` body and also in the same agent's `how_to_take_a_turn`, `workflow:`, `review:`, or other authored slot. The two copies are not inherited from a shared declaration; they are two hand-written statements of the same rule in one agent file. This is the within-one-agent cousin of `AL200-AL230`; the fix differs because there is nothing to lift to a shared owner."
+            "Why it matters: Two hand-written copies of one rule drift. The role copy pays always-on prompt budget for no new truth. Authors often duplicate because they do not trust one surface to carry the rule; the fix is to pick the surface that already loads when the rule is needed and delete the other copy."
+            "Default severity: `high` when the duplicate is three or more sentences restated verbatim. `medium` when the two surfaces paraphrase the same rule without exact overlap."
+            "Default fix: Pick one owner. If the rule is procedure, keep it in the workflow slot and strip the role copy. If the rule is an enforced invariant on a `review` gate, strip both the role copy and the workflow copy and trust the gate. If the role really is the right home, delete the workflow or review paraphrase."
+            "Good: `role: \"Partition the draft across sections.\"` plus a `how_to_take_a_turn` sequence that carries the numbered steps once."
+            "Bad: Role prose says `Do not cite deprecated sources.` and workflow step 3 also says `Skip any citation in the deprecated list.` — same rule, two hand-written owners, one file."
+            "See also: `AL200` (cross-agent version with a different fix), `AL925` when the restated rule is enforced by a declared `review` gate, and `references/authoring-patterns.md` section `intra_agent_duplication`."
 
         section al300: "`AL300` Runtime Boundary Leak"
             "What it means: The prompt starts owning runtime state, safety control, memory, scheduling, or orchestration."
@@ -430,6 +452,15 @@ document FindingCatalog: "Finding Catalog"
             "Default fix: Delete the prose copy and point at the declared surface."
             "Good: `Follow the declared route surface.`"
             "Bad: `If branch A happens, route to Reviewer; if branch B happens, stop with no owner.` copied into prose beside the real route surface."
+
+        section al925: "`AL925` Review-Gate Policy Restated In Prose"
+            "What it means: Role or workflow prose states a hard prohibition or invariant that a declared `review` gate on the same agent, or a review bound to the same work, already enforces mechanically. The prose often paraphrases the gate's predicate in English. This is the review-gate cousin of `AL920`; `AL920` covers compiler-owned verdicts and routing, but author-declared review gates are not compiler-derived and slip past that finding."
+            "Why it matters: The review is the fail-loud surface. Restating the gate in prose burns always-on prompt budget and signals that the author does not trust the review to carry the rule. The prose copy drifts the moment a gate is renamed or merged, and a new reader cannot tell which surface is authoritative."
+            "Default severity: `high` when the prose explicitly names the same failure mode the gate catches. `medium` when the prose paraphrases the gate's intent without naming the failure mode."
+            "Default fix: Delete the prose restatement. Trust the review. If the prose really needs to mention the gate for orientation, cite it by its `contract.NAME` identity through interpolation instead of paraphrasing the predicate. Pair with `AL245` when the gate itself is declared inline; the review contract should be the source of truth."
+            "Good: `The review declares `gate sources_all_cited` on the contract. The role says nothing about it. Failing-gate prose interpolates `contract.sources_all_cited` when orientation is needed.`"
+            "Bad: Role prose says `Never submit a draft without citations for every claim.` when the bound review contract already declares `gate sources_all_cited` that blocks exactly that. The prose is a second, drift-prone owner of the same rule."
+            "See also: `AL920` when the restated surface is compiler-owned rather than a declared gate, `AL245` when the gate itself is declared inline, and `references/authoring-patterns.md` section `review_gate_restatement`."
 
         section al930: "`AL930` Skill Needs Host Contract"
             "What it means: A bare `skill` declaration is imported into two or more agents, and its `use_when:` (or `purpose:`) prose names host-owned slots or imperative write-targets like `cite into`, `emit into`, or `write to \"Scope And Receipts\"`."

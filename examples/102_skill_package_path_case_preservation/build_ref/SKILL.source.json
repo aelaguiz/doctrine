@@ -1,0 +1,52 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "PathCasePreservation",
+    "title": "Path Case Preservation"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.0.0"
+  },
+  "source": {
+    "id": "path-case-preservation",
+    "root": "examples/102_skill_package_path_case_preservation/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "2646ad18c868ea665954d45bc13ceee543341accb2f609ad0abc90a5f882c3c7"
+    },
+    {
+      "path": "assets/BrandMark.TXT",
+      "kind": "package_file",
+      "sha256": "f974004ebcee588f3c1c6e1fbb963a9280039c7f81976637697dddaa4fbdb436"
+    },
+    {
+      "path": "reference/REFERENCE.md",
+      "kind": "package_file",
+      "sha256": "58285420da5e288cea7f0320fe2452b25a3aed5a28775469686974ed83838806"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "daf13273d12cb4e990761c62a178ef56b454bca239d76e9bf297d6f92d2a56a4"
+    },
+    {
+      "path": "assets/BrandMark.TXT",
+      "kind": "file",
+      "sha256": "f974004ebcee588f3c1c6e1fbb963a9280039c7f81976637697dddaa4fbdb436"
+    },
+    {
+      "path": "reference/REFERENCE.md",
+      "kind": "file",
+      "sha256": "58285420da5e288cea7f0320fe2452b25a3aed5a28775469686974ed83838806"
+    }
+  ],
+  "source_tree_sha256": "7688336cbf83ba6a17becc6cbd8715399f2a8daf07dea387649fc7add2588e6d",
+  "output_tree_sha256": "4e7a3d95b2bb8962803d0c7c47b2ed6f2b1c13c19d81c78c9e5340b8440fbd4b"
+}

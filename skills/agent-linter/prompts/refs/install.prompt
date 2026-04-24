@@ -1,19 +1,22 @@
 document Install: "Install"
-    "This skill now has one simple install command from the repo root."
+    "This skill installs from a generated public tree under `skills/.curated/agent-linter/`."
 
-    section one_line_install: "One-Line Install"
+    section one_line_install: "Generate And Install"
         code:
             language: bash
-            text: """npx skills add .
+            text: """uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
+npx skills add .
 """
-        "Run that from the Doctrine repo root."
-        "That installs the checked-in `agent-linter` skill from this repo."
+        "Run those from the Doctrine repo root."
+        "The first command writes `skills/.curated/agent-linter/`."
+        "The second command installs that generated tree."
         "If the CLI asks where to install it, pick the agent you use."
 
     section fast_codex_install: "Fast Codex Install"
         code:
             language: bash
-            text: """npx skills add . -g -a codex -y
+            text: """uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
+npx skills add . -g -a codex -y
 """
         "Restart Codex after install so it reloads the local skill tree."
 
@@ -24,7 +27,7 @@ document Install: "Install"
             text: """rm -rf skills/.curated/agent-linter
 uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
 """
-        "This writes the checked-in public install tree to:"
+        "This writes the generated public install tree to:"
         code:
             language: text
             text: """skills/.curated/agent-linter/

@@ -424,7 +424,7 @@ class CompileSkillPackageMixin:
 
         registry = new_package_output_registry(
             owner_label=f"skill package {decl.name}",
-            compiler_owned_paths=("SKILL.md", "SKILL.contract.json"),
+            compiler_owned_paths=("SKILL.md", "SKILL.contract.json", "SKILL.source.json"),
             path_label_singular="Skill package bundled path",
             path_label_plural="Skill package bundled paths",
             read_label="skill package bundled file",
