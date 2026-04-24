@@ -247,6 +247,42 @@ class VerifyCorpusBuildContractTests(unittest.TestCase):
             rendered,
         )
 
+    def test_flow_build_contract_surfaces_renderer_timeout_cleanly(self) -> None:
+        case = self._flow_build_contract_case()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_json = Path(temp_dir) / "node_modules" / "@terrastruct" / "d2" / "package.json"
+            package_json.parent.mkdir(parents=True)
+            package_json.write_text("{}\n")
+            helper = Path(temp_dir) / "flow_svg.mjs"
+            helper.write_text("// helper stub\n")
+
+            # The corpus verifier runs flow SVG rendering as part of exact-tree
+            # proof. A stuck Node renderer must become one bounded verification
+            # failure, not a hung test or an unreadable subprocess traceback.
+            with (
+                patch("doctrine.flow_renderer.D2_PACKAGE_PATH", package_json),
+                patch("doctrine.flow_renderer.D2_HELPER_PATH", helper),
+                patch(
+                    "doctrine.flow_renderer.subprocess.run",
+                    side_effect=subprocess.TimeoutExpired(
+                        cmd=["node", str(helper)],
+                        timeout=60,
+                    ),
+                ),
+            ):
+                with self.assertRaises(VerificationError) as ctx:
+                    _run_build_contract(case)
+
+        rendered = str(ctx.exception)
+        self.assertIn("E516 emit error", rendered)
+        self.assertIn("Pinned D2 renderer failed", rendered)
+        self.assertIn(
+            "Could not render `AGENTS.flow.svg` from `AGENTS.flow.d2`: "
+            "node timed out after 60 seconds while rendering flow SVG output",
+            rendered,
+        )
+
     def test_runtime_package_build_contract_stays_checked_in(self) -> None:
         result = _run_build_contract(self._runtime_package_build_contract_case())
 

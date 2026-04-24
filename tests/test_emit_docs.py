@@ -826,6 +826,134 @@ class EmitDocsTests(unittest.TestCase):
                 contract_data["io"]["output_bindings"],
             )
 
+    def test_emit_target_keeps_hidden_inherited_final_output_binding_for_previous_turn_io(
+        self,
+    ) -> None:
+        # A final output inherited through an outputs patch is hidden from
+        # ordinary Markdown, but it is still the machine readback contract.
+        # Downstream previous-turn inputs must be able to select that binding.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    input source RallyPreviousTurnOutput: "Rally Previous Turn Output"
+                        optional: "Optional Source Keys"
+                            output: "Output"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "AGENTS.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    output SharedTurnResult: "Shared Turn Result"
+                        target: TurnResponse
+                        shape: CommentText
+                        requirement: Required
+
+                    output NotesFile: "Notes File"
+                        target: File
+                            path: "artifacts/NOTES.md"
+                        shape: MarkdownDocument
+                        requirement: Advisory
+
+                    outputs SharedOutputs: "Shared Outputs"
+                        final_reply: "Final Reply"
+                            SharedTurnResult
+
+                        notes_file: "Notes File"
+                            NotesFile
+
+                    input PreviousTurnResult: "Previous Turn Result"
+                        source: RallyPreviousTurnOutput
+                            output: SharedOutputs:final_reply
+                        requirement: Advisory
+
+                    agent WorkerB:
+                        role: "Read the previous turn."
+                        workflow: "Act"
+                            "Use the selected previous final output."
+                        inputs: "Inputs"
+                            PreviousTurnResult
+                        outputs: SharedOutputs
+                        final_output: SharedTurnResult
+
+                    agent WorkerA:
+                        role: "Hand work to Worker B."
+                        workflow: "Route"
+                            law:
+                                current none
+                                active when true
+                                route "Send to Worker B." -> WorkerB
+                        outputs[SharedOutputs]: "Outputs"
+                            inherit final_reply
+                            inherit notes_file
+                        final_output: SharedTurnResult
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/AGENTS.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target(target)
+
+            worker_a_markdown = (root / "build" / "worker_a" / "AGENTS.md").read_text(
+                encoding="utf-8"
+            )
+            worker_a_outputs = worker_a_markdown.split("## Outputs", 1)[1].split(
+                "## Final Output", 1
+            )[0]
+            self.assertNotIn("### Shared Turn Result", worker_a_outputs)
+            self.assertIn("### Notes File", worker_a_outputs)
+
+            worker_a_contract = json.loads(
+                (root / "build" / "worker_a" / "final_output.contract.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertIn(
+                {"binding_path": ["final_reply"], "declaration_key": "SharedTurnResult"},
+                worker_a_contract["io"]["output_bindings"],
+            )
+            final_output_contract = next(
+                item
+                for item in worker_a_contract["io"]["outputs"]
+                if item["declaration_key"] == "SharedTurnResult"
+            )
+            self.assertEqual(final_output_contract["readback_mode"], "readable_text")
+            self.assertTrue(final_output_contract["requires_final_output"])
+
+            worker_b_contract = json.loads(
+                (root / "build" / "worker_b" / "final_output.contract.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            previous_input = worker_b_contract["io"]["previous_turn_inputs"][0]
+            self.assertEqual(previous_input["selector_kind"], "output_binding")
+            self.assertEqual(previous_input["selector_text"], "SharedOutputs:final_reply")
+            self.assertEqual(previous_input["binding_path"], ["final_reply"])
+            self.assertEqual(
+                previous_input["resolved_declaration_key"],
+                "SharedTurnResult",
+            )
+
     def test_emit_target_serializes_previous_turn_io_for_review_reject_route_selector(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

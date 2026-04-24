@@ -253,6 +253,74 @@ class FinalOutputTests(unittest.TestCase):
         self.assertNotIn("### Writer Decision", outputs_block)
         self.assertIn("### Other Reply", outputs_block)
 
+    def test_nested_route_field_choice_ref_can_guard_final_output_support(self) -> None:
+        # A nested `route field` is still the machine route selector. Authors
+        # need its choices to stay addressable in guards, or a valid routed
+        # final output cannot describe choice-specific support text.
+        agent = self._compile_agent(
+            """
+            output schema WriterDecisionSchema: "Writer Decision Schema"
+                field routing: "Routing"
+                    route field next_route: "Next Route"
+                        seek_muse: "Send to Muse." -> Muse
+                        ready_for_critic: "Send to Critic." -> Critic
+                        nullable
+
+                field summary: "Summary"
+                    type: string
+
+            output shape WriterDecisionJson: "Writer Decision JSON"
+                kind: JsonObject
+                schema: WriterDecisionSchema
+
+            output WriterDecision: "Writer Decision"
+                target: TurnResponse
+                shape: WriterDecisionJson
+                requirement: Required
+
+                muse_route: "Muse Route" when route.choice == WriterDecisionSchema.routing.next_route.seek_muse:
+                    "{{route.summary}}"
+
+            agent Muse:
+                role: "Help the writer."
+                workflow: "Muse"
+                    "Offer fresh direction."
+
+            agent Critic:
+                role: "Judge the draft."
+                workflow: "Critic"
+                    "Judge the draft."
+
+            agent Writer:
+                role: "Write the next turn."
+                workflow: "Write"
+                    "Write the next turn."
+                outputs: "Outputs"
+                    WriterDecision
+                final_output:
+                    output: WriterDecision
+                    route: routing.next_route
+            """,
+            agent_name="Writer",
+        )
+
+        self.assertIsNotNone(agent.route)
+        self.assertIsNotNone(agent.route.selector)
+        self.assertEqual(agent.route.selector.field_path, ("routing", "next_route"))
+        self.assertEqual(agent.route.behavior, "conditional")
+        self.assertTrue(agent.route.has_unrouted_branch)
+        self.assertEqual(
+            [member.member_key for member in agent.route.branches[0].choice_members],
+            ["seek_muse"],
+        )
+
+        rendered = render_markdown(agent)
+        self.assertIn(
+            "Show this only when route.choice is WriterDecisionSchema.routing.next_route.seek_muse.",
+            rendered,
+        )
+        self.assertIn("Send to Muse. Next owner: Muse.", rendered)
+
     def test_final_output_route_requires_structured_output_schema(self) -> None:
         error = self._compile_error(
             """
@@ -1164,6 +1232,123 @@ class FinalOutputTests(unittest.TestCase):
         self.assertIn("#### Trust Surface", final_output_block)
         self.assertIn("- Current Artifact", final_output_block)
         self.assertIn("#### Read on Its Own", final_output_block)
+
+    def test_split_final_output_review_fields_drive_final_response_semantics(self) -> None:
+        # When a split final response authors `review_fields:`, those bindings
+        # define the final response surface. It must not borrow the review
+        # carrier field label just because the same semantic field exists there.
+        agent = self._compile_agent(
+            """
+            input DraftSpec: "Draft Spec"
+                source: File
+                    path: "unit_root/DRAFT_SPEC.md"
+                shape: MarkdownDocument
+                requirement: Required
+
+            workflow DraftReviewContract: "Draft Review Contract"
+                completeness: "Completeness"
+                    "Confirm the draft is complete."
+
+            agent ReviewLead:
+                role: "Own accepted drafts."
+                workflow: "Follow Up"
+                    "Move accepted drafts forward."
+
+            agent DraftAuthor:
+                role: "Fix rejected drafts."
+                workflow: "Revise"
+                    "Revise rejected drafts."
+
+            output DraftReviewComment: "Draft Review Comment"
+                target: TurnResponse
+                shape: Comment
+                requirement: Required
+
+                verdict: "Carrier Verdict"
+                    "State whether the draft passed review."
+
+                reviewed_artifact: "Carrier Reviewed Artifact"
+                    "Name the reviewed artifact."
+
+                analysis_performed: "Carrier Analysis"
+                    "Summarize the review analysis."
+
+                output_contents_that_matter: "Carrier Readback"
+                    "Summarize what matters."
+
+                current_artifact: "Carrier Current Artifact"
+                    "Name the current artifact."
+
+                next_owner: "Carrier Next Owner"
+                    "Name {{ReviewLead}} when accepted and {{DraftAuthor}} when rejected."
+
+                failure_detail: "Failure Detail" when verdict == ReviewVerdict.changes_requested:
+                    failing_gates: "Carrier Failing Gates"
+                        "List failing gates."
+
+                trust_surface:
+                    current_artifact
+
+            output DraftReviewDecision: "Draft Review Decision"
+                target: TurnResponse
+                shape: CommentText
+                requirement: Required
+
+                outcome: "Outcome"
+                    final_current: "Final Current Artifact"
+                        "Name the current artifact for the final response."
+
+                trust_surface:
+                    current_artifact
+
+                standalone_read: "Standalone Read"
+                    "Final readback must name {{fields.current_artifact}}."
+
+            review DraftReview: "Draft Review"
+                subject: DraftSpec
+                contract: DraftReviewContract
+                comment_output: DraftReviewComment
+
+                fields:
+                    verdict: verdict
+                    reviewed_artifact: reviewed_artifact
+                    analysis: analysis_performed
+                    readback: output_contents_that_matter
+                    current_artifact: current_artifact
+                    failing_gates: failure_detail.failing_gates
+                    next_owner: next_owner
+
+                contract_checks: "Contract Checks"
+                    accept "The draft review contract passes." when contract.passes
+
+                on_accept: "If Accepted"
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
+                    route "Accepted draft returns to ReviewLead." -> ReviewLead
+
+                on_reject: "If Rejected"
+                    current artifact DraftSpec via DraftReviewComment.current_artifact
+                    route "Rejected draft returns to DraftAuthor." -> DraftAuthor
+
+            agent DraftReviewAgent:
+                role: "Emit a review carrier and final control answer."
+                review: DraftReview
+                inputs: "Inputs"
+                    DraftSpec
+                outputs: "Outputs"
+                    DraftReviewComment
+                    DraftReviewDecision
+                final_output:
+                    output: DraftReviewDecision
+                    review_fields:
+                        current_artifact: outcome.final_current
+            """,
+            agent_name="DraftReviewAgent",
+        )
+
+        final_output_block = render_markdown(agent).split("## Final Output", 1)[1]
+        self.assertIn("- Final Current Artifact", final_output_block)
+        self.assertIn("Final readback must name Final Current Artifact.", final_output_block)
+        self.assertNotIn("Carrier Current Artifact", final_output_block)
 
     def test_review_driven_split_final_output_can_render_route_semantics(self) -> None:
         agent = self._compile_agent(

@@ -96,19 +96,22 @@ Leave one honest handoff and stop.
 
 ## Quickstart
 
-Want the Doctrine skill from this repo?
+Want the first-party Doctrine skills from this source checkout?
 
 ```bash
-npx skills add .
+make skills
 ```
 
-Run that from the Doctrine repo root.
-That one line installs the checked-in `agent-linter` skill from this repo.
-If the CLI asks where to install it, pick the agent you use.
+Run that from the Doctrine repo root after `uv sync` and `npm ci`.
+That emits the public install trees under `skills/.curated/`, then runs
+`npx skills add .`.
+If the CLI asks where to install them, pick the agent you use.
 
 Want a no-prompt Codex install?
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_agent_linter_public_skill
+uv run --locked python -m doctrine.emit_skill --target doctrine_learn_public_skill
 npx skills add . -g -a codex -y
 ```
 

@@ -267,9 +267,9 @@ working exemplars. `skills/agent-linter/prompts/SKILL.prompt` and
 `skills/doctrine-learn/prompts/SKILL.prompt` each keep many sibling `.prompt`
 reference files under `prompts/refs/`, use bare same-flow refs in the package
 entrypoint, and emit the whole reference bundle through one `emit:` block. The
-checked-in install trees under
-`skills/.curated/<name>/references/` are verifier-owned proof; the authored
-truth lives in `prompts/refs/*.prompt`.
+generated install trees under `skills/.curated/<name>/references/` are install
+artifacts for `npx skills add .`; the authored truth lives in
+`prompts/refs/*.prompt`.
 
 ## Bundled Files
 

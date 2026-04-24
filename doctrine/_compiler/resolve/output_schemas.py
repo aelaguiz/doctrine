@@ -1598,6 +1598,7 @@ class ResolveOutputSchemasMixin:
         self,
         output_schema_decl: model.OutputSchemaDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> model.OutputSchemaExample | None:
         example_item: model.OutputSchemaExample | None = None
@@ -1626,10 +1627,12 @@ class ResolveOutputSchemasMixin:
         self,
         output_schema_decl: model.OutputSchemaDecl,
         *,
+        unit: IndexedUnit,
         owner_label: str,
     ) -> model.OutputSchemaExampleObject | None:
         example_item = self._output_schema_example_item(
             output_schema_decl,
+            unit=unit,
             owner_label=owner_label,
         )
         return None if example_item is None else example_item.value

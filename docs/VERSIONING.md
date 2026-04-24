@@ -86,9 +86,10 @@ Doctrine also ships narrower version lines.
   prove the source and output hashes for an emitted skill-package tree.
 - When present, emitted `SKILL.contract.json` files are also part of that
   public skill-package surface.
-- Checked-in public install trees such as `skills/.curated/agent-linter/`
-  are also part of the public surface when this repo is used as an
-  `npx skills` source.
+- Generated public install trees such as `skills/.curated/agent-linter/`
+  are part of the public surface when this repo is used as an `npx skills`
+  source. They are build artifacts. The `.prompt` sources and emit targets
+  own the shipped truth.
 - For structured final outputs, emitted
   `schemas/<output-slug>.schema.json` files are also part of the public
   surface for payload wire shape.

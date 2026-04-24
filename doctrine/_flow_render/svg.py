@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
+
+FLOW_RENDER_TIMEOUT_SECONDS = 60
 
 
 def ensure_pinned_d2_dependency(
@@ -31,6 +34,7 @@ def render_flow_svg(
     run,
     dependency_error_type,
     failure_type,
+    timeout_seconds: int = FLOW_RENDER_TIMEOUT_SECONDS,
 ) -> None:
     """Spawn the pinned D2 helper as a subprocess and translate its failures.
 
@@ -43,6 +47,9 @@ def render_flow_svg(
         the source but the helper rejected it. That becomes `failure_type`
         (mapped to E516 upstream) with the helper's stderr — falling back to
         stdout, then a synthesized exit-code message — as the detail.
+      - `TimeoutExpired` means the helper did not finish within the bounded
+        render window. That also becomes `failure_type` so proof commands fail
+        loudly instead of hanging.
 
     Other prerequisite problems (missing pinned bundle, missing helper file)
     are caught by the `ensure_pinned_d2_dependency` pre-flight before any
@@ -61,10 +68,15 @@ def render_flow_svg(
             capture_output=True,
             text=True,
             check=False,
+            timeout=timeout_seconds,
         )
     except FileNotFoundError as exc:
         raise dependency_error_type(
             "Node.js is required to render flow SVG output, but `node` was not found on PATH."
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        raise failure_type(
+            f"node timed out after {timeout_seconds} seconds while rendering flow SVG output"
         ) from exc
     if result.returncode == 0:
         return

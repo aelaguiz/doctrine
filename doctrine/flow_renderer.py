@@ -53,9 +53,9 @@ def render_flow_svg(d2_path: Path, svg_path: Path) -> None:
 
     Raises `FlowRenderDependencyError` when a prerequisite is missing: the
     pinned D2 bundle under `node_modules/`, the `flow_svg.mjs` helper, or
-    `node` on PATH. Raises `FlowRenderFailure` when the helper ran but exited
-    non-zero (D2 itself rejected the source). The caller in `emit_flow.py`
-    maps these to diagnostic codes E515 and E516 respectively.
+    `node` on PATH. Raises `FlowRenderFailure` when the helper times out or
+    exits non-zero (D2 itself rejected the source). The caller in
+    `emit_flow.py` maps these to diagnostic codes E515 and E516 respectively.
 
     Caller invariant: `d2_path` must already be on disk before this runs, and
     stays on disk if this raises. That lets authors inspect the exact source

@@ -17,19 +17,22 @@ teaches you how to avoid them; it does not explain a specific error code.
 
 ## Install
 
-Use one line:
+Generate the public install tree, then install it:
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_learn_public_skill
 npx skills add .
 ```
 
-Run that from the Doctrine repo root.
-That installs the checked-in `doctrine-learn` skill from this repo.
+Run those from the Doctrine repo root.
+The first command writes `skills/.curated/doctrine-learn/`.
+The second command installs that generated tree.
 If the CLI asks where to install it, pick the agent you use.
 
 Want a no-prompt Codex install?
 
 ```bash
+uv run --locked python -m doctrine.emit_skill --target doctrine_learn_public_skill
 npx skills add . -g -a codex -y
 ```
 
