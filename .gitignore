@@ -3,6 +3,7 @@
 .venv/
 .codex/
 /_audit_ledger.md
+_audit_ledger.md
 /.doc-audit-ledger.md
 /_comment_ledger.md
 .env
