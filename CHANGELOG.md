@@ -8,30 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- Next release planning starts after this cut.
+
+## v5.1.0 - 2026-04-24
+
 Release kind: Non-breaking
-Release channel: unreleased
-Release version: unreleased
+Release channel: stable
+Release version: v5.1.0
 Language version: 5.6 -> 5.7
-Affected surfaces: the Doctrine language (`skill package source:` with `id:`
-and `track:`), emit target config (`source_root`, `source_id`, `lock_file`),
-the emitted skill-package surface (`SKILL.source.json` beside every
-`SKILL.md`), the new `doctrine.verify_skill_receipts` CLI, the compiler error
-catalog (`E550`-`E558`), the shipped example corpus (`147`-`149`), and the
-curated `doctrine-learn` teaching skill.
-Who must act: downstream repos that snapshot emitted skill-package trees should
-check in the new `SKILL.source.json` sidecar and run the receipt verifier in CI.
-Who does not need to act: authors of existing `SKILL.prompt` packages that do
-not snapshot emitted output, and runtime hosts that only load `SKILL.md` or
-`SKILL.contract.json`.
-Upgrade steps: (1) re-run `emit_skill` for each skill package target; (2) keep
-the emitted `SKILL.source.json` sidecar with the emitted tree; (3) add
-`source_root`, `source_id`, and `lock_file` for downstream targets that build
-from upstream source trees; (4) run `python -m doctrine.verify_skill_receipts
---target <target-name>` in CI.
+Affected surfaces: the Doctrine language (`skill package source:` with `id:` and `track:`), emit target config (`source_root`, `source_id`, `lock_file`), the emitted skill-package surface (`SKILL.source.json` beside every `SKILL.md`), the new `doctrine.verify_skill_receipts` CLI, the compiler error catalog (`E550`-`E558`), the shipped example corpus (`147`-`149`), and the curated `doctrine-learn` teaching skill.
+Who must act: downstream repos that snapshot emitted skill-package trees should check in the new `SKILL.source.json` sidecar and run the receipt verifier in CI.
+Who does not need to act: authors of existing `SKILL.prompt` packages that do not snapshot emitted output, and runtime hosts that only load `SKILL.md` or `SKILL.contract.json`.
+Upgrade steps: (1) re-run `emit_skill` for each skill package target; (2) keep the emitted `SKILL.source.json` sidecar with the emitted tree; (3) add `source_root`, `source_id`, and `lock_file` for downstream targets that build from upstream source trees; (4) run `python -m doctrine.verify_skill_receipts --target <target-name>` in CI.
 Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
-Support-surface version changes: Doctrine language 5.6 -> 5.7; package
-metadata unchanged until the next public release cuts; distribution name
-`doctrine-agents` unchanged.
+Support-surface version changes: Doctrine language 5.6 -> 5.7; package metadata 5.0.0 -> 5.1.0; distribution name `doctrine-agents` unchanged.
 
 ### Added
 - `emit_skill` now writes `SKILL.source.json` for every skill package. The
