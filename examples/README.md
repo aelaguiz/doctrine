@@ -117,6 +117,11 @@ Some call out landmark examples inside those ranges.
 - `120`: a structured final output may own routed handoff truth with one
   `route field` plus `final_output.route:`
 - `121`: a nullable `route field` may mean "no handoff on this turn"
+- `122` through `164`: skill-package emit growth, project lint rules, top-level
+  receipts, stages, skill flows, skill graphs, graph emit, graph policy,
+  skill relations, checked skill mentions, receipt schema views, allowed graph
+  cycles, graph negative cases, audit authoring metadata, and durable
+  artifact symbols.
 
 For the shipped workflow-law reference, use
 [../docs/WORKFLOW_LAW.md](../docs/WORKFLOW_LAW.md). For the shipped review
@@ -285,8 +290,13 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `155_skill_flow_branch` | Skill flow edges may carry `when: <Enum>.<member>` branch conditions. If any outgoing edge from one source uses `when:`, every outgoing edge from that source must use `when:` on the same enum family and cover each member exactly once. Sub-plan 3 has no `otherwise:` escape hatch. The example also exercises `variation` with `safe_when:`, `unsafe`, and `changed_workflow:` lowering. Missing coverage, mixed enum families, and unknown `safe_when:`/`require` keys all fail with `E561`. |
 | `156_skill_flow_repeat` | A `repeat <Name>: <FlowRef>` block declares a typed repeat node over a top-level `enum`, `table`, or `schema` (graph `sets:` arrive in a later sub-plan). The repeat name is local to the flow and takes precedence over top-level stage and flow refs. Shadowing top-level names, unresolved targets, unknown `over:` refs, and `order:` outside the closed `serial`/`parallel`/`unspecified` set all fail with `E561`. |
 | `157_skill_graph_closure` | Top-level `skill_graph` closes one authored graph over root flows, graph-local `sets:`, recovery refs, and graph-wide reachability. The graph compile path may late-bind repeat `over:` refs to graph sets and fails with `E562` when a root or recovery ref does not resolve. |
-| `158_skill_graph_emit` | `emit_skill_graph` writes the full graph bundle from one resolved closure, including `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`, graph JSON, Markdown views, `.d2`, `.svg`, and Mermaid. This example proves the graph target path on `SKILL.prompt`, including view overrides. |
+| `158_skill_graph_emit` | `emit_skill_graph` writes the full graph bundle from one resolved closure, including `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`, graph JSON, Markdown views, receipt schema files, `.d2`, `.svg`, and Mermaid. This example proves the graph target path on `SKILL.prompt`, including view overrides. |
 | `159_skill_graph_policy` | Graph compile enforces expanded DAG checks and graph-owned strict policy facts. Nested flow cycles, `require stage_lane` on a reached stage with no `lane:`, and undeclared graph-set repeats all fail with `E562`. |
+| `160_skill_graph_relations_mentions` | Graph emit accepts `GRAPH.prompt`, closes over skill `relations:`, checks `{{skill:Name}}` mentions, emits relation facts, emits receipt schema files, and can warn on allowed unbound routed edges. |
+| `161_skill_graph_policy_allowances` | `dag allow_cycle "Reason"` keeps a documented cross-flow stage cycle in scope while preserving the expanded stage edges in graph outputs. `warn branch_coverage_incomplete` lets a legacy graph close with `W205` when an enum branch source does not cover every member. |
+| `162_skill_graph_negative_cases` | Required checked skill mentions, required relation reasons, and unknown relation kinds fail loud with stable diagnostics. |
+| `163_skill_graph_authoring_metadata` | Graph outputs include skill inventory metadata, aliases, richer stage entry/repair/waiver text, and graph-path repeat targets for input-like sources. |
+| `164_skill_graph_artifacts` | Top-level `artifact` declarations model durable graph targets. Stages can own them with `artifacts:` and later stages can read them through typed `inputs:`. |
 
 ## Useful Commands
 
@@ -319,6 +329,10 @@ uv run --locked python -m doctrine.emit_skill --target example_152_receipt_stage
 uv run --locked python -m doctrine.emit_skill --target example_154_skill_flow_route_binding
 uv run --locked python -m doctrine.emit_skill_graph --target example_157_skill_graph_closure
 uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
+uv run --locked python -m doctrine.emit_skill_graph --target example_160_skill_graph_relations_mentions
+uv run --locked python -m doctrine.emit_skill_graph --target example_161_skill_graph_policy_allowances
+uv run --locked python -m doctrine.emit_skill_graph --target example_163_skill_graph_authoring_metadata
+uv run --locked python -m doctrine.emit_skill_graph --target example_164_skill_graph_artifacts
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```

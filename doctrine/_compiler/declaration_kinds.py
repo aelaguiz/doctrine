@@ -201,6 +201,14 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         addressable_root=False,
     ),
     DeclarationKind(
+        name="artifact",
+        label="artifact declaration",
+        registry_attr="artifacts_by_name",
+        decl_type=model.ArtifactDecl,
+        readable=False,
+        addressable_root=False,
+    ),
+    DeclarationKind(
         name="rule",
         label="rule declaration",
         registry_attr="rules_by_name",

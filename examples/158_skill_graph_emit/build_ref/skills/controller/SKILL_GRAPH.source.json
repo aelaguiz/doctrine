@@ -24,12 +24,17 @@
     {
       "path": "SKILL_GRAPH.contract.json",
       "kind": "graph_artifact",
-      "sha256": "c4d300901243aa8c12a87338adf9472768a7dfb2b2fe8ef75fe45d48a4c0b362"
+      "sha256": "85698d25fb6969981df80ef2bc2b194e94ce0cdc289264a59abeb72297e71910"
+    },
+    {
+      "path": "references/artifact-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "f33bacbd97085c8c953d3535b87026dc9ad2460c917107f7e4817e216f0fa6c7"
     },
     {
       "path": "references/controller-graph.md",
       "kind": "graph_artifact",
-      "sha256": "87da8ee35500b981e267dca4a9199224e3be2627c3440e6495ebdc8fb0f102fb"
+      "sha256": "774cde7628cc99c20576108fe5c816dcc5a376586a23c5cc6e2e3aff2823de78"
     },
     {
       "path": "references/controller-graph.mmd",
@@ -40,6 +45,11 @@
       "path": "references/flow-registry.md",
       "kind": "graph_artifact",
       "sha256": "4cbe65a421ceba626adbfa06b27d13ac969c9421a7614b2e08bcb1eb43995f74"
+    },
+    {
+      "path": "references/receipts/LessonPlanReceipt.schema.json",
+      "kind": "graph_artifact",
+      "sha256": "3a35ab586681ec1098bc3861b57fa17fac50465eb6a5af25c7436713391e9337"
     },
     {
       "path": "references/recovery-audit.md",
@@ -54,7 +64,7 @@
     {
       "path": "references/skill-graph.json",
       "kind": "graph_artifact",
-      "sha256": "e828d2ed4d6dfd2d438633105821b011211df8537a4b39aeb7f118d34b404d2d"
+      "sha256": "23de7b51ade6f53f1a8e97384c255d6de68c6e0b7941294c30c480e01f1203e0"
     },
     {
       "path": "references/skill-graph.svg",
@@ -64,12 +74,12 @@
     {
       "path": "references/skill-inventory.md",
       "kind": "graph_artifact",
-      "sha256": "010734c2d281cf8a80e2d82daf1611ceae5011d23021a4ff781c9620e0671823"
+      "sha256": "f82bedf10826a9e1abb2abcf90c718975f8e9ae24253881901583bc828673d7e"
     },
     {
       "path": "references/stage-contracts.md",
       "kind": "graph_artifact",
-      "sha256": "9b47af32ed75fd5e85e1685654991aaafb793c113c97fdccbfa41142ecf3165d"
+      "sha256": "c5d58677ee2a535f6bf05584ee6898976881092cee5a89af88c74dc57f27480b"
     },
     {
       "path": "references/stepwise-manifest.md",
@@ -78,9 +88,9 @@
     }
   ],
   "source_tree_sha256": "77152de29d7ef67ce32fc0631decf624f11aeb0022943a260e36eda9abc0008b",
-  "output_tree_sha256": "e571cce6f5efc0840922fce8973259b218a547ad92b2b2705a7bb1f188254381",
-  "graph_contract_sha256": "c4d300901243aa8c12a87338adf9472768a7dfb2b2fe8ef75fe45d48a4c0b362",
-  "graph_json_sha256": "e828d2ed4d6dfd2d438633105821b011211df8537a4b39aeb7f118d34b404d2d",
+  "output_tree_sha256": "2d26303c567741077cc1fec026583cf6df46a384f9938d536175bb2343480bcc",
+  "graph_contract_sha256": "85698d25fb6969981df80ef2bc2b194e94ce0cdc289264a59abeb72297e71910",
+  "graph_json_sha256": "23de7b51ade6f53f1a8e97384c255d6de68c6e0b7941294c30c480e01f1203e0",
   "diagram_d2_sha256": "d37187f4698d617cd7cc923d9a48465e510cdebe7dbd003f57b36be5c0cfd52b",
   "diagram_svg_sha256": "f8deefa10a73070b537fac64b68f32b102b8a890f890cd59671c0421fe3891c3",
   "diagram_mermaid_sha256": "b6299b398c78d51553c831d40c25bd2a123f97528de914ce8272e2c86c9bf4c7",

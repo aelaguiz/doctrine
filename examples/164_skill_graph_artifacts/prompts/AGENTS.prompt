@@ -1,0 +1,47 @@
+skill ProducerSkill: "Producer Skill"
+    purpose: "Write durable graph packets."
+
+skill ConsumerSkill: "Consumer Skill"
+    purpose: "Read durable graph packets."
+
+document PacketPathFamily: "Packet Path Family"
+    "Section packet paths."
+
+artifact SectionPacket: "Section Packet"
+    owner: ProducePacket
+    path_family: PacketPathFamily
+    section: "Template"
+    anchor: "Section Packet"
+    intent: "Carry checked section facts."
+
+stage ProducePacket: "Produce Packet"
+    owner: ProducerSkill
+    artifacts:
+        SectionPacket
+    intent: "Produce the durable packet."
+    durable_target: "Section packet."
+    durable_evidence: "Section packet receipt."
+    advance_condition: "Packet is written."
+    risk_guarded: "Do not advance without the packet receipt."
+
+stage ConsumePacket: "Consume Packet"
+    owner: ConsumerSkill
+    inputs:
+        packet: SectionPacket
+    intent: "Consume the durable packet."
+    durable_target: "Review notes."
+    durable_evidence: "Review notes."
+    advance_condition: "Review notes land."
+    risk_guarded: "Do not read a missing packet."
+
+skill_flow PacketFlow: "Packet Flow"
+    start: ProducePacket
+    edge ProducePacket -> ConsumePacket:
+        why: "The consumer reads the producer artifact."
+
+skill_graph ArtifactGraph: "Artifact Graph"
+    purpose: "Emit durable artifact contracts from graph truth."
+    roots:
+        flow PacketFlow
+    policy:
+        dag acyclic

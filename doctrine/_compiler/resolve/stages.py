@@ -61,6 +61,7 @@ class ResolveStagesMixin:
         applies_to_items: list[model.StageAppliesToItem] = []
         inputs_items: list[model.StageInputsItem] = []
         emits_items: list[model.StageEmitsItem] = []
+        artifacts_items: list[model.StageArtifactsItem] = []
         forbidden_items: list[model.StageForbiddenOutputsItem] = []
         scalars_by_key: dict[str, model.StageScalarItem] = {}
 
@@ -82,6 +83,9 @@ class ResolveStagesMixin:
                 continue
             if isinstance(item, model.StageEmitsItem):
                 emits_items.append(item)
+                continue
+            if isinstance(item, model.StageArtifactsItem):
+                artifacts_items.append(item)
                 continue
             if isinstance(item, model.StageForbiddenOutputsItem):
                 forbidden_items.append(item)
@@ -109,6 +113,7 @@ class ResolveStagesMixin:
             ("applies_to", applies_to_items),
             ("inputs", inputs_items),
             ("emits", emits_items),
+            ("artifacts", artifacts_items),
             ("forbidden_outputs", forbidden_items),
         ):
             if len(items) > 1:
@@ -289,6 +294,34 @@ class ResolveStagesMixin:
                 source_span=emits_items[0].source_span,
             )
 
+        artifact_names: list[str] = []
+        if artifacts_items:
+            seen_artifact_names: set[str] = set()
+            for artifact_ref in artifacts_items[0].artifact_refs:
+                artifact_name = self._resolve_stage_artifact_ref(
+                    artifact_ref,
+                    unit=unit,
+                    owner_label=owner_label,
+                    source_span=artifact_ref.source_span
+                    or artifacts_items[0].source_span,
+                )
+                if artifact_name in seen_artifact_names:
+                    raise package_compile_error(
+                        code="E559",
+                        summary="Invalid stage declaration",
+                        detail=(
+                            f"Stage `{owner_label}` lists artifact "
+                            f"`{artifact_name}` more than once under "
+                            "`artifacts:`."
+                        ),
+                        path=unit.prompt_file.source_path,
+                        source_span=artifact_ref.source_span
+                        or artifacts_items[0].source_span,
+                        hints=("List each artifact once per stage.",),
+                    )
+                seen_artifact_names.add(artifact_name)
+                artifact_names.append(artifact_name)
+
         # Required scalar fields: intent and advance_condition.
         for required_key in ("intent", "advance_condition"):
             if required_key not in scalars_by_key:
@@ -361,6 +394,7 @@ class ResolveStagesMixin:
             applies_to_flow_names=tuple(applies_to_flow_names),
             inputs=tuple(resolved_inputs),
             emits_receipt_name=emits_receipt_name,
+            artifact_names=tuple(artifact_names),
             checkpoint=checkpoint_value,
             intent=scalars_by_key["intent"].value,
             durable_target=(
@@ -377,6 +411,21 @@ class ResolveStagesMixin:
             risk_guarded=(
                 scalars_by_key["risk_guarded"].value
                 if "risk_guarded" in scalars_by_key
+                else None
+            ),
+            entry=(
+                scalars_by_key["entry"].value
+                if "entry" in scalars_by_key
+                else None
+            ),
+            repair_routes=(
+                scalars_by_key["repair_routes"].value
+                if "repair_routes" in scalars_by_key
+                else None
+            ),
+            waiver_policy=(
+                scalars_by_key["waiver_policy"].value
+                if "waiver_policy" in scalars_by_key
                 else None
             ),
             forbidden_outputs=forbidden_items[0].values if forbidden_items else tuple(),
@@ -562,6 +611,8 @@ class ResolveStagesMixin:
             target_name = lookup_target.declaration_name
             if target_name in target_decls.receipts_by_name:
                 return ("receipt", target_name)
+            if target_name in target_decls.artifacts_by_name:
+                return ("artifact", target_name)
             if target_name in target_decls.documents_by_name:
                 return ("document", target_name)
             if target_name in target_decls.schemas_by_name:
@@ -579,13 +630,47 @@ class ResolveStagesMixin:
             detail=(
                 f"Stage `{owner_label}` input `{input_key}` is typed as "
                 f"`{dotted}`, but that name does not resolve to a top-level "
-                "`receipt`, `document`, `schema`, or `table` declaration."
+                "`receipt`, `artifact`, `document`, `schema`, or `table` "
+                "declaration."
             ),
             path=unit.prompt_file.source_path,
             source_span=ref.source_span or source_span,
             hints=(
-                "Stage inputs must point at a top-level `receipt`, `document`, "
-                "`schema`, or `table` declaration in scope.",
+                "Stage inputs must point at a top-level `receipt`, `artifact`, "
+                "`document`, `schema`, or `table` declaration in scope.",
+            ),
+        )
+
+    def _resolve_stage_artifact_ref(
+        self,
+        ref: model.NameRef,
+        *,
+        unit: IndexedUnit,
+        owner_label: str,
+        source_span,
+    ) -> str:
+        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        for lookup_target in lookup_targets:
+            target_decls = unit_declarations(lookup_target.unit)
+            if lookup_target.declaration_name in target_decls.artifacts_by_name:
+                return lookup_target.declaration_name
+        dotted = (
+            ".".join((*ref.module_parts, ref.declaration_name))
+            if ref.module_parts
+            else ref.declaration_name
+        )
+        raise package_compile_error(
+            code="E559",
+            summary="Invalid stage declaration",
+            detail=(
+                f"Stage `{owner_label}` artifact ref `{dotted}` does not "
+                "resolve to a top-level `artifact` declaration."
+            ),
+            path=unit.prompt_file.source_path,
+            source_span=ref.source_span or source_span,
+            hints=(
+                "Declare the durable artifact at the top level, or fix the "
+                "`artifacts:` ref.",
             ),
         )
 

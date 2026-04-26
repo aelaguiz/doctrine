@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_skill import emit_target_skill
-from doctrine.emit_skill_graph import emit_target_skill_graph
+from doctrine.emit_skill_graph import emit_target_skill_graph, main as emit_skill_graph_main
 from doctrine.skill_graph_source_receipts import receipt_path_for_target as graph_receipt_path_for_target
 
 
@@ -129,6 +129,7 @@ class EmitSkillGraphTests(unittest.TestCase):
             }
             self.assertIn("SKILL_GRAPH.contract.json", emitted_relpaths)
             self.assertIn("references/skill-graph.json", emitted_relpaths)
+            self.assertIn("references/receipts/LessonPlanReceipt.schema.json", emitted_relpaths)
             self.assertIn("references/skill-graph.svg", emitted_relpaths)
             self.assertIn("SKILL_GRAPH.source.json", emitted_relpaths)
 
@@ -150,3 +151,49 @@ class EmitSkillGraphTests(unittest.TestCase):
             self.assertEqual(len(linked), 1)
             self.assertEqual(linked[0]["package_id"], "controller-package")
             self.assertEqual(linked[0]["target_name"], "skill_bundle")
+
+    def test_direct_graph_prompt_can_emit_selected_view(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            prompt_path = root / "prompts" / "graphs" / "controller" / "GRAPH.prompt"
+            prompt_path.parent.mkdir(parents=True)
+            prompt_path.write_text(
+                textwrap.dedent(
+                    """\
+                    skill ControllerSkill: "Controller Skill"
+                        purpose: "Own the graph."
+
+                    stage ControllerStage: "Controller Stage"
+                        owner: ControllerSkill
+                        intent: "Run the graph."
+                        durable_target: "Graph receipt."
+                        durable_evidence: "Graph receipt."
+                        advance_condition: "Graph receipt lands."
+
+                    skill_graph ControllerGraph: "Controller Graph"
+                        purpose: "Emit from a graph entrypoint."
+                        roots:
+                            stage ControllerStage
+                    """
+                ),
+                encoding="utf-8",
+            )
+            output_dir = root / "build"
+
+            result = emit_skill_graph_main(
+                [
+                    "--entrypoint",
+                    str(prompt_path),
+                    "--output-dir",
+                    str(output_dir),
+                    "--view",
+                    "graph_json",
+                ]
+            )
+
+            self.assertEqual(result, 0)
+            emitted_json = output_dir / "graphs" / "controller" / "references" / "skill-graph.json"
+            self.assertTrue(emitted_json.is_file())
+            self.assertFalse(
+                (output_dir / "graphs" / "controller" / "SKILL_GRAPH.contract.json").exists()
+            )

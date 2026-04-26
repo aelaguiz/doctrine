@@ -1,0 +1,224 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "LoopGraph",
+    "title": "Loop Graph",
+    "purpose": "Show a named authoring loop."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "MainFlow"
+    }
+  ],
+  "sets": {},
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "allow_cycle",
+      "reason": "The review loop is a named authoring loop."
+    },
+    {
+      "action": "warn",
+      "key": "branch_coverage_incomplete",
+      "reason": null
+    }
+  ],
+  "views": {},
+  "skills": {
+    "ControllerSkill": {
+      "title": "Controller Skill",
+      "purpose": "Own the review loop.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  },
+  "skill_relations": [],
+  "stages": {
+    "DraftStage": {
+      "title": "Draft Stage",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Draft the work.",
+      "durable_target": "Draft receipt.",
+      "durable_evidence": "Draft receipt.",
+      "advance_condition": "Draft receipt lands.",
+      "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    },
+    "ReviewStage": {
+      "title": "Review Stage",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Review the work.",
+      "durable_target": "Review receipt.",
+      "durable_evidence": "Review receipt.",
+      "advance_condition": "Review receipt lands.",
+      "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    }
+  },
+  "artifacts": {},
+  "flows": {
+    "MainFlow": {
+      "title": "Main Flow",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "DraftStage"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "DraftStage"
+        },
+        {
+          "kind": "flow",
+          "name": "ReviewLoop"
+        }
+      ],
+      "edges": [
+        {
+          "from": "DraftStage",
+          "from_kind": "stage",
+          "to": "ReviewLoop",
+          "to_kind": "flow",
+          "kind": "normal",
+          "why": "Drafting enters the review loop.",
+          "route": null,
+          "when": null
+        }
+      ],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "ReviewLoop"
+      ]
+    },
+    "ReviewLoop": {
+      "title": "Review Loop",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "ReviewStage"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "ReviewStage"
+        },
+        {
+          "kind": "stage",
+          "name": "DraftStage"
+        }
+      ],
+      "edges": [
+        {
+          "from": "ReviewStage",
+          "from_kind": "stage",
+          "to": "DraftStage",
+          "to_kind": "stage",
+          "kind": "normal",
+          "why": "The reviewer can send the work back to drafting.",
+          "route": null,
+          "when": {
+            "enum": "ReviewDecision",
+            "member": "revise"
+          }
+        }
+      ],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "DraftStage"
+      ]
+    }
+  },
+  "receipts": {},
+  "packages": {},
+  "warnings": [
+    {
+      "code": "W205",
+      "policy": "branch_coverage_incomplete",
+      "summary": "Branch coverage is incomplete",
+      "owner": {
+        "kind": "skill_flow",
+        "name": "ReviewLoop"
+      },
+      "detail": "Skill flow `ReviewLoop` source `ReviewStage` branches on enum `ReviewDecision` but does not cover member(s): approve."
+    }
+  ],
+  "stage_edges": [
+    {
+      "from": "ReviewStage",
+      "to": "DraftStage",
+      "via_flow": "ReviewLoop",
+      "kind": "normal",
+      "why": "The reviewer can send the work back to drafting."
+    },
+    {
+      "from": "DraftStage",
+      "to": "ReviewStage",
+      "via_flow": "MainFlow",
+      "kind": "normal",
+      "why": "Drafting enters the review loop."
+    }
+  ],
+  "stage_successors": {
+    "DraftStage": [
+      "ReviewStage"
+    ],
+    "ReviewStage": [
+      "DraftStage"
+    ]
+  },
+  "stage_predecessors": {
+    "DraftStage": [
+      "ReviewStage"
+    ],
+    "ReviewStage": [
+      "DraftStage"
+    ]
+  },
+  "stage_reaching_flows": {
+    "DraftStage": [
+      "MainFlow",
+      "ReviewLoop"
+    ],
+    "ReviewStage": [
+      "MainFlow",
+      "ReviewLoop"
+    ]
+  }
+}

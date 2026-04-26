@@ -1,0 +1,183 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "ArtifactGraph",
+    "title": "Artifact Graph",
+    "purpose": "Emit durable artifact contracts from graph truth."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "PacketFlow"
+    }
+  ],
+  "sets": {},
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic",
+      "reason": null
+    }
+  ],
+  "views": {},
+  "skills": {
+    "ConsumerSkill": {
+      "title": "Consumer Skill",
+      "purpose": "Read durable graph packets.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    },
+    "ProducerSkill": {
+      "title": "Producer Skill",
+      "purpose": "Write durable graph packets.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  },
+  "skill_relations": [],
+  "stages": {
+    "ConsumePacket": {
+      "title": "Consume Packet",
+      "id": null,
+      "owner": "ConsumerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {
+        "packet": {
+          "kind": "artifact",
+          "type": "SectionPacket"
+        }
+      },
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Consume the durable packet.",
+      "durable_target": "Review notes.",
+      "durable_evidence": "Review notes.",
+      "advance_condition": "Review notes land.",
+      "risk_guarded": "Do not read a missing packet.",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    },
+    "ProducePacket": {
+      "title": "Produce Packet",
+      "id": null,
+      "owner": "ProducerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "artifacts": [
+        "SectionPacket"
+      ],
+      "checkpoint": "durable",
+      "intent": "Produce the durable packet.",
+      "durable_target": "Section packet.",
+      "durable_evidence": "Section packet receipt.",
+      "advance_condition": "Packet is written.",
+      "risk_guarded": "Do not advance without the packet receipt.",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    }
+  },
+  "artifacts": {
+    "SectionPacket": {
+      "name": "SectionPacket",
+      "title": "Section Packet",
+      "owner_stage": "ProducePacket",
+      "path_family": {
+        "kind": "document",
+        "name": "PacketPathFamily"
+      },
+      "path": null,
+      "section": "Template",
+      "anchor": "Section Packet",
+      "intent": "Carry checked section facts."
+    }
+  },
+  "flows": {
+    "PacketFlow": {
+      "title": "Packet Flow",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "ProducePacket"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "ProducePacket"
+        },
+        {
+          "kind": "stage",
+          "name": "ConsumePacket"
+        }
+      ],
+      "edges": [
+        {
+          "from": "ProducePacket",
+          "from_kind": "stage",
+          "to": "ConsumePacket",
+          "to_kind": "stage",
+          "kind": "normal",
+          "why": "The consumer reads the producer artifact.",
+          "route": null,
+          "when": null
+        }
+      ],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "ConsumePacket"
+      ]
+    }
+  },
+  "receipts": {},
+  "packages": {},
+  "warnings": [],
+  "stage_edges": [
+    {
+      "from": "ProducePacket",
+      "to": "ConsumePacket",
+      "via_flow": "PacketFlow",
+      "kind": "normal",
+      "why": "The consumer reads the producer artifact."
+    }
+  ],
+  "stage_successors": {
+    "ProducePacket": [
+      "ConsumePacket"
+    ]
+  },
+  "stage_predecessors": {
+    "ConsumePacket": [
+      "ProducePacket"
+    ]
+  },
+  "stage_reaching_flows": {
+    "ConsumePacket": [
+      "PacketFlow"
+    ],
+    "ProducePacket": [
+      "PacketFlow"
+    ]
+  }
+}

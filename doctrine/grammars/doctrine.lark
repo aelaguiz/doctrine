@@ -39,6 +39,7 @@ prompt_file: _NL* declaration+ _NL*
                        | output_decl
                        | skill_package_decl
                        | skill_decl
+                       | artifact_decl
                        | receipt_decl
                        | stage_decl
                        | skill_flow_decl
@@ -82,6 +83,7 @@ output_schema_decl: "output" "schema" CNAME inheritance? ":" string _NL _INDENT 
 output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
+artifact_decl: "artifact" CNAME ":" string _NL _INDENT artifact_body _DEDENT
 // Top-level reusable receipt declaration. The `receipt` keyword is also used
 // inside `package_host_receipt_slot:967` as an inline package host slot. The
 // two surfaces are unambiguous because the top-level form lives at module
@@ -940,8 +942,28 @@ record_body: record_item+
 
 skill_decl_body: skill_decl_item+
 ?skill_decl_item: skill_package_link_stmt
+                | skill_relations_block
                 | record_item
 skill_package_link_stmt: "package" ":" string _NL?
+skill_relations_block: "relations" ":" _NL _INDENT skill_relation_stmt+ _DEDENT
+skill_relation_stmt: CNAME name_ref ":" _NL _INDENT skill_relation_body _DEDENT
+skill_relation_body: skill_relation_body_line+
+?skill_relation_body_line: skill_relation_why_stmt
+skill_relation_why_stmt: "why" ":" string _NL?
+
+// Top-level durable artifact declarations. Artifacts are authoring symbols for
+// graph-owned durable targets. They do not read the file system.
+artifact_body: artifact_body_line+
+?artifact_body_line: artifact_owner_stmt
+                   | artifact_path_family_stmt
+                   | artifact_scalar_stmt
+artifact_owner_stmt: "owner" ":" name_ref _NL?
+artifact_path_family_stmt: "path_family" ":" name_ref _NL?
+artifact_scalar_stmt: artifact_scalar_key ":" string _NL?
+artifact_scalar_key: "path" -> artifact_scalar_key_path
+                   | "section" -> artifact_scalar_key_section
+                   | "anchor" -> artifact_scalar_key_anchor
+                   | "intent" -> artifact_scalar_key_intent
 
 skill_package_body: skill_package_item+
 ?skill_package_item: package_metadata_block
@@ -1019,6 +1041,7 @@ stage_body: stage_body_line+
                | stage_supports_block
                | stage_applies_to_block
                | stage_inputs_block
+               | stage_artifacts_block
                | stage_emits_stmt
                | stage_forbidden_outputs_block
                | stage_scalar_stmt
@@ -1033,6 +1056,8 @@ stage_applies_to_block: "applies_to" ":" _NL _INDENT stage_applies_to_item+ _DED
 stage_applies_to_item: name_ref _NL?
 stage_inputs_block: "inputs" ":" _NL _INDENT stage_input_item+ _DEDENT
 stage_input_item: CNAME ":" name_ref _NL?
+stage_artifacts_block: "artifacts" ":" _NL _INDENT stage_artifact_item+ _DEDENT
+stage_artifact_item: name_ref _NL?
 stage_emits_stmt: "emits" ":" name_ref _NL?
 stage_forbidden_outputs_block: "forbidden_outputs" ":" _NL _INDENT stage_forbidden_outputs_item+ _DEDENT
 stage_forbidden_outputs_item: string _NL?
@@ -1045,6 +1070,9 @@ stage_scalar_key: "id" -> stage_scalar_key_id
                | "durable_evidence" -> stage_scalar_key_durable_evidence
                | "advance_condition" -> stage_scalar_key_advance_condition
                | "risk_guarded" -> stage_scalar_key_risk_guarded
+               | "entry" -> stage_scalar_key_entry
+               | "repair_routes" -> stage_scalar_key_repair_routes
+               | "waiver_policy" -> stage_scalar_key_waiver_policy
                | "checkpoint" -> stage_scalar_key_checkpoint
 
 // Top-level `skill_flow` declaration. Sub-plan 3 lifts the body from
@@ -1120,6 +1148,8 @@ skill_graph_recovery_key: "flow_receipt"                                     -> 
                        | "durable_artifact_status"                           -> skill_graph_recovery_key_durable_artifact_status
 skill_graph_policy_block: "policy" ":" _NL _INDENT skill_graph_policy_item+ _DEDENT
 skill_graph_policy_item: "dag" "acyclic" _NL?                               -> skill_graph_policy_dag_acyclic_stmt
+                       | "dag" "allow_cycle" string _NL?                    -> skill_graph_policy_dag_allow_cycle_stmt
+                       | "allow" CNAME _NL?                                 -> skill_graph_policy_allow_stmt
                        | "require" CNAME _NL?                                -> skill_graph_policy_require_stmt
                        | "warn" CNAME _NL?                                   -> skill_graph_policy_warn_stmt
 skill_graph_views_block: "views" ":" _NL _INDENT skill_graph_view_item+ _DEDENT

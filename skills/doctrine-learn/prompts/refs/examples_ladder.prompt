@@ -1,7 +1,7 @@
 document ExamplesLadder: "Examples Ladder"
     """Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `159_skill_graph_policy`. It is
+from `01_hello_world` through `164_skill_graph_artifacts`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -213,9 +213,22 @@ before the capstone graph bundle."""
   target wiring, view overrides, and `SKILL_GRAPH.source.json`."""
             """`examples/159_skill_graph_policy` — strict graph policy failures
   and graph-owned cycle checks."""
+            """`examples/160_skill_graph_relations_mentions` — `GRAPH.prompt`,
+  skill relations, checked skill mentions, graph warnings, receipt schemas,
+  and allowed unbound routed edges."""
+            """`examples/161_skill_graph_policy_allowances` — documented
+  `dag allow_cycle "Reason"` loops."""
+            """`examples/162_skill_graph_negative_cases` — checked mention and
+  relation diagnostics."""
+            """`examples/163_skill_graph_authoring_metadata` — skill inventory
+  metadata, aliases, richer stage entry/repair/waiver text, and graph-path
+  repeat targets."""
+            """`examples/164_skill_graph_artifacts` — top-level durable
+  artifact symbols, stage ownership, and artifact-typed stage inputs."""
 
         """After this rung, you can author compiler-owned graph truth from routed
-receipts through graph emit without hand-maintained Markdown registries."""
+receipts and durable artifacts through graph emit without hand-maintained
+Markdown registries."""
 
     section pick_next: "How To Pick Your Next Example"
         "Use this short rule-set."

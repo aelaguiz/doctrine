@@ -16,23 +16,28 @@
   "policies": [
     {
       "action": "dag",
-      "key": "acyclic"
+      "key": "acyclic",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "edge_reason"
+      "key": "edge_reason",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "durable_checkpoint"
+      "key": "durable_checkpoint",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "route_targets_resolve"
+      "key": "route_targets_resolve",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "stage_lane"
+      "key": "stage_lane",
+      "reason": null
     }
   ],
   "views": {
@@ -43,9 +48,15 @@
     "ControllerSkill": {
       "title": "Controller Skill",
       "purpose": "Own the controller stages.",
-      "package_id": "controller-package"
+      "package_id": "controller-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
     }
   },
+  "skill_relations": [],
   "stages": {
     "AuthorReview": {
       "title": "Author Review",
@@ -61,12 +72,16 @@
         }
       },
       "emits": null,
+      "artifacts": [],
       "checkpoint": "durable",
       "intent": "Review the plan before handoff.",
       "durable_target": "Review notes.",
       "durable_evidence": "Review receipt.",
       "advance_condition": "Review receipt landed.",
       "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
       "forbidden_outputs": []
     },
     "LessonPlan": {
@@ -78,15 +93,20 @@
       "applies_to": [],
       "inputs": {},
       "emits": "LessonPlanReceipt",
+      "artifacts": [],
       "checkpoint": "durable",
       "intent": "Plan the lesson.",
       "durable_target": "Lesson plan.",
       "durable_evidence": "Plan receipt.",
       "advance_condition": "Plan receipt landed.",
       "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
       "forbidden_outputs": []
     }
   },
+  "artifacts": {},
   "flows": {
     "F1AuthorLesson": {
       "title": "F1 - Author One Lesson",
@@ -185,6 +205,7 @@
       "title": "Controller Package"
     }
   },
+  "warnings": [],
   "stage_edges": [
     {
       "from": "LessonPlan",

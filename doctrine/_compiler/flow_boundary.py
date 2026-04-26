@@ -9,6 +9,7 @@ FlowBoundaryKind: TypeAlias = Literal["agent_flow", "skill_flow"]
 _FLOW_ENTRYPOINT_FILENAMES: dict[str, FlowBoundaryKind] = {
     "AGENTS.prompt": "agent_flow",
     "SOUL.prompt": "agent_flow",
+    "GRAPH.prompt": "skill_flow",
     "SKILL.prompt": "skill_flow",
 }
 

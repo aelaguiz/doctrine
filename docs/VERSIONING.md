@@ -160,7 +160,12 @@ Every public release uses one release class.
   `verify_skill_graph`, `SKILL_GRAPH.contract.json`,
   `SKILL_GRAPH.source.json`, graph JSON, graph Markdown views, and graph
   diagram emit is an `additive` release when older prompts and older emit
-  targets still compile and emit unchanged.
+  targets still compile and emit unchanged. The same additive class covers
+  the restored phase 5 graph surface: `skill.relations:`, checked
+  `{{skill:...}}` mentions, graph warnings `W201` through `W211`,
+  `GRAPH.prompt`, `receipt_schema_dir`, `artifact` declarations, graph
+  policy relaxers, graph view selectors, graph-path repeat sources, and
+  graph authoring metadata.
 - Adding `type: enum` plus `values:` for local `output schema` enums was an
   `additive` release when legacy `type: string` plus `enum:` still worked and
   emitted schema files kept the same string-enum wire shape. Both forms are
@@ -301,21 +306,19 @@ Every public release uses one release class.
   `receipt_lock_mismatch`, and `unsupported_receipt_version`. Existing skill
   packages keep compiling; they now gain a receipt sidecar. Advances the
   language line from `5.6` to `5.7`.
-- Lifting top-level `skill_flow` from registry-only to a real flow-local
-  declaration is one backward-compatible language addition inside the
-  `5.7` line. Authors may now declare `start:`, `approve:`, `edge
-  Source -> Target:` blocks with `route:`, `kind:`, `when:`, and required
-  `why:`, plus `repeat`, `variation`, `unsafe`, and `changed_workflow:`
-  body items. The compiler resolves edge endpoints against top-level
-  `stage`, top-level `skill_flow`, and local repeat names; binds edges
-  to typed receipt route choices; enforces local DAG, branch coverage,
-  repeat shadowing, and closed value sets; and lowers the body into
-  compiler-owned facts only. Graph closure across flows, graph policies,
-  and graph emit stay in later sub-plans. Existing prompts that do not
-  author the new body shapes keep compiling unchanged. The skill graph
-  language work in sub-plans 1, 2, and 3 ships together as one shipped
-  language slice within the unreleased `5.7` line and only crosses a new
-  language version line at the next public release.
+- The unreleased `5.7` graph slice now includes sub-plans 1 through 5 as one
+  backward-compatible language move. It covers top-level `receipt`, `stage`,
+  `skill_flow`, `skill_graph`, and `artifact` declarations; receipt routes;
+  skill-flow DAGs, route binding, branches, repeats, variations, and
+  changed-workflow facts; graph closure and graph emit; `skill.relations:`;
+  checked `{{skill:...}}` mentions; graph warnings `W201` through `W211`;
+  `GRAPH.prompt`; `receipt_schema_dir`; graph policy relaxers such as
+  `allow unbound_edges` and `dag allow_cycle "Reason"`; view-scoped graph
+  emit; graph-path repeat sources; and the graph authoring metadata proven by
+  examples `150` through `164`. Existing prompts that do not author the new
+  graph shapes keep compiling unchanged. This remains inside the unreleased
+  `5.7` line and only crosses a new language version line at the next public
+  release.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

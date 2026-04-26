@@ -1,0 +1,55 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the graph."
+    category: "controller"
+    visibility: "default"
+    manual_only: "false"
+    default_flow_member: "true"
+    aliases: "controller, graph-owner"
+
+skill SlotWorkerSkill: "Slot Worker Skill"
+    purpose: "Run one slot."
+    category: "worker"
+    visibility: "explicit-only"
+    manual_only: "true"
+    default_flow_member: "false"
+
+stage PrepareGraph: "Prepare Graph"
+    owner: ControllerSkill
+    supports:
+        SlotWorkerSkill
+    intent: "Prepare graph inputs."
+    entry: "Start only after graph inputs are current."
+    durable_target: "Graph input receipt."
+    durable_evidence: "Graph input receipt."
+    advance_condition: "Graph inputs are current."
+    risk_guarded: "Do not run slots with stale inputs."
+    repair_routes: "Route stale inputs back to preparation."
+    waiver_policy: "Only a human owner can waive stale inputs."
+
+stage RunSlot: "Run Slot"
+    owner: SlotWorkerSkill
+    intent: "Run one graph slot."
+    entry: "Start after preparation succeeds."
+    durable_target: "Slot receipt."
+    durable_evidence: "Slot receipt."
+    advance_condition: "Slot receipt lands."
+    risk_guarded: "Do not merge partial slot output."
+
+skill_flow RunOneSlot: "Run One Slot"
+    start: RunSlot
+
+skill_flow RunGraph: "Run Graph"
+    start: PrepareGraph
+    repeat SlotRun: RunOneSlot
+        over: GraphInputs.lesson_slots
+        order: serial
+        why: "Each lesson slot gets one run from graph input facts."
+    edge PrepareGraph -> SlotRun:
+        why: "Prepared inputs feed each slot run."
+
+skill_graph AuthoringMetadataGraph: "Authoring Metadata Graph"
+    purpose: "Emit graph authoring metadata."
+    roots:
+        flow RunGraph
+    policy:
+        dag acyclic

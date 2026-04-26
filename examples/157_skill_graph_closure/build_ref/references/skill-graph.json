@@ -24,19 +24,23 @@
   "policies": [
     {
       "action": "dag",
-      "key": "acyclic"
+      "key": "acyclic",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "edge_reason"
+      "key": "edge_reason",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "durable_checkpoint"
+      "key": "durable_checkpoint",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "route_targets_resolve"
+      "key": "route_targets_resolve",
+      "reason": null
     }
   ],
   "skills": [
@@ -44,15 +48,25 @@
       "name": "ControllerSkill",
       "title": "Controller Skill",
       "purpose": "Own the authoring stages.",
-      "package_id": null
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
     }
   ],
+  "skill_relations": [],
   "stages": [
     {
       "name": "ControllerRecoveryAudit",
       "title": "Controller Recovery Audit",
       "owner": "ControllerSkill",
       "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
       "reaching_flows": [
         "F2AuthorSection"
       ]
@@ -62,12 +76,17 @@
       "title": "Lesson Plan",
       "owner": "ControllerSkill",
       "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
       "reaching_flows": [
         "F1AuthorLesson",
         "F2AuthorSection"
       ]
     }
   ],
+  "artifacts": [],
   "flows": [
     {
       "name": "F1AuthorLesson",
@@ -105,5 +124,6 @@
       "kind": "normal",
       "why": "Audit before per-slot authoring starts."
     }
-  ]
+  ],
+  "warnings": []
 }

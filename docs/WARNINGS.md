@@ -9,9 +9,30 @@ A first-class warning layer would flag those shapes without turning the
 compiler into a second harness or a style linter.
 
 This doc is the evergreen landing page for that work.
-No warning codes ship in the compiler today.
+Doctrine now ships graph-scoped warnings for `skill_graph` policy lines.
+They are emitted into graph contracts and graph Markdown. They do not fail
+compile by themselves.
 The [agent-linter skill](AGENT_LINTER.md) is the current home for
 judgment-first authoring review.
+
+## Shipped Graph Warnings
+
+These warnings only run when a graph opts in with a matching `warn <key>`
+policy line.
+
+| Code | Policy key | Meaning |
+| --- | --- | --- |
+| `W201` | `orphan_stage` | A visible stage is not reached from this graph's roots. |
+| `W202` | `orphan_skill` | A visible skill is not reached from a stage, relation, or checked skill mention. |
+| `W203` | `stage_owner_shared` | One skill owns more than one reached stage. |
+| `W204` | `checked_skill_mention_unknown` | A checked skill mention does not resolve, and strict checked mentions are off. |
+| `W205` | `branch_coverage_incomplete` | A graph allowed an enum branch source that does not cover every enum member. |
+| `W206` | `receipt_without_consumer` | A reached receipt is not read by a reached stage input or recovery ref. |
+| `W207` | `flow_without_approve` | A reached flow has no `approve:` flow. |
+| `W208` | `stage_without_risk_guard` | A reached stage has no `risk_guarded:` field. |
+| `W209` | `edge_route_binding_missing` | `allow unbound_edges` let a routed edge compile without `route:`. |
+| `W210` | `relation_without_reason` | A skill relation has no `why:` and `require relation_reason` is off. |
+| `W211` | `manual_only_default_flow_conflict` | A reached skill is marked both manual-only and a default flow member. |
 
 ## Goals
 

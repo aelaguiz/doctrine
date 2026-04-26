@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass, field, replace
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 
 
@@ -29,6 +31,15 @@ class _FlowExpansion:
     stage_reaching_flows: dict[str, tuple[str, ...]]
 
 
+_CHECKED_SKILL_MENTION_RE = re.compile(
+    r"\{\{skill:(?P<target>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\}\}"
+)
+
+
+def _truthy(value: str | None) -> bool:
+    return value is not None and value.strip().casefold() in {"1", "true", "yes", "on"}
+
+
 class ResolveSkillGraphsMixin:
     """Top-level skill_graph resolution helpers for ResolveMixin."""
 
@@ -50,6 +61,23 @@ class ResolveSkillGraphsMixin:
         return compile_error(
             code="E562",
             summary="Invalid skill graph",
+            detail=detail,
+            path=unit.prompt_file.source_path,
+            source_span=source_span,
+            hints=hints,
+        )
+
+    def _skill_relation_error(
+        self,
+        *,
+        detail: str,
+        unit: IndexedUnit,
+        source_span,
+        hints: tuple[str, ...] = (),
+    ) -> CompileError:
+        return compile_error(
+            code="E566",
+            summary="Invalid skill relation",
             detail=detail,
             path=unit.prompt_file.source_path,
             source_span=source_span,
@@ -142,6 +170,73 @@ class ResolveSkillGraphsMixin:
             owner_label=owner_label,
             graph_decl=graph_decl,
         )
+
+        def policy_enabled(action: str, key: str) -> bool:
+            return any(
+                policy.action == action and policy.key == key
+                for policy in graph_policies
+            )
+
+        allow_unbound_edges = policy_enabled("allow", "unbound_edges")
+        allow_graph_cycles = policy_enabled("dag", "allow_cycle")
+        require_checked_skill_mentions = policy_enabled(
+            "require",
+            "checked_skill_mentions",
+        )
+        require_relation_reason = policy_enabled("require", "relation_reason")
+        require_branch_coverage = policy_enabled("require", "branch_coverage")
+        warn_branch_coverage = policy_enabled("warn", "branch_coverage_incomplete")
+        graph_warnings: list[model.ResolvedSkillGraphWarning] = []
+
+        def warn_enabled(key: str) -> bool:
+            return policy_enabled("warn", key)
+
+        def append_warning(
+            *,
+            code: str,
+            policy_key: str,
+            summary: str,
+            owner_kind: str,
+            owner_name: str,
+            detail: str,
+            source_span,
+        ) -> None:
+            if not warn_enabled(policy_key):
+                return
+            graph_warnings.append(
+                model.ResolvedSkillGraphWarning(
+                    code=code,
+                    policy_key=policy_key,
+                    summary=summary,
+                    owner_kind=owner_kind,
+                    owner_name=owner_name,
+                    detail=detail,
+                    source_span=source_span,
+                )
+            )
+
+        def append_branch_coverage_warning(
+            flow_name: str,
+            source_name: str,
+            enum_name: str,
+            missing_members: tuple[str, ...],
+            source_span,
+        ) -> None:
+            missing_text = ", ".join(missing_members)
+            append_warning(
+                code="W205",
+                policy_key="branch_coverage_incomplete",
+                summary="Branch coverage is incomplete",
+                owner_kind="skill_flow",
+                owner_name=flow_name,
+                detail=(
+                    f"Skill flow `{flow_name}` source `{source_name}` "
+                    f"branches on enum `{enum_name}` but does not cover "
+                    f"member(s): {missing_text}."
+                ),
+                source_span=source_span or graph_decl.source_span,
+            )
+
         graph_views = self._resolve_skill_graph_views(
             views_items[0] if views_items else None,
             unit=unit,
@@ -172,8 +267,13 @@ class ResolveSkillGraphsMixin:
         reached_flow_units: dict[str, IndexedUnit] = {}
         reached_skill_units: dict[str, IndexedUnit] = {}
         reached_skill_decls: dict[str, model.SkillDecl] = {}
+        processed_relation_skills: set[tuple[int, str]] = set()
+        skill_relation_seen: set[tuple[str, str, str, str | None]] = set()
+        skill_relations: list[model.ResolvedSkillGraphSkillRelation] = []
         reached_package_units: dict[str, IndexedUnit] = {}
         reached_package_decls: dict[str, model.SkillPackageDecl] = {}
+        reached_artifact_units: dict[str, IndexedUnit] = {}
+        reached_artifact_decls: dict[str, model.ArtifactDecl] = {}
         reached_receipt_units: dict[str, IndexedUnit] = {}
         reached_receipt_decls: dict[str, model.ReceiptDecl] = {}
         aggregate_edges: list[model.ResolvedSkillGraphStageEdge] = []
@@ -206,6 +306,15 @@ class ResolveSkillGraphsMixin:
             reached_receipt_units.setdefault(receipt_name, owner_unit)
             reached_receipt_decls.setdefault(receipt_name, receipt_decl)
 
+        def remember_artifact(
+            artifact_name: str,
+            *,
+            owner_unit: IndexedUnit,
+            artifact_decl: model.ArtifactDecl,
+        ) -> None:
+            reached_artifact_units.setdefault(artifact_name, owner_unit)
+            reached_artifact_decls.setdefault(artifact_name, artifact_decl)
+
         def remember_skill(
             skill_name: str,
             *,
@@ -215,6 +324,11 @@ class ResolveSkillGraphsMixin:
             reached_skill_units.setdefault(skill_name, owner_unit)
             reached_skill_decls.setdefault(skill_name, skill_decl)
             if skill_decl.package_link is None:
+                process_skill_relations(
+                    skill_name,
+                    owner_unit=owner_unit,
+                    skill_decl=skill_decl,
+                )
                 return
             package_unit, package_decl = self._resolve_skill_package_id(
                 skill_decl.package_link.package_id,
@@ -225,6 +339,225 @@ class ResolveSkillGraphsMixin:
             package_id = skill_decl.package_link.package_id
             reached_package_units.setdefault(package_id, package_unit)
             reached_package_decls.setdefault(package_id, package_decl)
+            process_skill_relations(
+                skill_name,
+                owner_unit=owner_unit,
+                skill_decl=skill_decl,
+            )
+
+        def process_skill_relations(
+            skill_name: str,
+            *,
+            owner_unit: IndexedUnit,
+            skill_decl: model.SkillDecl,
+        ) -> None:
+            relation_owner_key = (id(owner_unit), skill_name)
+            if relation_owner_key in processed_relation_skills:
+                return
+            processed_relation_skills.add(relation_owner_key)
+            for relation in skill_decl.relations:
+                if relation.kind not in model.SKILL_RELATION_KINDS:
+                    allowed = ", ".join(sorted(model.SKILL_RELATION_KINDS))
+                    raise self._skill_relation_error(
+                        detail=(
+                            f"Skill `{skill_name}` declares relation kind "
+                            f"`{relation.kind}`, but the closed value set is "
+                            f"{{{allowed}}}."
+                        ),
+                        unit=owner_unit,
+                        source_span=relation.source_span or skill_decl.source_span,
+                        hints=("Use one of the shipped skill relation kinds.",),
+                    )
+                try:
+                    target_unit, target_decl = self._resolve_decl_ref(
+                        relation.target_ref,
+                        unit=owner_unit,
+                        registry_name="skills_by_name",
+                        missing_label="skill declaration",
+                    )
+                except CompileError as exc:
+                    dotted = self._dotted_ref(relation.target_ref)
+                    raise self._skill_relation_error(
+                        detail=(
+                            f"Skill `{skill_name}` relation "
+                            f"`{relation.kind} {dotted}` does not resolve to "
+                            "a top-level `skill` declaration."
+                        ),
+                        unit=owner_unit,
+                        source_span=relation.source_span or skill_decl.source_span,
+                        hints=(
+                            "Declare the target skill at the top level, or fix "
+                            "the relation ref.",
+                        ),
+                    ) from exc
+                if require_relation_reason and not relation.why:
+                    raise self._skill_relation_error(
+                        detail=(
+                            f"Skill graph `{owner_label}` requires "
+                            "`relation_reason`, but skill "
+                            f"`{skill_name}` relation "
+                            f"`{relation.kind} {target_decl.name}` has no "
+                            "`why:` line."
+                        ),
+                        unit=owner_unit,
+                        source_span=relation.source_span or skill_decl.source_span,
+                        hints=("Add `why: \"...\"` under the relation.",),
+                    )
+                if not relation.why:
+                    append_warning(
+                        code="W210",
+                        policy_key="relation_without_reason",
+                        summary="Skill relation has no reason",
+                        owner_kind="skill",
+                        owner_name=skill_name,
+                        detail=(
+                            f"Relation `{relation.kind} {target_decl.name}` "
+                            "does not declare `why:`."
+                        ),
+                        source_span=relation.source_span or skill_decl.source_span,
+                    )
+                remember_skill(
+                    target_decl.name,
+                    owner_unit=target_unit,
+                    skill_decl=target_decl,
+                )
+                relation_why = (
+                    None
+                    if relation.why is None
+                    else interpolate_checked_skill_mentions(
+                        relation.why,
+                        current_unit=owner_unit,
+                        owner_text=(
+                            f"skill `{skill_name}` relation "
+                            f"`{relation.kind} {target_decl.name}`"
+                        ),
+                        source_span=relation.source_span or skill_decl.source_span,
+                    )
+                )
+                relation_key = (
+                    skill_name,
+                    target_decl.name,
+                    relation.kind,
+                    relation_why,
+                )
+                if relation_key in skill_relation_seen:
+                    continue
+                skill_relation_seen.add(relation_key)
+                skill_relations.append(
+                    model.ResolvedSkillGraphSkillRelation(
+                        source_skill_name=skill_name,
+                        target_skill_name=target_decl.name,
+                        kind=relation.kind,
+                        why=relation_why,
+                        source_span=relation.source_span,
+                    )
+                )
+
+        def resolve_skill_ref_for_checked_mention(
+            skill_name: str,
+            *,
+            current_unit: IndexedUnit,
+            owner_text: str,
+            source_span,
+        ) -> tuple[IndexedUnit, model.SkillDecl] | None:
+            ref = model.NameRef(
+                module_parts=(),
+                declaration_name=skill_name,
+                source_span=source_span,
+            )
+            try:
+                return self._resolve_decl_ref(
+                    ref,
+                    unit=current_unit,
+                    registry_name="skills_by_name",
+                    missing_label="skill declaration",
+                )
+            except CompileError:
+                detail = (
+                    f"{owner_text} references checked skill mention "
+                    f"`{{{{skill:{skill_name}}}}}`, but no visible top-level "
+                    "`skill` declaration has that name."
+                )
+                if require_checked_skill_mentions:
+                    raise self._skill_graph_error(
+                        detail=detail,
+                        unit=current_unit,
+                        source_span=source_span,
+                        hints=("Declare the skill, import it, or fix the checked mention.",),
+                    )
+                append_warning(
+                    code="W204",
+                    policy_key="checked_skill_mention_unknown",
+                    summary="Checked skill mention does not resolve",
+                    owner_kind="text",
+                    owner_name=owner_text,
+                    detail=detail,
+                    source_span=source_span,
+                )
+                return None
+
+        def interpolate_checked_skill_mentions(
+            text: str,
+            *,
+            current_unit: IndexedUnit,
+            owner_text: str,
+            source_span,
+        ) -> str:
+            if "{{skill:" not in text:
+                return text
+
+            def render_match(match: re.Match[str]) -> str:
+                target_text = match.group("target")
+                parts = target_text.split(".")
+                skill_name = parts[0]
+                projection = None if len(parts) == 1 else parts[1]
+                if len(parts) > 2 or projection not in {None, "package", "purpose"}:
+                    detail = (
+                        f"{owner_text} references `{{{{skill:{target_text}}}}}`, "
+                        "but checked skill mentions only allow "
+                        "`{{skill:Name}}`, `{{skill:Name.package}}`, or "
+                        "`{{skill:Name.purpose}}`."
+                    )
+                    if require_checked_skill_mentions:
+                        raise self._skill_graph_error(
+                            detail=detail,
+                            unit=current_unit,
+                            source_span=source_span,
+                            hints=("Use one of the supported checked skill projections.",),
+                        )
+                    append_warning(
+                        code="W204",
+                        policy_key="checked_skill_mention_unknown",
+                        summary="Checked skill mention projection is unknown",
+                        owner_kind="text",
+                        owner_name=owner_text,
+                        detail=detail,
+                        source_span=source_span,
+                    )
+                    return match.group(0)
+                resolved = resolve_skill_ref_for_checked_mention(
+                    skill_name,
+                    current_unit=current_unit,
+                    owner_text=owner_text,
+                    source_span=source_span,
+                )
+                if resolved is None:
+                    return match.group(0)
+                target_unit, target_decl = resolved
+                remember_skill(
+                    target_decl.name,
+                    owner_unit=target_unit,
+                    skill_decl=target_decl,
+                )
+                if projection == "package":
+                    if target_decl.package_link is None:
+                        return ""
+                    return target_decl.package_link.package_id
+                if projection == "purpose":
+                    return self._skill_decl_purpose(target_decl) or ""
+                return target_decl.title
+
+            return _CHECKED_SKILL_MENTION_RE.sub(render_match, text)
 
         def merge_node_expansion(dest: _NodeExpansion, src: _NodeExpansion) -> None:
             dest.reached_stage_names.update(src.reached_stage_names)
@@ -338,6 +671,194 @@ class ResolveSkillGraphsMixin:
                     hints=("Declare the receipt at the top level, or fix the ref.",),
                 ) from exc
 
+        def resolve_artifact_by_name(
+            artifact_name: str,
+            *,
+            current_unit: IndexedUnit,
+            source_span,
+            role: str,
+        ) -> tuple[IndexedUnit, model.ArtifactDecl]:
+            ref = model.NameRef(
+                module_parts=(),
+                declaration_name=artifact_name,
+                source_span=source_span,
+            )
+            try:
+                return self._resolve_decl_ref(
+                    ref,
+                    unit=current_unit,
+                    registry_name="artifacts_by_name",
+                    missing_label="artifact declaration",
+                )
+            except CompileError as exc:
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Skill graph `{owner_label}` {role} artifact "
+                        f"`{artifact_name}` does not resolve to a top-level "
+                        "`artifact` declaration."
+                    ),
+                    unit=current_unit,
+                    source_span=source_span,
+                    hints=("Declare the artifact at the top level, or fix the ref.",),
+                ) from exc
+
+        def resolve_artifact_decl(
+            artifact_decl: model.ArtifactDecl,
+            *,
+            owner_unit: IndexedUnit,
+        ) -> model.ResolvedSkillGraphArtifact:
+            owner_items: list[model.ArtifactOwnerItem] = []
+            path_family_items: list[model.ArtifactPathFamilyItem] = []
+            scalars_by_key: dict[str, model.ArtifactScalarItem] = {}
+            for item in artifact_decl.items:
+                if isinstance(item, model.ArtifactOwnerItem):
+                    owner_items.append(item)
+                    continue
+                if isinstance(item, model.ArtifactPathFamilyItem):
+                    path_family_items.append(item)
+                    continue
+                if isinstance(item, model.ArtifactScalarItem):
+                    if item.key in scalars_by_key:
+                        raise self._skill_graph_error(
+                            detail=(
+                                f"Artifact `{artifact_decl.name}` declares "
+                                f"`{item.key}:` more than once."
+                            ),
+                            unit=owner_unit,
+                            source_span=item.source_span or artifact_decl.source_span,
+                            hints=("Keep one value per artifact scalar field.",),
+                        )
+                    scalars_by_key[item.key] = item
+            for label, items in (
+                ("owner", owner_items),
+                ("path_family", path_family_items),
+            ):
+                if len(items) > 1:
+                    raise self._skill_graph_error(
+                        detail=(
+                            f"Artifact `{artifact_decl.name}` declares "
+                            f"`{label}:` more than once."
+                        ),
+                        unit=owner_unit,
+                        source_span=items[1].source_span or artifact_decl.source_span,
+                        hints=(f"Keep one `{label}:` line per artifact.",),
+                    )
+            if not owner_items:
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Artifact `{artifact_decl.name}` is missing required "
+                        "`owner:`."
+                    ),
+                    unit=owner_unit,
+                    source_span=artifact_decl.source_span,
+                    hints=("Add `owner: <StageRef>` so the graph knows who writes it.",),
+                )
+            try:
+                owner_stage_unit, owner_stage_decl = self._resolve_decl_ref(
+                    owner_items[0].stage_ref,
+                    unit=owner_unit,
+                    registry_name="stages_by_name",
+                    missing_label="stage declaration",
+                )
+                _ = owner_stage_unit
+            except CompileError as exc:
+                dotted = self._dotted_ref(owner_items[0].stage_ref)
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Artifact `{artifact_decl.name}` owner `{dotted}` "
+                        "does not resolve to a top-level `stage` declaration."
+                    ),
+                    unit=owner_unit,
+                    source_span=owner_items[0].source_span or artifact_decl.source_span,
+                    hints=("Declare the owner stage, or fix the artifact owner ref.",),
+                ) from exc
+
+            path_family_kind: str | None = None
+            path_family_name: str | None = None
+            if path_family_items:
+                path_family_kind, path_family_name = resolve_artifact_path_family(
+                    path_family_items[0].target_ref,
+                    owner_unit=owner_unit,
+                    artifact_decl=artifact_decl,
+                    source_span=path_family_items[0].source_span,
+                )
+            if not any(key in scalars_by_key for key in ("path", "section", "anchor")):
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Artifact `{artifact_decl.name}` must declare at least "
+                        "one of `path:`, `section:`, or `anchor:`."
+                    ),
+                    unit=owner_unit,
+                    source_span=artifact_decl.source_span,
+                    hints=("Give the artifact a stable authored location hint.",),
+                )
+            return model.ResolvedSkillGraphArtifact(
+                name=artifact_decl.name,
+                title=artifact_decl.title,
+                owner_stage_name=owner_stage_decl.name,
+                path_family_kind=path_family_kind,
+                path_family_name=path_family_name,
+                path=(
+                    scalars_by_key["path"].value
+                    if "path" in scalars_by_key
+                    else None
+                ),
+                section=(
+                    scalars_by_key["section"].value
+                    if "section" in scalars_by_key
+                    else None
+                ),
+                anchor=(
+                    scalars_by_key["anchor"].value
+                    if "anchor" in scalars_by_key
+                    else None
+                ),
+                intent=(
+                    scalars_by_key["intent"].value
+                    if "intent" in scalars_by_key
+                    else None
+                ),
+                source_span=artifact_decl.source_span,
+            )
+
+        def resolve_artifact_path_family(
+            ref: model.NameRef,
+            *,
+            owner_unit: IndexedUnit,
+            artifact_decl: model.ArtifactDecl,
+            source_span,
+        ) -> tuple[str, str]:
+            lookup_targets = self._decl_lookup_targets(ref, unit=owner_unit)
+            registry_kinds = (
+                ("document", "documents_by_name"),
+                ("schema", "schemas_by_name"),
+                ("table", "tables_by_name"),
+                ("enum", "enums_by_name"),
+                ("receipt", "receipts_by_name"),
+                ("output", "outputs_by_name"),
+                ("input", "inputs_by_name"),
+                ("output_target", "output_targets_by_name"),
+            )
+            for lookup_target in lookup_targets:
+                target_decls = unit_declarations(lookup_target.unit)
+                target_name = lookup_target.declaration_name
+                for kind, registry_name in registry_kinds:
+                    if target_name in getattr(target_decls, registry_name):
+                        return kind, target_name
+            dotted = self._dotted_ref(ref)
+            raise self._skill_graph_error(
+                detail=(
+                    f"Artifact `{artifact_decl.name}` path family `{dotted}` "
+                    "does not resolve to a supported top-level declaration."
+                ),
+                unit=owner_unit,
+                source_span=ref.source_span or source_span or artifact_decl.source_span,
+                hints=(
+                    "Point `path_family:` at a document, schema, table, enum, "
+                    "receipt, input, output, or output target declaration.",
+                ),
+            )
+
         def resolve_stage_dependencies(
             stage_decl: model.StageDecl,
             *,
@@ -371,18 +892,41 @@ class ResolveSkillGraphsMixin:
 
             resolved_stage = self._resolve_stage_decl(stage_decl, unit=owner_unit)
             for input_entry in resolved_stage.inputs:
-                if input_entry.type_kind != "receipt":
-                    continue
-                receipt_unit, receipt_decl = resolve_receipt_by_name(
-                    input_entry.type_name,
+                if input_entry.type_kind == "receipt":
+                    receipt_unit, receipt_decl = resolve_receipt_by_name(
+                        input_entry.type_name,
+                        current_unit=owner_unit,
+                        source_span=stage_decl.source_span,
+                        role="stage input",
+                    )
+                    remember_receipt(
+                        receipt_decl.name,
+                        owner_unit=receipt_unit,
+                        receipt_decl=receipt_decl,
+                    )
+                if input_entry.type_kind == "artifact":
+                    artifact_unit, artifact_decl = resolve_artifact_by_name(
+                        input_entry.type_name,
+                        current_unit=owner_unit,
+                        source_span=stage_decl.source_span,
+                        role="stage input",
+                    )
+                    remember_artifact(
+                        artifact_decl.name,
+                        owner_unit=artifact_unit,
+                        artifact_decl=artifact_decl,
+                    )
+            for artifact_name in resolved_stage.artifact_names:
+                artifact_unit, artifact_decl = resolve_artifact_by_name(
+                    artifact_name,
                     current_unit=owner_unit,
                     source_span=stage_decl.source_span,
-                    role="stage input",
+                    role="stage owned",
                 )
-                remember_receipt(
-                    receipt_decl.name,
-                    owner_unit=receipt_unit,
-                    receipt_decl=receipt_decl,
+                remember_artifact(
+                    artifact_decl.name,
+                    owner_unit=artifact_unit,
+                    artifact_decl=artifact_decl,
                 )
             if resolved_stage.emits_receipt_name is not None:
                 receipt_unit, receipt_decl = resolve_receipt_by_name(
@@ -504,12 +1048,36 @@ class ResolveSkillGraphsMixin:
                     flow_decl,
                     unit=owner_unit,
                     allow_graph_set_candidates=True,
+                    allow_unbound_edges=allow_unbound_edges,
+                    allow_incomplete_branch_coverage=(
+                        warn_branch_coverage and not require_branch_coverage
+                    ),
+                    branch_coverage_warning_callback=append_branch_coverage_warning,
+                )
+                resolved_edges = tuple(
+                    replace(
+                        edge,
+                        why=interpolate_checked_skill_mentions(
+                            edge.why,
+                            current_unit=owner_unit,
+                            owner_text=(
+                                f"skill_flow `{flow_decl.name}` edge "
+                                f"`{edge.source.name} -> {edge.target.name}`"
+                            ),
+                            source_span=edge.source_span or flow_decl.source_span,
+                        ),
+                    )
+                    for edge in resolved_flow.edges
                 )
                 graph_repeats: list[model.ResolvedSkillGraphRepeat] = []
                 for repeat in resolved_flow.repeats:
                     over_kind = repeat.over_kind
                     if over_kind == "graph_set_candidate":
-                        if repeat.over_name not in set_names:
+                        if repeat.over_name in set_names:
+                            over_kind = "graph_set"
+                        elif "." in repeat.over_name:
+                            over_kind = "graph_path"
+                        else:
                             raise self._skill_graph_error(
                                 detail=(
                                     f"Skill graph `{owner_label}` repeat "
@@ -523,7 +1091,6 @@ class ResolveSkillGraphsMixin:
                                     "Declare the graph set under `sets:`, or point `over:` at a declared enum, table, or schema.",
                                 ),
                             )
-                        over_kind = "graph_set"
                     graph_repeats.append(
                         model.ResolvedSkillGraphRepeat(
                             name=repeat.name,
@@ -531,18 +1098,35 @@ class ResolveSkillGraphsMixin:
                             over_kind=over_kind,
                             over_name=repeat.over_name,
                             order=repeat.order,
-                            why=repeat.why,
+                            why=interpolate_checked_skill_mentions(
+                                repeat.why,
+                                current_unit=owner_unit,
+                                owner_text=(
+                                    f"skill_flow `{flow_decl.name}` repeat "
+                                    f"`{repeat.name}`"
+                                ),
+                                source_span=repeat.source_span or flow_decl.source_span,
+                            ),
                             source_span=repeat.source_span,
                         )
                     )
                 graph_flow = model.ResolvedSkillGraphFlow(
                     canonical_name=resolved_flow.canonical_name,
                     title=resolved_flow.title,
-                    intent=resolved_flow.intent,
+                    intent=(
+                        None
+                        if resolved_flow.intent is None
+                        else interpolate_checked_skill_mentions(
+                            resolved_flow.intent,
+                            current_unit=owner_unit,
+                            owner_text=f"skill_flow `{flow_decl.name}` intent",
+                            source_span=flow_decl.source_span,
+                        )
+                    ),
                     start=resolved_flow.start,
                     approve=resolved_flow.approve,
                     nodes=resolved_flow.nodes,
-                    edges=resolved_flow.edges,
+                    edges=resolved_edges,
                     repeats=tuple(graph_repeats),
                     variations=resolved_flow.variations,
                     unsafe_variations=resolved_flow.unsafe_variations,
@@ -736,6 +1320,81 @@ class ResolveSkillGraphsMixin:
             stage_unit = reached_stage_units[stage_name]
             stage_decl = reached_stage_decls[stage_name]
             resolved_stage = self._resolve_stage_decl(stage_decl, unit=stage_unit)
+            resolved_stage = replace(
+                resolved_stage,
+                intent=interpolate_checked_skill_mentions(
+                    resolved_stage.intent,
+                    current_unit=stage_unit,
+                    owner_text=f"stage `{stage_name}` intent",
+                    source_span=resolved_stage.source_span or stage_decl.source_span,
+                ),
+                durable_target=(
+                    None
+                    if resolved_stage.durable_target is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.durable_target,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` durable_target",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+                durable_evidence=(
+                    None
+                    if resolved_stage.durable_evidence is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.durable_evidence,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` durable_evidence",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+                advance_condition=interpolate_checked_skill_mentions(
+                    resolved_stage.advance_condition,
+                    current_unit=stage_unit,
+                    owner_text=f"stage `{stage_name}` advance_condition",
+                    source_span=resolved_stage.source_span or stage_decl.source_span,
+                ),
+                risk_guarded=(
+                    None
+                    if resolved_stage.risk_guarded is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.risk_guarded,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` risk_guarded",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+                entry=(
+                    None
+                    if resolved_stage.entry is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.entry,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` entry",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+                repair_routes=(
+                    None
+                    if resolved_stage.repair_routes is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.repair_routes,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` repair_routes",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+                waiver_policy=(
+                    None
+                    if resolved_stage.waiver_policy is None
+                    else interpolate_checked_skill_mentions(
+                        resolved_stage.waiver_policy,
+                        current_unit=stage_unit,
+                        owner_text=f"stage `{stage_name}` waiver_policy",
+                        source_span=resolved_stage.source_span or stage_decl.source_span,
+                    )
+                ),
+            )
             reaching_flows = aggregate_stage_reaching_flows.get(stage_name, set())
             if resolved_stage.applies_to_flow_names:
                 missing_flows = sorted(
@@ -809,6 +1468,33 @@ class ResolveSkillGraphsMixin:
             stage_edges=tuple(dedup_stage_edges),
             unit=unit,
             source_span=graph_decl.source_span,
+            allow_cycles=allow_graph_cycles,
+        )
+
+        resolved_flows = [
+            flow_cache[key].graph_flow
+            for key in sorted(flow_cache, key=lambda item: item[1])
+        ]
+
+        graph_purpose_text = interpolate_checked_skill_mentions(
+            purpose_items[0].value,
+            current_unit=unit,
+            owner_text=f"skill_graph `{graph_decl.name}` purpose",
+            source_span=purpose_items[0].source_span or graph_decl.source_span,
+        )
+
+        self._append_skill_graph_policy_warnings(
+            graph_decl=graph_decl,
+            graph_name=graph_decl.name,
+            flow=self.session.flow_for_unit(unit),
+            reached_stage_decls=reached_stage_decls,
+            reached_stage_units=reached_stage_units,
+            reached_skill_decls=reached_skill_decls,
+            reached_receipt_decls=reached_receipt_decls,
+            resolved_stages=tuple(resolved_stages),
+            resolved_flows=tuple(resolved_flows),
+            graph_recovery=graph_recovery,
+            append_warning=append_warning,
         )
 
         resolved_skills: list[model.ResolvedSkillGraphSkill] = []
@@ -824,9 +1510,31 @@ class ResolveSkillGraphsMixin:
                         if skill_decl.package_link is None
                         else skill_decl.package_link.package_id
                     ),
+                    category=self._skill_decl_scalar(skill_decl, "category"),
+                    visibility=self._skill_decl_scalar(skill_decl, "visibility"),
+                    manual_only=self._skill_decl_scalar(skill_decl, "manual_only"),
+                    default_flow_member=self._skill_decl_scalar(
+                        skill_decl,
+                        "default_flow_member",
+                    ),
+                    aliases=self._skill_decl_scalar(skill_decl, "aliases"),
                     source_span=skill_decl.source_span,
                 )
             )
+        for skill in resolved_skills:
+            if _truthy(skill.manual_only) and _truthy(skill.default_flow_member):
+                append_warning(
+                    code="W211",
+                    policy_key="manual_only_default_flow_conflict",
+                    summary="Manual-only skill is marked as a default flow member",
+                    owner_kind="skill",
+                    owner_name=skill.name,
+                    detail=(
+                        f"Skill `{skill.name}` has `manual_only: \"true\"` "
+                        "and `default_flow_member: \"true\"`."
+                    ),
+                    source_span=skill.source_span or graph_decl.source_span,
+                )
 
         resolved_packages: list[model.ResolvedSkillGraphPackage] = []
         for package_id in sorted(reached_package_decls):
@@ -840,6 +1548,52 @@ class ResolveSkillGraphsMixin:
                 )
             )
 
+        resolved_artifacts: list[model.ResolvedSkillGraphArtifact] = []
+        for artifact_name in sorted(reached_artifact_decls):
+            artifact_decl = reached_artifact_decls[artifact_name]
+            artifact_unit = reached_artifact_units[artifact_name]
+            resolved_artifacts.append(
+                resolve_artifact_decl(artifact_decl, owner_unit=artifact_unit)
+            )
+        artifacts_by_name = {artifact.name: artifact for artifact in resolved_artifacts}
+        anchors_by_key: dict[str, model.ResolvedSkillGraphArtifact] = {}
+        for artifact in resolved_artifacts:
+            if artifact.anchor is None:
+                continue
+            anchor_key = artifact.anchor.casefold()
+            existing_artifact = anchors_by_key.get(anchor_key)
+            if existing_artifact is not None:
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Skill graph `{graph_decl.name}` reaches artifacts "
+                        f"`{existing_artifact.name}` and `{artifact.name}` with "
+                        f"the same anchor `{artifact.anchor}`."
+                    ),
+                    unit=reached_artifact_units[artifact.name],
+                    source_span=artifact.source_span or graph_decl.source_span,
+                    hints=("Keep artifact anchors unique within one graph.",),
+                )
+            anchors_by_key[anchor_key] = artifact
+        for stage in resolved_stages:
+            for artifact_name in stage.artifact_names:
+                artifact = artifacts_by_name[artifact_name]
+                if artifact.owner_stage_name == stage.canonical_name:
+                    continue
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Stage `{stage.canonical_name}` lists artifact "
+                        f"`{artifact_name}` under `artifacts:`, but that "
+                        f"artifact declares owner `{artifact.owner_stage_name}`."
+                    ),
+                    unit=reached_stage_units[stage.canonical_name],
+                    source_span=stage.source_span or graph_decl.source_span,
+                    hints=(
+                        "Only the artifact owner stage may list it under "
+                        "`artifacts:`. Other stages can read it through "
+                        "`inputs:`.",
+                    ),
+                )
+
         resolved_receipts: list[model.ResolvedReceipt] = []
         for receipt_name in sorted(reached_receipt_decls):
             receipt_decl = reached_receipt_decls[receipt_name]
@@ -848,14 +1602,10 @@ class ResolveSkillGraphsMixin:
                 self._resolve_resolved_receipt(receipt_decl, unit=receipt_unit)
             )
 
-        resolved_flows = [
-            flow_cache[key].graph_flow
-            for key in sorted(flow_cache, key=lambda item: item[1])
-        ]
         resolved = model.ResolvedSkillGraph(
             canonical_name=graph_decl.name,
             title=graph_decl.title,
-            purpose=purpose_items[0].value,
+            purpose=graph_purpose_text,
             roots=graph_roots,
             sets=graph_sets,
             recovery=graph_recovery,
@@ -864,8 +1614,11 @@ class ResolveSkillGraphsMixin:
             flows=tuple(resolved_flows),
             stages=tuple(resolved_stages),
             skills=tuple(resolved_skills),
+            skill_relations=tuple(skill_relations),
+            artifacts=tuple(resolved_artifacts),
             receipts=tuple(resolved_receipts),
             packages=tuple(resolved_packages),
+            warnings=tuple(graph_warnings),
             stage_edges=tuple(dedup_stage_edges),
             stage_successors={
                 key: tuple(values) for key, values in sorted(stage_successors.items())
@@ -991,7 +1744,7 @@ class ResolveSkillGraphsMixin:
                 )
             seen.add(policy_key)
             if entry.action == "dag":
-                if entry.key != "acyclic":
+                if entry.key not in model.SKILL_GRAPH_DAG_POLICY_KEYS:
                     raise self._skill_graph_error(
                         detail=(
                             f"Skill graph `{owner_label}` declares unsupported "
@@ -999,7 +1752,33 @@ class ResolveSkillGraphsMixin:
                         ),
                         unit=unit,
                         source_span=entry.source_span or graph_decl.source_span,
-                        hints=("Sub-plan 4 supports only `dag acyclic`.",),
+                        hints=(
+                            "Use `dag acyclic` or `dag allow_cycle \"...\"`.",
+                        ),
+                    )
+                if entry.key == "allow_cycle" and not entry.reason:
+                    raise self._skill_graph_error(
+                        detail=(
+                            f"Skill graph `{owner_label}` declares "
+                            "`dag allow_cycle` without a reason."
+                        ),
+                        unit=unit,
+                        source_span=entry.source_span or graph_decl.source_span,
+                        hints=("Write `dag allow_cycle \"Reason\"`.",),
+                    )
+            elif entry.action == "allow":
+                if entry.key not in model.SKILL_GRAPH_ALLOW_POLICY_KEYS:
+                    raise self._skill_graph_error(
+                        detail=(
+                            f"Skill graph `{owner_label}` declares unsupported "
+                            f"`allow {entry.key}` policy."
+                        ),
+                        unit=unit,
+                        source_span=entry.source_span or graph_decl.source_span,
+                        hints=(
+                            "Use a shipped graph allow-policy key such as "
+                            "`unbound_edges`.",
+                        ),
                     )
             elif entry.action == "require":
                 if entry.key not in model.SKILL_GRAPH_STRICT_POLICY_KEYS:
@@ -1031,6 +1810,7 @@ class ResolveSkillGraphsMixin:
                 model.ResolvedSkillGraphPolicy(
                     action=entry.action,
                     key=entry.key,
+                    reason=entry.reason,
                     source_span=entry.source_span,
                 )
             )
@@ -1131,6 +1911,161 @@ class ResolveSkillGraphsMixin:
             resolved_decls.append((entry.kind, owner_unit, declaration, entry))
         return tuple(resolved_roots), tuple(resolved_decls)
 
+    def _append_skill_graph_policy_warnings(
+        self,
+        *,
+        graph_decl: model.SkillGraphDecl,
+        graph_name: str,
+        flow,
+        reached_stage_decls: dict[str, model.StageDecl],
+        reached_stage_units: dict[str, IndexedUnit],
+        reached_skill_decls: dict[str, model.SkillDecl],
+        reached_receipt_decls: dict[str, model.ReceiptDecl],
+        resolved_stages: tuple[model.ResolvedStage, ...],
+        resolved_flows: tuple[model.ResolvedSkillGraphFlow, ...],
+        graph_recovery: model.ResolvedSkillGraphRecovery | None,
+        append_warning,
+    ) -> None:
+        for stage_name, stage_decl in sorted(flow.stages_by_name.items()):
+            if stage_name in reached_stage_decls:
+                continue
+            append_warning(
+                code="W201",
+                policy_key="orphan_stage",
+                summary="Stage is not reached by this graph",
+                owner_kind="stage",
+                owner_name=stage_name,
+                detail=(
+                    f"Skill graph `{graph_name}` does not reach stage "
+                    f"`{stage_name}` from any root."
+                ),
+                source_span=stage_decl.source_span or graph_decl.source_span,
+            )
+
+        for skill_name, skill_decl in sorted(flow.skills_by_name.items()):
+            if skill_name in reached_skill_decls:
+                continue
+            append_warning(
+                code="W202",
+                policy_key="orphan_skill",
+                summary="Skill is not reached by this graph",
+                owner_kind="skill",
+                owner_name=skill_name,
+                detail=(
+                    f"Skill graph `{graph_name}` does not reach skill "
+                    f"`{skill_name}` from a stage owner, stage support, "
+                    "relation, or checked skill mention."
+                ),
+                source_span=skill_decl.source_span or graph_decl.source_span,
+            )
+
+        stages_by_owner: dict[str, list[model.ResolvedStage]] = {}
+        for stage in resolved_stages:
+            stages_by_owner.setdefault(stage.owner_skill_name, []).append(stage)
+            if stage.risk_guarded is None:
+                append_warning(
+                    code="W208",
+                    policy_key="stage_without_risk_guard",
+                    summary="Stage has no risk guard",
+                    owner_kind="stage",
+                    owner_name=stage.canonical_name,
+                    detail=(
+                        f"Stage `{stage.canonical_name}` has no "
+                        "`risk_guarded:` field."
+                    ),
+                    source_span=stage.source_span or graph_decl.source_span,
+                )
+        for owner_skill, owner_stages in sorted(stages_by_owner.items()):
+            if len(owner_stages) < 2:
+                continue
+            stage_list = ", ".join(stage.canonical_name for stage in owner_stages)
+            append_warning(
+                code="W203",
+                policy_key="stage_owner_shared",
+                summary="One skill owns multiple stages",
+                owner_kind="skill",
+                owner_name=owner_skill,
+                detail=(
+                    f"Skill `{owner_skill}` owns multiple reached stages in "
+                    f"`{graph_name}`: {stage_list}."
+                ),
+                source_span=owner_stages[0].source_span or graph_decl.source_span,
+            )
+
+        for graph_flow in resolved_flows:
+            if graph_flow.approve is None:
+                append_warning(
+                    code="W207",
+                    policy_key="flow_without_approve",
+                    summary="Flow has no approve route",
+                    owner_kind="skill_flow",
+                    owner_name=graph_flow.canonical_name,
+                    detail=(
+                        f"Skill flow `{graph_flow.canonical_name}` has no "
+                        "`approve:` flow."
+                    ),
+                    source_span=graph_flow.source_span or graph_decl.source_span,
+                )
+            for edge in graph_flow.edges:
+                if edge.route is not None or edge.source.kind != "stage":
+                    continue
+                stage_unit = reached_stage_units.get(edge.source.name)
+                if stage_unit is None:
+                    continue
+                emitted_receipt = self._lookup_stage_emitted_receipt(
+                    stage_name=edge.source.name,
+                    unit=stage_unit,
+                )
+                if emitted_receipt is None:
+                    continue
+                if not any(
+                    self._receipt_route_choice_matches_target(
+                        choice,
+                        target_node=edge.target,
+                    )
+                    for route_field in emitted_receipt.routes
+                    for choice in route_field.choices
+                ):
+                    continue
+                append_warning(
+                    code="W209",
+                    policy_key="edge_route_binding_missing",
+                    summary="Edge route binding is missing",
+                    owner_kind="skill_flow",
+                    owner_name=graph_flow.canonical_name,
+                    detail=(
+                        f"Skill flow `{graph_flow.canonical_name}` edge "
+                        f"`{edge.source.name} -> {edge.target.name}` is "
+                        "allowed by graph policy but has no `route:` binding."
+                    ),
+                    source_span=edge.source_span or graph_flow.source_span,
+                )
+
+        consumed_receipts = {
+            entry.type_name
+            for stage in resolved_stages
+            for entry in stage.inputs
+            if entry.type_kind == "receipt"
+        }
+        recovery_receipts = set()
+        if graph_recovery is not None and graph_recovery.flow_receipt_name is not None:
+            recovery_receipts.add(graph_recovery.flow_receipt_name)
+        for receipt_name, receipt_decl in sorted(reached_receipt_decls.items()):
+            if receipt_name in consumed_receipts or receipt_name in recovery_receipts:
+                continue
+            append_warning(
+                code="W206",
+                policy_key="receipt_without_consumer",
+                summary="Receipt has no reached consumer",
+                owner_kind="receipt",
+                owner_name=receipt_name,
+                detail=(
+                    f"Receipt `{receipt_name}` is reached by `{graph_name}` "
+                    "but no reached stage lists it under `inputs:`."
+                ),
+                source_span=receipt_decl.source_span or graph_decl.source_span,
+            )
+
     def _validate_skill_graph_dag(
         self,
         *,
@@ -1138,6 +2073,7 @@ class ResolveSkillGraphsMixin:
         stage_edges: tuple[model.ResolvedSkillGraphStageEdge, ...],
         unit: IndexedUnit,
         source_span,
+        allow_cycles: bool = False,
     ) -> None:
         adjacency: dict[str, tuple[str, ...]] = {}
         edge_by_pair: dict[tuple[str, str], model.ResolvedSkillGraphStageEdge] = {}
@@ -1181,6 +2117,8 @@ class ResolveSkillGraphsMixin:
 
         if cycle_edge is None:
             return
+        if allow_cycles:
+            return
         raise self._skill_graph_error(
             detail=(
                 f"Skill graph `{graph_name}` expands to a stage cycle through "
@@ -1197,8 +2135,15 @@ class ResolveSkillGraphsMixin:
         self,
         skill_decl: model.SkillDecl,
     ) -> str | None:
+        return self._skill_decl_scalar(skill_decl, "purpose")
+
+    def _skill_decl_scalar(
+        self,
+        skill_decl: model.SkillDecl,
+        key: str,
+    ) -> str | None:
         for item in skill_decl.items:
-            if isinstance(item, model.RecordScalar) and item.key == "purpose":
+            if isinstance(item, model.RecordScalar) and item.key == key:
                 if isinstance(item.value, str):
                     return item.value
         return None

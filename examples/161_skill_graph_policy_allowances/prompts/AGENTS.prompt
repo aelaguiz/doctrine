@@ -1,0 +1,39 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the review loop."
+
+enum ReviewDecision: "Review Decision"
+    approve: "Approve"
+    revise: "Revise"
+
+stage DraftStage: "Draft Stage"
+    owner: ControllerSkill
+    intent: "Draft the work."
+    durable_target: "Draft receipt."
+    durable_evidence: "Draft receipt."
+    advance_condition: "Draft receipt lands."
+
+stage ReviewStage: "Review Stage"
+    owner: ControllerSkill
+    intent: "Review the work."
+    durable_target: "Review receipt."
+    durable_evidence: "Review receipt."
+    advance_condition: "Review receipt lands."
+
+skill_flow ReviewLoop: "Review Loop"
+    start: ReviewStage
+    edge ReviewStage -> DraftStage:
+        when: ReviewDecision.revise
+        why: "The reviewer can send the work back to drafting."
+
+skill_flow MainFlow: "Main Flow"
+    start: DraftStage
+    edge DraftStage -> ReviewLoop:
+        why: "Drafting enters the review loop."
+
+skill_graph LoopGraph: "Loop Graph"
+    purpose: "Show a named authoring loop."
+    roots:
+        flow MainFlow
+    policy:
+        dag allow_cycle "The review loop is a named authoring loop."
+        warn branch_coverage_incomplete

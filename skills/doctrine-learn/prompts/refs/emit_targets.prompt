@@ -47,14 +47,15 @@ output_dir = "examples/07_handoffs/build"
 
         "Rules the compiler enforces:"
         bullets rules:
-            """`entrypoint` must be `AGENTS.prompt`, `SOUL.prompt`, or
-  `SKILL.prompt`."""
+            """`entrypoint` must be `AGENTS.prompt`, `SOUL.prompt`,
+  `SKILL.prompt`, or `GRAPH.prompt`."""
             "`emit_docs` accepts `AGENTS.prompt` or `SOUL.prompt`."
             "`emit_skill` accepts `SKILL.prompt`."
             """`emit_flow` accepts `AGENTS.prompt` or `SOUL.prompt`, not
   `SKILL.prompt`."""
-            """`emit_skill_graph` accepts `AGENTS.prompt`, `SOUL.prompt`, or
-  `SKILL.prompt`, as long as the entrypoint can see the target graph."""
+            """`emit_skill_graph` accepts `AGENTS.prompt`, `SOUL.prompt`,
+  `SKILL.prompt`, or `GRAPH.prompt`, as long as the entrypoint can see the
+  target graph."""
             """`entrypoint` stays inside the target project root unless the target
   declares both `source_root` and `source_id`."""
             "`source_root` must be an existing directory, and the entrypoint must stay inside it."
@@ -72,12 +73,13 @@ across two entrypoints."""
 uv run --locked python -m doctrine.emit_skill --target example_122_skill_package_emit_documents
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
+uv run --locked python -m doctrine.emit_skill_graph --target example_160_skill_graph_relations_mentions
 """
         "Useful rules:"
         bullets rules:
             "Repeat `--target` to emit several targets in one command."
             "`emit_docs` and `emit_skill` run on configured targets only."
-            "`emit_skill_graph` runs on configured targets and also supports direct mode with `--entrypoint`, `--output-dir`, and optional `--graph`."
+            "`emit_skill_graph` runs on configured targets and also supports direct mode with `--entrypoint`, `--output-dir`, optional `--graph`, repeatable `--view`, and repeatable `--diagram`."
             """`emit_flow` also accepts direct mode with `--entrypoint` plus
   `--output-dir`, but not both modes at once."""
             """All commands fail loud on config or compiler errors. They do not
@@ -118,7 +120,7 @@ Run with `doctrine.emit_skill`."""
 
         section skill_graph_target: "Skill Graph Target"
             """Compiles one named `skill_graph` into a graph bundle with graph
-Markdown, JSON, diagrams, and `SKILL_GRAPH.source.json`:"""
+Markdown, JSON, receipt schemas, diagrams, and `SKILL_GRAPH.source.json`:"""
             code:
                 language: toml
                 text: """[[tool.doctrine.emit.targets]]
@@ -135,6 +137,8 @@ Run with `doctrine.emit_skill_graph`."""
                 "`graph` is optional only when the entrypoint can see exactly one graph."
                 "Use `graph = \"<Name>\"` to make build-contract proof exact and stable."
                 "Graph targets emit `SKILL_GRAPH.contract.json` and `SKILL_GRAPH.source.json` beside the `references/` graph views."
+                "`GRAPH.prompt` is the preferred entrypoint for standalone graph packages."
+                "Use `views:` in the graph to override paths such as `receipt_schema_dir`."
 
         section external_skill_source_target: "External Skill Source Target"
             """Use this when a downstream repo emits a local runtime copy from an

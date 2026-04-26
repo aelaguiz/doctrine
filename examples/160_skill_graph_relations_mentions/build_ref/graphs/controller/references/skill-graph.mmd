@@ -1,0 +1,4 @@
+flowchart LR
+    stage_DraftStage["Draft Stage<br/>owner: AuthorSkill"]
+    stage_ReviewStage["Review Stage<br/>owner: ReviewSkill"]
+    stage_DraftStage -->|The draft moves to Review Skill.| stage_ReviewStage

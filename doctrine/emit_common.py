@@ -45,7 +45,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CAMEL_BOUNDARY_RE = re.compile(r"(?<!^)(?=[A-Z])")
 DOCS_ENTRYPOINTS = ("AGENTS.prompt", "SOUL.prompt")
 SKILL_ENTRYPOINTS = ("SKILL.prompt",)
-SUPPORTED_ENTRYPOINTS = DOCS_ENTRYPOINTS + SKILL_ENTRYPOINTS
+GRAPH_ENTRYPOINTS = ("GRAPH.prompt",)
+SUPPORTED_ENTRYPOINTS = DOCS_ENTRYPOINTS + SKILL_ENTRYPOINTS + GRAPH_ENTRYPOINTS
 
 
 # Single rendering path for field vocabularies across all field-shaped surfaces.

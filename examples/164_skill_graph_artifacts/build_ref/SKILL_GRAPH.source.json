@@ -1,0 +1,93 @@
+{
+  "receipt_version": 1,
+  "graph": {
+    "name": "ArtifactGraph",
+    "title": "Artifact Graph",
+    "purpose": "Emit durable artifact contracts from graph truth."
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "target": {
+    "name": "example_164_skill_graph_artifacts",
+    "entrypoint": "examples/164_skill_graph_artifacts/prompts/AGENTS.prompt"
+  },
+  "inputs": [
+    {
+      "path": "examples/164_skill_graph_artifacts/prompts/AGENTS.prompt",
+      "kind": "prompt",
+      "sha256": "53bd11e44c5935e677caf62e80f7b5ae0d686b61db2276eabcbe027598a541e0"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL_GRAPH.contract.json",
+      "kind": "graph_artifact",
+      "sha256": "c8c393f740def909bc03ffcdaa1ddf48cfa250807384b175ea21d07de0cbce2b"
+    },
+    {
+      "path": "references/artifact-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "ddb256ab25a12ad9bd710aba587146f11cdca234d91379cdc37efcceaac7ddbb"
+    },
+    {
+      "path": "references/flow-registry.md",
+      "kind": "graph_artifact",
+      "sha256": "3cdf50da41739b41926c0cbec200eb24ca48871f6bb7ce70a13b56daaf89f121"
+    },
+    {
+      "path": "references/recovery-audit.md",
+      "kind": "graph_artifact",
+      "sha256": "665baf9f9537ba6cf2e9a3357de7add0d770f23155a0c05032368da68a1ced47"
+    },
+    {
+      "path": "references/skill-graph.d2",
+      "kind": "graph_artifact",
+      "sha256": "1dae5d9e9fb3eb6cfe75b5ac0f35c360f22d3058c57aef95d57485e9f3c5a7ac"
+    },
+    {
+      "path": "references/skill-graph.json",
+      "kind": "graph_artifact",
+      "sha256": "954b68af65efe4591121dc9d108667ef65e967588e04f692d2f328f30725917c"
+    },
+    {
+      "path": "references/skill-graph.md",
+      "kind": "graph_artifact",
+      "sha256": "1711d38a190a30a30b22cb513da3eaa76f06910c4032f8fafed9f3a47c95cf7d"
+    },
+    {
+      "path": "references/skill-graph.mmd",
+      "kind": "graph_artifact",
+      "sha256": "e74c971df219291d6589ded799c750a283fd1d58082431ff2eff2c97ed4a16db"
+    },
+    {
+      "path": "references/skill-graph.svg",
+      "kind": "graph_artifact",
+      "sha256": "491a41ffe50759dd4762330a0cd8256e8c11807ad6721497717fd8472f4ea9d4"
+    },
+    {
+      "path": "references/skill-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "6814bb0ec43d0e59728087fe81c3938aa857b39566fa71fb9c94aa22f0c35f9e"
+    },
+    {
+      "path": "references/stage-contracts.md",
+      "kind": "graph_artifact",
+      "sha256": "e9330ff2ead99161d1df7fbedcf3111ce75ef942f0a1b1b04cbe23d0c189e763"
+    },
+    {
+      "path": "references/stepwise-manifest.md",
+      "kind": "graph_artifact",
+      "sha256": "712c6868819daf12b38d23aa4199cdfd5eb0e4a474d9db5f6376534b03ad772f"
+    }
+  ],
+  "source_tree_sha256": "00759e5dea42465a817a52d545b60d30dba14da79e4ef7973955fe5e831dd895",
+  "output_tree_sha256": "a30188f7b0ac9a5bc4eb2e7c0f0e6cc1b56ea66373134a514258af1ce4606f2c",
+  "graph_contract_sha256": "c8c393f740def909bc03ffcdaa1ddf48cfa250807384b175ea21d07de0cbce2b",
+  "graph_json_sha256": "954b68af65efe4591121dc9d108667ef65e967588e04f692d2f328f30725917c",
+  "diagram_d2_sha256": "1dae5d9e9fb3eb6cfe75b5ac0f35c360f22d3058c57aef95d57485e9f3c5a7ac",
+  "diagram_svg_sha256": "491a41ffe50759dd4762330a0cd8256e8c11807ad6721497717fd8472f4ea9d4",
+  "diagram_mermaid_sha256": "e74c971df219291d6589ded799c750a283fd1d58082431ff2eff2c97ed4a16db",
+  "linked_package_receipts": []
+}

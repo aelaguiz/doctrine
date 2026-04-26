@@ -18,10 +18,19 @@ Emit the full controller graph bundle from one closure.
 - `require route_targets_resolve`
 - `require stage_lane`
 
+## Skill Relations
+
+- No reached skill relations.
+
+## Warnings
+
+- No graph warnings.
+
 ## Reached
 
 - Flows: 1
 - Stages: 2
 - Skills: 1
+- Artifacts: 0
 - Receipts: 1
 - Packages: 1

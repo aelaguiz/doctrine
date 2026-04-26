@@ -15,23 +15,28 @@
   "policies": [
     {
       "action": "dag",
-      "key": "acyclic"
+      "key": "acyclic",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "edge_reason"
+      "key": "edge_reason",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "durable_checkpoint"
+      "key": "durable_checkpoint",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "route_targets_resolve"
+      "key": "route_targets_resolve",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "stage_lane"
+      "key": "stage_lane",
+      "reason": null
     }
   ],
   "skills": [
@@ -39,15 +44,25 @@
       "name": "ControllerSkill",
       "title": "Controller Skill",
       "purpose": "Own the controller stages.",
-      "package_id": "controller-package"
+      "package_id": "controller-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
     }
   ],
+  "skill_relations": [],
   "stages": [
     {
       "name": "AuthorReview",
       "title": "Author Review",
       "owner": "ControllerSkill",
       "lane": "StageLane.review",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
       "reaching_flows": [
         "F1AuthorLesson"
       ]
@@ -57,11 +72,16 @@
       "title": "Lesson Plan",
       "owner": "ControllerSkill",
       "lane": "StageLane.pipeline",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
       "reaching_flows": [
         "F1AuthorLesson"
       ]
     }
   ],
+  "artifacts": [],
   "flows": [
     {
       "name": "F1AuthorLesson",
@@ -96,5 +116,6 @@
       "why": "The review stage must follow the plan receipt route.",
       "route": "LessonPlanReceipt.next_route.review"
     }
-  ]
+  ],
+  "warnings": []
 }

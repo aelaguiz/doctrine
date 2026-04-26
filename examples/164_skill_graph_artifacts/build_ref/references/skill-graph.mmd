@@ -1,0 +1,4 @@
+flowchart LR
+    stage_ConsumePacket["Consume Packet<br/>owner: ConsumerSkill"]
+    stage_ProducePacket["Produce Packet<br/>owner: ProducerSkill"]
+    stage_ProducePacket -->|The consumer reads the producer artifact.| stage_ConsumePacket

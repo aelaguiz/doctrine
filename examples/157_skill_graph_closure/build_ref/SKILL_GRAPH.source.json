@@ -24,12 +24,22 @@
     {
       "path": "SKILL_GRAPH.contract.json",
       "kind": "graph_artifact",
-      "sha256": "957ff2fa083af2480b69e5d4a0162c6ae2c80cb6c8d45b20c37fca2676daa821"
+      "sha256": "a86a2dce0ef3410be520e96c4457a9b4054e9ad9a778f47aedb46083d72559b5"
+    },
+    {
+      "path": "references/artifact-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "f33bacbd97085c8c953d3535b87026dc9ad2460c917107f7e4817e216f0fa6c7"
     },
     {
       "path": "references/flow-registry.md",
       "kind": "graph_artifact",
       "sha256": "4e59bbdc1fea70ee7de5917b1b2a6a799de24849c4b456262aa30a991877ca14"
+    },
+    {
+      "path": "references/receipts/FlowReceipt.schema.json",
+      "kind": "graph_artifact",
+      "sha256": "9da1faaba58be30ae2ccb535ae87b50575def5d1a4a3b5b2253087d3bbe6a0bc"
     },
     {
       "path": "references/recovery-audit.md",
@@ -44,12 +54,12 @@
     {
       "path": "references/skill-graph.json",
       "kind": "graph_artifact",
-      "sha256": "eb3c6dce1af25a2340733d3aee188deb5d42801fc6b65d1d5656f5bcf40fe6de"
+      "sha256": "88c702be34525601434f402531ea31ed56fe0803f651e28239f00630e67f10f5"
     },
     {
       "path": "references/skill-graph.md",
       "kind": "graph_artifact",
-      "sha256": "128e02a4c7e7fba893b93b3d814bdc9fe4387eb3df80646ab7b7eb8b81dc32b3"
+      "sha256": "0228a6b4378834c75d805125e01256178271671f6b01e8491a79f961e9b46289"
     },
     {
       "path": "references/skill-graph.mmd",
@@ -64,12 +74,12 @@
     {
       "path": "references/skill-inventory.md",
       "kind": "graph_artifact",
-      "sha256": "e5d2419b19ed842a0bda2b30745d47de685844ed75d11fe2ddb4656f5485f243"
+      "sha256": "8528bcd012d73633a1543593291d53ef795146907d9a9a70ed5207c8d79227b0"
     },
     {
       "path": "references/stage-contracts.md",
       "kind": "graph_artifact",
-      "sha256": "632919a8a1c3e7c54d7a199313b838a09566881853a7bae54a19f8859f78d145"
+      "sha256": "067a40649dec39202068b8a3cda30080087e8f243eaacd7def5d0aceec2f76eb"
     },
     {
       "path": "references/stepwise-manifest.md",
@@ -78,9 +88,9 @@
     }
   ],
   "source_tree_sha256": "0da78d6382acbaf57736c3dd6b1f4e0c6a17c72c03764a6641be3421cb53df82",
-  "output_tree_sha256": "ca7adbe541c15c7dfd8d8007c8376d3c36ba80c4b2e707f96f9893dc36d71bd9",
-  "graph_contract_sha256": "957ff2fa083af2480b69e5d4a0162c6ae2c80cb6c8d45b20c37fca2676daa821",
-  "graph_json_sha256": "eb3c6dce1af25a2340733d3aee188deb5d42801fc6b65d1d5656f5bcf40fe6de",
+  "output_tree_sha256": "d6ea398a972cdb213131eed3bcaf35b318048e162eb4eb3851923945ced2b053",
+  "graph_contract_sha256": "a86a2dce0ef3410be520e96c4457a9b4054e9ad9a778f47aedb46083d72559b5",
+  "graph_json_sha256": "88c702be34525601434f402531ea31ed56fe0803f651e28239f00630e67f10f5",
   "diagram_d2_sha256": "84273d63f83895ce7acfae1f154e95635803b8f25cd76ebbe08a81cd2e3088bc",
   "diagram_svg_sha256": "1ad6ad6da047fe3d6cb74af911e5de1fbb646bde580040e891229771655fb023",
   "diagram_mermaid_sha256": "61c81502109a2cb4c35872effd5937daf3780915b225a81ff97a579b04d6675e",

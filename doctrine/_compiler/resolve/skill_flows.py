@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from doctrine import model
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
@@ -91,13 +93,33 @@ class ResolveSkillFlowsMixin:
         *,
         unit: IndexedUnit,
         allow_graph_set_candidates: bool = False,
+        allow_unbound_edges: bool = False,
+        allow_incomplete_branch_coverage: bool = False,
+        branch_coverage_warning_callback: Callable[
+            [str, str, str, tuple[str, ...], object],
+            None,
+        ]
+        | None = None,
     ) -> model.ResolvedSkillFlow:
+        owner_label = self._skill_flow_owner_label(flow_decl, unit=unit)
         cache = self._resolved_skill_flow_cache()
-        cache_key = (id(unit), flow_decl.name, allow_graph_set_candidates)
+        cache_key = (
+            id(unit),
+            flow_decl.name,
+            allow_graph_set_candidates,
+            allow_unbound_edges,
+            allow_incomplete_branch_coverage,
+        )
         cached = cache.get(cache_key)
         if cached is not None:
+            if allow_incomplete_branch_coverage:
+                self._emit_incomplete_branch_coverage_warnings(
+                    edges=cached.edges,
+                    unit=unit,
+                    owner_label=owner_label,
+                    warning_callback=branch_coverage_warning_callback,
+                )
             return cached
-        owner_label = self._skill_flow_owner_label(flow_decl, unit=unit)
 
         intent_items: list[model.SkillFlowIntentItem] = []
         start_items: list[model.SkillFlowStartItem] = []
@@ -188,6 +210,7 @@ class ResolveSkillFlowsMixin:
             owner_label=owner_label,
             repeats_by_name=repeats_by_name,
             start_node=start_node,
+            allow_unbound_edges=allow_unbound_edges,
         )
 
         # Local DAG check (after expansion just enough to flag cycles among
@@ -207,6 +230,8 @@ class ResolveSkillFlowsMixin:
             edge_items=edge_items,
             unit=unit,
             owner_label=owner_label,
+            allow_incomplete_coverage=allow_incomplete_branch_coverage,
+            warning_callback=branch_coverage_warning_callback,
         )
 
         resolved_variations = self._resolve_skill_flow_variations(
@@ -384,7 +409,12 @@ class ResolveSkillFlowsMixin:
         # Local flow validation stays strict by default. Graph closure can
         # opt into late binding so unresolved names carry forward as graph-set
         # candidates instead of failing here.
-        lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        try:
+            lookup_targets = self._decl_lookup_targets(ref, unit=unit)
+        except CompileError:
+            if allow_graph_set_candidates:
+                return ("graph_set_candidate", self._dotted_ref(ref))
+            raise
         for lookup_target in lookup_targets:
             target_decls = unit_declarations(lookup_target.unit)
             target_name = lookup_target.declaration_name
@@ -422,6 +452,7 @@ class ResolveSkillFlowsMixin:
         owner_label: str,
         repeats_by_name: dict[str, model.ResolvedSkillFlowRepeat],
         start_node: model.ResolvedSkillFlowNode | None,
+        allow_unbound_edges: bool = False,
     ) -> tuple[
         tuple[model.ResolvedSkillFlowEdge, ...],
         dict[tuple[str, str], model.ResolvedSkillFlowNode],
@@ -505,14 +536,15 @@ class ResolveSkillFlowsMixin:
             # Strict default: when the source stage emits a routed receipt
             # whose route choice points at the edge target, the edge must
             # bind that route choice exactly.
-            self._enforce_required_route_binding(
-                edge=item,
-                unit=unit,
-                owner_label=owner_label,
-                source_node=source_node,
-                target_node=target_node,
-                resolved_route=resolved_route,
-            )
+            if not allow_unbound_edges:
+                self._enforce_required_route_binding(
+                    edge=item,
+                    unit=unit,
+                    owner_label=owner_label,
+                    source_node=source_node,
+                    target_node=target_node,
+                    resolved_route=resolved_route,
+                )
 
             resolved.append(
                 model.ResolvedSkillFlowEdge(
@@ -762,6 +794,9 @@ class ResolveSkillFlowsMixin:
         edge_items: list[model.SkillFlowEdgeItem],
         unit: IndexedUnit,
         owner_label: str,
+        allow_incomplete_coverage: bool = False,
+        warning_callback: Callable[[str, str, str, tuple[str, ...], object], None]
+        | None = None,
     ) -> None:
         sources_with_when: dict[
             tuple[str, str], list[model.ResolvedSkillFlowEdge]
@@ -835,6 +870,16 @@ class ResolveSkillFlowsMixin:
                 seen[key] = edge
             missing = sorted(members - set(seen.keys()))
             if missing:
+                if allow_incomplete_coverage:
+                    self._emit_branch_coverage_warning(
+                        owner_label=owner_label,
+                        source_name=branched[0].source.name,
+                        enum_name=enum_name,
+                        missing=tuple(missing),
+                        source_span=branched[0].source_span,
+                        warning_callback=warning_callback,
+                    )
+                    continue
                 missing_text = ", ".join(missing)
                 raise self._skill_flow_error(
                     detail=(
@@ -850,6 +895,57 @@ class ResolveSkillFlowsMixin:
                         "Sub-plan 3 has no `otherwise:` escape hatch.",
                     ),
                 )
+
+    def _emit_incomplete_branch_coverage_warnings(
+        self,
+        *,
+        edges: tuple[model.ResolvedSkillFlowEdge, ...],
+        unit: IndexedUnit,
+        owner_label: str,
+        warning_callback: Callable[[str, str, str, tuple[str, ...], object], None]
+        | None,
+    ) -> None:
+        sources_with_when: dict[
+            tuple[str, str], list[model.ResolvedSkillFlowEdge]
+        ] = {}
+        for edge in edges:
+            if edge.when is None:
+                continue
+            key = (edge.source.kind, edge.source.name)
+            sources_with_when.setdefault(key, []).append(edge)
+        for branched in sources_with_when.values():
+            enum_name = branched[0].when.enum_name
+            enum_decl = self._lookup_enum_decl(enum_name=enum_name, unit=unit)
+            if enum_decl is None:
+                continue
+            members = {member.key for member in enum_decl.members}
+            seen = {edge.when.member_key for edge in branched}
+            missing = tuple(sorted(members - seen))
+            if not missing:
+                continue
+            self._emit_branch_coverage_warning(
+                owner_label=owner_label,
+                source_name=branched[0].source.name,
+                enum_name=enum_name,
+                missing=missing,
+                source_span=branched[0].source_span,
+                warning_callback=warning_callback,
+            )
+
+    def _emit_branch_coverage_warning(
+        self,
+        *,
+        owner_label: str,
+        source_name: str,
+        enum_name: str,
+        missing: tuple[str, ...],
+        source_span,
+        warning_callback: Callable[[str, str, str, tuple[str, ...], object], None]
+        | None,
+    ) -> None:
+        if warning_callback is None:
+            return
+        warning_callback(owner_label, source_name, enum_name, missing, source_span)
 
     # ---- Branch ref resolution -------------------------------------------
 

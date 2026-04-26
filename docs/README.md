@@ -26,7 +26,7 @@ for repo setup and proof commands.
   declaration reference for composition rules, refs, `output schema`,
   `route field`, `final_output.route:`, target-owned `delivery_skill:`,
   runtime packages, top-level `output[...]` inheritance, markdown emission,
-  and `skill package`
+  `skill package`, and the shipped skill graph language
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, explicit `emit:` document companions, source-root package
   bundles, `SKILL.source.json`, package-scoped graph targets, `emit_skill`,
@@ -69,7 +69,7 @@ for repo setup and proof commands.
 - [LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md](LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md):
   use-case audit for first-class skill graph support
 - [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md):
-  proposed Doctrine language support for typed skill graphs
+  shipped Doctrine-side language support for typed skill graphs
 - [EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md](EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md):
   active epic that decomposes the skill graph spec into shipped sub-plans
 - [ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md](ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md):
@@ -83,12 +83,16 @@ for repo setup and proof commands.
   shipped sub-plan 3 — full top-level `skill_flow` body with `start:`,
   `approve:`, `edge`, `route:`, `kind:`, `when:`, `repeat`, `variation`,
   `unsafe`, and `changed_workflow:`, plus local DAG and route-binding
-  checks. Graph closure across flows, graph policies, and graph emit stay
-  in later sub-plans
+  checks. Graph closure across flows, graph policies, and graph emit are
+  covered by sub-plans 4 and 5 below
 - [ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md](ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md):
   shipped sub-plan 4 — top-level `skill_graph`, graph closure, graph JSON
   and Markdown emit, graph source receipts, `emit_skill_graph`, and
   `verify_skill_graph`
+- [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md): shipped
+  Doctrine-side graph language surface, including skill relations, checked
+  skill mentions, graph warnings, `GRAPH.prompt`, receipt schema views, and
+  `dag allow_cycle`; examples `160` through `164` prove the phase 5 surface
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor

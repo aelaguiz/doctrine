@@ -441,6 +441,7 @@ class SkillDecl:
     title: str
     items: tuple[RecordItem, ...]
     package_link: "SkillPackageLink" | None = None
+    relations: tuple["SkillRelation", ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

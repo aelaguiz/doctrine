@@ -17,10 +17,19 @@ Close the authoring graph over roots sets and recovery refs.
 - `require durable_checkpoint`
 - `require route_targets_resolve`
 
+## Skill Relations
+
+- No reached skill relations.
+
+## Warnings
+
+- No graph warnings.
+
 ## Reached
 
 - Flows: 2
 - Stages: 2
 - Skills: 1
+- Artifacts: 0
 - Receipts: 1
 - Packages: 0

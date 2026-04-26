@@ -62,6 +62,7 @@ class UnitDeclarations:
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skill_packages_by_id: dict[str, model.SkillPackageDecl]
+    artifacts_by_name: dict[str, model.ArtifactDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
@@ -133,6 +134,7 @@ class IndexedFlow:
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skill_packages_by_id: dict[str, model.SkillPackageDecl]
+    artifacts_by_name: dict[str, model.ArtifactDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
@@ -723,6 +725,7 @@ def index_unit(
     skills_by_name: dict[str, model.SkillDecl] = {}
     skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
+    artifacts_by_name: dict[str, model.ArtifactDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
@@ -956,6 +959,16 @@ def index_unit(
                 source_path=prompt_file.source_path,
             )
             continue
+        if isinstance(declaration, model.ArtifactDecl):
+            _register_decl(
+                artifacts_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            artifacts_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.EnumDecl):
             _register_decl(
                 enums_by_name,
@@ -1080,6 +1093,7 @@ def index_unit(
         skills_by_name=skills_by_name,
         skill_packages_by_name=skill_packages_by_name,
         skill_packages_by_id=skill_packages_by_id,
+        artifacts_by_name=artifacts_by_name,
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,

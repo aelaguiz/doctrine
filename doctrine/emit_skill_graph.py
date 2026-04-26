@@ -38,6 +38,7 @@ from doctrine.skill_graph_source_receipts import (
 from doctrine.skill_source_receipts import receipt_path_for_target as skill_receipt_path_for_target
 from doctrine._skill_graph_render.d2 import render_skill_graph_d2
 from doctrine._skill_graph_render.markdown import (
+    render_artifact_inventory,
     render_flow_registry,
     render_graph_markdown,
     render_recovery_audit,
@@ -54,18 +55,24 @@ GRAPH_MARKDOWN_FILE = "references/skill-graph.md"
 SKILL_INVENTORY_FILE = "references/skill-inventory.md"
 FLOW_REGISTRY_FILE = "references/flow-registry.md"
 STAGE_CONTRACTS_FILE = "references/stage-contracts.md"
+ARTIFACT_INVENTORY_FILE = "references/artifact-inventory.md"
 RECOVERY_AUDIT_FILE = "references/recovery-audit.md"
 STEPWISE_MANIFEST_FILE = "references/stepwise-manifest.md"
 GRAPH_D2_FILE = "references/skill-graph.d2"
 GRAPH_SVG_FILE = "references/skill-graph.svg"
 GRAPH_MERMAID_FILE = "references/skill-graph.mmd"
+RECEIPT_SCHEMA_DIR = "references/receipts"
+GRAPH_EMIT_ENTRYPOINTS = SUPPORTED_ENTRYPOINTS
+DIAGRAM_VIEW_KEYS = frozenset({"diagram_d2", "diagram_svg", "diagram_mermaid"})
 
 DEFAULT_GRAPH_VIEW_PATHS = {
     "graph_contract": GRAPH_CONTRACT_FILE,
     "graph_source": SOURCE_RECEIPT_FILE_NAME,
     "graph_json": GRAPH_JSON_FILE,
     "graph_markdown": GRAPH_MARKDOWN_FILE,
+    "receipt_schema_dir": RECEIPT_SCHEMA_DIR,
     "skill_inventory": SKILL_INVENTORY_FILE,
+    "artifact_inventory": ARTIFACT_INVENTORY_FILE,
     "flow_registry": FLOW_REGISTRY_FILE,
     "stage_contracts": STAGE_CONTRACTS_FILE,
     "recovery_audit": RECOVERY_AUDIT_FILE,
@@ -85,7 +92,10 @@ def main(argv: list[str] | None = None) -> int:
             else Path(args.pyproject).resolve() if args.pyproject else None
         )
         for target in _resolve_requested_targets(args, config_path):
-            emitted = emit_target_skill_graph(target)
+            emitted = emit_target_skill_graph(
+                target,
+                selected_views=_selected_views_from_args(args),
+            )
             print(
                 f"{target.name}: emitted {len(emitted)} file(s) to {display_path(target.output_dir)}"
             )
@@ -99,10 +109,11 @@ def emit_target_skill_graph(
     target: EmitTarget,
     *,
     output_dir_override: Path | None = None,
+    selected_views: frozenset[str] | None = None,
 ) -> tuple[Path, ...]:
     ensure_supported_entrypoint(
         target.entrypoint,
-        allowed_entrypoints=SUPPORTED_ENTRYPOINTS,
+        allowed_entrypoints=GRAPH_EMIT_ENTRYPOINTS,
         owner_label=f"emit_skill_graph target `{target.name}`",
     )
     try:
@@ -138,6 +149,7 @@ def emit_target_skill_graph(
         graph=graph,
         emitted_dir=emitted_dir,
     )
+    selected_view_keys = _normalize_selected_views(selected_views)
 
     files_to_write = {
         "graph_contract": json.dumps(_render_graph_contract(graph), indent=2, sort_keys=False)
@@ -146,6 +158,7 @@ def emit_target_skill_graph(
         + "\n",
         "graph_markdown": render_graph_markdown(graph),
         "skill_inventory": render_skill_inventory(graph),
+        "artifact_inventory": render_artifact_inventory(graph),
         "flow_registry": render_flow_registry(graph),
         "stage_contracts": render_stage_contracts(graph),
         "recovery_audit": render_recovery_audit(graph),
@@ -153,6 +166,12 @@ def emit_target_skill_graph(
         "diagram_d2": render_skill_graph_d2(graph),
         "diagram_mermaid": render_skill_graph_mermaid(graph),
     }
+    if selected_view_keys is not None:
+        files_to_write = {
+            key: value
+            for key, value in files_to_write.items()
+            if key in selected_view_keys
+        }
 
     emitted_paths: list[Path] = []
     for view_key, content in files_to_write.items():
@@ -161,27 +180,44 @@ def emit_target_skill_graph(
         path.write_text(content, encoding="utf-8")
         emitted_paths.append(path)
 
-    try:
-        render_flow_svg(
-            resolved_paths["diagram_d2"],
-            resolved_paths["diagram_svg"],
+    if selected_view_keys is None or "receipt_schema_dir" in selected_view_keys:
+        emitted_paths.extend(
+            _emit_receipt_schema_files(
+                graph=graph,
+                schema_dir=resolved_paths["receipt_schema_dir"],
+                emitted_dir=emitted_dir,
+            )
         )
-    except FlowRenderDependencyError as exc:
-        raise emit_error(
-            "E565",
-            "Skill graph emit failed",
-            str(exc),
-            location=path_location(resolved_paths["diagram_d2"]),
-            hints=exc.hints,
-        ) from exc
-    except FlowRenderFailure as exc:
-        raise emit_error(
-            "E565",
-            "Skill graph emit failed",
-            f"Could not render `{resolved_paths['diagram_svg'].name}` from `{resolved_paths['diagram_d2'].name}`: {exc}",
-            location=path_location(resolved_paths["diagram_svg"]),
-        ) from exc
-    emitted_paths.append(resolved_paths["diagram_svg"])
+
+    if selected_view_keys is None or "diagram_svg" in selected_view_keys:
+        if not resolved_paths["diagram_d2"].is_file():
+            resolved_paths["diagram_d2"].parent.mkdir(parents=True, exist_ok=True)
+            resolved_paths["diagram_d2"].write_text(
+                render_skill_graph_d2(graph),
+                encoding="utf-8",
+            )
+            emitted_paths.append(resolved_paths["diagram_d2"])
+        try:
+            render_flow_svg(
+                resolved_paths["diagram_d2"],
+                resolved_paths["diagram_svg"],
+            )
+        except FlowRenderDependencyError as exc:
+            raise emit_error(
+                "E565",
+                "Skill graph emit failed",
+                str(exc),
+                location=path_location(resolved_paths["diagram_d2"]),
+                hints=exc.hints,
+            ) from exc
+        except FlowRenderFailure as exc:
+            raise emit_error(
+                "E565",
+                "Skill graph emit failed",
+                f"Could not render `{resolved_paths['diagram_svg'].name}` from `{resolved_paths['diagram_d2'].name}`: {exc}",
+                location=path_location(resolved_paths["diagram_svg"]),
+            ) from exc
+        emitted_paths.append(resolved_paths["diagram_svg"])
 
     linked_package_receipts = _linked_package_receipts(target=target, graph=graph)
     input_paths = tuple(session.root_flow.member_paths)
@@ -201,6 +237,70 @@ def emit_target_skill_graph(
     )
     emitted_paths.append(source_receipt_path)
     return tuple(emitted_paths)
+
+
+def _normalize_selected_views(
+    selected_views: frozenset[str] | None,
+) -> frozenset[str] | None:
+    if selected_views is None:
+        return None
+    unknown = sorted(selected_views - model.SKILL_GRAPH_VIEW_KEYS)
+    if unknown:
+        raise emit_error(
+            "E564",
+            "Invalid skill graph view path",
+            f"Unsupported skill graph view selector(s): {', '.join(unknown)}.",
+            hints=(
+                "Use shipped graph view keys such as `graph_json`, "
+                "`graph_markdown`, or `diagram_mermaid`.",
+            ),
+        )
+    normalized = set(selected_views)
+    if "diagram_svg" in normalized:
+        normalized.add("diagram_d2")
+    return frozenset(normalized)
+
+
+def _emit_receipt_schema_files(
+    *,
+    graph: model.ResolvedSkillGraph,
+    schema_dir: Path,
+    emitted_dir: Path,
+) -> tuple[Path, ...]:
+    _validate_path_within_root(
+        candidate_path=schema_dir,
+        root=emitted_dir,
+        detail_prefix=(
+            f"Skill graph `{graph.canonical_name}` view `receipt_schema_dir`"
+        ),
+        code="E564",
+        summary="Invalid skill graph view path",
+    )
+    schema_dir.mkdir(parents=True, exist_ok=True)
+    emitted: list[Path] = []
+    for receipt in graph.receipts:
+        schema_path = (schema_dir / f"{receipt.canonical_name}.schema.json").resolve()
+        _validate_path_within_root(
+            candidate_path=schema_path,
+            root=schema_dir,
+            detail_prefix=(
+                f"Skill graph `{graph.canonical_name}` receipt schema "
+                f"`{receipt.canonical_name}`"
+            ),
+            code="E564",
+            summary="Invalid skill graph view path",
+        )
+        schema_path.write_text(
+            json.dumps(
+                _render_resolved_receipt_json_schema(receipt),
+                indent=2,
+                sort_keys=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        emitted.append(schema_path)
+    return tuple(emitted)
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -239,7 +339,34 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "Direct mode graph name. Optional when exactly one visible graph is available."
         ),
     )
+    parser.add_argument(
+        "--view",
+        action="append",
+        choices=tuple(sorted(model.SKILL_GRAPH_VIEW_KEYS)),
+        help=(
+            "Emit one graph view key. Repeat to emit multiple views. "
+            "By default all graph views are emitted."
+        ),
+    )
+    parser.add_argument(
+        "--diagram",
+        action="append",
+        choices=("d2", "mermaid", "svg"),
+        help=(
+            "Emit one graph diagram form. Repeat to emit multiple diagrams. "
+            "Equivalent to selecting the matching diagram view."
+        ),
+    )
     return parser
+
+
+def _selected_views_from_args(args: argparse.Namespace) -> frozenset[str] | None:
+    selected = set(args.view or ())
+    for diagram in args.diagram or ():
+        selected.add(f"diagram_{diagram}")
+    if not selected:
+        return None
+    return frozenset(selected)
 
 
 def _resolve_requested_targets(
@@ -284,7 +411,7 @@ def _resolve_requested_targets(
                 location=path_location(config_path),
                 hints=(
                     "Use `--target <name>` for configured targets.",
-                    "Use `--entrypoint path/to/SKILL.prompt --output-dir build` for direct mode.",
+                    "Use `--entrypoint path/to/SKILL.prompt --output-dir build` or `--entrypoint path/to/GRAPH.prompt --output-dir build` for direct mode.",
                 ),
             )
         return (
@@ -294,7 +421,7 @@ def _resolve_requested_targets(
                 entrypoint=args.entrypoint,
                 output_dir=args.output_dir,
                 graph=args.graph,
-                allowed_entrypoints=SUPPORTED_ENTRYPOINTS,
+                allowed_entrypoints=GRAPH_EMIT_ENTRYPOINTS,
             ),
         )
 
@@ -305,7 +432,7 @@ def _resolve_requested_targets(
         location=path_location(config_path),
         hints=(
             "Use `--target <name>` for configured targets.",
-            "Use `--entrypoint path/to/SKILL.prompt --output-dir build` for direct mode.",
+            "Use `--entrypoint path/to/SKILL.prompt --output-dir build` or `--entrypoint path/to/GRAPH.prompt --output-dir build` for direct mode.",
         ),
     )
 
@@ -375,7 +502,11 @@ def _render_graph_contract(graph: model.ResolvedSkillGraph) -> dict[str, object]
             }
         ),
         "policies": [
-            {"action": policy.action, "key": policy.key}
+            {
+                "action": policy.action,
+                "key": policy.key,
+                "reason": policy.reason,
+            }
             for policy in graph.policies
         ],
         "views": {
@@ -387,9 +518,18 @@ def _render_graph_contract(graph: model.ResolvedSkillGraph) -> dict[str, object]
                 "title": skill.title,
                 "purpose": skill.purpose,
                 "package_id": skill.package_id,
+                "category": skill.category,
+                "visibility": skill.visibility,
+                "manual_only": skill.manual_only,
+                "default_flow_member": skill.default_flow_member,
+                "aliases": skill.aliases,
             }
             for skill in graph.skills
         },
+        "skill_relations": [
+            _render_skill_relation(relation)
+            for relation in graph.skill_relations
+        ],
         "stages": {
             stage.canonical_name: {
                 "title": stage.title,
@@ -406,15 +546,23 @@ def _render_graph_contract(graph: model.ResolvedSkillGraph) -> dict[str, object]
                     for entry in stage.inputs
                 },
                 "emits": stage.emits_receipt_name,
+                "artifacts": list(stage.artifact_names),
                 "checkpoint": stage.checkpoint,
                 "intent": stage.intent,
                 "durable_target": stage.durable_target,
                 "durable_evidence": stage.durable_evidence,
                 "advance_condition": stage.advance_condition,
                 "risk_guarded": stage.risk_guarded,
+                "entry": stage.entry,
+                "repair_routes": stage.repair_routes,
+                "waiver_policy": stage.waiver_policy,
                 "forbidden_outputs": list(stage.forbidden_outputs),
             }
             for stage in graph.stages
+        },
+        "artifacts": {
+            artifact.name: _render_graph_artifact(artifact)
+            for artifact in graph.artifacts
         },
         "flows": {
             flow.canonical_name: _render_graph_flow(flow)
@@ -442,6 +590,10 @@ def _render_graph_contract(graph: model.ResolvedSkillGraph) -> dict[str, object]
             }
             for package in graph.packages
         },
+        "warnings": [
+            _render_graph_warning(warning)
+            for warning in graph.warnings
+        ],
         "stage_edges": [
             _render_stage_edge(edge)
             for edge in graph.stage_edges
@@ -477,7 +629,11 @@ def _render_graph_query_json(graph: model.ResolvedSkillGraph) -> dict[str, objec
             }
         ),
         "policies": [
-            {"action": policy.action, "key": policy.key}
+            {
+                "action": policy.action,
+                "key": policy.key,
+                "reason": policy.reason,
+            }
             for policy in graph.policies
         ],
         "skills": [
@@ -486,8 +642,17 @@ def _render_graph_query_json(graph: model.ResolvedSkillGraph) -> dict[str, objec
                 "title": skill.title,
                 "purpose": skill.purpose,
                 "package_id": skill.package_id,
+                "category": skill.category,
+                "visibility": skill.visibility,
+                "manual_only": skill.manual_only,
+                "default_flow_member": skill.default_flow_member,
+                "aliases": skill.aliases,
             }
             for skill in graph.skills
+        ],
+        "skill_relations": [
+            _render_skill_relation(relation)
+            for relation in graph.skill_relations
         ],
         "stages": [
             {
@@ -495,9 +660,17 @@ def _render_graph_query_json(graph: model.ResolvedSkillGraph) -> dict[str, objec
                 "title": stage.title,
                 "owner": stage.owner_skill_name,
                 "lane": stage.lane_name,
+                "entry": stage.entry,
+                "repair_routes": stage.repair_routes,
+                "waiver_policy": stage.waiver_policy,
+                "artifacts": list(stage.artifact_names),
                 "reaching_flows": list(graph.stage_reaching_flows.get(stage.canonical_name, ())),
             }
             for stage in graph.stages
+        ],
+        "artifacts": [
+            _render_graph_artifact(artifact)
+            for artifact in graph.artifacts
         ],
         "flows": [
             {
@@ -525,6 +698,10 @@ def _render_graph_query_json(graph: model.ResolvedSkillGraph) -> dict[str, objec
             for package in graph.packages
         ],
         "stage_edges": [_render_stage_edge(edge) for edge in graph.stage_edges],
+        "warnings": [
+            _render_graph_warning(warning)
+            for warning in graph.warnings
+        ],
     }
 
 
@@ -619,6 +796,54 @@ def _render_stage_edge(edge: model.ResolvedSkillGraphStageEdge) -> dict[str, obj
             f"{edge.route_receipt_name}.{edge.route_field_key}.{edge.route_choice_key}"
         )
     return payload
+
+
+def _render_skill_relation(
+    relation: model.ResolvedSkillGraphSkillRelation,
+) -> dict[str, object]:
+    return {
+        "from": relation.source_skill_name,
+        "to": relation.target_skill_name,
+        "kind": relation.kind,
+        "why": relation.why,
+    }
+
+
+def _render_graph_artifact(
+    artifact: model.ResolvedSkillGraphArtifact,
+) -> dict[str, object]:
+    return {
+        "name": artifact.name,
+        "title": artifact.title,
+        "owner_stage": artifact.owner_stage_name,
+        "path_family": (
+            None
+            if artifact.path_family_name is None
+            else {
+                "kind": artifact.path_family_kind,
+                "name": artifact.path_family_name,
+            }
+        ),
+        "path": artifact.path,
+        "section": artifact.section,
+        "anchor": artifact.anchor,
+        "intent": artifact.intent,
+    }
+
+
+def _render_graph_warning(
+    warning: model.ResolvedSkillGraphWarning,
+) -> dict[str, object]:
+    return {
+        "code": warning.code,
+        "policy": warning.policy_key,
+        "summary": warning.summary,
+        "owner": {
+            "kind": warning.owner_kind,
+            "name": warning.owner_name,
+        },
+        "detail": warning.detail,
+    }
 
 
 def _linked_package_receipts(

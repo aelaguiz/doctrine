@@ -46,6 +46,20 @@ class _EdgeWhyPart:
 
 
 @dataclass(frozen=True, slots=True)
+class _SkillRelationsBlockPart:
+    relations: tuple[model.SkillRelation, ...]
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _SkillRelationWhyPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class _RepeatOverPart:
     ref: model.NameRef
     line: int | None
@@ -156,6 +170,18 @@ class SkillsTransformerMixin:
                 title=title,
                 items=body.items,
                 package_link=body.package_link,
+                relations=body.relations,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.ArtifactDecl(
+                name=name,
+                title=title,
+                items=tuple(body),
             ),
             meta,
         )
@@ -286,6 +312,8 @@ class SkillsTransformerMixin:
     def skill_decl_body(self, items):
         record_items: list[model.RecordItem] = []
         package_link: model.SkillPackageLink | None = None
+        relations: tuple[model.SkillRelation, ...] = ()
+        seen_relations = False
         for item in items:
             if isinstance(item, model.SkillPackageLink):
                 if package_link is not None:
@@ -297,8 +325,102 @@ class SkillsTransformerMixin:
                     )
                 package_link = item
                 continue
+            if isinstance(item, _SkillRelationsBlockPart):
+                if seen_relations:
+                    raise TransformParseFailure(
+                        "Skills may define `relations:` only once.",
+                        hints=("Keep exactly one `relations:` block per skill.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                relations = item.relations
+                seen_relations = True
+                continue
             record_items.append(item)
-        return SkillDeclBodyParts(items=tuple(record_items), package_link=package_link)
+        return SkillDeclBodyParts(
+            items=tuple(record_items),
+            package_link=package_link,
+            relations=relations,
+        )
+
+    @v_args(meta=True)
+    def skill_relations_block(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return _SkillRelationsBlockPart(
+            relations=tuple(items),
+            line=line,
+            column=column,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_relation_stmt(self, meta, kind, target_ref, body):
+        why: str | None = None
+        for item in body:
+            if isinstance(item, _SkillRelationWhyPart):
+                if why is not None:
+                    raise TransformParseFailure(
+                        "Skill relations may declare `why:` only once.",
+                        hints=("Keep one `why:` per skill relation.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                why = item.value
+        return _with_source_span(
+            model.SkillRelation(kind=kind, target_ref=target_ref, why=why),
+            meta,
+        )
+
+    def skill_relation_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_relation_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_relation_why_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _SkillRelationWhyPart(value=value, line=line, column=column)
+
+    def artifact_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def artifact_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def artifact_owner_stmt(self, meta, ref):
+        return _with_source_span(
+            model.ArtifactOwnerItem(stage_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_path_family_stmt(self, meta, ref):
+        return _with_source_span(
+            model.ArtifactPathFamilyItem(target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_scalar_stmt(self, meta, key, value):
+        return _with_source_span(
+            model.ArtifactScalarItem(key=key, value=value),
+            meta,
+        )
+
+    def artifact_scalar_key_path(self, _children):
+        return "path"
+
+    def artifact_scalar_key_section(self, _children):
+        return "section"
+
+    def artifact_scalar_key_anchor(self, _children):
+        return "anchor"
+
+    def artifact_scalar_key_intent(self, _children):
+        return "intent"
 
     def skill_entry_body(self, items):
         record_items: list[model.RecordItem] = []
@@ -750,6 +872,17 @@ class SkillsTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True)
+    def stage_artifacts_block(self, meta, items):
+        return _with_source_span(
+            model.StageArtifactsItem(artifact_refs=tuple(items)),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def stage_artifact_item(self, ref):
+        return ref
+
     @v_args(meta=True, inline=True)
     def stage_emits_stmt(self, meta, ref):
         return _with_source_span(
@@ -792,6 +925,15 @@ class SkillsTransformerMixin:
 
     def stage_scalar_key_risk_guarded(self, _children):
         return "risk_guarded"
+
+    def stage_scalar_key_entry(self, _children):
+        return "entry"
+
+    def stage_scalar_key_repair_routes(self, _children):
+        return "repair_routes"
+
+    def stage_scalar_key_waiver_policy(self, _children):
+        return "waiver_policy"
 
     def stage_scalar_key_checkpoint(self, _children):
         return "checkpoint"
@@ -1315,6 +1457,24 @@ class SkillsTransformerMixin:
     def skill_graph_policy_dag_acyclic_stmt(self, meta, _children=None):
         return _with_source_span(
             model.SkillGraphPolicyEntry(action="dag", key="acyclic"),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_dag_allow_cycle_stmt(self, meta, reason):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(
+                action="dag",
+                key="allow_cycle",
+                reason=reason,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_allow_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="allow", key=key),
             meta,
         )
 

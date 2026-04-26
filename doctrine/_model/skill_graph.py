@@ -74,13 +74,22 @@ class StageEmitsItem:
 
 
 @_dataclass(slots=True, frozen=True)
+class StageArtifactsItem:
+    """Raw `artifacts:` block on a top-level `stage` declaration."""
+
+    artifact_refs: tuple[NameRef, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class StageScalarItem:
     """A typed scalar field on a top-level `stage` declaration.
 
     Covers `id`, `intent`, `durable_target`, `durable_evidence`,
-    `advance_condition`, `risk_guarded`, and `checkpoint`. The parser does not
-    distinguish closed/open value sets here; the resolver enforces the closed
-    `checkpoint` set and required-field rules.
+    `advance_condition`, `risk_guarded`, `entry`, `repair_routes`,
+    `waiver_policy`, and `checkpoint`. The parser does not distinguish
+    closed/open value sets here; the resolver enforces the closed `checkpoint`
+    set and required-field rules.
     """
 
     key: str
@@ -103,6 +112,7 @@ StageBodyItem: _TypeAlias = (
     | StageAppliesToItem
     | StageInputsItem
     | StageEmitsItem
+    | StageArtifactsItem
     | StageScalarItem
     | StageForbiddenOutputsItem
 )
@@ -494,23 +504,109 @@ SKILL_GRAPH_VIEW_KEYS: frozenset[str] = frozenset(
         "graph_json",
         "graph_contract",
         "graph_source",
+        "artifact_inventory",
+        "receipt_schema_dir",
         "diagram_d2",
         "diagram_svg",
         "diagram_mermaid",
     }
 )
 SKILL_GRAPH_WARNING_POLICY_KEYS: frozenset[str] = frozenset(
-    {"orphan_stage", "orphan_skill", "receipt_without_consumer"}
+    {
+        "branch_coverage_incomplete",
+        "checked_skill_mention_unknown",
+        "edge_route_binding_missing",
+        "flow_without_approve",
+        "manual_only_default_flow_conflict",
+        "orphan_skill",
+        "orphan_stage",
+        "receipt_without_consumer",
+        "relation_without_reason",
+        "stage_owner_shared",
+        "stage_without_risk_guard",
+    }
 )
 SKILL_GRAPH_STRICT_POLICY_KEYS: frozenset[str] = frozenset(
     {
+        "checked_skill_mentions",
         "edge_reason",
         "durable_checkpoint",
+        "relation_reason",
         "route_targets_resolve",
         "branch_coverage",
         "stage_lane",
     }
 )
+SKILL_GRAPH_ALLOW_POLICY_KEYS: frozenset[str] = frozenset({"unbound_edges"})
+SKILL_GRAPH_DAG_POLICY_KEYS: frozenset[str] = frozenset({"acyclic", "allow_cycle"})
+SKILL_RELATION_KINDS: frozenset[str] = frozenset(
+    {
+        "baseline_for",
+        "blocks",
+        "extends",
+        "requires",
+        "supports",
+        "composes",
+        "audits",
+        "teaches",
+        "repairs",
+        "delegates_to",
+        "owns_surface",
+        "reads_surface",
+        "wraps",
+        "writes_surface",
+        "supersedes",
+        "related",
+    }
+)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillRelation:
+    """Raw `relations:` entry on a top-level `skill` declaration."""
+
+    kind: str
+    target_ref: NameRef
+    why: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ArtifactOwnerItem:
+    """Raw `owner: StageRef` line on a top-level `artifact` declaration."""
+
+    stage_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ArtifactPathFamilyItem:
+    """Raw `path_family: Ref` line on a top-level `artifact` declaration."""
+
+    target_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ArtifactScalarItem:
+    """A scalar field on a top-level `artifact` declaration."""
+
+    key: str
+    value: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+ArtifactBodyItem: _TypeAlias = ArtifactOwnerItem | ArtifactPathFamilyItem | ArtifactScalarItem
+
+
+@_dataclass(slots=True, frozen=True)
+class ArtifactDecl:
+    """A top-level durable artifact declaration."""
+
+    name: str
+    title: str
+    items: tuple[ArtifactBodyItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -578,6 +674,7 @@ class SkillGraphPolicyEntry:
 
     action: str
     key: str
+    reason: str | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -652,12 +749,16 @@ class ResolvedStage:
     applies_to_flow_names: tuple[str, ...]
     inputs: tuple[ResolvedStageInput, ...]
     emits_receipt_name: str | None
+    artifact_names: tuple[str, ...]
     checkpoint: str
     intent: str
     durable_target: str | None
     durable_evidence: str | None
     advance_condition: str
     risk_guarded: str | None
+    entry: str | None
+    repair_routes: str | None
+    waiver_policy: str | None
     forbidden_outputs: tuple[str, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
@@ -699,6 +800,7 @@ class ResolvedSkillGraphPolicy:
 
     action: str
     key: str
+    reason: str | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -751,6 +853,51 @@ class ResolvedSkillGraphSkill:
     title: str
     purpose: str | None
     package_id: str | None
+    category: str | None = None
+    visibility: str | None = None
+    manual_only: str | None = None
+    default_flow_member: str | None = None
+    aliases: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphSkillRelation:
+    """One graph-closed relation between two reached skills."""
+
+    source_skill_name: str
+    target_skill_name: str
+    kind: str
+    why: str | None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphArtifact:
+    """One reached durable artifact symbol in a resolved graph."""
+
+    name: str
+    title: str
+    owner_stage_name: str
+    path_family_kind: str | None = None
+    path_family_name: str | None = None
+    path: str | None = None
+    section: str | None = None
+    anchor: str | None = None
+    intent: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphWarning:
+    """One non-fatal graph warning produced by a `warn` policy."""
+
+    code: str
+    policy_key: str
+    summary: str
+    owner_kind: str
+    owner_name: str
+    detail: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -794,8 +941,11 @@ class ResolvedSkillGraph:
     flows: tuple[ResolvedSkillGraphFlow, ...]
     stages: tuple[ResolvedStage, ...]
     skills: tuple[ResolvedSkillGraphSkill, ...]
+    skill_relations: tuple[ResolvedSkillGraphSkillRelation, ...]
+    artifacts: tuple[ResolvedSkillGraphArtifact, ...]
     receipts: tuple["ResolvedReceipt", ...]
     packages: tuple[ResolvedSkillGraphPackage, ...]
+    warnings: tuple[ResolvedSkillGraphWarning, ...]
     stage_edges: tuple[ResolvedSkillGraphStageEdge, ...]
     stage_successors: dict[str, tuple[str, ...]]
     stage_predecessors: dict[str, tuple[str, ...]]

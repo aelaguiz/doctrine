@@ -24,19 +24,23 @@
   "policies": [
     {
       "action": "dag",
-      "key": "acyclic"
+      "key": "acyclic",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "edge_reason"
+      "key": "edge_reason",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "durable_checkpoint"
+      "key": "durable_checkpoint",
+      "reason": null
     },
     {
       "action": "require",
-      "key": "route_targets_resolve"
+      "key": "route_targets_resolve",
+      "reason": null
     }
   ],
   "views": {},
@@ -44,9 +48,15 @@
     "ControllerSkill": {
       "title": "Controller Skill",
       "purpose": "Own the authoring stages.",
-      "package_id": null
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
     }
   },
+  "skill_relations": [],
   "stages": {
     "ControllerRecoveryAudit": {
       "title": "Controller Recovery Audit",
@@ -57,12 +67,16 @@
       "applies_to": [],
       "inputs": {},
       "emits": null,
+      "artifacts": [],
       "checkpoint": "durable",
       "intent": "Audit the section state before work starts.",
       "durable_target": "Recovery brief.",
       "durable_evidence": "Recovery receipt.",
       "advance_condition": "Recovery receipt landed.",
       "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
       "forbidden_outputs": []
     },
     "LessonPlan": {
@@ -74,15 +88,20 @@
       "applies_to": [],
       "inputs": {},
       "emits": null,
+      "artifacts": [],
       "checkpoint": "durable",
       "intent": "Plan one lesson.",
       "durable_target": "Lesson plan.",
       "durable_evidence": "Plan receipt.",
       "advance_condition": "Plan receipt landed.",
       "risk_guarded": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
       "forbidden_outputs": []
     }
   },
+  "artifacts": {},
   "flows": {
     "F1AuthorLesson": {
       "title": "F1 - Author One Lesson",
@@ -177,6 +196,7 @@
     }
   },
   "packages": {},
+  "warnings": [],
   "stage_edges": [
     {
       "from": "ControllerRecoveryAudit",

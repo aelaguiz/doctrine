@@ -40,14 +40,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `forbidden_outputs:`, plus a closed `checkpoint:` value set
   (`durable`, `review_only`, `diagnostic`, `none`; default `durable`).
   Durable stages must declare `durable_target:` and `durable_evidence:`.
-  In this slice, `applies_to:` checks only that each ref resolves to a
-  top-level `skill_flow` and that the resolved flow does not repeat.
-  Stage validation runs as a flow-wide sweep during `compile_agent` and
-  `compile_skill_package`.
-- Skeletal top-level `skill_flow Name: "Title"` declarations register a
-  graph flow name so receipt route targets can resolve `flow FlowName`.
-  The optional body accepts only `intent: "..."`. DAG edges, branches,
-  repeats, route binding, and graph emit belong to later sub-plans.
+  Ordinary stage validation checks that each `applies_to:` ref resolves to a
+  top-level `skill_flow` and that the resolved flow does not repeat. Graph
+  compile also checks that reached stages list every reaching flow.
+- Top-level `skill_flow Name: "Title"` declarations register graph flow names
+  so receipt route targets can resolve `flow FlowName`. The unreleased graph
+  slice now also ships the full `skill_flow` body described below.
 - Top-level receipts may declare `route <key>: "Title"` fields whose
   choices target `stage <Name>`, `flow <Name>`, or the closed sentinel
   set `human`, `external`, or `terminal`. Route fields lower into a
@@ -122,6 +120,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - New examples `157_skill_graph_closure`, `158_skill_graph_emit`, and
   `159_skill_graph_policy` cover graph closure, graph emit from both
   `AGENTS.prompt` and `SKILL.prompt`, and graph-owned policy failures.
+- Top-level `skill` declarations now accept a checked `relations:` block.
+  Relation targets must resolve to top-level skills. Relation kinds are
+  closed. `require relation_reason` fails missing `why:` lines with `E566`,
+  while `warn relation_without_reason` emits `W210` when the strict policy is
+  off. Graph closure and graph JSON include reached skill relation facts.
+- Skill graphs now support checked `{{skill:Name}}`,
+  `{{skill:Name.package}}`, and `{{skill:Name.purpose}}` mentions in
+  graph-owned text. `require checked_skill_mentions` fails unknown mentions
+  with `E562`; `warn checked_skill_mention_unknown` emits `W204` when strict
+  checked mentions are off.
+- Graph warning policies now emit real graph warnings `W201` through `W211`
+  into graph contracts and graph Markdown. The warning set covers orphan
+  stages, orphan skills, shared stage owners, unknown checked skill mentions,
+  incomplete branch coverage, receipts without consumers, flows without
+  approve routes, stages without risk guards, missing relaxed route bindings,
+  missing relation reasons, and manual-only/default-flow conflicts.
+- Graph policy relaxers now include `allow unbound_edges`,
+  `dag allow_cycle "Reason"`, and `warn branch_coverage_incomplete`. Local
+  `skill_flow` compile stays strict by default; the relaxed behavior is graph
+  policy owned.
+- `GRAPH.prompt` is now a supported graph entrypoint for configured targets,
+  direct `emit_skill_graph`, graph verification, and manifest-backed corpus
+  proof.
+- Graph emit now supports `receipt_schema_dir`, `artifact_inventory`, and
+  view-scoped graph output. `SKILL_GRAPH.source.json` records emitted receipt
+  schemas, and `verify_skill_graph` checks them.
+- Top-level `artifact` declarations now model durable graph targets. Stages
+  can own artifacts with `artifacts:` and later stages can read them through
+  typed `inputs:`.
+- Graph contracts and graph views now carry additional authoring metadata:
+  skill `category`, `visibility`, `manual_only`, `default_flow_member`, and
+  `aliases`; stage `entry`, `repair_routes`, and `waiver_policy`; and
+  graph-path repeat targets backed by graph sets or dotted graph paths.
+- New examples `160_skill_graph_relations_mentions`,
+  `161_skill_graph_policy_allowances`, `162_skill_graph_negative_cases`,
+  `163_skill_graph_authoring_metadata`, and `164_skill_graph_artifacts` cover
+  the restored phase 5 graph language and emit surface.
+- Updated public graph docs, `docs/LANGUAGE_REFERENCE.md`,
+  `docs/VERSIONING.md`, `docs/README.md`, `docs/WARNINGS.md`,
+  `docs/COMPILER_ERRORS.md`, `examples/README.md`, and the shipped
+  `doctrine-learn` skill so release truth matches examples `150` through
+  `164`.
+
+### Verification
+
+- Phase 5 implementation proof on 2026-04-26: `make verify-examples`
+  passed 486/486 manifest cases, `make verify-package` passed, and
+  `uv run --locked python -m unittest discover tests` passed 581/581 tests.
+- Phase 5 repair proof on 2026-04-26: `make verify-examples` passed,
+  `make verify-package` passed, `uv run --locked python -m unittest discover
+  tests` passed 581/581 tests, and
+  `git -C ../lessons_studio status --short` returned no output after the
+  public-doc repair.
 
 ## v5.1.0 - 2026-04-24
 
