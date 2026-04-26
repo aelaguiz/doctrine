@@ -1,0 +1,7 @@
+title: Controller Graph
+direction: right
+
+stage_AuthorReview: "Author Review\nowner: ControllerSkill\nlane: StageLane.review"
+stage_LessonPlan: "Lesson Plan\nowner: ControllerSkill\nlane: StageLane.pipeline"
+
+stage_LessonPlan -> stage_AuthorReview: "The review stage must follow the plan receipt route.\nroute: LessonPlanReceipt.next_route.review"

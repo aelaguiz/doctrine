@@ -1,0 +1,59 @@
+enum StageLane: "Stage Lane"
+    pipeline: "Pipeline"
+    review: "Review"
+
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the controller stages."
+    package: "controller-package"
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+    route next_route: "Next Route"
+        review: "Review the plan." -> stage AuthorReview
+        done: "Finish the graph." -> terminal
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    lane: StageLane.pipeline
+    intent: "Plan the lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+    emits: LessonPlanReceipt
+
+stage AuthorReview: "Author Review"
+    owner: ControllerSkill
+    lane: StageLane.review
+    inputs:
+        flow_receipt: LessonPlanReceipt
+    intent: "Review the plan before handoff."
+    durable_target: "Review notes."
+    durable_evidence: "Review receipt."
+    advance_condition: "Review receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Plan then review one lesson."
+    start: LessonPlan
+    edge LessonPlan -> AuthorReview:
+        route: LessonPlanReceipt.next_route.review
+        why: "The review stage must follow the plan receipt route."
+
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+        description: "Own the controller graph package."
+    "Own the controller graph package."
+
+skill_graph ControllerGraph: "Controller Graph"
+    purpose: "Emit the full controller graph bundle from one closure."
+    roots:
+        flow F1AuthorLesson
+    policy:
+        dag acyclic
+        require edge_reason
+        require durable_checkpoint
+        require route_targets_resolve
+        require stage_lane
+    views:
+        graph_markdown: "references/controller-graph.md"
+        diagram_mermaid: "references/controller-graph.mmd"

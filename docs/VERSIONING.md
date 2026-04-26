@@ -89,6 +89,11 @@ Doctrine also ships narrower version lines.
   Additive keys such as `routes` or `json_schema` still count as public
   surface and need the same release review as any other emitted contract
   change.
+- Emitted `SKILL_GRAPH.contract.json` and `SKILL_GRAPH.source.json` files are
+  part of the public graph emit surface when a repo ships first-party graph
+  targets.
+- The graph Markdown views, graph JSON, `.d2`, `.svg`, and Mermaid files from
+  `emit_skill_graph` are also part of that public graph surface.
 - Generated public install trees such as `skills/.curated/agent-linter/`
   are part of the public surface when this repo is used as an `npx skills`
   source. They are build artifacts. The `.prompt` sources and emit targets
@@ -151,6 +156,11 @@ Every public release uses one release class.
   receipt-by-reference `SKILL.contract.json` slots, is an `additive`
   release when older prompts and older inline receipt slots still compile
   and emit unchanged.
+- Adding top-level `skill_graph`, graph closure, `emit_skill_graph`,
+  `verify_skill_graph`, `SKILL_GRAPH.contract.json`,
+  `SKILL_GRAPH.source.json`, graph JSON, graph Markdown views, and graph
+  diagram emit is an `additive` release when older prompts and older emit
+  targets still compile and emit unchanged.
 - Adding `type: enum` plus `values:` for local `output schema` enums was an
   `additive` release when legacy `type: string` plus `enum:` still worked and
   emitted schema files kept the same string-enum wire shape. Both forms are

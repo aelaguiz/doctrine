@@ -1,0 +1,24 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the authoring stages."
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan one lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Plan one lesson."
+    start: LessonPlan
+
+skill_graph BrokenRecoveryGraph: "Broken Recovery Graph"
+    purpose: "Fail on a missing recovery enum."
+    roots:
+        flow F1AuthorLesson
+    recovery:
+        flow_receipt: FlowReceipt
+        stage_status: MissingStageStatus

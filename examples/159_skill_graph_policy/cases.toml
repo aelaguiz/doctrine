@@ -1,0 +1,29 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "skill graph nested flow cycle fails with E562"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_cycle/AGENTS.prompt"
+graph = "CycleGraph"
+exception_type = "CompileError"
+error_code = "E562"
+
+[[cases]]
+name = "skill graph require stage_lane fails when a reached stage has no lane"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_stage_lane/AGENTS.prompt"
+graph = "LaneGraph"
+exception_type = "CompileError"
+error_code = "E562"
+
+[[cases]]
+name = "skill graph repeat over an undeclared graph set fails with E562"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_graph_set/AGENTS.prompt"
+graph = "MissingSetGraph"
+exception_type = "CompileError"
+error_code = "E562"

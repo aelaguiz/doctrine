@@ -1,0 +1,208 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "AuthoringGraph",
+    "title": "Authoring Graph",
+    "purpose": "Close the authoring graph over roots sets and recovery refs."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "F2AuthorSection"
+    }
+  ],
+  "sets": {
+    "LessonSlots": {
+      "title": "The slots in the section plan."
+    }
+  },
+  "recovery": {
+    "flow_receipt": "FlowReceipt",
+    "stage_status": "StageStatus",
+    "durable_artifact_status": "DurableArtifactStatus"
+  },
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic"
+    },
+    {
+      "action": "require",
+      "key": "edge_reason"
+    },
+    {
+      "action": "require",
+      "key": "durable_checkpoint"
+    },
+    {
+      "action": "require",
+      "key": "route_targets_resolve"
+    }
+  ],
+  "views": {},
+  "skills": {
+    "ControllerSkill": {
+      "title": "Controller Skill",
+      "purpose": "Own the authoring stages.",
+      "package_id": null
+    }
+  },
+  "stages": {
+    "ControllerRecoveryAudit": {
+      "title": "Controller Recovery Audit",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "checkpoint": "durable",
+      "intent": "Audit the section state before work starts.",
+      "durable_target": "Recovery brief.",
+      "durable_evidence": "Recovery receipt.",
+      "advance_condition": "Recovery receipt landed.",
+      "risk_guarded": null,
+      "forbidden_outputs": []
+    },
+    "LessonPlan": {
+      "title": "Lesson Plan",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "checkpoint": "durable",
+      "intent": "Plan one lesson.",
+      "durable_target": "Lesson plan.",
+      "durable_evidence": "Plan receipt.",
+      "advance_condition": "Plan receipt landed.",
+      "risk_guarded": null,
+      "forbidden_outputs": []
+    }
+  },
+  "flows": {
+    "F1AuthorLesson": {
+      "title": "F1 - Author One Lesson",
+      "intent": "Author one lesson from a locked slot.",
+      "start": {
+        "kind": "stage",
+        "name": "LessonPlan"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "LessonPlan"
+        }
+      ],
+      "edges": [],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": []
+    },
+    "F2AuthorSection": {
+      "title": "F2 - Author Section",
+      "intent": "Audit the section, then run one lesson per slot.",
+      "start": {
+        "kind": "stage",
+        "name": "ControllerRecoveryAudit"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "ControllerRecoveryAudit"
+        },
+        {
+          "kind": "repeat",
+          "name": "LessonSlotRun"
+        }
+      ],
+      "edges": [
+        {
+          "from": "ControllerRecoveryAudit",
+          "from_kind": "stage",
+          "to": "LessonSlotRun",
+          "to_kind": "repeat",
+          "kind": "normal",
+          "why": "Audit before per-slot authoring starts.",
+          "route": null,
+          "when": null
+        }
+      ],
+      "repeat_nodes": {
+        "LessonSlotRun": {
+          "target_flow": "F1AuthorLesson",
+          "over_kind": "graph_set",
+          "over": "LessonSlots",
+          "order": "serial",
+          "why": "Each slot changes the evidence for the next slot."
+        }
+      },
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "LessonSlotRun"
+      ]
+    }
+  },
+  "receipts": {
+    "FlowReceipt": {
+      "title": "Flow Receipt",
+      "fields": {
+        "current_stage": {
+          "type": "string",
+          "kind": "builtin"
+        }
+      },
+      "routes": {},
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "current_stage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_stage"
+        ]
+      }
+    }
+  },
+  "packages": {},
+  "stage_edges": [
+    {
+      "from": "ControllerRecoveryAudit",
+      "to": "LessonPlan",
+      "via_flow": "F2AuthorSection",
+      "kind": "normal",
+      "why": "Audit before per-slot authoring starts."
+    }
+  ],
+  "stage_successors": {
+    "ControllerRecoveryAudit": [
+      "LessonPlan"
+    ]
+  },
+  "stage_predecessors": {
+    "LessonPlan": [
+      "ControllerRecoveryAudit"
+    ]
+  },
+  "stage_reaching_flows": {
+    "ControllerRecoveryAudit": [
+      "F2AuthorSection"
+    ],
+    "LessonPlan": [
+      "F1AuthorLesson",
+      "F2AuthorSection"
+    ]
+  }
+}

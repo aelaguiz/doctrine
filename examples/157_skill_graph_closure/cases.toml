@@ -1,0 +1,26 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "skill graph closure emits one checked graph tree with roots sets and recovery refs"
+status = "active"
+kind = "build_contract"
+build_target = "example_157_skill_graph_closure"
+
+[[cases]]
+name = "skill graph root that does not resolve fails with E562"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_root/AGENTS.prompt"
+graph = "BrokenGraph"
+exception_type = "CompileError"
+error_code = "E562"
+
+[[cases]]
+name = "skill graph recovery enum that does not resolve fails with E562"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_bad_recovery_ref/AGENTS.prompt"
+graph = "BrokenRecoveryGraph"
+exception_type = "CompileError"
+error_code = "E562"

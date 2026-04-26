@@ -232,6 +232,14 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         readable=False,
         addressable_root=False,
     ),
+    DeclarationKind(
+        name="skill_graph",
+        label="skill_graph declaration",
+        registry_attr="skill_graphs_by_name",
+        decl_type=model.SkillGraphDecl,
+        readable=False,
+        addressable_root=False,
+    ),
 )
 
 

@@ -42,6 +42,7 @@ prompt_file: _NL* declaration+ _NL*
                        | receipt_decl
                        | stage_decl
                        | skill_flow_decl
+                       | skill_graph_decl
                        | enum_decl
                        | rule_decl
                        | abstract_agent
@@ -1093,6 +1094,36 @@ skill_flow_changed_workflow_body: skill_flow_changed_workflow_body_line+
                                       | skill_flow_changed_workflow_require_stmt
 skill_flow_changed_workflow_allow_stmt: "allow" CNAME _NL?
 skill_flow_changed_workflow_require_stmt: "require" CNAME _NL?
+
+// Top-level `skill_graph` declaration. Sub-plan 4 adds roots, graph-local
+// sets, recovery refs, policy metadata, and closed view overrides. Graph
+// emit and verify consume the resolved closure; they do not rebuild graph
+// truth from raw strings.
+skill_graph_decl: "skill_graph" CNAME ":" string _NL _INDENT skill_graph_body _DEDENT
+skill_graph_body: skill_graph_body_line+
+?skill_graph_body_line: skill_graph_purpose_stmt
+                      | skill_graph_roots_block
+                      | skill_graph_sets_block
+                      | skill_graph_recovery_block
+                      | skill_graph_policy_block
+                      | skill_graph_views_block
+skill_graph_purpose_stmt: "purpose" ":" string _NL?
+skill_graph_roots_block: "roots" ":" _NL _INDENT skill_graph_root_item+ _DEDENT
+skill_graph_root_item: "flow" name_ref _NL?                                  -> skill_graph_root_flow
+                     | "stage" name_ref _NL?                                 -> skill_graph_root_stage
+skill_graph_sets_block: "sets" ":" _NL _INDENT skill_graph_set_item+ _DEDENT
+skill_graph_set_item: CNAME ":" string _NL?
+skill_graph_recovery_block: "recovery" ":" _NL _INDENT skill_graph_recovery_item+ _DEDENT
+skill_graph_recovery_item: skill_graph_recovery_key ":" name_ref _NL?
+skill_graph_recovery_key: "flow_receipt"                                     -> skill_graph_recovery_key_flow_receipt
+                       | "stage_status"                                      -> skill_graph_recovery_key_stage_status
+                       | "durable_artifact_status"                           -> skill_graph_recovery_key_durable_artifact_status
+skill_graph_policy_block: "policy" ":" _NL _INDENT skill_graph_policy_item+ _DEDENT
+skill_graph_policy_item: "dag" "acyclic" _NL?                               -> skill_graph_policy_dag_acyclic_stmt
+                       | "require" CNAME _NL?                                -> skill_graph_policy_require_stmt
+                       | "warn" CNAME _NL?                                   -> skill_graph_policy_warn_stmt
+skill_graph_views_block: "views" ":" _NL _INDENT skill_graph_view_item+ _DEDENT
+skill_graph_view_item: CNAME ":" string _NL?
 
 record_readable_block: record_section_block
                      | readable_nonsection_block

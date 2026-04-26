@@ -78,6 +78,34 @@ build/
 package body as ordinary Doctrine-authored Markdown.
 `SKILL.source.json` records the source files and emitted files by hash.
 
+## Skill Graphs On `SKILL.prompt`
+
+One `SKILL.prompt` file may also declare top-level `stage`, `skill_flow`, and
+`skill_graph`.
+That does not change `emit_skill`. Skill emit stays package-first.
+
+Use a second emit target when the same package source should also emit graph
+docs:
+
+```toml
+[[tool.doctrine.emit.targets]]
+name = "controller_graph"
+entrypoint = "prompts/skills/controller/SKILL.prompt"
+graph = "ControllerGraph"
+output_dir = "build/graph"
+```
+
+Run the graph emit directly:
+
+```bash
+uv run --locked python -m doctrine.emit_skill_graph --target controller_graph
+```
+
+The graph target writes `SKILL_GRAPH.contract.json`,
+`SKILL_GRAPH.source.json`, graph JSON, Markdown views, `.d2`, `.svg`, and
+Mermaid under the same prompts-root-aware output layout the other emit
+commands use.
+
 ## Source-Root Model
 
 The package source root is the directory that contains `SKILL.prompt`.

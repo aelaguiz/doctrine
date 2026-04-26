@@ -1,0 +1,20 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the lane demo."
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan the lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow FlowA: "Flow A"
+    intent: "Reach the stage without a lane."
+    start: LessonPlan
+
+skill_graph LaneGraph: "Lane Graph"
+    purpose: "Fail when a reached stage is missing a lane."
+    roots:
+        flow FlowA
+    policy:
+        require stage_lane

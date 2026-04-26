@@ -100,6 +100,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   flow-local DAG, route binding, branches plus variations plus
   changed-workflow facts, and repeats. Each manifest includes one
   positive case plus focused `E561` negatives.
+- Top-level `skill_graph Name: "Title"` now closes one graph over root
+  `stage` and `skill_flow` declarations. The body supports required
+  `purpose:`, required `roots:`, optional `sets:`, optional `recovery:`,
+  optional `policy:`, and optional `views:`.
+- Doctrine now resolves one canonical graph closure object. It closes roots,
+  nested flows, repeat targets, reached stages, owner and support skills,
+  receipts, route bindings, package ids, recovery refs, and expanded
+  stage-edge DAG facts. Repeats may late-bind `over:` to graph-local
+  `sets:` on the graph compile path while ordinary agent and skill-package
+  compiles keep the older strict local flow rule.
+- Added `python -m doctrine.emit_skill_graph` and
+  `python -m doctrine.verify_skill_graph`. Graph emit writes
+  `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`,
+  `references/skill-graph.json`, graph Markdown views, `.d2`, `.svg`, and
+  Mermaid from one resolved closure. Graph verify checks the emitted tree,
+  graph receipt, and linked package receipts when they were recorded.
+- New errors: `E562` (invalid skill graph), `E563` (invalid skill graph
+  target), `E564` (invalid skill graph view path), and `E565` (skill graph
+  emit failed).
+- New examples `157_skill_graph_closure`, `158_skill_graph_emit`, and
+  `159_skill_graph_policy` cover graph closure, graph emit from both
+  `AGENTS.prompt` and `SKILL.prompt`, and graph-owned policy failures.
 
 ## v5.1.0 - 2026-04-24
 

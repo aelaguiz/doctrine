@@ -1,6 +1,6 @@
 # Emit Guide
 
-Doctrine ships three emit commands that share one prompts-root-aware emit
+Doctrine ships four emit commands that share one prompts-root-aware emit
 pipeline:
 
 - `doctrine.emit_docs` writes the runtime Markdown tree. That may be one
@@ -18,17 +18,24 @@ pipeline:
   package host-binding metadata.
 - `doctrine.emit_flow` writes one workflow data-flow graph as
   deterministic `.flow.d2` plus same-command `.flow.svg`.
+- `doctrine.emit_skill_graph` writes one graph bundle from a resolved
+  `skill_graph`: `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`,
+  graph JSON, Markdown views, `.d2`, `.svg`, and Mermaid.
 
 Use `emit_docs` when you need the compiled runtime prompt surface and the real
 structured final-output schema file. Use `emit_skill` when you need Doctrine
 to emit a real skill-package tree from `SKILL.prompt`. Use `emit_flow` when
 you need a reviewable graph of how declared inputs, concrete agents, outputs,
-and route edges fit together for one entrypoint.
+and route edges fit together for one entrypoint. Use `emit_skill_graph` when
+you need checked graph docs from top-level `skill_graph`, `stage`, and
+`skill_flow` declarations.
 
 Important mode split:
 
 - `emit_docs` runs on named targets from `pyproject.toml`.
 - `emit_skill` runs on named targets from `pyproject.toml`.
+- `emit_skill_graph` runs on named targets from `pyproject.toml` and also
+  supports direct mode with `--entrypoint` plus `--output-dir`.
 - `emit_flow` can run on a named target or in direct quick-start mode with
   `--entrypoint` plus `--output-dir`.
 
@@ -91,6 +98,7 @@ Each target field has one job:
 - `source_root`: optional source tree for an external skill source
 - `source_id`: stable id for that external skill source
 - `lock_file`: optional generated lock file for skill receipts
+- `graph`: optional `skill_graph` name for graph emit and graph verify
 
 Important rules:
 
@@ -98,6 +106,9 @@ Important rules:
   `SKILL.prompt`.
 - `emit_docs` accepts `AGENTS.prompt` or `SOUL.prompt`.
 - `emit_skill` accepts `SKILL.prompt`.
+- `emit_skill_graph` accepts `AGENTS.prompt`, `SOUL.prompt`, or
+  `SKILL.prompt` as long as the selected graph is visible from that
+  entrypoint.
 - `emit_flow` remains agent and workflow oriented. It accepts
   `AGENTS.prompt` or `SOUL.prompt` and rejects `SKILL.prompt`.
 - `entrypoint` must live under a `prompts/` tree. The emit pipeline preserves
@@ -227,6 +238,13 @@ a source checkout for this specific bundle.
 Use [AGENT_LINTER.md](AGENT_LINTER.md) for the install and use flow after
 emit.
 
+Emit one checked graph bundle from a configured target:
+
+```bash
+uv run --locked python -m doctrine.emit_skill_graph --target example_157_skill_graph_closure
+uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
+```
+
 Emit one workflow data-flow graph from a configured target:
 
 ```bash
@@ -295,10 +313,13 @@ Verify receipts in CI:
 
 ```bash
 uv run --locked python -m doctrine.verify_skill_receipts --target <target-name>
+uv run --locked python -m doctrine.verify_skill_graph --target example_157_skill_graph_closure
 ```
 
 When a target has `lock_file`, `emit_skill` updates that lock entry. The
 verify command then checks the emitted receipt and the lock entry together.
+`verify_skill_graph` checks the graph receipt, the emitted graph tree, and any
+linked package receipts recorded in `SKILL_GRAPH.source.json`.
 
 ## Quick Start Without A Named Target
 

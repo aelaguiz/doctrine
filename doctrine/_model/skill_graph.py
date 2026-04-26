@@ -476,3 +476,328 @@ class ResolvedReceiptRouteField:
     title: str
     choices: tuple[ResolvedReceiptRouteChoice, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+# Skill-graph declarations -------------------------------------------------
+
+SKILL_GRAPH_RECOVERY_KEYS: frozenset[str] = frozenset(
+    {"flow_receipt", "stage_status", "durable_artifact_status"}
+)
+SKILL_GRAPH_VIEW_KEYS: frozenset[str] = frozenset(
+    {
+        "flow_registry",
+        "stage_contracts",
+        "recovery_audit",
+        "stepwise_manifest",
+        "skill_inventory",
+        "graph_markdown",
+        "graph_json",
+        "graph_contract",
+        "graph_source",
+        "diagram_d2",
+        "diagram_svg",
+        "diagram_mermaid",
+    }
+)
+SKILL_GRAPH_WARNING_POLICY_KEYS: frozenset[str] = frozenset(
+    {"orphan_stage", "orphan_skill", "receipt_without_consumer"}
+)
+SKILL_GRAPH_STRICT_POLICY_KEYS: frozenset[str] = frozenset(
+    {
+        "edge_reason",
+        "durable_checkpoint",
+        "route_targets_resolve",
+        "branch_coverage",
+        "stage_lane",
+    }
+)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphPurposeItem:
+    """Raw `purpose:` line on a top-level `skill_graph` declaration."""
+
+    value: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphRootEntry:
+    """One `flow <Ref>` or `stage <Ref>` line inside `roots:`."""
+
+    kind: str
+    target_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphRootsItem:
+    """Raw `roots:` block on a top-level `skill_graph` declaration."""
+
+    entries: tuple[SkillGraphRootEntry, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphSetEntry:
+    """One `<SetName>: "Title"` row inside `sets:`."""
+
+    name: str
+    title: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphSetsItem:
+    """Raw `sets:` block on a top-level `skill_graph` declaration."""
+
+    entries: tuple[SkillGraphSetEntry, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphRecoveryEntry:
+    """One recovery ref inside `recovery:`."""
+
+    key: str
+    target_ref: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphRecoveryItem:
+    """Raw `recovery:` block on a top-level `skill_graph` declaration."""
+
+    entries: tuple[SkillGraphRecoveryEntry, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphPolicyEntry:
+    """One policy line inside `policy:`."""
+
+    action: str
+    key: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphPolicyItem:
+    """Raw `policy:` block on a top-level `skill_graph` declaration."""
+
+    entries: tuple[SkillGraphPolicyEntry, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphViewEntry:
+    """One `<view_key>: "path"` row inside `views:`."""
+
+    key: str
+    path: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphViewsItem:
+    """Raw `views:` block on a top-level `skill_graph` declaration."""
+
+    entries: tuple[SkillGraphViewEntry, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+SkillGraphBodyItem: _TypeAlias = (
+    SkillGraphPurposeItem
+    | SkillGraphRootsItem
+    | SkillGraphSetsItem
+    | SkillGraphRecoveryItem
+    | SkillGraphPolicyItem
+    | SkillGraphViewsItem
+)
+
+
+@_dataclass(slots=True, frozen=True)
+class SkillGraphDecl:
+    """A top-level `skill_graph` declaration."""
+
+    name: str
+    title: str
+    items: tuple[SkillGraphBodyItem, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+# Resolved stage facts -----------------------------------------------------
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedStageInput:
+    """One resolved stage input."""
+
+    key: str
+    type_kind: str
+    type_name: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedStage:
+    """Compiler-owned facts for one top-level `stage` declaration."""
+
+    canonical_name: str
+    title: str
+    stage_id: str | None
+    owner_skill_name: str
+    lane_name: str | None
+    support_skill_names: tuple[str, ...]
+    applies_to_flow_names: tuple[str, ...]
+    inputs: tuple[ResolvedStageInput, ...]
+    emits_receipt_name: str | None
+    checkpoint: str
+    intent: str
+    durable_target: str | None
+    durable_evidence: str | None
+    advance_condition: str
+    risk_guarded: str | None
+    forbidden_outputs: tuple[str, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+# Resolved graph closure ---------------------------------------------------
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphRoot:
+    """One resolved root on a `skill_graph` declaration."""
+
+    kind: str
+    name: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphSet:
+    """One resolved graph-local set."""
+
+    name: str
+    title: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphRecovery:
+    """Resolved `recovery:` refs for one graph."""
+
+    flow_receipt_name: str | None
+    stage_status_name: str | None
+    durable_artifact_status_name: str | None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphPolicy:
+    """One resolved graph policy fact."""
+
+    action: str
+    key: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphView:
+    """One resolved graph view override."""
+
+    key: str
+    path: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphRepeat:
+    """Graph-closed repeat metadata with graph-set refs finalized."""
+
+    name: str
+    target_flow_name: str
+    over_kind: str
+    over_name: str
+    order: str
+    why: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphFlow:
+    """Graph-owned view of one reached `skill_flow`."""
+
+    canonical_name: str
+    title: str
+    intent: str | None
+    start: ResolvedSkillFlowNode | None
+    approve: str | None
+    nodes: tuple[ResolvedSkillFlowNode, ...]
+    edges: tuple[ResolvedSkillFlowEdge, ...]
+    repeats: tuple[ResolvedSkillGraphRepeat, ...]
+    variations: tuple[ResolvedSkillFlowVariation, ...]
+    unsafe_variations: tuple[ResolvedSkillFlowUnsafe, ...]
+    changed_workflow: ResolvedSkillFlowChangedWorkflow | None
+    terminals: tuple[str, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphSkill:
+    """One reached skill in a resolved graph."""
+
+    name: str
+    title: str
+    purpose: str | None
+    package_id: str | None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphPackage:
+    """One reached skill package id in a resolved graph."""
+
+    package_id: str
+    package_name: str
+    package_title: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraphStageEdge:
+    """One expanded stage-to-stage edge in the graph DAG."""
+
+    source_stage_name: str
+    target_stage_name: str
+    via_flow_name: str
+    kind: str
+    why: str
+    route_receipt_name: str | None = None
+    route_field_key: str | None = None
+    route_choice_key: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ResolvedSkillGraph:
+    """Canonical resolved graph closure used by emit and verify."""
+
+    canonical_name: str
+    title: str
+    purpose: str
+    roots: tuple[ResolvedSkillGraphRoot, ...]
+    sets: tuple[ResolvedSkillGraphSet, ...]
+    recovery: ResolvedSkillGraphRecovery | None
+    policies: tuple[ResolvedSkillGraphPolicy, ...]
+    views: tuple[ResolvedSkillGraphView, ...]
+    flows: tuple[ResolvedSkillGraphFlow, ...]
+    stages: tuple[ResolvedStage, ...]
+    skills: tuple[ResolvedSkillGraphSkill, ...]
+    receipts: tuple["ResolvedReceipt", ...]
+    packages: tuple[ResolvedSkillGraphPackage, ...]
+    stage_edges: tuple[ResolvedSkillGraphStageEdge, ...]
+    stage_successors: dict[str, tuple[str, ...]]
+    stage_predecessors: dict[str, tuple[str, ...]]
+    stage_reaching_flows: dict[str, tuple[str, ...]]
+    source_span: SourceSpan | None = _field(default=None, compare=False)

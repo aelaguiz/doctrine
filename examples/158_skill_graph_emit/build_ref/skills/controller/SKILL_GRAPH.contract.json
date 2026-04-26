@@ -1,0 +1,216 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "ControllerGraph",
+    "title": "Controller Graph",
+    "purpose": "Emit the full controller graph bundle from one closure."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "F1AuthorLesson"
+    }
+  ],
+  "sets": {},
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic"
+    },
+    {
+      "action": "require",
+      "key": "edge_reason"
+    },
+    {
+      "action": "require",
+      "key": "durable_checkpoint"
+    },
+    {
+      "action": "require",
+      "key": "route_targets_resolve"
+    },
+    {
+      "action": "require",
+      "key": "stage_lane"
+    }
+  ],
+  "views": {
+    "graph_markdown": "references/controller-graph.md",
+    "diagram_mermaid": "references/controller-graph.mmd"
+  },
+  "skills": {
+    "ControllerSkill": {
+      "title": "Controller Skill",
+      "purpose": "Own the controller stages.",
+      "package_id": "controller-package"
+    }
+  },
+  "stages": {
+    "AuthorReview": {
+      "title": "Author Review",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": "StageLane.review",
+      "supports": [],
+      "applies_to": [],
+      "inputs": {
+        "flow_receipt": {
+          "kind": "receipt",
+          "type": "LessonPlanReceipt"
+        }
+      },
+      "emits": null,
+      "checkpoint": "durable",
+      "intent": "Review the plan before handoff.",
+      "durable_target": "Review notes.",
+      "durable_evidence": "Review receipt.",
+      "advance_condition": "Review receipt landed.",
+      "risk_guarded": null,
+      "forbidden_outputs": []
+    },
+    "LessonPlan": {
+      "title": "Lesson Plan",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": "StageLane.pipeline",
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": "LessonPlanReceipt",
+      "checkpoint": "durable",
+      "intent": "Plan the lesson.",
+      "durable_target": "Lesson plan.",
+      "durable_evidence": "Plan receipt.",
+      "advance_condition": "Plan receipt landed.",
+      "risk_guarded": null,
+      "forbidden_outputs": []
+    }
+  },
+  "flows": {
+    "F1AuthorLesson": {
+      "title": "F1 - Author One Lesson",
+      "intent": "Plan then review one lesson.",
+      "start": {
+        "kind": "stage",
+        "name": "LessonPlan"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "LessonPlan"
+        },
+        {
+          "kind": "stage",
+          "name": "AuthorReview"
+        }
+      ],
+      "edges": [
+        {
+          "from": "LessonPlan",
+          "from_kind": "stage",
+          "to": "AuthorReview",
+          "to_kind": "stage",
+          "kind": "normal",
+          "why": "The review stage must follow the plan receipt route.",
+          "route": {
+            "receipt": "LessonPlanReceipt",
+            "field": "next_route",
+            "choice": "review"
+          },
+          "when": null
+        }
+      ],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "AuthorReview"
+      ]
+    }
+  },
+  "receipts": {
+    "LessonPlanReceipt": {
+      "title": "Lesson Plan Receipt",
+      "fields": {
+        "plan_status": {
+          "type": "string",
+          "kind": "builtin"
+        }
+      },
+      "routes": {
+        "next_route": {
+          "title": "Next Route",
+          "choices": {
+            "review": {
+              "title": "Review the plan.",
+              "target_kind": "stage",
+              "target": "AuthorReview"
+            },
+            "done": {
+              "title": "Finish the graph.",
+              "target_kind": "sentinel",
+              "target": "terminal"
+            }
+          }
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "plan_status": {
+            "type": "string"
+          },
+          "next_route": {
+            "type": "string",
+            "enum": [
+              "review",
+              "done"
+            ]
+          }
+        },
+        "required": [
+          "plan_status",
+          "next_route"
+        ]
+      }
+    }
+  },
+  "packages": {
+    "controller-package": {
+      "name": "ControllerPackage",
+      "title": "Controller Package"
+    }
+  },
+  "stage_edges": [
+    {
+      "from": "LessonPlan",
+      "to": "AuthorReview",
+      "via_flow": "F1AuthorLesson",
+      "kind": "normal",
+      "why": "The review stage must follow the plan receipt route.",
+      "route": "LessonPlanReceipt.next_route.review"
+    }
+  ],
+  "stage_successors": {
+    "LessonPlan": [
+      "AuthorReview"
+    ]
+  },
+  "stage_predecessors": {
+    "AuthorReview": [
+      "LessonPlan"
+    ]
+  },
+  "stage_reaching_flows": {
+    "AuthorReview": [
+      "F1AuthorLesson"
+    ],
+    "LessonPlan": [
+      "F1AuthorLesson"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+schema_version = 1
+default_prompt = "prompts/skills/controller/SKILL.prompt"
+
+[[cases]]
+name = "skill graph emit target on SKILL.prompt writes the full graph bundle"
+status = "active"
+kind = "build_contract"
+build_target = "example_158_skill_graph_emit"

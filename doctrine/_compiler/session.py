@@ -313,6 +313,25 @@ class CompilationSession:
                 location=path_location(self.root_flow.entrypoint_path),
             ).ensure_location(path=self.root_flow.entrypoint_path)
 
+    def compile_skill_graph(
+        self,
+        graph_name: str | None = None,
+    ) -> model.ResolvedSkillGraph:
+        from doctrine._compiler.context import CompilationContext
+
+        try:
+            return CompilationContext(self).compile_skill_graph(graph_name)
+        except DoctrineError as exc:
+            label = (
+                f"compile skill graph `{graph_name}`"
+                if graph_name is not None
+                else "compile skill graph"
+            )
+            raise exc.prepend_trace(
+                label,
+                location=path_location(self.root_flow.entrypoint_path),
+            ).ensure_location(path=self.root_flow.entrypoint_path)
+
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str
     ) -> CompiledSection:
@@ -503,6 +522,21 @@ def compile_prompt(
         project_config=project_config,
         provided_prompt_roots=provided_prompt_roots,
     ).compile_agent(agent_name)
+
+
+def compile_skill_graph(
+    prompt_file: model.PromptFile,
+    graph_name: str | None = None,
+    *,
+    project_config: ProjectConfig | None = None,
+    provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
+) -> model.ResolvedSkillGraph:
+    """One-shot convenience wrapper: build a session and resolve one skill graph."""
+    return CompilationSession(
+        prompt_file,
+        project_config=project_config,
+        provided_prompt_roots=provided_prompt_roots,
+    ).compile_skill_graph(graph_name)
 
 
 def extract_target_flow_graph(

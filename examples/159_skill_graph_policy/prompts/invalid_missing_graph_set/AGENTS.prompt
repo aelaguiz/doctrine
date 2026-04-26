@@ -1,0 +1,35 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the graph-set demo."
+
+stage Intake: "Intake"
+    owner: ControllerSkill
+    intent: "Audit the section state."
+    durable_target: "Intake target."
+    durable_evidence: "Intake evidence."
+    advance_condition: "Intake landed."
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan one lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan landed."
+
+skill_flow LessonFlow: "Lesson Flow"
+    intent: "Plan one lesson."
+    start: LessonPlan
+
+skill_flow SectionFlow: "Section Flow"
+    intent: "Run the lesson flow once per slot."
+    start: Intake
+    repeat LessonSlotRun: LessonFlow
+        over: MissingSlots
+        order: serial
+        why: "Each slot changes the evidence for the next slot."
+    edge Intake -> LessonSlotRun:
+        why: "Audit before slot work starts."
+
+skill_graph MissingSetGraph: "Missing Set Graph"
+    purpose: "Fail when a repeat points at an undeclared graph set."
+    roots:
+        flow SectionFlow

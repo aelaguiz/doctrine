@@ -284,6 +284,9 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `154_skill_flow_route_binding` | Skill flow edges bind to typed receipt route choices with `route: <ReceiptRef>.<route_field>.<choice>`. The compiler enforces the strict default: when a source stage emits a routed receipt whose choice targets the edge target, the edge must declare that exact binding. Unbound required edges, missing route fields, and target mismatches fail with `E561`. |
 | `155_skill_flow_branch` | Skill flow edges may carry `when: <Enum>.<member>` branch conditions. If any outgoing edge from one source uses `when:`, every outgoing edge from that source must use `when:` on the same enum family and cover each member exactly once. Sub-plan 3 has no `otherwise:` escape hatch. The example also exercises `variation` with `safe_when:`, `unsafe`, and `changed_workflow:` lowering. Missing coverage, mixed enum families, and unknown `safe_when:`/`require` keys all fail with `E561`. |
 | `156_skill_flow_repeat` | A `repeat <Name>: <FlowRef>` block declares a typed repeat node over a top-level `enum`, `table`, or `schema` (graph `sets:` arrive in a later sub-plan). The repeat name is local to the flow and takes precedence over top-level stage and flow refs. Shadowing top-level names, unresolved targets, unknown `over:` refs, and `order:` outside the closed `serial`/`parallel`/`unspecified` set all fail with `E561`. |
+| `157_skill_graph_closure` | Top-level `skill_graph` closes one authored graph over root flows, graph-local `sets:`, recovery refs, and graph-wide reachability. The graph compile path may late-bind repeat `over:` refs to graph sets and fails with `E562` when a root or recovery ref does not resolve. |
+| `158_skill_graph_emit` | `emit_skill_graph` writes the full graph bundle from one resolved closure, including `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`, graph JSON, Markdown views, `.d2`, `.svg`, and Mermaid. This example proves the graph target path on `SKILL.prompt`, including view overrides. |
+| `159_skill_graph_policy` | Graph compile enforces expanded DAG checks and graph-owned strict policy facts. Nested flow cycles, `require stage_lane` on a reached stage with no `lane:`, and undeclared graph-set repeats all fail with `E562`. |
 
 ## Useful Commands
 
@@ -314,6 +317,8 @@ uv run --locked python -m doctrine.emit_skill --target example_149_external_skil
 uv run --locked python -m doctrine.emit_skill --target example_150_receipt_top_level_decl
 uv run --locked python -m doctrine.emit_skill --target example_152_receipt_stage_route
 uv run --locked python -m doctrine.emit_skill --target example_154_skill_flow_route_binding
+uv run --locked python -m doctrine.emit_skill_graph --target example_157_skill_graph_closure
+uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```

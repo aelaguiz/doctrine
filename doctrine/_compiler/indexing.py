@@ -69,6 +69,7 @@ class UnitDeclarations:
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
     skill_flows_by_name: dict[str, model.SkillFlowDecl]
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl]
 
 
 @dataclass(slots=True, frozen=True)
@@ -139,6 +140,7 @@ class IndexedFlow:
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
     skill_flows_by_name: dict[str, model.SkillFlowDecl]
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl]
 
 
 def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
@@ -727,6 +729,7 @@ def index_unit(
     receipts_by_name: dict[str, model.ReceiptDecl] = {}
     stages_by_name: dict[str, model.StageDecl] = {}
     skill_flows_by_name: dict[str, model.SkillFlowDecl] = {}
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl] = {}
 
     for declaration in prompt_file.declarations:
         if isinstance(declaration, model.ImportDecl):
@@ -1018,6 +1021,16 @@ def index_unit(
             )
             skill_flows_by_name[declaration.name] = declaration
             continue
+        if isinstance(declaration, model.SkillGraphDecl):
+            _register_decl(
+                skill_graphs_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            skill_graphs_by_name[declaration.name] = declaration
+            continue
         raise compile_error(
             code="E901",
             summary="Internal compiler error",
@@ -1074,6 +1087,7 @@ def index_unit(
         receipts_by_name=receipts_by_name,
         stages_by_name=stages_by_name,
         skill_flows_by_name=skill_flows_by_name,
+        skill_graphs_by_name=skill_graphs_by_name,
     )
     indexed_unit = IndexedUnit(
         prompt_root=prompt_root,

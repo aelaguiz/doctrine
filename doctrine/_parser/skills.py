@@ -1219,6 +1219,133 @@ class SkillsTransformerMixin:
         line, column = _meta_line_column(meta)
         return _ChangedWorkflowRequirePart(value=value, line=line, column=column)
 
+    # Top-level skill_graph declarations ---------------------------------
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.SkillGraphDecl(
+                name=name,
+                title=title,
+                items=tuple(body),
+            ),
+            meta,
+        )
+
+    def skill_graph_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_graph_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_purpose_stmt(self, meta, value):
+        return _with_source_span(
+            model.SkillGraphPurposeItem(value=value),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_roots_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphRootsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_root_flow(self, meta, ref):
+        return _with_source_span(
+            model.SkillGraphRootEntry(kind="flow", target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_root_stage(self, meta, ref):
+        return _with_source_span(
+            model.SkillGraphRootEntry(kind="stage", target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_sets_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphSetsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_set_item(self, meta, name, title):
+        return _with_source_span(
+            model.SkillGraphSetEntry(name=name, title=title),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_recovery_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphRecoveryItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_recovery_item(self, meta, key, ref):
+        return _with_source_span(
+            model.SkillGraphRecoveryEntry(key=key, target_ref=ref),
+            meta,
+        )
+
+    def skill_graph_recovery_key_flow_receipt(self, _children):
+        return "flow_receipt"
+
+    def skill_graph_recovery_key_stage_status(self, _children):
+        return "stage_status"
+
+    def skill_graph_recovery_key_durable_artifact_status(self, _children):
+        return "durable_artifact_status"
+
+    @v_args(meta=True)
+    def skill_graph_policy_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphPolicyItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_policy_dag_acyclic_stmt(self, meta, _children=None):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="dag", key="acyclic"),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_require_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="require", key=key),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_warn_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="warn", key=key),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_views_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphViewsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_view_item(self, meta, key, path):
+        return _with_source_span(
+            model.SkillGraphViewEntry(key=key, path=path),
+            meta,
+        )
+
     def package_host_slot_family_input(self, _children):
         return "input"
 

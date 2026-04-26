@@ -113,6 +113,7 @@ from doctrine._compiler.resolved_types import (
 )
 from doctrine._compiler.session import (
     CompilationSession,
+    compile_skill_graph,
     compile_prompt,
     extract_target_flow_graph,
 )
@@ -233,6 +234,7 @@ __all__ = [
     *_PUBLIC_RESOLVED_EXPORTS,
     "CompilationSession",
     "ProvidedPromptRoot",
+    "compile_skill_graph",
     "compile_prompt",
     "extract_target_flow_graph",
 ]

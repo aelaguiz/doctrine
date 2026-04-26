@@ -47,11 +47,12 @@ class ResolveStagesMixin:
         stage_decl: model.StageDecl,
         *,
         unit: IndexedUnit,
-    ) -> None:
+    ) -> model.ResolvedStage:
         cache = self._resolved_stage_cache()
         cache_key = (id(unit), stage_decl.name)
-        if cache_key in cache:
-            return
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
         owner_label = self._stage_owner_label(stage_decl, unit=unit)
 
         owner_items: list[model.StageOwnerItem] = []
@@ -152,14 +153,16 @@ class ResolveStagesMixin:
             owner_item.owner_ref.declaration_name,
         )
 
+        lane_name: str | None = None
         if lane_items:
-            self._resolve_stage_lane_ref(
+            lane_name = self._resolve_stage_lane_ref(
                 lane_items[0].lane_ref,
                 unit=unit,
                 owner_label=owner_label,
                 source_span=lane_items[0].source_span,
             )
 
+        support_skill_names: list[str] = []
         if supports_items:
             seen_support_keys: set[
                 tuple[object, tuple[str, ...], str]
@@ -208,7 +211,9 @@ class ResolveStagesMixin:
                         hints=("List each support skill once per stage.",),
                     )
                 seen_support_keys.add(support_key)
+                support_skill_names.append(_support_decl.name)
 
+        applies_to_flow_names: list[str] = []
         if applies_to_items:
             seen_flow_keys: set[
                 tuple[object, tuple[str, ...], str]
@@ -240,7 +245,9 @@ class ResolveStagesMixin:
                         hints=("List each `skill_flow` once per stage.",),
                     )
                 seen_flow_keys.add(flow_key)
+                applies_to_flow_names.append(flow_decl.name)
 
+        resolved_inputs: list[model.ResolvedStageInput] = []
         if inputs_items:
             seen_input_keys: set[str] = set()
             for entry in inputs_items[0].entries:
@@ -257,16 +264,25 @@ class ResolveStagesMixin:
                         hints=("Use a unique key for each stage input.",),
                     )
                 seen_input_keys.add(entry.key)
-                self._resolve_stage_input_ref(
+                input_kind, input_name = self._resolve_stage_input_ref(
                     entry.type_ref,
                     unit=unit,
                     owner_label=owner_label,
                     input_key=entry.key,
                     source_span=entry.source_span or inputs_items[0].source_span,
                 )
+                resolved_inputs.append(
+                    model.ResolvedStageInput(
+                        key=entry.key,
+                        type_kind=input_kind,
+                        type_name=input_name,
+                        source_span=entry.source_span or inputs_items[0].source_span,
+                    )
+                )
 
+        emits_receipt_name: str | None = None
         if emits_items:
-            self._resolve_stage_emits_ref(
+            emits_receipt_name = self._resolve_stage_emits_ref(
                 emits_items[0].receipt_ref,
                 unit=unit,
                 owner_label=owner_label,
@@ -335,12 +351,44 @@ class ResolveStagesMixin:
                         ),
                     )
 
-        cache.add(cache_key)
+        resolved = model.ResolvedStage(
+            canonical_name=stage_decl.name,
+            title=stage_decl.title,
+            stage_id=scalars_by_key.get("id").value if "id" in scalars_by_key else None,
+            owner_skill_name=_owner_skill.name,
+            lane_name=lane_name,
+            support_skill_names=tuple(support_skill_names),
+            applies_to_flow_names=tuple(applies_to_flow_names),
+            inputs=tuple(resolved_inputs),
+            emits_receipt_name=emits_receipt_name,
+            checkpoint=checkpoint_value,
+            intent=scalars_by_key["intent"].value,
+            durable_target=(
+                scalars_by_key["durable_target"].value
+                if "durable_target" in scalars_by_key
+                else None
+            ),
+            durable_evidence=(
+                scalars_by_key["durable_evidence"].value
+                if "durable_evidence" in scalars_by_key
+                else None
+            ),
+            advance_condition=scalars_by_key["advance_condition"].value,
+            risk_guarded=(
+                scalars_by_key["risk_guarded"].value
+                if "risk_guarded" in scalars_by_key
+                else None
+            ),
+            forbidden_outputs=forbidden_items[0].values if forbidden_items else tuple(),
+            source_span=stage_decl.source_span,
+        )
+        cache[cache_key] = resolved
+        return resolved
 
-    def _resolved_stage_cache(self) -> set[tuple[int, str]]:
+    def _resolved_stage_cache(self) -> dict[tuple[int, str], model.ResolvedStage]:
         cache = getattr(self, "_resolved_stage_decl_cache", None)
         if cache is None:
-            cache = set()
+            cache = {}
             object.__setattr__(self, "_resolved_stage_decl_cache", cache)
         return cache
 
@@ -400,7 +448,7 @@ class ResolveStagesMixin:
         unit: IndexedUnit,
         owner_label: str,
         source_span,
-    ) -> None:
+    ) -> str:
         # The lane ref is `EnumName.member`. The last dotted part is the member
         # key; the rest names the enum declaration. The compiler already has a
         # `_try_resolve_enum_decl` helper for this shape.
@@ -430,8 +478,8 @@ class ResolveStagesMixin:
             source_span=ref.source_span,
         )
         member_key = ref.declaration_name
-        enum_decl = self._try_resolve_enum_decl(enum_ref, unit=unit)
-        if enum_decl is None:
+        resolved_enum = self._try_resolve_enum_decl_with_unit(enum_ref, unit=unit)
+        if resolved_enum is None:
             raise package_compile_error(
                 code="E559",
                 summary="Invalid stage declaration",
@@ -446,6 +494,7 @@ class ResolveStagesMixin:
                     "ref.",
                 ),
             )
+        _enum_unit, enum_decl = resolved_enum
         if not any(member.key == member_key for member in enum_decl.members):
             raise package_compile_error(
                 code="E559",
@@ -460,6 +509,7 @@ class ResolveStagesMixin:
                     "Use one of the enum members declared on the lane enum.",
                 ),
             )
+        return f"{enum_decl.name}.{member_key}"
 
     def _resolve_stage_skill_flow_ref(
         self,
@@ -505,18 +555,19 @@ class ResolveStagesMixin:
         owner_label: str,
         input_key: str,
         source_span,
-    ) -> None:
+    ) -> tuple[str, str]:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         for lookup_target in lookup_targets:
             target_decls = unit_declarations(lookup_target.unit)
             target_name = lookup_target.declaration_name
-            if (
-                target_name in target_decls.receipts_by_name
-                or target_name in target_decls.documents_by_name
-                or target_name in target_decls.schemas_by_name
-                or target_name in target_decls.tables_by_name
-            ):
-                return
+            if target_name in target_decls.receipts_by_name:
+                return ("receipt", target_name)
+            if target_name in target_decls.documents_by_name:
+                return ("document", target_name)
+            if target_name in target_decls.schemas_by_name:
+                return ("schema", target_name)
+            if target_name in target_decls.tables_by_name:
+                return ("table", target_name)
         dotted = (
             ".".join((*ref.module_parts, ref.declaration_name))
             if ref.module_parts
@@ -545,12 +596,12 @@ class ResolveStagesMixin:
         unit: IndexedUnit,
         owner_label: str,
         source_span,
-    ) -> None:
+    ) -> str:
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         for lookup_target in lookup_targets:
             target_decls = unit_declarations(lookup_target.unit)
             if lookup_target.declaration_name in target_decls.receipts_by_name:
-                return
+                return lookup_target.declaration_name
         dotted = (
             ".".join((*ref.module_parts, ref.declaration_name))
             if ref.module_parts

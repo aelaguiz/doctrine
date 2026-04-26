@@ -90,9 +90,10 @@ class ResolveSkillFlowsMixin:
         flow_decl: model.SkillFlowDecl,
         *,
         unit: IndexedUnit,
+        allow_graph_set_candidates: bool = False,
     ) -> model.ResolvedSkillFlow:
         cache = self._resolved_skill_flow_cache()
-        cache_key = (id(unit), flow_decl.name)
+        cache_key = (id(unit), flow_decl.name, allow_graph_set_candidates)
         cached = cache.get(cache_key)
         if cached is not None:
             return cached
@@ -150,6 +151,7 @@ class ResolveSkillFlowsMixin:
             flow_decl=flow_decl,
             unit=unit,
             owner_label=owner_label,
+            allow_graph_set_candidates=allow_graph_set_candidates,
         )
 
         # Resolve start
@@ -273,6 +275,7 @@ class ResolveSkillFlowsMixin:
         flow_decl: model.SkillFlowDecl,
         unit: IndexedUnit,
         owner_label: str,
+        allow_graph_set_candidates: bool,
     ) -> tuple[
         tuple[model.ResolvedSkillFlowRepeat, ...],
         dict[str, model.ResolvedSkillFlowRepeat],
@@ -353,6 +356,7 @@ class ResolveSkillFlowsMixin:
                 owner_label=owner_label,
                 source_span=item.source_span,
                 repeat_name=item.name,
+                allow_graph_set_candidates=allow_graph_set_candidates,
             )
             entry = model.ResolvedSkillFlowRepeat(
                 name=item.name,
@@ -375,9 +379,11 @@ class ResolveSkillFlowsMixin:
         owner_label: str,
         source_span,
         repeat_name: str,
+        allow_graph_set_candidates: bool,
     ) -> tuple[str, str]:
-        # Sub-plan 3 limits `over:` to top-level enum, table, or schema refs.
-        # Graph `sets:` wait for sub-plan 4.
+        # Local flow validation stays strict by default. Graph closure can
+        # opt into late binding so unresolved names carry forward as graph-set
+        # candidates instead of failing here.
         lookup_targets = self._decl_lookup_targets(ref, unit=unit)
         for lookup_target in lookup_targets:
             target_decls = unit_declarations(lookup_target.unit)
@@ -388,6 +394,8 @@ class ResolveSkillFlowsMixin:
                 return ("table", target_name)
             if target_name in target_decls.schemas_by_name:
                 return ("schema", target_name)
+        if allow_graph_set_candidates:
+            return ("graph_set_candidate", self._dotted_ref(ref))
         dotted = self._dotted_ref(ref)
         raise self._skill_flow_error(
             detail=(

@@ -999,7 +999,8 @@ Rules:
 A `skill_flow` is a typed DAG of stages and nested flows. The body owns
 `intent:`, `start:`, `approve:`, `edge` blocks, `repeat` blocks,
 `variation`, `unsafe`, and `changed_workflow:`. Graph closure across
-flows, graph policies, and graph emit stay in later sub-plans.
+flows, graph policies, and graph emit are now owned by top-level
+`skill_graph`.
 
 ```prompt
 enum ExactMoveProofNeeded: "Exact Move Proof Needed"
@@ -1096,6 +1097,74 @@ Rules:
   enum-member refs. Compile-time flow validation uses `E561`. Receipt
   route target resolution still uses `E560` so that diagnostic surface
   stays stable.
+
+#### Top-Level `skill_graph` Declarations
+
+A `skill_graph` closes one authored graph over root stages and flows. The
+graph owns graph-local sets, recovery refs, policy facts, and emitted graph
+views.
+
+```prompt
+enum StageStatus: "Stage Status"
+    ready: "Ready"
+    blocked: "Blocked"
+
+enum DurableArtifactStatus: "Durable Artifact Status"
+    current: "Current"
+    stale: "Stale"
+
+skill_graph AuthoringGraph: "Authoring Graph"
+    purpose: "Close the authoring graph over roots sets and recovery refs."
+    roots:
+        flow F2AuthorSection
+    sets:
+        LessonSlots: "The slots in the section plan."
+    recovery:
+        flow_receipt: FlowReceipt
+        stage_status: StageStatus
+        durable_artifact_status: DurableArtifactStatus
+    policy:
+        dag acyclic
+        require edge_reason
+        require durable_checkpoint
+        require route_targets_resolve
+    views:
+        graph_markdown: "references/controller-graph.md"
+        diagram_mermaid: "references/controller-graph.mmd"
+```
+
+Rules:
+
+- `purpose:` is required. Missing `purpose:` fails with `E562`.
+- `roots:` is required. Each root line is either `flow <Ref>` or
+  `stage <Ref>`. Missing or wrong roots fail with `E562`.
+- `sets:` is optional. It declares graph-local names for repeat late
+  binding. A graph compile may late-bind `repeat over:` to a graph set
+  only on the graph path. Agent and skill-package compile still keep the
+  older strict `enum` / `table` / `schema` flow check.
+- `recovery:` is optional. `flow_receipt:` must resolve to a top-level
+  `receipt`. `stage_status:` and `durable_artifact_status:` must resolve to
+  top-level `enum` declarations. Wrong-kind or missing refs fail with
+  `E562`.
+- `policy:` is optional. The shipped strict keys are `dag acyclic`,
+  `require edge_reason`, `require durable_checkpoint`,
+  `require route_targets_resolve`, `require branch_coverage`, and
+  `require stage_lane`. The shipped warning keys are `warn orphan_stage`,
+  `warn orphan_skill`, and `warn receipt_without_consumer`. Warning keys
+  are metadata only in this slice. Unsupported keys fail with `E562`.
+- `views:` is optional. The shipped keys are `graph_contract`,
+  `graph_source`, `graph_json`, `graph_markdown`, `skill_inventory`,
+  `flow_registry`, `stage_contracts`, `recovery_audit`,
+  `stepwise_manifest`, `diagram_d2`, `diagram_svg`, and
+  `diagram_mermaid`. Invalid keys or output paths that escape the target
+  output dir fail with `E564`.
+- Graph compile closes roots over nested flows, repeat targets, reached
+  stages, owner and support skills, receipts, route bindings, package ids,
+  and recovery refs.
+- A reached stage that declares `applies_to:` must list every reaching
+  flow. Otherwise graph compile fails with `E562`.
+- The graph compile path checks the expanded stage DAG. A cross-flow stage
+  cycle fails with `E562`.
 
 #### Receipt Route Fields
 

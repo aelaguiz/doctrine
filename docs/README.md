@@ -29,12 +29,13 @@ for repo setup and proof commands.
   and `skill package`
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, explicit `emit:` document companions, source-root package
-  bundles, `SKILL.source.json`, `emit_skill`, and the package example gallery
+  bundles, `SKILL.source.json`, package-scoped graph targets, `emit_skill`,
+  and the package example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
   Markdown, emit structured-output schema files, emit final-output, review,
-  and route metadata, generate runtime-package and skill-package trees, verify
-  skill source receipts, generate workflow flow diagrams, and troubleshoot emit
-  failures
+  and route metadata, generate runtime-package and skill-package trees, emit
+  checked graph bundles, verify skill and graph source receipts, generate
+  workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
@@ -84,6 +85,10 @@ for repo setup and proof commands.
   `unsafe`, and `changed_workflow:`, plus local DAG and route-binding
   checks. Graph closure across flows, graph policies, and graph emit stay
   in later sub-plans
+- [ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md](ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md):
+  shipped sub-plan 4 — top-level `skill_graph`, graph closure, graph JSON
+  and Markdown emit, graph source receipts, `emit_skill_graph`, and
+  `verify_skill_graph`
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor

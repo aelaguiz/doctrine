@@ -236,3 +236,15 @@ output_dir = "examples/152_receipt_stage_route/build"
 name = "example_154_skill_flow_route_binding"
 entrypoint = "examples/154_skill_flow_route_binding/prompts/skills/controller/SKILL.prompt"
 output_dir = "examples/154_skill_flow_route_binding/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_157_skill_graph_closure"
+entrypoint = "examples/157_skill_graph_closure/prompts/AGENTS.prompt"
+graph = "AuthoringGraph"
+output_dir = "examples/157_skill_graph_closure/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_158_skill_graph_emit"
+entrypoint = "examples/158_skill_graph_emit/prompts/skills/controller/SKILL.prompt"
+graph = "ControllerGraph"
+output_dir = "examples/158_skill_graph_emit/build"

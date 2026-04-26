@@ -76,6 +76,7 @@ class EmitTarget:
     entrypoint: Path
     output_dir: Path
     project_config: ProjectConfig
+    graph: str | None = None
     source_id: str | None = None
     source_root: Path | None = None
     lock_file: Path | None = None
@@ -215,6 +216,7 @@ def load_emit_targets(
                 location=path_location(config_path),
             )
 
+        graph = optional_str(raw_target, "graph", label=f"emit target {name}")
         source_id = optional_str(raw_target, "source_id", label=f"emit target {name}")
         raw_source_root = optional_str(
             raw_target,
@@ -320,6 +322,7 @@ def load_emit_targets(
             entrypoint=entrypoint,
             output_dir=output_dir,
             project_config=project_config,
+            graph=graph,
             source_id=source_id,
             source_root=source_root,
             lock_file=lock_file,
@@ -332,6 +335,7 @@ def resolve_direct_emit_target(
     *,
     entrypoint: str | Path,
     output_dir: str | Path,
+    graph: str | None = None,
     pyproject_path: str | Path | None = None,
     start_dir: str | Path | None = None,
     name: str | None = None,
@@ -400,6 +404,7 @@ def resolve_direct_emit_target(
         entrypoint=entrypoint_path,
         output_dir=output_dir_path,
         project_config=project_config,
+        graph=graph,
     )
 
 

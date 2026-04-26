@@ -17,6 +17,7 @@ from doctrine._compiler.resolve.route_semantics import ResolveRouteSemanticsMixi
 from doctrine._compiler.resolve.schemas import ResolveSchemasMixin
 from doctrine._compiler.resolve.section_bodies import ResolveSectionBodiesMixin
 from doctrine._compiler.resolve.skill_flows import ResolveSkillFlowsMixin
+from doctrine._compiler.resolve.skill_graphs import ResolveSkillGraphsMixin
 from doctrine._compiler.resolve.skills import ResolveSkillsMixin
 from doctrine._compiler.resolve.stages import ResolveStagesMixin
 from doctrine._compiler.resolve.workflows import ResolveWorkflowsMixin
@@ -41,6 +42,7 @@ class ResolveMixin(
     ResolveReceiptsMixin,
     ResolveStagesMixin,
     ResolveSkillFlowsMixin,
+    ResolveSkillGraphsMixin,
     ResolveAddressablesMixin,
     ResolveLawPathsMixin,
 ):

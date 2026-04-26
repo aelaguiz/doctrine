@@ -1,0 +1,88 @@
+{
+  "receipt_version": 1,
+  "graph": {
+    "name": "AuthoringGraph",
+    "title": "Authoring Graph",
+    "purpose": "Close the authoring graph over roots sets and recovery refs."
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "target": {
+    "name": "example_157_skill_graph_closure",
+    "entrypoint": "examples/157_skill_graph_closure/prompts/AGENTS.prompt"
+  },
+  "inputs": [
+    {
+      "path": "examples/157_skill_graph_closure/prompts/AGENTS.prompt",
+      "kind": "prompt",
+      "sha256": "c6814733ffa0eb9998fd8058555c487d6b69b0dabd634f8f5f917e5fc4156a04"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL_GRAPH.contract.json",
+      "kind": "graph_artifact",
+      "sha256": "957ff2fa083af2480b69e5d4a0162c6ae2c80cb6c8d45b20c37fca2676daa821"
+    },
+    {
+      "path": "references/flow-registry.md",
+      "kind": "graph_artifact",
+      "sha256": "4e59bbdc1fea70ee7de5917b1b2a6a799de24849c4b456262aa30a991877ca14"
+    },
+    {
+      "path": "references/recovery-audit.md",
+      "kind": "graph_artifact",
+      "sha256": "f3211d8fe41aa5c77543fe8c8db2c9cae6145482d5c575002f9ae2e325e038f5"
+    },
+    {
+      "path": "references/skill-graph.d2",
+      "kind": "graph_artifact",
+      "sha256": "84273d63f83895ce7acfae1f154e95635803b8f25cd76ebbe08a81cd2e3088bc"
+    },
+    {
+      "path": "references/skill-graph.json",
+      "kind": "graph_artifact",
+      "sha256": "eb3c6dce1af25a2340733d3aee188deb5d42801fc6b65d1d5656f5bcf40fe6de"
+    },
+    {
+      "path": "references/skill-graph.md",
+      "kind": "graph_artifact",
+      "sha256": "128e02a4c7e7fba893b93b3d814bdc9fe4387eb3df80646ab7b7eb8b81dc32b3"
+    },
+    {
+      "path": "references/skill-graph.mmd",
+      "kind": "graph_artifact",
+      "sha256": "61c81502109a2cb4c35872effd5937daf3780915b225a81ff97a579b04d6675e"
+    },
+    {
+      "path": "references/skill-graph.svg",
+      "kind": "graph_artifact",
+      "sha256": "1ad6ad6da047fe3d6cb74af911e5de1fbb646bde580040e891229771655fb023"
+    },
+    {
+      "path": "references/skill-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "e5d2419b19ed842a0bda2b30745d47de685844ed75d11fe2ddb4656f5485f243"
+    },
+    {
+      "path": "references/stage-contracts.md",
+      "kind": "graph_artifact",
+      "sha256": "632919a8a1c3e7c54d7a199313b838a09566881853a7bae54a19f8859f78d145"
+    },
+    {
+      "path": "references/stepwise-manifest.md",
+      "kind": "graph_artifact",
+      "sha256": "0a66990536f8a8aa6dcfc72af2230608e3f53290f245de1f8161b70aa39d43a6"
+    }
+  ],
+  "source_tree_sha256": "0da78d6382acbaf57736c3dd6b1f4e0c6a17c72c03764a6641be3421cb53df82",
+  "output_tree_sha256": "ca7adbe541c15c7dfd8d8007c8376d3c36ba80c4b2e707f96f9893dc36d71bd9",
+  "graph_contract_sha256": "957ff2fa083af2480b69e5d4a0162c6ae2c80cb6c8d45b20c37fca2676daa821",
+  "graph_json_sha256": "eb3c6dce1af25a2340733d3aee188deb5d42801fc6b65d1d5656f5bcf40fe6de",
+  "diagram_d2_sha256": "84273d63f83895ce7acfae1f154e95635803b8f25cd76ebbe08a81cd2e3088bc",
+  "diagram_svg_sha256": "1ad6ad6da047fe3d6cb74af911e5de1fbb646bde580040e891229771655fb023",
+  "diagram_mermaid_sha256": "61c81502109a2cb4c35872effd5937daf3780915b225a81ff97a579b04d6675e",
+  "linked_package_receipts": []
+}
