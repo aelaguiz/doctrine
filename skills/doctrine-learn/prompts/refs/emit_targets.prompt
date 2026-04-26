@@ -38,8 +38,9 @@ output_dir = "examples/07_handoffs/build"
   under a `prompts/` tree."""
             """`output_dir`: the root directory for emitted artifacts. Must not
   already exist as a file."""
-        "Skill targets may also use optional source-receipt fields:"
+        "Graph and skill targets may also use optional fields:"
         bullets optional_fields:
+            "`graph`: the visible `skill_graph` name to emit or verify for graph targets."
             "`source_root`: the upstream source tree for an external skill source."
             "`source_id`: the stable id for that external source tree. Required with `source_root`."
             "`lock_file`: the generated receipt lock file inside the downstream project."
@@ -52,6 +53,8 @@ output_dir = "examples/07_handoffs/build"
             "`emit_skill` accepts `SKILL.prompt`."
             """`emit_flow` accepts `AGENTS.prompt` or `SOUL.prompt`, not
   `SKILL.prompt`."""
+            """`emit_skill_graph` accepts `AGENTS.prompt`, `SOUL.prompt`, or
+  `SKILL.prompt`, as long as the entrypoint can see the target graph."""
             """`entrypoint` stays inside the target project root unless the target
   declares both `source_root` and `source_id`."""
             "`source_root` must be an existing directory, and the entrypoint must stay inside it."
@@ -68,11 +71,13 @@ across two entrypoints."""
             text: """uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
 uv run --locked python -m doctrine.emit_skill --target example_122_skill_package_emit_documents
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
+uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
 """
         "Useful rules:"
         bullets rules:
             "Repeat `--target` to emit several targets in one command."
             "`emit_docs` and `emit_skill` run on configured targets only."
+            "`emit_skill_graph` runs on configured targets and also supports direct mode with `--entrypoint`, `--output-dir`, and optional `--graph`."
             """`emit_flow` also accepts direct mode with `--entrypoint` plus
   `--output-dir`, but not both modes at once."""
             """All commands fail loud on config or compiler errors. They do not
@@ -110,6 +115,26 @@ output_dir = "examples/122_skill_package_emit_documents/build"
             """Shipped proof lives at
 `/Users/aelaguiz/workspace/doctrine/examples/122_skill_package_emit_documents/`.
 Run with `doctrine.emit_skill`."""
+
+        section skill_graph_target: "Skill Graph Target"
+            """Compiles one named `skill_graph` into a graph bundle with graph
+Markdown, JSON, diagrams, and `SKILL_GRAPH.source.json`:"""
+            code:
+                language: toml
+                text: """[[tool.doctrine.emit.targets]]
+name = "example_158_skill_graph_emit"
+entrypoint = "examples/158_skill_graph_emit/prompts/skills/controller/SKILL.prompt"
+graph = "ControllerGraph"
+output_dir = "examples/158_skill_graph_emit/build"
+"""
+            """Shipped proof lives at
+`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`.
+Run with `doctrine.emit_skill_graph`."""
+            "Rules:"
+            bullets rules:
+                "`graph` is optional only when the entrypoint can see exactly one graph."
+                "Use `graph = \"<Name>\"` to make build-contract proof exact and stable."
+                "Graph targets emit `SKILL_GRAPH.contract.json` and `SKILL_GRAPH.source.json` beside the `references/` graph views."
 
         section external_skill_source_target: "External Skill Source Target"
             """Use this when a downstream repo emits a local runtime copy from an
@@ -306,6 +331,41 @@ outputs, a source tree hash, and an output tree hash."""
                 "`/Users/aelaguiz/workspace/doctrine/examples/147_skill_package_source_receipt/`"
                 "`/Users/aelaguiz/workspace/doctrine/examples/148_skill_package_tracked_sources/`"
 
+        section graph_contract_json: "`SKILL_GRAPH.contract.json`"
+            """`emit_skill_graph` writes this sidecar for every graph target. It is
+the authoritative graph contract for one resolved `skill_graph`."""
+
+            "Use it when a harness or downstream tool needs graph-owned truth."
+            "Shipped proof:"
+            bullets proof:
+                "`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`"
+
+        section graph_source_json: "`SKILL_GRAPH.source.json`"
+            """`emit_skill_graph` writes this sidecar for every graph target. It
+records the target graph identity, hashed source inputs, hashed emitted
+graph outputs, top-level graph artifact hashes, and any linked package
+receipt hashes."""
+
+            "Verify it with:"
+            code:
+                language: bash
+                text: """uv run --locked python -m doctrine.verify_skill_graph --target <target-name>
+"""
+            "Verifier statuses:"
+            bullets statuses:
+                "`current`"
+                "`missing_graph_receipt`"
+                "`stale_graph_source`"
+                "`edited_graph_artifact`"
+                "`missing_package_receipt`"
+                "`stale_package_receipt`"
+                "`graph_contract_mismatch`"
+                "`unsupported_graph_receipt_version`"
+
+            "Shipped proof:"
+            bullets proof:
+                "`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`"
+
     section schema_validator_cli: "Schema Validator CLI"
         "Validate any emitted schema file with:"
         code:
@@ -339,6 +399,8 @@ not silently prefer one root. Fix the duplicate at the source."""
         bullets refs:
             """`references/skills-and-packages.md`: `skill`, `skill package`, and
   host-binding authoring."""
+            """`references/skill-graphs.md`: top-level graph declarations,
+  graph closure, and graph emit."""
             """`references/outputs-and-schemas.md`: `output schema`, `route field`,
   and `final_output`."""
             """`references/verify-and-ship.md`: verify commands, Definition of Done,

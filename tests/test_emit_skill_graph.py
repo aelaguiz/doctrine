@@ -75,6 +75,9 @@ def _write_graph_repo(root: Path) -> Path:
                     require durable_checkpoint
                     require route_targets_resolve
                     require stage_lane
+                views:
+                    graph_markdown: "references/controller-graph.md"
+                    diagram_mermaid: "references/controller-graph.mmd"
             """
         ),
         encoding="utf-8",
@@ -133,6 +136,15 @@ class EmitSkillGraphTests(unittest.TestCase):
                 graph_receipt_path_for_target(targets["graph_bundle"]).read_text(
                     encoding="utf-8"
                 )
+            )
+            outputs = {
+                entry["path"]: entry["sha256"]
+                for entry in receipt_payload["outputs"]
+            }
+            self.assertIn("references/controller-graph.mmd", outputs)
+            self.assertEqual(
+                receipt_payload["diagram_mermaid_sha256"],
+                outputs["references/controller-graph.mmd"],
             )
             linked = receipt_payload["linked_package_receipts"]
             self.assertEqual(len(linked), 1)

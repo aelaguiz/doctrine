@@ -43,6 +43,7 @@ def build_graph_source_receipt_payload(
     input_paths: tuple[Path, ...],
     emitted_dir: Path,
     emitted_paths: tuple[Path, ...],
+    resolved_view_paths: dict[str, Path],
     linked_package_receipts: tuple[dict[str, Any], ...],
 ) -> dict[str, Any]:
     inputs = _input_entries(input_paths)
@@ -67,11 +68,31 @@ def build_graph_source_receipt_payload(
         "outputs": outputs,
         "source_tree_sha256": _tree_hash(inputs),
         "output_tree_sha256": _tree_hash(outputs),
-        "graph_contract_sha256": output_hashes.get("SKILL_GRAPH.contract.json"),
-        "graph_json_sha256": output_hashes.get("references/skill-graph.json"),
-        "diagram_d2_sha256": output_hashes.get("references/skill-graph.d2"),
-        "diagram_svg_sha256": output_hashes.get("references/skill-graph.svg"),
-        "diagram_mermaid_sha256": output_hashes.get("references/skill-graph.mmd"),
+        "graph_contract_sha256": _output_hash_for_path(
+            output_hashes,
+            emitted_dir=emitted_dir,
+            path=resolved_view_paths["graph_contract"],
+        ),
+        "graph_json_sha256": _output_hash_for_path(
+            output_hashes,
+            emitted_dir=emitted_dir,
+            path=resolved_view_paths["graph_json"],
+        ),
+        "diagram_d2_sha256": _output_hash_for_path(
+            output_hashes,
+            emitted_dir=emitted_dir,
+            path=resolved_view_paths["diagram_d2"],
+        ),
+        "diagram_svg_sha256": _output_hash_for_path(
+            output_hashes,
+            emitted_dir=emitted_dir,
+            path=resolved_view_paths["diagram_svg"],
+        ),
+        "diagram_mermaid_sha256": _output_hash_for_path(
+            output_hashes,
+            emitted_dir=emitted_dir,
+            path=resolved_view_paths["diagram_mermaid"],
+        ),
         "linked_package_receipts": list(linked_package_receipts),
     }
 
@@ -326,6 +347,15 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _output_hash_for_path(
+    output_hashes: dict[str, str],
+    *,
+    emitted_dir: Path,
+    path: Path,
+) -> str | None:
+    return output_hashes.get(path.resolve().relative_to(emitted_dir.resolve()).as_posix())
 
 
 def _payload_path(path_value: str) -> Path:

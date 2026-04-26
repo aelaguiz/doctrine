@@ -55,7 +55,7 @@ class EmitSkillTests(unittest.TestCase):
 
     def test_emit_skill_emits_doctrine_learn_bundle_without_scripts(self) -> None:
         # This protects the first-party teaching bundle shape. The emitted
-        # tree must stay complete and script-free across all thirteen
+        # tree must stay complete and script-free across all fourteen
         # references.
         repo_root = Path(__file__).resolve().parents[1]
         target = load_emit_targets(repo_root / "pyproject.toml")["doctrine_learn_skill"]
@@ -79,6 +79,7 @@ class EmitSkillTests(unittest.TestCase):
                 output_dir / "references" / "principles.md",
                 output_dir / "references" / "reviews.md",
                 output_dir / "references" / "rules.md",
+                output_dir / "references" / "skill-graphs.md",
                 output_dir / "references" / "skills-and-packages.md",
                 output_dir / "references" / "verify-and-ship.md",
             )

@@ -191,6 +191,7 @@ def emit_target_skill_graph(
         input_paths=input_paths,
         emitted_dir=emitted_dir,
         emitted_paths=tuple(emitted_paths),
+        resolved_view_paths=resolved_paths,
         linked_package_receipts=linked_package_receipts,
     )
     source_receipt_path = resolved_paths["graph_source"]
