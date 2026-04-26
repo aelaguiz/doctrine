@@ -1,0 +1,32 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "skill flow edge bound to a receipt route choice compiles through the package contract path"
+status = "active"
+kind = "build_contract"
+build_target = "example_154_skill_flow_route_binding"
+
+[[cases]]
+name = "skill flow edge that omits the required route binding fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_route_binding/skills/controller/SKILL.prompt"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow route binding whose choice does not target the edge target fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_route_target_mismatch/skills/controller/SKILL.prompt"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow route binding that names an unknown route field fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_route_field/skills/controller/SKILL.prompt"
+exception_type = "CompileError"
+error_code = "E561"

@@ -1,0 +1,66 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "stage validation passes for a fully typed stage with owner, support, applies_to, lane, inputs, and emits"
+status = "active"
+kind = "render_contract"
+agent = "StagePlanDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Read the lesson plan stage contract.",
+]
+
+[[cases]]
+name = "stage owner that does not resolve to a top-level skill fails with E546"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_owner/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E546"
+
+[[cases]]
+name = "stage support that does not resolve to a top-level skill fails with E547"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_support/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E547"
+
+[[cases]]
+name = "stage input typed against a non-receipt/document/schema/table fails with E548"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_input_type/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E548"
+
+[[cases]]
+name = "stage emits typed against a non-receipt fails with E549"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_emits_type/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E549"
+
+[[cases]]
+name = "stage missing required intent field fails with E559"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_intent/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E559"
+
+[[cases]]
+name = "stage applies_to ref that does not resolve to a top-level skill_flow fails with E559"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_applies_to/AGENTS.prompt"
+agent = "StagePlanDemo"
+exception_type = "CompileError"
+error_code = "E559"

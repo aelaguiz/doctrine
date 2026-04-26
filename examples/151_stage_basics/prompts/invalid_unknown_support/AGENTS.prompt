@@ -1,0 +1,15 @@
+skill StudioLessonPlan: "Studio Lesson Plan"
+    purpose: "Plan."
+    package: "studio-lesson-plan"
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioLessonPlan
+    supports:
+        MissingSupport
+    intent: "Plan."
+    durable_target: "Plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+agent StagePlanDemo:
+    role: "Plan stage demo."

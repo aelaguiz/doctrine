@@ -66,6 +66,9 @@ class UnitDeclarations:
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     rules_by_name: dict[str, model.RuleDecl]
+    receipts_by_name: dict[str, model.ReceiptDecl]
+    stages_by_name: dict[str, model.StageDecl]
+    skill_flows_by_name: dict[str, model.SkillFlowDecl]
 
 
 @dataclass(slots=True, frozen=True)
@@ -133,6 +136,9 @@ class IndexedFlow:
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     rules_by_name: dict[str, model.RuleDecl]
+    receipts_by_name: dict[str, model.ReceiptDecl]
+    stages_by_name: dict[str, model.StageDecl]
+    skill_flows_by_name: dict[str, model.SkillFlowDecl]
 
 
 def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
@@ -718,6 +724,9 @@ def index_unit(
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
+    receipts_by_name: dict[str, model.ReceiptDecl] = {}
+    stages_by_name: dict[str, model.StageDecl] = {}
+    skill_flows_by_name: dict[str, model.SkillFlowDecl] = {}
 
     for declaration in prompt_file.declarations:
         if isinstance(declaration, model.ImportDecl):
@@ -979,6 +988,36 @@ def index_unit(
             )
             rules_by_name[declaration.name] = declaration
             continue
+        if isinstance(declaration, model.ReceiptDecl):
+            _register_decl(
+                receipts_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            receipts_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.StageDecl):
+            _register_decl(
+                stages_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            stages_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.SkillFlowDecl):
+            _register_decl(
+                skill_flows_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            skill_flows_by_name[declaration.name] = declaration
+            continue
         raise compile_error(
             code="E901",
             summary="Internal compiler error",
@@ -1032,6 +1071,9 @@ def index_unit(
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
         rules_by_name=rules_by_name,
+        receipts_by_name=receipts_by_name,
+        stages_by_name=stages_by_name,
+        skill_flows_by_name=skill_flows_by_name,
     )
     indexed_unit = IndexedUnit(
         prompt_root=prompt_root,

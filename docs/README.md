@@ -65,6 +65,25 @@ for repo setup and proof commands.
   guardrails
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
+- [LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md](LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md):
+  use-case audit for first-class skill graph support
+- [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md):
+  proposed Doctrine language support for typed skill graphs
+- [EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md](EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md):
+  active epic that decomposes the skill graph spec into shipped sub-plans
+- [ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md](ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md):
+  shipped sub-plan 1 — top-level `receipt` declarations, inheritance, and
+  the `host_contract: receipt key: ReceiptRef` bridge
+- [ARCH_STAGE_CORE_ROUTED_RECEIPTS_2026-04-26.md](ARCH_STAGE_CORE_ROUTED_RECEIPTS_2026-04-26.md):
+  shipped sub-plan 2 — top-level `stage` declarations, skeletal
+  `skill_flow` registration, and receipt route fields targeting `stage`,
+  `flow`, and the closed `human`/`external`/`terminal` sentinel set
+- [ARCH_SKILL_FLOW_CORE_2026-04-26.md](ARCH_SKILL_FLOW_CORE_2026-04-26.md):
+  shipped sub-plan 3 — full top-level `skill_flow` body with `start:`,
+  `approve:`, `edge`, `route:`, `kind:`, `when:`, `repeat`, `variation`,
+  `unsafe`, and `changed_workflow:`, plus local DAG and route-binding
+  checks. Graph closure across flows, graph policies, and graph emit stay
+  in later sub-plans
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor

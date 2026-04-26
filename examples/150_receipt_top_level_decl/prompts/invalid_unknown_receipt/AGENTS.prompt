@@ -1,0 +1,8 @@
+skill UnknownReceiptSkill: "Unknown Receipt Skill"
+    purpose: "Skill package points at an undeclared receipt."
+    package: "unknown-receipt-package"
+
+agent ControllerDemo:
+    role: "Run the package so E545 can fire."
+    skills: "Skills"
+        skill controller: UnknownReceiptSkill

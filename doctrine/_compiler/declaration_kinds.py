@@ -208,6 +208,30 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         readable=False,
         addressable_root=False,
     ),
+    DeclarationKind(
+        name="receipt",
+        label="receipt declaration",
+        registry_attr="receipts_by_name",
+        decl_type=model.ReceiptDecl,
+        readable=False,
+        addressable_root=False,
+    ),
+    DeclarationKind(
+        name="stage",
+        label="stage declaration",
+        registry_attr="stages_by_name",
+        decl_type=model.StageDecl,
+        readable=False,
+        addressable_root=False,
+    ),
+    DeclarationKind(
+        name="skill_flow",
+        label="skill_flow declaration",
+        registry_attr="skill_flows_by_name",
+        decl_type=model.SkillFlowDecl,
+        readable=False,
+        addressable_root=False,
+    ),
 )
 
 

@@ -1,0 +1,53 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "package binds top-level receipts by reference and inherits fields"
+status = "active"
+kind = "render_contract"
+agent = "ControllerDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the controller package and emit the lesson plan receipt.",
+  "",
+  "## Skills",
+  "",
+  "### Controller Skill",
+  "",
+  "**Purpose**",
+  "",
+  "Run the controller package and emit the lesson plan receipt.",
+]
+
+[[cases]]
+name = "package emits receipt-by-ref slots with the lowered field map, including imported aliases canonicalized to the resolved declaration name"
+status = "active"
+kind = "build_contract"
+build_target = "example_150_receipt_top_level_decl"
+
+[[cases]]
+name = "receipt-by-ref slot pointing at an unknown receipt fails with E545"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_receipt/AGENTS.prompt"
+agent = "ControllerDemo"
+exception_type = "CompileError"
+error_code = "E545"
+
+[[cases]]
+name = "receipt inheritance cycle fails with E544"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_inheritance_cycle/AGENTS.prompt"
+agent = "ControllerDemo"
+exception_type = "CompileError"
+error_code = "E544"
+
+[[cases]]
+name = "duplicate host_contract slot key fails with E535"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_duplicate_slot_key/AGENTS.prompt"
+agent = "ControllerDemo"
+exception_type = "CompileError"
+error_code = "E535"

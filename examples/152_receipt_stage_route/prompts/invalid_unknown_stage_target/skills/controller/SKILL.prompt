@@ -1,0 +1,15 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Run."
+    package: "controller-package"
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+    route next_route: "Next Route"
+        approve: "Show review." -> stage MissingStage
+
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+    host_contract:
+        receipt plan_receipt: LessonPlanReceipt
+    "Receipt routes at a missing stage."

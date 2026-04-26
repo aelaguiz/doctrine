@@ -8,7 +8,98 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-- Next release planning starts after this cut.
+### Added
+- Top-level `receipt Name[Parent]?: "Title"` declarations. Receipts list
+  required typed fields with builtin scalar (`string`, `integer`, `number`,
+  `boolean`), declared `enum`, `table`, `schema`, or another declared
+  `receipt`. `list[Type]` marks a repeating field. Receipts use the
+  explicit `[Parent]` inheritance model shared with `output`, `workflow`,
+  and `document`: inherited fields must be accounted for with
+  `inherit <key>` or `override <key>: <Type>`.
+- Skill package `host_contract:` may now write `receipt key: <ReceiptRef>`
+  to point a slot at a top-level `receipt` declaration. The inline
+  `receipt key: "Title" + fields` form still works.
+- `SKILL.contract.json` records receipt-by-reference slots with the slot
+  key, the canonical receipt name, and a lowered `fields` map keyed by
+  field name. Each lowered field carries its `kind` (`builtin`, `enum`,
+  `table`, `schema`, or `receipt`).
+- New compile errors: `E544` (invalid receipt declaration: empty body,
+  duplicate field key, missing or extra inherit/override accounting,
+  invalid field type, inheritance cycle, or receipt-of-receipt cycle) and
+  `E545` (receipt-by-reference slot does not resolve to a top-level
+  receipt). Existing `E535` now also fires when `host_contract:` declares
+  the same slot key twice.
+- New example `150_receipt_top_level_decl` covers a reusable top-level
+  receipt with inheritance plus a package that points three receipt slots
+  at top-level receipts by name, including one imported through an alias.
+- Top-level `stage Name: "Title"` declarations bind a graph node to an
+  owner skill, optional `lane: EnumName.member`, optional `supports:`
+  block, optional `applies_to:` skill-flow list, optional `inputs:` map,
+  optional `emits: ReceiptRef`, required `intent:` and
+  `advance_condition:`, optional `id:`, `risk_guarded:`, and
+  `forbidden_outputs:`, plus a closed `checkpoint:` value set
+  (`durable`, `review_only`, `diagnostic`, `none`; default `durable`).
+  Durable stages must declare `durable_target:` and `durable_evidence:`.
+  In this slice, `applies_to:` checks only that each ref resolves to a
+  top-level `skill_flow` and that the resolved flow does not repeat.
+  Stage validation runs as a flow-wide sweep during `compile_agent` and
+  `compile_skill_package`.
+- Skeletal top-level `skill_flow Name: "Title"` declarations register a
+  graph flow name so receipt route targets can resolve `flow FlowName`.
+  The optional body accepts only `intent: "..."`. DAG edges, branches,
+  repeats, route binding, and graph emit belong to later sub-plans.
+- Top-level receipts may declare `route <key>: "Title"` fields whose
+  choices target `stage <Name>`, `flow <Name>`, or the closed sentinel
+  set `human`, `external`, or `terminal`. Route fields lower into a
+  deterministic per-receipt `routes:` metadata map.
+- `SKILL.contract.json` adds a `routes:` block on each receipt-by-ref
+  slot whose receipt declares route fields. Each route entry carries
+  `title` plus `choices` keyed by choice name; each choice records
+  `title`, `target_kind` (`stage`, `flow`, or `sentinel`), and `target`
+  (canonical declaration name or sentinel keyword). Receipt-by-ref slots
+  also add a conservative `json_schema` object. It includes the receipt
+  data fields plus each route key as a required string enum property over
+  the authored choice keys.
+- New compile errors: `E546` (stage owner is not a declared skill),
+  `E547` (stage support is not a declared skill), `E548` (stage input
+  type is invalid), `E549` (stage emit type is invalid), `E559`
+  (invalid stage declaration: missing required field, duplicate
+  scalar/support/input, support repeats owner, bad `applies_to:` block or
+  ref, bad lane member ref, bad checkpoint value, or durable checkpoint
+  missing target/evidence), and `E560` (receipt route target stage or
+  flow does not resolve).
+- New examples `151_stage_basics` and `152_receipt_stage_route` cover
+  the typed-fields stage surface, the five receipt route target forms,
+  and one focused negative case for each new error code.
+- Top-level `skill_flow Name: "Title"` now supports the full flow-local
+  body. The optional `start: NodeRef` and `approve: SkillFlowRef` lines
+  bind the entry node and the approve handoff. `edge Source -> Target:`
+  blocks accept `route: <ReceiptRef>.<route_field>.<choice>`, optional
+  `kind:` from the closed `normal`/`review`/`repair`/`recovery`/
+  `approval`/`handoff` set, optional `when: <EnumName>.<member>`, and a
+  required `why:` reason. A `repeat <Name>: <FlowRef>` block declares a
+  repeat node with required `over:`, `order:` (`serial`, `parallel`, or
+  `unspecified`), and `why:`. `variation <name>: "Title"` blocks may
+  carry `safe_when: <EnumName>.<member>`. `unsafe <name>: "Title"` and
+  `changed_workflow:` (with `allow provisional_flow` and closed `require`
+  keys `nearest_flow`, `difference`, `safety_rationale`) lower into
+  compiler-owned facts only.
+- The compiler resolves edge endpoints against top-level `stage`,
+  top-level `skill_flow`, and local repeat names; checks the local DAG;
+  binds edges to typed receipt route choices and enforces the strict
+  default that a routed source stage must bind the exact route choice on
+  every edge whose target the receipt route choice names; enforces local
+  enum-branch coverage from one source; resolves `repeat over:` against
+  top-level `enum`, `table`, or `schema`; and checks repeat-name
+  shadowing and uniqueness.
+- New compile error: `E561` (invalid skill flow). Existing `E551` and
+  `E552` keep their emit-target source-id/root meanings. `E560` keeps
+  its receipt route target meaning.
+- New examples `153_skill_flow_linear`, `154_skill_flow_route_binding`,
+  `155_skill_flow_branch`, and `156_skill_flow_repeat` cover the
+  flow-local DAG, route binding, branches plus variations plus
+  changed-workflow facts, and repeats. Each manifest includes one
+  positive case plus focused `E561` negatives.
 
 ## v5.1.0 - 2026-04-24
 

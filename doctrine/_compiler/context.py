@@ -213,7 +213,10 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                 detail=f"Agent `{agent_name}` is marked abstract and cannot render output directly.",
                 hints=("Render a concrete child agent instead.",),
             )
-        self._validate_all_rules_in_flow(self.session.flow_for_unit(unit))
+        flow = self.session.flow_for_unit(unit)
+        self._validate_all_rules_in_flow(flow)
+        self._validate_all_stages_in_flow(flow)
+        self._validate_all_skill_flows_in_flow(flow)
         return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(
@@ -241,6 +244,9 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                     detail=f"Missing target skill package: {package_name}",
                 )
         owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+        flow = self.session.flow_for_unit(owner_unit)
+        self._validate_all_stages_in_flow(flow)
+        self._validate_all_skill_flows_in_flow(flow)
         return self._compile_skill_package_decl(declaration, unit=owner_unit)
 
     def compile_readable_declaration(

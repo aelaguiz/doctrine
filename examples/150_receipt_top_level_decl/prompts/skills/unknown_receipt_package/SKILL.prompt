@@ -1,0 +1,5 @@
+skill package UnknownReceiptPackage: "Unknown Receipt Package"
+    metadata:
+        name: "unknown-receipt-package"
+    host_contract:
+        receipt slot: NoSuchReceipt

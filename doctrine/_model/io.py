@@ -6,6 +6,7 @@ from typing import Literal as _Literal, TYPE_CHECKING, TypeAlias as _TypeAlias
 
 from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
+from doctrine._model.receipts import ReceiptHostSlotRef, ResolvedReceiptHostSlotRef
 
 if TYPE_CHECKING:
     from doctrine._compiler.resolve.field_types import FieldTypeRef
@@ -504,7 +505,12 @@ class ReceiptHostSlot:
         return "receipt"
 
 
-SkillPackageHostSlotItem: _TypeAlias = SkillPackageHostSlot | ReceiptHostSlot
+SkillPackageHostSlotItem: _TypeAlias = (
+    SkillPackageHostSlot
+    | ReceiptHostSlot
+    | ReceiptHostSlotRef
+    | ResolvedReceiptHostSlotRef
+)
 
 
 @_dataclass(slots=True, frozen=True)

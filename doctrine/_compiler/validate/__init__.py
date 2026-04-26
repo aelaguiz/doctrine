@@ -78,6 +78,7 @@ class ValidateMixin(
             ("skill declaration", declarations.skills_by_name),
             ("agent declaration", declarations.agents_by_name),
             ("enum declaration", declarations.enums_by_name),
+            ("receipt declaration", declarations.receipts_by_name),
         )
         for label, registry in registry_order:
             if declaration_name in registry:

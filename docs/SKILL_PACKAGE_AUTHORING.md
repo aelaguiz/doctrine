@@ -352,6 +352,7 @@ Important rules:
   - `schema`
   - `table`
   - `final_output`
+  - `receipt` (inline body, or pointed at a top-level `receipt`)
 - Bind targets may use:
   - `inputs:key`
   - `outputs:key`
@@ -359,6 +360,59 @@ Important rules:
   - `final_output`
   - ordinary declaration refs such as `SectionMap`
   - addressable child paths on those same roots
+- Receipt host slots own their typed envelope. Consuming agents do not bind
+  receipt slots; the package emits the receipt itself.
+
+### Receipt host slots
+
+Receipt slots come in two shapes.
+
+The inline shape declares fields directly on the slot:
+
+```prompt
+host_contract:
+    receipt process_receipt: "Process Receipt"
+        confidence: ConfidenceLevel
+        evidence: list[EvidenceRow]
+```
+
+The by-reference shape points at a top-level `receipt` declaration so the
+same typed handoff can be shared by many packages or graph stages:
+
+```prompt
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+    confidence: ConfidenceLevel
+
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+    host_contract:
+        receipt flow_receipt: FlowReceipt
+```
+
+Top-level receipts support the explicit `[Parent]` inheritance model
+shared with `output`, `workflow`, and `document`. See
+[`docs/LANGUAGE_REFERENCE.md`](LANGUAGE_REFERENCE.md#top-level-receipt-declarations)
+for the full rules.
+
+`SKILL.contract.json` records both shapes side by side. By-reference
+slots add a top-level `receipt` field with the canonical receipt name, a
+lowered `fields` map where each field carries a `kind` of `builtin`,
+`enum`, `table`, `schema`, or `receipt`, and a conservative
+`json_schema` object for the whole receipt payload.
+
+When the resolved receipt also declares route fields, the slot adds a
+deterministic `routes` map keyed by route name. Each entry carries the
+route `title` plus `choices` keyed by choice name. Each choice records
+`title`, `target_kind` (one of `stage`, `flow`, or `sentinel`), and
+`target` (the canonical declaration name for `stage`/`flow` choices, or
+the sentinel keyword `human`, `external`, or `terminal`). Those route
+keys also show up in `json_schema` as required string enum properties
+over the choice keys. This lets a harness route handoffs from the lowered
+contract without re-resolving receipt sources. See
+[`docs/LANGUAGE_REFERENCE.md`](LANGUAGE_REFERENCE.md#receipt-route-fields)
+for the receipt-side rules.
 
 This is the clean thin-harness pattern:
 

@@ -277,6 +277,13 @@ For public release history, use [../CHANGELOG.md](../CHANGELOG.md).
 | `147_skill_package_source_receipt` | Every skill package emits `SKILL.source.json` with hashed source inputs and emitted outputs. |
 | `148_skill_package_tracked_sources` | `source.track:` can include source-only files outside the emitted package tree when the target names a wider `source_root`. |
 | `149_external_skill_source_target` | A downstream emit target can name an upstream `source_root`, stable `source_id`, and optional `lock_file` while keeping emitted output in the downstream tree. |
+| `150_receipt_top_level_decl` | Top-level `receipt Name[Parent]?: "Title"` declarations carry typed handoff facts. A skill package may point a `host_contract:` receipt slot at a top-level receipt by name. The receipt fields lower into `SKILL.contract.json` with each field's resolved kind. |
+| `151_stage_basics` | Top-level `stage Name: "Title"` declarations bind an owner skill to typed inputs, an optional emitted receipt, an advance condition, and a closed `checkpoint:` value. Sub-plan 2 ships the typed-fields surface; flow membership and graph closure belong to later sub-plans. |
+| `152_receipt_stage_route` | Top-level receipts may declare `route <key>: "Title"` fields whose choices target `stage <Name>`, `flow <Name>`, or the closed `human`/`external`/`terminal` sentinel set. By-reference receipt slots emit a deterministic `routes` map in `SKILL.contract.json`. |
+| `153_skill_flow_linear` | Top-level `skill_flow` declarations carry a real DAG with `start:`, `edge`, and `approve:`. Edge bodies require a `why:` reason, optionally name a `kind:` from the closed `normal`/`review`/`repair`/`recovery`/`approval`/`handoff` set, and resolve sources and targets against top-level `stage`, top-level `skill_flow`, or local repeat names. Missing nodes, self-edges, and local cycles fail with `E561`. |
+| `154_skill_flow_route_binding` | Skill flow edges bind to typed receipt route choices with `route: <ReceiptRef>.<route_field>.<choice>`. The compiler enforces the strict default: when a source stage emits a routed receipt whose choice targets the edge target, the edge must declare that exact binding. Unbound required edges, missing route fields, and target mismatches fail with `E561`. |
+| `155_skill_flow_branch` | Skill flow edges may carry `when: <Enum>.<member>` branch conditions. If any outgoing edge from one source uses `when:`, every outgoing edge from that source must use `when:` on the same enum family and cover each member exactly once. Sub-plan 3 has no `otherwise:` escape hatch. The example also exercises `variation` with `safe_when:`, `unsafe`, and `changed_workflow:` lowering. Missing coverage, mixed enum families, and unknown `safe_when:`/`require` keys all fail with `E561`. |
+| `156_skill_flow_repeat` | A `repeat <Name>: <FlowRef>` block declares a typed repeat node over a top-level `enum`, `table`, or `schema` (graph `sets:` arrive in a later sub-plan). The repeat name is local to the flow and takes precedence over top-level stage and flow refs. Shadowing top-level names, unresolved targets, unknown `over:` refs, and `order:` outside the closed `serial`/`parallel`/`unspecified` set all fail with `E561`. |
 
 ## Useful Commands
 
@@ -304,6 +311,9 @@ uv run --locked python -m doctrine.emit_skill --target example_122_skill_package
 uv run --locked python -m doctrine.emit_skill --target example_123_skill_package_emit_documents_mixed_bundle
 uv run --locked python -m doctrine.emit_skill --target example_124_skill_package_host_binding
 uv run --locked python -m doctrine.emit_skill --target example_149_external_skill_source_target
+uv run --locked python -m doctrine.emit_skill --target example_150_receipt_top_level_decl
+uv run --locked python -m doctrine.emit_skill --target example_152_receipt_stage_route
+uv run --locked python -m doctrine.emit_skill --target example_154_skill_flow_route_binding
 uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer_showcase
 uv run --locked python -m doctrine.emit_flow --target example_115_runtime_agent_packages
 ```

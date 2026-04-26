@@ -1,0 +1,39 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "linear skill flow with start, two edges, and approve compiles"
+status = "active"
+kind = "render_contract"
+agent = "FlowDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the linear authoring flow.",
+]
+
+[[cases]]
+name = "skill flow edge target that does not resolve to a stage, flow, or repeat fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_node/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow edge that points at the same node as its source fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_self_reference/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow edges that form a local cycle fail with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_local_cycle/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"

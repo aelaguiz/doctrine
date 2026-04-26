@@ -1,0 +1,48 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "skill flow with enum-member branches, safe variation, unsafe variation, and changed_workflow facts compiles"
+status = "active"
+kind = "render_contract"
+agent = "FlowDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the branched authoring flow.",
+]
+
+[[cases]]
+name = "skill flow source whose branch edges do not cover every enum member fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_branch/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow source whose branch edges mix two enum families fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_mixed_enum/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow safe_when that names a non-existent enum member fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_safe_when_member/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow changed_workflow requiring an unknown key fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_changed_workflow_require/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"

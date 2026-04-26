@@ -1,0 +1,8 @@
+export enum HandoffStatus: "Handoff Status"
+    not_started: "Not Started"
+    partial: "Partial"
+    approved: "Approved"
+
+export receipt SharedHandoffReceipt: "Shared Handoff Receipt"
+    stage: string
+    status: HandoffStatus

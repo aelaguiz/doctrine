@@ -159,17 +159,6 @@ class DeclarationTransformerMixin:
         self,
         slots: tuple[model.SkillPackageHostSlotItem, ...],
     ) -> tuple[model.SkillPackageHostSlotItem, ...]:
-        seen_keys: dict[str, model.SkillPackageHostSlotItem] = {}
-        for slot in slots:
-            existing = seen_keys.get(slot.key)
-            if existing is not None:
-                raise TransformParseFailure(
-                    f"Duplicate skill package host slot: {slot.key}",
-                    hints=("Keep each `host_contract:` slot key only once.",),
-                    line=slot.source_span.line if slot.source_span is not None else None,
-                    column=slot.source_span.column if slot.source_span is not None else None,
-                )
-            seen_keys[slot.key] = slot
         return slots
 
     def _skill_entry_binds(

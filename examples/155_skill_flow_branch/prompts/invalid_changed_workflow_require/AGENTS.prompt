@@ -1,0 +1,19 @@
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage Plan: "Plan"
+    owner: StudioSkill
+    intent: "Plan the work."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow F1: "F1"
+    intent: "changed_workflow uses a key outside the closed set."
+    start: Plan
+    changed_workflow:
+        require unknown_field
+
+agent FlowDemo:
+    role: "Run the bad changed_workflow flow."

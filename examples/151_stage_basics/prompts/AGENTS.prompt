@@ -1,0 +1,43 @@
+enum StageLane: "Stage Lane"
+    pipeline: "Pipeline Stage"
+    primitive: "Primitive"
+
+skill StudioLessonPlan: "Studio Lesson Plan"
+    purpose: "Plan one lesson from the current section."
+    package: "studio-lesson-plan"
+
+skill CatalogOps: "Catalog Ops"
+    purpose: "Write exact catalog facts."
+    package: "catalog-ops"
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson end-to-end."
+
+stage LessonPlan: "Lesson Plan"
+    id: "lesson_plan"
+    owner: StudioLessonPlan
+    lane: StageLane.pipeline
+    supports:
+        CatalogOps
+    applies_to:
+        F1AuthorLesson
+    inputs:
+        flow_receipt: FlowReceipt
+    emits: LessonPlanReceipt
+    intent: "Turn the section strategy into a lesson plan."
+    durable_target: "Lesson plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Author approval plus write receipt."
+    risk_guarded: "Reps chosen before pool exists."
+    forbidden_outputs:
+        "rep selection"
+        "correct action columns"
+
+agent StagePlanDemo:
+    role: "Read the lesson plan stage contract."

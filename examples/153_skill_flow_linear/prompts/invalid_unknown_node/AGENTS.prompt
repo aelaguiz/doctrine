@@ -1,0 +1,19 @@
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioSkill
+    intent: "Plan one lesson."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson."
+    start: LessonPlan
+    edge LessonPlan -> MissingStage:
+        why: "Edge target does not resolve."
+
+agent FlowDemo:
+    role: "Run the broken flow."

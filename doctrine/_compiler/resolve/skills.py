@@ -651,7 +651,14 @@ class ResolveSkillsMixin:
         slot_map = {
             slot.key: slot
             for slot in package_contract.host_contract
-            if not isinstance(slot, model.ReceiptHostSlot)
+            if not isinstance(
+                slot,
+                (
+                    model.ReceiptHostSlot,
+                    model.ReceiptHostSlotRef,
+                    model.ResolvedReceiptHostSlotRef,
+                ),
+            )
         }
         bind_map = {bind.key: bind for bind in entry.binds}
 

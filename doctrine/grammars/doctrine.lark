@@ -39,6 +39,9 @@ prompt_file: _NL* declaration+ _NL*
                        | output_decl
                        | skill_package_decl
                        | skill_decl
+                       | receipt_decl
+                       | stage_decl
+                       | skill_flow_decl
                        | enum_decl
                        | rule_decl
                        | abstract_agent
@@ -78,6 +81,11 @@ output_schema_decl: "output" "schema" CNAME inheritance? ":" string _NL _INDENT 
 output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
 skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
+// Top-level reusable receipt declaration. The `receipt` keyword is also used
+// inside `package_host_receipt_slot:967` as an inline package host slot. The
+// two surfaces are unambiguous because the top-level form lives at module
+// scope while the inline form is scoped under `host_contract:`.
+receipt_decl: "receipt" CNAME inheritance? ":" string _NL _INDENT receipt_decl_body _DEDENT
 enum_decl: "enum" CNAME ":" string _NL _INDENT enum_body _DEDENT
 
 // Top-level `rule` declaration. The P7 predicate set is deliberately closed;
@@ -965,10 +973,126 @@ package_host_slot_family: "input" -> package_host_slot_family_input
                          | "table" -> package_host_slot_family_table
                          | "final_output" -> package_host_slot_family_final_output
 package_host_receipt_slot: "receipt" CNAME ":" string _NL receipt_slot_body?
+                         | "receipt" CNAME ":" name_ref _NL?                  -> package_host_receipt_slot_ref
 receipt_slot_body: _INDENT receipt_field+ _DEDENT
 receipt_field: CNAME ":" receipt_field_type _NL?
 receipt_field_type: receipt_field_list_type | name_ref
 receipt_field_list_type: "list" "[" name_ref "]"
+
+// Top-level receipt declarations support explicit `[Parent]` inheritance with
+// the same `inherit`/`override` shape used by `workflow`, `output`, and
+// `document`. Field types accept builtin scalars, declared receipts,
+// schemas/tables/enums, and `list[TypeRef]`. The resolver enforces the closed
+// type family. Receipt route fields lower into per-receipt `routes:` metadata
+// without adding new typed receipt fields.
+receipt_decl_body: receipt_decl_body_line+
+?receipt_decl_body_line: receipt_decl_field
+                       | receipt_decl_route_field
+                       | receipt_decl_inherit
+                       | receipt_decl_override
+receipt_decl_field: CNAME ":" receipt_decl_field_type _NL?
+receipt_decl_field_type: receipt_decl_field_list_type | name_ref
+receipt_decl_field_list_type: "list" "[" name_ref "]"
+receipt_decl_inherit: "inherit" CNAME _NL?                                    -> receipt_decl_inherit
+                    | "inherit" "{" grouped_inherit_keys "}" _NL?             -> receipt_decl_inherit_group
+receipt_decl_override: "override" CNAME ":" receipt_decl_field_type _NL?
+
+// Receipt route fields lower into the resolved receipt's `routes` metadata.
+// Closed sentinels stay capitalized as keywords so the parser can distinguish
+// `-> human` from `-> stage HumanReview`.
+receipt_decl_route_field: "route" CNAME ":" string _NL _INDENT receipt_route_choice+ _DEDENT
+receipt_route_choice: CNAME ":" string "->" receipt_route_target _NL?
+receipt_route_target: "stage" name_ref                                        -> receipt_route_target_stage
+                    | "flow" name_ref                                         -> receipt_route_target_flow
+                    | "human"                                                 -> receipt_route_target_human
+                    | "external"                                              -> receipt_route_target_external
+                    | "terminal"                                              -> receipt_route_target_terminal
+
+// Top-level `stage` declarations. Sub-plan 2 ships the typed-fields surface;
+// the resolver enforces required fields, closed `checkpoint:` values, and
+// owner/support/input/emits/lane references.
+stage_decl: "stage" CNAME ":" string _NL _INDENT stage_body _DEDENT
+stage_body: stage_body_line+
+?stage_body_line: stage_owner_stmt
+               | stage_lane_stmt
+               | stage_supports_block
+               | stage_applies_to_block
+               | stage_inputs_block
+               | stage_emits_stmt
+               | stage_forbidden_outputs_block
+               | stage_scalar_stmt
+stage_owner_stmt: "owner" ":" name_ref _NL?
+stage_lane_stmt: "lane" ":" name_ref _NL?
+stage_supports_block: "supports" ":" _NL _INDENT stage_supports_item+ _DEDENT
+stage_supports_item: name_ref _NL?
+// `applies_to:` is a narrow stage-local declaration that only validates
+// `skill_flow` refs in sub-plan 2. Reachability checks wait for real flow
+// expansion in the next slice.
+stage_applies_to_block: "applies_to" ":" _NL _INDENT stage_applies_to_item+ _DEDENT
+stage_applies_to_item: name_ref _NL?
+stage_inputs_block: "inputs" ":" _NL _INDENT stage_input_item+ _DEDENT
+stage_input_item: CNAME ":" name_ref _NL?
+stage_emits_stmt: "emits" ":" name_ref _NL?
+stage_forbidden_outputs_block: "forbidden_outputs" ":" _NL _INDENT stage_forbidden_outputs_item+ _DEDENT
+stage_forbidden_outputs_item: string _NL?
+// Typed scalar stage fields. The resolver enforces which keys are recognized
+// and the closed `checkpoint:` value set.
+stage_scalar_stmt: stage_scalar_key ":" string _NL?
+stage_scalar_key: "id" -> stage_scalar_key_id
+               | "intent" -> stage_scalar_key_intent
+               | "durable_target" -> stage_scalar_key_durable_target
+               | "durable_evidence" -> stage_scalar_key_durable_evidence
+               | "advance_condition" -> stage_scalar_key_advance_condition
+               | "risk_guarded" -> stage_scalar_key_risk_guarded
+               | "checkpoint" -> stage_scalar_key_checkpoint
+
+// Top-level `skill_flow` declaration. Sub-plan 3 lifts the body from
+// registry-only to a real DAG with `start:`, `approve:`, `edge`, `repeat`,
+// `variation`, `unsafe`, and `changed_workflow:`. Graph closure, graph
+// policies, and graph emit stay in later sub-plans.
+skill_flow_decl: "skill_flow" CNAME ":" string _NL                            -> skill_flow_decl_bare
+              | "skill_flow" CNAME ":" string _NL _INDENT skill_flow_body _DEDENT -> skill_flow_decl_body
+skill_flow_body: skill_flow_body_line+
+?skill_flow_body_line: skill_flow_intent_stmt
+                     | skill_flow_start_stmt
+                     | skill_flow_approve_stmt
+                     | skill_flow_edge_stmt
+                     | skill_flow_repeat_stmt
+                     | skill_flow_variation_stmt
+                     | skill_flow_unsafe_stmt
+                     | skill_flow_changed_workflow_stmt
+skill_flow_intent_stmt: "intent" ":" string _NL?
+skill_flow_start_stmt: "start" ":" name_ref _NL?
+skill_flow_approve_stmt: "approve" ":" name_ref _NL?
+skill_flow_edge_stmt: "edge" name_ref "->" name_ref ":" _NL _INDENT skill_flow_edge_body _DEDENT
+skill_flow_edge_body: skill_flow_edge_body_line+
+?skill_flow_edge_body_line: skill_flow_edge_route_stmt
+                          | skill_flow_edge_kind_stmt
+                          | skill_flow_edge_when_stmt
+                          | skill_flow_edge_why_stmt
+skill_flow_edge_route_stmt: "route" ":" name_ref _NL?
+skill_flow_edge_kind_stmt: "kind" ":" CNAME _NL?
+skill_flow_edge_when_stmt: "when" ":" name_ref _NL?
+skill_flow_edge_why_stmt: "why" ":" string _NL?
+skill_flow_repeat_stmt: "repeat" CNAME ":" name_ref _NL _INDENT skill_flow_repeat_body _DEDENT
+skill_flow_repeat_body: skill_flow_repeat_body_line+
+?skill_flow_repeat_body_line: skill_flow_repeat_over_stmt
+                            | skill_flow_repeat_order_stmt
+                            | skill_flow_repeat_why_stmt
+skill_flow_repeat_over_stmt: "over" ":" name_ref _NL?
+skill_flow_repeat_order_stmt: "order" ":" CNAME _NL?
+skill_flow_repeat_why_stmt: "why" ":" string _NL?
+skill_flow_variation_stmt: "variation" CNAME ":" string _NL skill_flow_variation_body?
+skill_flow_variation_body: _INDENT skill_flow_variation_body_line+ _DEDENT
+?skill_flow_variation_body_line: skill_flow_variation_safe_when_stmt
+skill_flow_variation_safe_when_stmt: "safe_when" ":" name_ref _NL?
+skill_flow_unsafe_stmt: "unsafe" CNAME ":" string _NL?
+skill_flow_changed_workflow_stmt: "changed_workflow" ":" _NL _INDENT skill_flow_changed_workflow_body _DEDENT
+skill_flow_changed_workflow_body: skill_flow_changed_workflow_body_line+
+?skill_flow_changed_workflow_body_line: skill_flow_changed_workflow_allow_stmt
+                                      | skill_flow_changed_workflow_require_stmt
+skill_flow_changed_workflow_allow_stmt: "allow" CNAME _NL?
+skill_flow_changed_workflow_require_stmt: "require" CNAME _NL?
 
 record_readable_block: record_section_block
                      | readable_nonsection_block

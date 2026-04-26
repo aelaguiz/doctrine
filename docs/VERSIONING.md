@@ -86,6 +86,9 @@ Doctrine also ships narrower version lines.
   prove the source and output hashes for an emitted skill-package tree.
 - When present, emitted `SKILL.contract.json` files are also part of that
   public skill-package surface.
+  Additive keys such as `routes` or `json_schema` still count as public
+  surface and need the same release review as any other emitted contract
+  change.
 - Generated public install trees such as `skills/.curated/agent-linter/`
   are part of the public surface when this repo is used as an `npx skills`
   source. They are build artifacts. The `.prompt` sources and emit targets
@@ -143,6 +146,11 @@ Every public release uses one release class.
   conditional emitted `SKILL.contract.json` sidecars for host-bound packages is
   an `additive` release when older inline skills and older skill packages
   still keep working unchanged.
+- Adding top-level reusable `receipt`, `stage`, and skeletal `skill_flow`
+  declarations, plus additive `routes` and `json_schema` data on
+  receipt-by-reference `SKILL.contract.json` slots, is an `additive`
+  release when older prompts and older inline receipt slots still compile
+  and emit unchanged.
 - Adding `type: enum` plus `values:` for local `output schema` enums was an
   `additive` release when legacy `type: string` plus `enum:` still worked and
   emitted schema files kept the same string-enum wire shape. Both forms are
@@ -283,6 +291,21 @@ Every public release uses one release class.
   `receipt_lock_mismatch`, and `unsupported_receipt_version`. Existing skill
   packages keep compiling; they now gain a receipt sidecar. Advances the
   language line from `5.6` to `5.7`.
+- Lifting top-level `skill_flow` from registry-only to a real flow-local
+  declaration is one backward-compatible language addition inside the
+  `5.7` line. Authors may now declare `start:`, `approve:`, `edge
+  Source -> Target:` blocks with `route:`, `kind:`, `when:`, and required
+  `why:`, plus `repeat`, `variation`, `unsafe`, and `changed_workflow:`
+  body items. The compiler resolves edge endpoints against top-level
+  `stage`, top-level `skill_flow`, and local repeat names; binds edges
+  to typed receipt route choices; enforces local DAG, branch coverage,
+  repeat shadowing, and closed value sets; and lowers the body into
+  compiler-owned facts only. Graph closure across flows, graph policies,
+  and graph emit stay in later sub-plans. Existing prompts that do not
+  author the new body shapes keep compiling unchanged. The skill graph
+  language work in sub-plans 1, 2, and 3 ships together as one shipped
+  language slice within the unreleased `5.7` line and only crosses a new
+  language version line at the next public release.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

@@ -849,6 +849,288 @@ Rules:
 - When a package has host-binding truth, `SKILL.contract.json` records the
   package host contract and the host paths used by each emitted prompt-authored
   artifact.
+- Two `host_contract:` slots may not share the same key. Duplicate slot
+  keys fail with `E535`.
+
+#### Top-Level Receipt Declarations
+
+Receipts can also live at the top level so many packages or graph stages
+can share the same typed handoff fact. Top-level receipts use the same
+explicit `[Parent]` inheritance model as `output`, `workflow`, and
+`document`.
+
+```prompt
+enum StageStatus: "Stage Status"
+    not_started: "Not Started"
+    approved: "Approved"
+
+receipt StageReceipt: "Stage Receipt"
+    stage: string
+    status: StageStatus
+
+receipt LessonPlanReceipt[StageReceipt]: "Lesson Plan Receipt"
+    inherit {stage, status}
+    fit_grid_written: boolean
+```
+
+Rules:
+
+- All fields are required. Model an absent value with an enum member or
+  point at a nullable schema instead.
+- Field types are closed: builtin scalars (`string`, `integer`, `number`,
+  `boolean`), declared `enum`, `table`, `schema`, or another declared
+  `receipt`. `list[Type]` marks a repeating field.
+- Inherited fields must be accounted for with `inherit <key>` or
+  `override <key>: <Type>`. Redeclaring an inherited field without one of
+  those keywords, missing accounting for an inherited field, overriding
+  an undefined parent field, or repeating a field key fails with `E544`.
+- Receipt inheritance cycles and receipt-of-receipt field cycles fail
+  with `E544`.
+
+A skill package can point a host contract slot at a top-level receipt by
+reference. The slot keeps its package-local key while the receipt fields
+come from the shared declaration.
+
+```prompt
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+    host_contract:
+        receipt flow_receipt: StageReceipt
+        receipt plan_receipt: LessonPlanReceipt
+```
+
+Rules:
+
+- The receipt name after the colon must resolve to a top-level `receipt`
+  declaration in scope. Unresolved refs fail with `E545`.
+- The slot title and field map come from the resolved receipt; do not
+  restate them inside the package.
+- The inline `receipt key: "Title"` form with a body still works, side by
+  side with by-reference slots.
+- `SKILL.contract.json` records each by-reference slot with the slot key,
+  the canonical receipt name under `receipt`, the lowered `fields` map,
+  and a `json_schema` object so consumers do not need to re-resolve the
+  source declaration. Each field carries its `kind` (`builtin`, `enum`,
+  `table`, `schema`, or `receipt`). When the resolved receipt also
+  declares route fields, the slot adds a `routes` map keyed by route name,
+  and the route keys also appear in `json_schema` as required string enum
+  properties over the authored choice keys.
+
+#### Top-Level Stage Declarations
+
+A `stage` declaration names one graph node and binds an owner skill to
+typed inputs, an optional emitted receipt, an advance condition, and a
+durable checkpoint rule. Stages compose with `skill_flow` and
+`skill_graph` declarations in later releases; sub-plan 2 ships the
+typed-fields surface only.
+
+```prompt
+enum StageLane: "Stage Lane"
+    pipeline: "Pipeline Stage"
+    primitive: "Primitive"
+
+skill StudioLessonPlan: "Studio Lesson Plan"
+    purpose: "Plan one lesson."
+    package: "studio-lesson-plan"
+
+skill CatalogOps: "Catalog Ops"
+    purpose: "Write exact catalog facts."
+    package: "catalog-ops"
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson end-to-end."
+
+stage LessonPlan: "Lesson Plan"
+    id: "lesson_plan"
+    owner: StudioLessonPlan
+    lane: StageLane.pipeline
+    supports:
+        CatalogOps
+    applies_to:
+        F1AuthorLesson
+    inputs:
+        flow_receipt: FlowReceipt
+    emits: LessonPlanReceipt
+    intent: "Turn the section strategy into a lesson plan."
+    durable_target: "Lesson plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Author approval plus write receipt."
+    risk_guarded: "Reps chosen before pool exists."
+    forbidden_outputs:
+        "rep selection"
+        "correct action columns"
+```
+
+Rules:
+
+- `owner:` is required and must resolve to a top-level `skill`. Unresolved
+  refs fail with `E546`.
+- `intent:` and `advance_condition:` are required. Missing required fields
+  fail with `E559`.
+- `id:` is optional; it gives the public stage id used in rendered docs.
+- `lane:` is optional. When present it must resolve to an enum member
+  (`EnumName.member`); unknown enums or members fail with `E559`.
+- `supports:` lists top-level skill refs. Each ref must resolve
+  (`E547`). Duplicates and entries that repeat the owner fail with
+  `E559`.
+- `applies_to:` is optional. Each ref must resolve to a top-level
+  `skill_flow`. Duplicate resolved flows fail with `E559`. This slice only
+  checks the refs. Reachability cross-checks wait for real `skill_flow`
+  expansion.
+- `inputs:` map keys must be unique (`E559`). Each value must resolve to
+  a top-level `receipt`, `document`, `schema`, or `table` (`E548`).
+- `emits:` must resolve to a top-level `receipt` (`E549`).
+- `forbidden_outputs:` is an optional list of strings.
+- `checkpoint:` is optional. The closed value set is `durable`,
+  `review_only`, `diagnostic`, and `none`; the default is `durable`.
+  Other values fail with `E559`.
+- A stage with `checkpoint: durable` must declare `durable_target:` and
+  `durable_evidence:` (`E559`).
+
+#### Top-Level `skill_flow` Declarations
+
+A `skill_flow` is a typed DAG of stages and nested flows. The body owns
+`intent:`, `start:`, `approve:`, `edge` blocks, `repeat` blocks,
+`variation`, `unsafe`, and `changed_workflow:`. Graph closure across
+flows, graph policies, and graph emit stay in later sub-plans.
+
+```prompt
+enum ExactMoveProofNeeded: "Exact Move Proof Needed"
+    yes: "Yes"
+    no: "No"
+
+skill_flow F18PublishHandoff: "F18 - Publish Handoff"
+    intent: "Publish the lesson when authoring is done."
+    start: Publish
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Turn one stable lesson slot into a complete review-ready lesson."
+    start: LessonPlan
+    edge LessonPlan -> AuthorRender:
+        route: LessonPlanReceipt.next_route.approve
+        kind: review
+        why: "The author reviews the plan before downstream work depends on it."
+    edge AuthorRender -> SituationSynthesis:
+        why: "Concrete situations must be built from approved plan truth."
+    edge SituationSynthesis -> ExactMoveProof:
+        when: ExactMoveProofNeeded.yes
+        why: "Exact action claims need solver proof before build."
+    edge SituationSynthesis -> PlayableMaterialization:
+        when: ExactMoveProofNeeded.no
+        why: "No exact-action proof is needed for this lesson contract."
+    edge ExactMoveProof -> PlayableMaterialization:
+        why: "The proof must land before the manifest relies on it."
+    variation skip_exact_move_proof: "Skip exact-move proof for family recognition lessons."
+        safe_when: ExactMoveProofNeeded.no
+    unsafe concrete_hands_in_plan: "Pick concrete hands during planning."
+    changed_workflow:
+        allow provisional_flow
+        require nearest_flow
+        require difference
+        require safety_rationale
+    approve: F18PublishHandoff
+```
+
+Rules:
+
+- `intent:` is optional. When present it captures one short statement of
+  flow purpose.
+- `start:` is optional. When present it must resolve to a top-level
+  `stage`, top-level `skill_flow`, or a local `repeat` name. Unresolved
+  refs fail with `E561`.
+- `approve:` is optional and must resolve to a top-level `skill_flow`
+  declaration. Unresolved refs fail with `E561`.
+- Each `edge Source -> Target:` block requires a `why:` reason and resolves
+  the source and target against top-level `stage`, top-level `skill_flow`,
+  or local repeat names. Direct self-edges (same source and target) and
+  edges that close a local cycle fail with `E561`.
+- Edge `kind:` is optional. The closed v1 set is `normal`, `review`,
+  `repair`, `recovery`, `approval`, and `handoff`. The default is
+  `normal`. Other values fail with `E561`.
+- Edge `route:` accepts the form `<ReceiptRef>.<route_field>.<choice>`.
+  The receipt must resolve to a top-level `receipt`, the route field must
+  exist on that receipt, the choice must exist on that route field, and
+  the choice target must match the edge target. Otherwise `E561`.
+- Strict default: if a source stage emits a routed receipt and a route
+  choice on that receipt targets the edge target, the edge must bind that
+  exact route choice with `route:`. Sub-plan 3 has no `allow unbound_edges`
+  policy. A missing required binding fails with `E561`.
+- Edge `when:` accepts only declared enum members in this slice
+  (`EnumName.member`). Unresolved enums or members fail with `E561`.
+- Branch coverage: if any outgoing edge from one source uses `when:`,
+  every outgoing edge from that source must use `when:` on the same enum
+  family and must cover each member exactly once. Mixed enum families,
+  duplicate member branches, or missing members all fail with `E561`.
+  Sub-plan 3 has no `otherwise:` escape hatch.
+- `repeat <Name>: <FlowRef>` requires `over:`, `order:`, and `why:`. The
+  target flow ref must resolve to a top-level `skill_flow`. The `over:`
+  ref must resolve to a top-level `enum`, `table`, or `schema` in this
+  slice; graph `sets:` arrive in a later sub-plan. The `order:` value is
+  one of the closed set `serial`, `parallel`, or `unspecified`. The
+  repeat name is local to one flow. It may not shadow a top-level
+  `stage`, top-level `skill_flow`, or another repeat in the same flow.
+  Local repeat names take precedence over top-level stage and flow refs
+  when resolving edge endpoints. Missing or duplicate parser-owned body
+  lines such as `over:`, `order:`, or `why:` still fail during parse with
+  `E199`. Repeat resolution and shadowing failures use `E561`.
+- `variation <name>: "<Title>"` is optional. The optional `safe_when:`
+  body line uses the same `EnumName.member` form as `when:` and reports
+  unresolved enums or members with `E561`. Duplicate variation names
+  fail with `E561`.
+- `unsafe <name>: "<Title>"` lists unsafe variations as compiler-owned
+  facts. Duplicate names fail with `E561`.
+- `changed_workflow:` is optional. The closed body keys are
+  `allow provisional_flow` and `require <name>`, where `<name>` is one of
+  `nearest_flow`, `difference`, or `safety_rationale`. Unknown keys fail
+  with `E561`.
+- Parser-level `skill_flow` syntax or block-shape failures still use
+  fallback parse `E199`. That includes missing required body lines,
+  duplicate parser-owned body keys, and malformed dotted `route:` or
+  enum-member refs. Compile-time flow validation uses `E561`. Receipt
+  route target resolution still uses `E560` so that diagnostic surface
+  stays stable.
+
+#### Receipt Route Fields
+
+Top-level receipts may declare route fields that name typed handoff
+choices. Each choice points at one of `stage <Name>`, `flow <Name>`, or
+the closed sentinel set `human`, `external`, or `terminal`.
+
+```prompt
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+    route next_route: "Next Route"
+        approve: "Show review." -> stage AuthorRender
+        revise: "Re-plan." -> stage LessonPlan
+        flow: "Jump to flow." -> flow F1AuthorLesson
+        human: "Hand to human." -> human
+        external: "External system." -> external
+        done: "Done." -> terminal
+```
+
+Rules:
+
+- `stage StageRef` must resolve to a top-level `stage` (`E560`).
+- `flow SkillFlowRef` must resolve to a top-level `skill_flow` (`E560`).
+- The sentinel set is closed to `human`, `external`, and `terminal`. The
+  parser rejects any other bare keyword.
+- Route field keys must be unique within one receipt; duplicate route
+  fields or duplicate choice keys fail with `E544`.
+- When a skill package's `host_contract:` slot points at a receipt with
+  routes, `SKILL.contract.json` adds a deterministic `routes` map under
+  the slot. Each entry carries `title`, then `choices` keyed by choice
+  name. Each choice entry carries `title`, `target_kind` (one of `stage`,
+  `flow`, or `sentinel`), and `target` (the canonical declaration name or
+  the sentinel keyword). The same slot also adds `json_schema`, where each
+  route key lowers to a required string enum property over the authored
+  choice keys.
 
 #### Skill Binding Mode
 
