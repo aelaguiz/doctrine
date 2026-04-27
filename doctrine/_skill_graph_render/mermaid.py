@@ -15,7 +15,7 @@ def render_skill_graph_mermaid(graph: model.ResolvedSkillGraph) -> str:
             f'    {_node_id(stage.canonical_name)}["{_label(stage)}"]'
         )
     for edge in graph.stage_edges:
-        label = edge.why.replace('"', '\\"')
+        label = _escape_label_text(edge.why)
         lines.append(
             "    "
             f"{_node_id(edge.source_stage_name)} -->|{label}| "
@@ -32,4 +32,17 @@ def _label(stage: model.ResolvedStage) -> str:
     bits = [stage.title, f"owner: {stage.owner_skill_name}"]
     if stage.lane_name is not None:
         bits.append(f"lane: {stage.lane_name}")
-    return "<br/>".join(bit.replace('"', '\\"') for bit in bits)
+    return "<br/>".join(_escape_label_text(bit) for bit in bits)
+
+
+def _escape_label_text(value: str) -> str:
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
+    return (
+        normalized.replace("&", "&amp;")
+        .replace("\\", "&#92;")
+        .replace('"', "&quot;")
+        .replace("|", "&#124;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\n", "<br/>")
+    )

@@ -1,16 +1,11 @@
 # Warnings
 
 Doctrine treats fail-loud errors as the default.
-Some authoring shapes compile cleanly today but still push against the
-project principles: context budget, reuse pressure, narrow typed-truth
-shadowing, weak load boundaries.
+Some valid authoring shapes still signal likely drift. Doctrine uses warnings
+for those cases when a hard error would be too strict.
 
-A first-class warning layer would flag those shapes without turning the
-compiler into a second harness or a style linter.
-
-This doc is the evergreen landing page for that work.
-Doctrine now ships graph-scoped warnings for `skill_graph` policy lines.
-They are emitted into graph contracts and graph Markdown. They do not fail
+Doctrine currently ships graph-scoped warnings for `skill_graph` policy lines.
+Warnings are emitted into graph contracts and graph Markdown. They do not fail
 compile by themselves.
 The [agent-linter skill](AGENT_LINTER.md) is the current home for
 judgment-first authoring review.
@@ -34,6 +29,11 @@ policy line.
 | `W210` | `relation_without_reason` | A skill relation has no `why:` and `require relation_reason` is off. |
 | `W211` | `manual_only_default_flow_conflict` | A reached skill is marked both manual-only and a default flow member. |
 
+Graph warning `owner` fields use the public declaration name. They do not carry
+a module path. When two modules use the same public name, the warning detail
+must say which local graph-entrypoint declaration is not reached and which
+imported declaration was reached instead.
+
 ## Goals
 
 - Give authors early, clear guidance on valid-but-bad authoring.
@@ -56,7 +56,7 @@ If the compiler can prove a shape is semantically wrong, the long-term
 home is an error in [COMPILER_ERRORS.md](COMPILER_ERRORS.md), not a
 warning.
 
-## Candidate First-Wave Families
+## Future Candidate Families
 
 These are the families most aligned with Doctrine principles. They are
 candidates, not shipped codes.
@@ -102,4 +102,4 @@ If any answer is weak, do not ship the warning by default.
   compiler still accepts. Some may earn a warning bridge before they
   become hard errors.
 - [COMPILER_ERRORS.md](COMPILER_ERRORS.md): canonical error catalog.
-  Shipped warnings will land alongside errors in the same catalog.
+  Error codes live there. Shipped graph warning codes are listed in this file.

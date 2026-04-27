@@ -220,6 +220,55 @@ class EmitSkillTests(unittest.TestCase):
             self.assertTrue(metadata_path.is_file())
             self.assertEqual(metadata_path.read_text(encoding="utf-8"), runtime_metadata)
 
+    def test_emit_skill_rejects_invalid_skill_graph_decl_in_package_source(self) -> None:
+        # A SKILL.prompt can now carry graph declarations beside the package.
+        # Package emit must fail before shipping SKILL.md when that graph
+        # contract is wrong, even if the graph bundle is emitted by another
+        # target later.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "graph_guard"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill OwnerSkill: "Owner Skill"
+                        purpose: "Own the package."
+
+                    skill package GraphGuard: "Graph Guard"
+                        metadata:
+                            name: "graph-guard"
+                        "Do not ship with a broken graph contract."
+
+                    skill_graph BrokenGraph: "Broken Graph"
+                        purpose: "This graph names a missing stage."
+                        roots:
+                            stage MissingStage
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/graph_guard/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(CompileError) as ctx:
+                emit_target_skill(load_emit_targets(pyproject)["demo"])
+
+        self.assertIn("E562", str(ctx.exception))
+        self.assertIn("MissingStage", str(ctx.exception))
+
     def test_emit_skill_emits_document_companions_from_emit_block(self) -> None:
         # This protects the new first-class package artifact map. A skill
         # package should emit prompt-authored companion docs from imported

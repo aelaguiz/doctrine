@@ -8,7 +8,14 @@ from pathlib import Path
 from typing import Any
 
 from doctrine import model
-from doctrine.emit_common import REPO_ROOT, EmitTarget, display_path, emit_error, entrypoint_relative_dir
+from doctrine.emit_common import (
+    REPO_ROOT,
+    EmitTarget,
+    _validate_path_within_root,
+    display_path,
+    emit_error,
+    entrypoint_relative_dir,
+)
 
 
 SOURCE_RECEIPT_FILE_NAME = "SKILL_GRAPH.source.json"
@@ -31,9 +38,37 @@ def receipt_path_for_target(
     target: EmitTarget,
     *,
     output_dir_override: Path | None = None,
+    graph: model.ResolvedSkillGraph | None = None,
+) -> Path:
+    output_dir = output_dir_for_target(target, output_dir_override=output_dir_override)
+    raw_path = (
+        _graph_source_view_path(graph)
+        if graph is not None
+        else SOURCE_RECEIPT_FILE_NAME
+    )
+    candidate = Path(raw_path)
+    receipt_path = (
+        candidate.resolve()
+        if candidate.is_absolute()
+        else (output_dir / candidate).resolve()
+    )
+    _validate_path_within_root(
+        candidate_path=receipt_path,
+        root=output_dir,
+        detail_prefix=f"Skill graph source receipt for target `{target.name}`",
+        code="E564",
+        summary="Invalid skill graph view path",
+    )
+    return receipt_path
+
+
+def output_dir_for_target(
+    target: EmitTarget,
+    *,
+    output_dir_override: Path | None = None,
 ) -> Path:
     output_root = (output_dir_override or target.output_dir).resolve()
-    return output_root / entrypoint_relative_dir(target.entrypoint) / SOURCE_RECEIPT_FILE_NAME
+    return output_root / entrypoint_relative_dir(target.entrypoint)
 
 
 def build_graph_source_receipt_payload(
@@ -45,11 +80,12 @@ def build_graph_source_receipt_payload(
     emitted_paths: tuple[Path, ...],
     resolved_view_paths: dict[str, Path],
     linked_package_receipts: tuple[dict[str, Any], ...],
+    selected_view_keys: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     inputs = _input_entries(input_paths)
     outputs = _output_entries(emitted_dir=emitted_dir, emitted_paths=emitted_paths)
     output_hashes = {entry["path"]: entry["sha256"] for entry in outputs}
-    return {
+    payload = {
         "receipt_version": SOURCE_RECEIPT_VERSION,
         "graph": {
             "name": graph.canonical_name,
@@ -95,6 +131,9 @@ def build_graph_source_receipt_payload(
         ),
         "linked_package_receipts": list(linked_package_receipts),
     }
+    if selected_view_keys is not None:
+        payload["selected_views"] = sorted(selected_view_keys)
+    return payload
 
 
 def render_graph_source_receipt_json(payload: dict[str, Any]) -> str:
@@ -105,8 +144,10 @@ def verify_actual_output_tree(
     *,
     target: EmitTarget,
     receipt_payload: dict[str, Any],
+    graph: model.ResolvedSkillGraph | None = None,
+    receipt_path: Path | None = None,
 ) -> GraphReceiptCheckResult | None:
-    output_dir = receipt_path_for_target(target).parent
+    output_dir = output_dir_for_target(target)
     if not output_dir.is_dir():
         return GraphReceiptCheckResult(
             target.name,
@@ -121,9 +162,11 @@ def verify_actual_output_tree(
     )
     expected_paths = {str(entry["path"]) for entry in expected_outputs}
     actual_paths: set[str] = set()
-    root_receipt_path = output_dir / SOURCE_RECEIPT_FILE_NAME
+    actual_receipt_path = (
+        receipt_path or receipt_path_for_target(target, graph=graph)
+    ).resolve()
     for path in sorted(output_dir.rglob("*")):
-        if not path.is_file() or path == root_receipt_path:
+        if not path.is_file() or path.resolve() == actual_receipt_path:
             continue
         actual_paths.add(path.relative_to(output_dir).as_posix())
 
@@ -230,6 +273,14 @@ def verify_graph_receipt(
             "stale_graph_source",
             "The graph receipt target identity does not match this emit target.",
         )
+    if actual_receipt_payload.get("selected_views") != expected_receipt_payload.get(
+        "selected_views"
+    ):
+        return GraphReceiptCheckResult(
+            target.name,
+            "stale_graph_source",
+            "The graph receipt selected view set does not match a fresh graph emit.",
+        )
     if actual_receipt_payload.get("source_tree_sha256") != expected_receipt_payload.get(
         "source_tree_sha256"
     ):
@@ -319,6 +370,13 @@ def _output_entries(
             }
         )
     return tuple(entries)
+
+
+def _graph_source_view_path(graph: model.ResolvedSkillGraph) -> str:
+    for view in graph.views:
+        if view.key == "graph_source":
+            return view.path
+    return SOURCE_RECEIPT_FILE_NAME
 
 
 def _entries_for_paths(

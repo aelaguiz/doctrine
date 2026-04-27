@@ -4,6 +4,7 @@ from doctrine import model
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
+from doctrine._compiler.support import dotted_decl_name
 
 
 _STAGE_CHECKPOINT_VALUES: frozenset[str] = frozenset(
@@ -219,6 +220,7 @@ class ResolveStagesMixin:
                 support_skill_names.append(_support_decl.name)
 
         applies_to_flow_names: list[str] = []
+        applies_to_flow_identities: list[str] = []
         if applies_to_items:
             seen_flow_keys: set[
                 tuple[object, tuple[str, ...], str]
@@ -251,6 +253,9 @@ class ResolveStagesMixin:
                     )
                 seen_flow_keys.add(flow_key)
                 applies_to_flow_names.append(flow_decl.name)
+                applies_to_flow_identities.append(
+                    dotted_decl_name(flow_unit.module_parts, flow_decl.name)
+                )
 
         resolved_inputs: list[model.ResolvedStageInput] = []
         if inputs_items:
@@ -392,6 +397,7 @@ class ResolveStagesMixin:
             lane_name=lane_name,
             support_skill_names=tuple(support_skill_names),
             applies_to_flow_names=tuple(applies_to_flow_names),
+            applies_to_flow_identities=tuple(applies_to_flow_identities),
             inputs=tuple(resolved_inputs),
             emits_receipt_name=emits_receipt_name,
             artifact_names=tuple(artifact_names),

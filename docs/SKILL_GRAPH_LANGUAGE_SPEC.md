@@ -1,20 +1,20 @@
 # Skill Graph Language Spec
 
-Status: Doctrine-side language work shipped. The `../lessons_studio`
-migration is still out of scope here.
+Status: Doctrine-side language work is shipped. Downstream repo migrations are
+out of scope here.
 
-This spec defines Doctrine-side language changes for first-class skill graph
-support. It is based on the
-[`lessons_studio` skill graph audit](LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md), the
-studio authoring flow controller in `../lessons_studio`, and an independent
-fresh consult with Claude Opus 4.7 at xhigh effort.
+This spec records the durable design for first-class skill graph support. The
+canonical shipped syntax is in [LANGUAGE_REFERENCE.md](LANGUAGE_REFERENCE.md).
+The command and output layout reference is in [EMIT_GUIDE.md](EMIT_GUIDE.md).
+The warning catalog is in [WARNINGS.md](WARNINGS.md).
 
-This spec does not refactor `../lessons_studio`. It defines the language,
-compiler, emit, docs, and test work Doctrine should own.
+Doctrine owns the language, compiler, emit, docs, and proof corpus for this
+surface. Downstream repos decide when to migrate their own prose inventories to
+typed graph declarations.
 
 ## Core Decision
 
-Add `skill_graph` as a first-class Doctrine declaration.
+Doctrine ships `skill_graph` as a first-class declaration.
 
 The first pass treated a skill graph as only an inferred compiler closure. That
 was too weak for the studio authoring use case. The studio controller is
@@ -126,7 +126,7 @@ recovery guide, and a stepwise guide in sync by hand.
 
 ## Existing Primitives To Reuse
 
-The design should reuse these shipped surfaces:
+The design reuses these shipped surfaces:
 
 - `skill package` emits one `SKILL.md` tree.
 - Top-level `skill` names a reusable capability.
@@ -140,7 +140,7 @@ The design should reuse these shipped surfaces:
 - `rule` already models compiler-owned authoring policy.
 - Source receipts already prove source freshness.
 
-The new work should extend these pieces, not fork them.
+The graph surface extends these pieces instead of forking them.
 
 `skill_flow` is new because a graph DAG is not the same thing as a prose
 workflow. A `workflow` tells an agent how to do work. A `skill_flow` tells the
@@ -228,9 +228,9 @@ without making stage flows carry every support edge.
 The surface relation kinds are useful for current studio checks, but they may
 move to a future typed `surface` declaration if Doctrine adds one.
 
-## New Declaration: `artifact`
+## Declaration: `artifact`
 
-Add top-level `artifact` declarations for durable graph targets.
+Doctrine supports top-level `artifact` declarations for durable graph targets.
 
 Artifacts are symbols, not live file checks. They tell the graph which stage
 writes a durable target and let later stages require that target by name.
@@ -270,9 +270,9 @@ Rules:
 - Later stages may read the artifact by listing it under `inputs:`.
 - Reached artifact anchors must be unique inside one graph.
 
-## New Declaration: `receipt`
+## Declaration: `receipt`
 
-Add top-level `receipt` declarations.
+Doctrine supports top-level `receipt` declarations.
 
 Today a receipt can live inside a `skill package` host contract. That works
 for one package, but skill graphs need receipts that many stages and packages
@@ -402,9 +402,9 @@ Rules:
 This keeps package contracts local while letting graph handoffs use shared
 receipt types.
 
-## New Declaration: `stage`
+## Declaration: `stage`
 
-Add top-level `stage` declarations.
+Doctrine supports top-level `stage` declarations.
 
 A stage is the graph role binding. It says which skill owns a graph step, what
 the step reads, what it emits, and what durable checkpoint proves it served its
@@ -481,10 +481,9 @@ Rules:
 - Each `supports:` item must resolve to a top-level `skill`.
 - `supports:` may not repeat `owner:`.
 - `applies_to:` values must resolve to `skill_flow` declarations.
-- In the shipped sub-plan 2 slice, `applies_to:` only validates those refs and
-  rejects duplicate resolved flows through the stage diagnostic family.
-- Reachability cross-checks between `applies_to:` and expanded flow membership
-  are deferred until real `skill_flow` expansion ships.
+- Duplicate resolved flows fail through the stage diagnostic family.
+- On the graph compile path, a reached stage with `applies_to:` must list
+  every reaching flow. Otherwise graph compile fails with `E562`.
 - `inputs:` values must resolve to a `receipt`, `artifact`, `document`,
   `schema`, or `table`.
 - `artifacts:` values must resolve to top-level `artifact` declarations owned
@@ -566,9 +565,9 @@ Rules:
 This gives `next_on_approve` style handoffs compiler truth without adding a
 second handoff language on stages.
 
-## New Declaration: `skill_flow`
+## Declaration: `skill_flow`
 
-Add top-level `skill_flow` declarations.
+Doctrine supports top-level `skill_flow` declarations.
 
 A `skill_flow` is a graph DAG. It is not a prose workflow. It owns nodes,
 edges, branch reasons, nested flows, and safe or unsafe variations.
@@ -771,9 +770,9 @@ the route.
 When possible, this should reuse the existing typed output or `final_output`
 surface instead of inventing a separate runtime response system.
 
-## New Declaration: `skill_graph`
+## Declaration: `skill_graph`
 
-Add top-level `skill_graph` declarations.
+Doctrine supports top-level `skill_graph` declarations.
 
 A `skill_graph` is the named graph boundary. It selects roots, sets policies,
 and declares the views Doctrine should emit.
@@ -870,7 +869,7 @@ Rules:
 
 ## DAG Policy
 
-The default graph policy should be strict.
+The default graph policy is strict.
 
 Built-in policies:
 
@@ -897,7 +896,7 @@ routes back to a parent stage without an allowed cycle.
 
 ## Checked Skill Mentions
 
-Add checked skill refs for prose.
+Doctrine supports checked skill refs for graph-owned prose.
 
 ```prompt
 "Use {{skill:CatalogOps}} for exact catalog writes."
@@ -915,10 +914,8 @@ Rules:
 
 This catches stale `$skill-name` prose.
 
-If Doctrine does not already have a general `{{...}}` interpolation pass for
-strings, treat this as a small parallel feature. It should resolve only inside
-string and Markdown text surfaces that opt into checked interpolation. It
-should ship with its own example before graph docs rely on it broadly.
+Checked interpolation runs only in graph-owned text such as graph purpose,
+stage text, flow text, edge reasons, repeat reasons, and relation reasons.
 
 ## Generated Graph Contract
 
@@ -1127,10 +1124,10 @@ Markdown is for people. `skill-graph.json` is for tools and agents.
 
 ## Mermaid Diagram Output
 
-Doctrine should be able to generate a Mermaid graph on request.
+Doctrine can generate a Mermaid graph on request.
 
 Mermaid is useful because many docs sites and chats render it directly. D2 and
-SVG can remain the stable visual artifacts. Mermaid should be the portable
+SVG remain stable visual artifacts. Mermaid is the portable
 Markdown-native view.
 
 View key:
@@ -1282,7 +1279,7 @@ It records:
 - graph JSON hash
 - graph diagram hash
 
-`verify_skill_graph` should report:
+`verify_skill_graph` reports:
 
 - `current`
 - `missing_graph_receipt`
@@ -1295,17 +1292,26 @@ It records:
 
 ## Commands
 
-Add:
+Configured target mode:
 
 ```bash
-uv run --locked python -m doctrine.emit_skill_graph --graph <graph-name>
-uv run --locked python -m doctrine.verify_skill_graph --graph <graph-name>
+uv run --locked python -m doctrine.emit_skill_graph --target <target-name>
+uv run --locked python -m doctrine.verify_skill_graph --target <target-name>
+```
+
+Direct graph emit mode:
+
+```bash
+uv run --locked python -m doctrine.emit_skill_graph \
+  --entrypoint path/to/GRAPH.prompt \
+  --output-dir build/skill_graph \
+  --graph <graph-name>
 ```
 
 Rules:
 
-- `emit_skill_graph` accepts a file or configured target that contains a
-  `skill_graph` declaration.
+- `emit_skill_graph` accepts a configured target or direct entrypoint that
+  contains a `skill_graph` declaration.
 - `SKILL.prompt` remains package-first, but it may import a graph declaration.
 - `GRAPH.prompt` is the preferred standalone graph entrypoint.
 - The graph must compile at least one root flow or root stage.
@@ -1322,232 +1328,47 @@ graph = "StudioAuthoringGraph"
 output_dir = "build/skill_graph"
 ```
 
-## Compiler Errors
+## Diagnostics And Warnings
 
-Reserve new compile and emit errors for the graph surface. The exact numbers
-can move before implementation, but the families should stay stable.
+The canonical diagnostic table is
+[COMPILER_ERRORS.md](COMPILER_ERRORS.md). The graph family uses:
 
-| Code | Summary | When |
-| --- | --- | --- |
-| `E544` | Invalid receipt declaration | Duplicate fields, empty receipt, unknown type, or receipt cycle |
-| `E545` | Invalid stage declaration | Missing owner, duplicate input key, duplicate support skill, or invalid body item |
-| `E546` | Stage owner is not a declared skill | `owner:` points at a missing or wrong-kind declaration |
-| `E547` | Stage support is not a declared skill | `supports:` points at a missing or wrong-kind declaration |
-| `E548` | Stage input type is invalid | `inputs:` points at a missing or wrong-kind declaration |
-| `E549` | Stage emit type is invalid | `emits:` points at a missing or wrong-kind declaration |
-| `E550` | Receipt route target is invalid | A receipt route points at a missing stage, flow, or unknown sentinel |
-| `E551` | Invalid skill flow | A flow node, edge, branch, route binding, repeat, or approve route is invalid |
-| `E552` | Invalid skill graph | A graph root, graph set, recovery ref, policy, view path, or closure is invalid |
-| `E553` | Skill package id is unresolved | `package:` matches no visible package id or registered target |
-| `E554` | Skill graph emit failed | Graph emit found no graph closure or hit an invalid graph output path |
-| `E566` | Invalid skill relation | A skill relation target, relation kind, or required relation reason is invalid |
+- `E544` and `E545` for receipt declarations and receipt-by-reference slots.
+- `E546` through `E549` for stage owner, support, input, and emit refs.
+- `E560` for receipt route targets.
+- `E561` for top-level `skill_flow` validation.
+- `E562` through `E565` for graph closure, graph target selection, graph view
+  paths, and graph emit failures.
+- `E566` for invalid skill relations.
 
-Example diagnostic:
+Doctrine also ships graph-scoped warnings. They run only when the graph opts in
+with a matching `warn <key>` policy line. The canonical warning list is
+[WARNINGS.md](WARNINGS.md).
 
-```text
-E551 compile error: Invalid skill flow
+Use errors when Doctrine can prove the shape is wrong. Use warnings only for
+valid shapes that often signal drift.
 
-Detail:
-Flow `F1AuthorLesson` has edge `LessonPlan -> MissingStage`, but
-`MissingStage` does not resolve to a stage, nested flow, or repeat node.
+## Implementation Homes
 
-Hint:
-Declare `stage MissingStage: "Missing Stage"`, fix the edge target, or remove
-the edge.
-```
+The shipped code lives in the same compiler path as the rest of Doctrine:
 
-## Compiler Warnings
-
-Doctrine now ships a graph-scoped warning layer. Warnings run only when the
-graph opts in with a matching `warn <key>` policy line. Skill graphs need this
-because some graph shapes are valid but suspicious.
-
-Candidate warnings:
-
-| Code | Summary | When |
-| --- | --- | --- |
-| `W201` | Stage has no graph | A visible stage is not reached by this `skill_graph` root |
-| `W202` | Skill has no stage | A visible skill is not reached from a stage, relation, or checked skill mention |
-| `W203` | Stage owner is shared | Two stages use the same owner skill |
-| `W204` | Checked skill mention is unknown | `{{skill:Name}}` does not resolve and strict policy is off |
-| `W205` | Branch coverage is incomplete | `warn branch_coverage_incomplete` let enum branch edges compile without covering all enum members |
-| `W206` | Receipt has no consumer | A receipt is emitted by a stage but no later reached stage reads it |
-| `W207` | Flow has no approve route | A flow has terminal stages but no `approve:` route |
-| `W208` | Stage has no risk guard | A reached durable stage has no `risk_guarded:` text |
-| `W209` | Edge route binding is missing | A stage emits a routed receipt but an outgoing edge has no `route:` under relaxed policy |
-| `W210` | Skill relation has no reason | A skill relation has no `why:` and strict policy is off |
-| `W211` | Manual-only default-flow conflict | A reached skill is marked both manual-only and a default flow member |
-
-If Doctrine can prove the shape is wrong, make it an error. Use warnings only
-for valid shapes that often signal drift.
-
-## Implementation Plan
-
-### Parser And Model
-
-Add model types:
-
-- `ReceiptDecl`
-- `ReceiptField`
-- `ReceiptRouteField`
-- `ReceiptRouteChoice`
-- `SkillRelation`
-- `StageDecl`
-- `StageInput`
-- `StageLaneRef`
-- `SkillFlowDecl`
-- `SkillFlowEdge`
-- `SkillFlowEdgeRouteRef`
-- `SkillFlowRepeat`
-- `SkillFlowVariation`
-- `SkillGraphDecl`
-- `SkillGraphRoot`
-- `SkillGraphSet`
-- `SkillGraphRecovery`
-- `SkillGraphPolicy`
-- `SkillGraphView`
-
-Add grammar rules:
-
-- `receipt_decl`
-- `receipt_body`
-- `receipt_field`
-- `receipt_route_field`
-- `receipt_route_choice`
-- `skill_relations_block`
-- `skill_relation_stmt`
-- `stage_decl`
-- `stage_body`
-- `stage_owner_stmt`
-- `stage_supports_block`
-- `stage_inputs_block`
-- `stage_emits_stmt`
-- `stage_checkpoint_stmt`
-- `stage_lane_stmt`
-- `skill_flow_decl`
-- `skill_flow_body`
-- `skill_flow_edge`
-- `skill_flow_edge_route`
-- `skill_flow_repeat`
-- `skill_flow_variation`
-- `skill_flow_changed_workflow`
-- `skill_graph_decl`
-- `skill_graph_body`
-- `skill_graph_roots_block`
-- `skill_graph_sets_block`
-- `skill_graph_recovery_block`
-- `skill_graph_policy_block`
-- `skill_graph_views_block`
-
-Extend grammar rules:
-
-- `package_host_receipt_slot` accepts `receipt key: ReceiptRef`
-- top-level `skill` accepts `relations:`
-- top-level `receipt` route targets accept `stage`, `flow`, and sentinels
-- interpolation accepts `skill:` roots
-
-Do not change existing `output schema route field` target syntax in v1.
-Typed targets such as `-> stage StageRef` and `-> flow SkillFlowRef` are valid
-only on top-level `receipt` route fields. That avoids changing the shipped
-agent-output route surface while skill graph receipts are still new.
-
-Keep grammar style close to existing surfaces:
-
-- declaration head: `kind CNAME: "Title"`
-- block ownership by indentation
-- refs by `name_ref`
-- route choices reuse route field shape
-- no free-form YAML maps
-
-### Resolve And Validate
-
-Add resolver support that:
-
-1. indexes top-level receipts, stages, skill flows, and skill graphs
-2. resolves package-linked skills through existing package id lookup
-3. resolves direct skill relations
-4. resolves stage owners and support skills
-5. resolves stage input and emit types
-6. resolves receipt fields and route targets
-7. resolves flow nodes, edges, branches, repeats, and approve routes
-8. checks edge route bindings against receipt route choices
-9. resolves graph sets and recovery metadata
-10. expands nested flows into a graph closure
-11. checks DAG policy and allowed cycle policy
-12. applies graph-related rules
-13. lowers the graph closure to contract and query JSON objects
-
-The resolver should not require a concrete agent context. A graph can resolve
-package links and package receipt contracts without binding host slots.
-
-### Emit
-
-Add `doctrine.emit_skill_graph`.
-
-It should emit:
-
-- skill inventory Markdown
-- stage contract Markdown
-- flow registry Markdown
-- recovery audit Markdown
-- stepwise manifest Markdown
-- graph Markdown
-- graph contract JSON
-- query-friendly graph JSON
-- graph source receipt JSON
-- D2, SVG, and Mermaid graph output
-- JSON Schema files for receipts
-
-### Verify
-
-Add `doctrine.verify_skill_graph`.
-
-It should:
-
-- compile the named graph
-- compare emitted graph files to source truth
-- compare graph source receipt hashes
-- verify package receipts named by graph skills when those receipts exist
-- report one status per graph target
+- `doctrine/grammars/doctrine.lark` owns syntax.
+- `doctrine/_model/skill_graph.py` owns graph model types.
+- `doctrine/_parser/skills.py` lowers skill, receipt, stage, flow, and graph
+  source.
+- `doctrine/_compiler/resolve/` resolves receipts, stages, skill flows, and
+  graph closure.
+- `doctrine/emit_skill_graph.py` emits graph contracts, views, diagrams,
+  receipt schemas, and source receipts.
+- `doctrine/verify_skill_graph.py` verifies graph outputs and linked package
+  receipts when present.
 
 Do not make `verify_skill_graph` run every package target by itself. It checks
 the graph and receipts already present.
 
-## Docs Update Plan
+## Shipped Proof
 
-Update:
-
-- `docs/LANGUAGE_REFERENCE.md`
-- `docs/SKILL_PACKAGE_AUTHORING.md`
-- `docs/EMIT_GUIDE.md`
-- `docs/WARNINGS.md`
-- `docs/COMPILER_ERRORS.md`
-- `docs/AUTHORING_PATTERNS.md`
-- `docs/DOCTRINE_LEARN.md`
-- `examples/README.md`
-- `skills/doctrine-learn/prompts/SKILL.prompt`
-- `skills/doctrine-learn/prompts/refs/skill_graphs.prompt`
-
-Add:
-
-- `docs/SKILL_GRAPH_AUTHORING.md`
-
-That guide should teach:
-
-- when to use `receipt`
-- when to use `stage`
-- when to use `skill_flow`
-- when to use `skill_graph`
-- how to link a skill to a package
-- how to model stage handoffs on receipt route fields
-- how to model nested flow repeats
-- how to emit and verify graph docs
-- how to generate a Mermaid diagram on request
-- how to migrate a prose inventory without changing runtime behavior
-
-## Test Plan
-
-Add examples after the current corpus:
+The manifest-backed corpus proves the surface:
 
 - `150_receipt_top_level_decl`: reusable receipt and package receipt by ref
 - `151_stage_basics`: one stage with owner, support, inputs, and emits
@@ -1565,7 +1386,7 @@ Add examples after the current corpus:
 - `163_skill_graph_authoring_metadata`: skill inventory metadata, aliases, richer stage entry, repair and waiver text, and graph-path repeat targets
 - `164_skill_graph_artifacts`: top-level durable artifact symbols, stage ownership, and artifact-typed stage inputs
 
-Add unit tests for:
+Focused unit tests cover:
 
 - parser model shape
 - receipt inheritance and cycles
@@ -1592,11 +1413,11 @@ Add unit tests for:
 - graph source receipt freshness
 - verify statuses
 
-Add diagnostic smoke fixtures for every new error code.
+Diagnostic smoke fixtures cover the graph error and warning families.
 
-## Migration Path For `lessons_studio`
+## Downstream Adoption Path
 
-This spec does not change `../lessons_studio`, but it defines a later path:
+This spec does not change downstream repos, but it defines the adoption path:
 
 1. Add top-level receipts for `FlowReceipt` and the main stage receipts.
 2. Add top-level `skill` declarations that link to each emitted package.

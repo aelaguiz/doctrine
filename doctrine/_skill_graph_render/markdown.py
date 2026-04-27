@@ -89,7 +89,10 @@ def render_skill_inventory(graph: model.ResolvedSkillGraph) -> str:
             if value
         )
         suffix = f" ({metadata})" if metadata else ""
-        lines.append(f"| {skill.title}{suffix} | `{package_id}` | {purpose} |")
+        lines.append(
+            f"| {_md_cell(skill.title + suffix)} | {_md_code(package_id)} | "
+            f"{_md_cell(purpose)} |"
+        )
     if not graph.skills:
         lines.append("| - | - | No reached skills. |")
     lines.append("")
@@ -104,8 +107,8 @@ def render_skill_inventory(graph: model.ResolvedSkillGraph) -> str:
     if graph.skill_relations:
         for relation in graph.skill_relations:
             lines.append(
-                f"| `{relation.source_skill_name}` | `{relation.kind}` | "
-                f"`{relation.target_skill_name}` | {relation.why or '-'} |"
+                f"| {_md_code(relation.source_skill_name)} | {_md_code(relation.kind)} | "
+                f"{_md_code(relation.target_skill_name)} | {_md_cell(relation.why or '-')} |"
             )
     else:
         lines.append("| - | - | - | No reached skill relations. |")
@@ -149,9 +152,10 @@ def render_flow_registry(graph: model.ResolvedSkillGraph) -> str:
                 )
                 lines.append(
                     "| "
-                    f"`{edge.source.name}` ({edge.source.kind}) | "
-                    f"`{edge.target.name}` ({edge.target.kind}) | "
-                    f"`{edge.kind}` | {route_text} | {when_text} | {edge.why} |"
+                    f"{_md_code(edge.source.name)} ({_md_cell(edge.source.kind)}) | "
+                    f"{_md_code(edge.target.name)} ({_md_cell(edge.target.kind)}) | "
+                    f"{_md_code(edge.kind)} | {_md_cell(route_text)} | "
+                    f"{_md_cell(when_text)} | {_md_cell(edge.why)} |"
                 )
         else:
             lines.append("| - | - | - | - | - | No authored edges. |")
@@ -159,9 +163,9 @@ def render_flow_registry(graph: model.ResolvedSkillGraph) -> str:
         if flow.repeats:
             for repeat in flow.repeats:
                 lines.append(
-                    f"| `{repeat.name}` | `{repeat.target_flow_name}` | "
-                    f"`{repeat.over_kind}:{repeat.over_name}` | `{repeat.order}` | "
-                    f"{repeat.why} |"
+                    f"| {_md_code(repeat.name)} | {_md_code(repeat.target_flow_name)} | "
+                    f"{_md_code(f'{repeat.over_kind}:{repeat.over_name}')} | "
+                    f"{_md_code(repeat.order)} | {_md_cell(repeat.why)} |"
                 )
         else:
             lines.append("| - | - | - | - | No repeat nodes. |")
@@ -228,7 +232,8 @@ def render_stage_contracts(graph: model.ResolvedSkillGraph) -> str:
         if stage.inputs:
             for entry in stage.inputs:
                 lines.append(
-                    f"| `{entry.key}` | `{entry.type_kind}` | `{entry.type_name}` |"
+                    f"| {_md_code(entry.key)} | {_md_code(entry.type_kind)} | "
+                    f"{_md_code(entry.type_name)} |"
                 )
         else:
             lines.append("| - | - | No typed inputs. |")
@@ -262,9 +267,9 @@ def render_artifact_inventory(graph: model.ResolvedSkillGraph) -> str:
                 if value
             ]
             lines.append(
-                f"| `{artifact.name}` | `{artifact.owner_stage_name}` | "
-                f"{path_family} | {', '.join(location_parts) or '-'} | "
-                f"{artifact.intent or '-'} |"
+                f"| {_md_code(artifact.name)} | {_md_code(artifact.owner_stage_name)} | "
+                f"{_md_cell(path_family)} | {_md_cell(', '.join(location_parts) or '-')} | "
+                f"{_md_cell(artifact.intent or '-')} |"
             )
     else:
         lines.append("| - | - | - | - | No reached artifacts. |")
@@ -281,10 +286,10 @@ def render_recovery_audit(graph: model.ResolvedSkillGraph) -> str:
         [
             "| Key | Target |",
             "| --- | --- |",
-            f"| `flow_receipt` | `{graph.recovery.flow_receipt_name or '-'}` |",
-            f"| `stage_status` | `{graph.recovery.stage_status_name or '-'}` |",
+            f"| {_md_code('flow_receipt')} | {_md_code(graph.recovery.flow_receipt_name or '-')} |",
+            f"| {_md_code('stage_status')} | {_md_code(graph.recovery.stage_status_name or '-')} |",
             "| `durable_artifact_status` | "
-            f"`{graph.recovery.durable_artifact_status_name or '-'}` |",
+            f"{_md_code(graph.recovery.durable_artifact_status_name or '-')} |",
             "",
             "This is a static authoring audit. It does not claim live runtime state.",
             "",
@@ -326,3 +331,13 @@ def _render_node(node: model.ResolvedSkillFlowNode | None) -> str:
     if node is None:
         return "-"
     return f"`{node.name}` ({node.kind})"
+
+
+def _md_cell(value: object) -> str:
+    text = str(value).replace("\r\n", "\n").replace("\r", "\n")
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", "<br>")
+
+
+def _md_code(value: object) -> str:
+    escaped = _md_cell(value).replace("`", "\\`")
+    return f"`{escaped}`"

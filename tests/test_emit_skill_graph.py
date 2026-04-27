@@ -197,3 +197,19 @@ class EmitSkillGraphTests(unittest.TestCase):
             self.assertFalse(
                 (output_dir / "graphs" / "controller" / "SKILL_GRAPH.contract.json").exists()
             )
+
+            receipt_path = output_dir / "graphs" / "controller" / "SKILL_GRAPH.source.json"
+            receipt_payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+            outputs = {
+                entry["path"]: entry["sha256"]
+                for entry in receipt_payload["outputs"]
+            }
+            # Selected graph emits are intentionally partial. The receipt must name
+            # that view set so verification can rebuild the same partial tree.
+            self.assertEqual(receipt_payload["selected_views"], ["graph_json"])
+            self.assertEqual(set(outputs), {"references/skill-graph.json"})
+            self.assertEqual(
+                receipt_payload["graph_json_sha256"],
+                outputs["references/skill-graph.json"],
+            )
+            self.assertIsNone(receipt_payload["graph_contract_sha256"])

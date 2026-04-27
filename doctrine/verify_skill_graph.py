@@ -5,9 +5,19 @@ import sys
 import tempfile
 from pathlib import Path
 
+from doctrine import model
 from doctrine.diagnostics import DoctrineError
-from doctrine.emit_common import emit_error, load_emit_targets, path_location, resolve_pyproject_path
-from doctrine.emit_skill_graph import emit_target_skill_graph
+from doctrine.emit_common import (
+    EmitTarget,
+    emit_error,
+    load_emit_targets,
+    path_location,
+    resolve_pyproject_path,
+)
+from doctrine.emit_skill_graph import (
+    compile_skill_graph_for_target,
+    emit_target_skill_graph,
+)
 from doctrine.skill_graph_source_receipts import (
     GraphReceiptCheckResult,
     read_receipt_payload,
@@ -72,8 +82,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def verify_target_skill_graph(target) -> GraphReceiptCheckResult:
-    actual_receipt_path = receipt_path_for_target(target)
+def verify_target_skill_graph(target: EmitTarget) -> GraphReceiptCheckResult:
+    graph, _input_paths = compile_skill_graph_for_target(
+        target,
+        trace_label="verify target",
+    )
+    actual_receipt_path = receipt_path_for_target(target, graph=graph)
     if not actual_receipt_path.is_file():
         return GraphReceiptCheckResult(
             target.name,
@@ -81,9 +95,19 @@ def verify_target_skill_graph(target) -> GraphReceiptCheckResult:
             f"Missing emitted graph source receipt: `{actual_receipt_path}`.",
         )
     actual_payload = read_receipt_payload(actual_receipt_path)
+    try:
+        selected_views = _selected_views_from_receipt(actual_payload)
+    except ValueError as exc:
+        return GraphReceiptCheckResult(
+            target.name,
+            "stale_graph_source",
+            str(exc),
+        )
     actual_output_result = verify_actual_output_tree(
         target=target,
         receipt_payload=actual_payload,
+        graph=graph,
+        receipt_path=actual_receipt_path,
     )
     if actual_output_result is not None:
         return actual_output_result
@@ -96,9 +120,13 @@ def verify_target_skill_graph(target) -> GraphReceiptCheckResult:
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_root = Path(temp_dir).resolve()
-        emit_target_skill_graph(target, output_dir_override=temp_root)
+        emit_target_skill_graph(
+            target,
+            output_dir_override=temp_root,
+            selected_views=selected_views,
+        )
         expected_payload = read_receipt_payload(
-            receipt_path_for_target(target, output_dir_override=temp_root)
+            receipt_path_for_target(target, output_dir_override=temp_root, graph=graph)
         )
 
     return verify_graph_receipt(
@@ -106,6 +134,26 @@ def verify_target_skill_graph(target) -> GraphReceiptCheckResult:
         actual_receipt_payload=actual_payload,
         expected_receipt_payload=expected_payload,
     )
+
+
+def _selected_views_from_receipt(
+    receipt_payload: dict[str, object],
+) -> frozenset[str] | None:
+    raw = receipt_payload.get("selected_views")
+    if raw is None:
+        return None
+    if not isinstance(raw, list) or not all(isinstance(item, str) for item in raw):
+        raise ValueError(
+            "The graph receipt selected_views field must be a list of view keys."
+        )
+    selected = frozenset(raw)
+    unknown = sorted(selected - model.SKILL_GRAPH_VIEW_KEYS)
+    if unknown:
+        raise ValueError(
+            "The graph receipt selected_views field contains unsupported view keys: "
+            f"{', '.join(unknown)}."
+        )
+    return selected
 
 
 if __name__ == "__main__":

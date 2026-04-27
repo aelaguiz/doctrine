@@ -6,6 +6,7 @@ from doctrine import model
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
+from doctrine._compiler.support import dotted_decl_name
 from doctrine._model.skill_graph import (
     SKILL_FLOW_CHANGED_WORKFLOW_REQUIRES,
     SKILL_FLOW_EDGE_KINDS,
@@ -190,6 +191,7 @@ class ResolveSkillFlowsMixin:
 
         # Resolve approve (must point at a top-level skill_flow declaration).
         approve_name: str | None = None
+        approve_module_parts: tuple[str, ...] = ()
         if approve_items:
             approve_ref = approve_items[0].flow_ref
             approve_unit, approve_decl = self._resolve_flow_skill_flow_ref(
@@ -199,8 +201,8 @@ class ResolveSkillFlowsMixin:
                 source_span=approve_items[0].source_span,
                 role="approve",
             )
-            _ = approve_unit
             approve_name = approve_decl.name
+            approve_module_parts = approve_unit.module_parts
 
         # Resolve edges.
         resolved_edges, nodes_by_id = self._resolve_skill_flow_edges(
@@ -286,6 +288,7 @@ class ResolveSkillFlowsMixin:
             unsafe_variations=resolved_unsafe,
             changed_workflow=resolved_changed,
             terminals=terminals,
+            approve_module_parts=approve_module_parts,
             source_span=flow_decl.source_span,
         )
         cache[cache_key] = resolved
@@ -374,7 +377,6 @@ class ResolveSkillFlowsMixin:
                 source_span=item.source_span,
                 role="repeat target",
             )
-            _ = target_unit
             over_kind, over_name = self._resolve_repeat_over_ref(
                 item.over_ref,
                 unit=unit,
@@ -390,6 +392,7 @@ class ResolveSkillFlowsMixin:
                 over_name=over_name,
                 order=item.order,
                 why=item.why,
+                target_flow_module_parts=target_unit.module_parts,
                 source_span=item.source_span,
             )
             resolved.append(entry)
@@ -457,9 +460,11 @@ class ResolveSkillFlowsMixin:
         tuple[model.ResolvedSkillFlowEdge, ...],
         dict[tuple[str, str], model.ResolvedSkillFlowNode],
     ]:
-        nodes_by_id: dict[tuple[str, str], model.ResolvedSkillFlowNode] = {}
+        nodes_by_id: dict[
+            tuple[str, tuple[str, ...], str], model.ResolvedSkillFlowNode
+        ] = {}
         if start_node is not None:
-            nodes_by_id[(start_node.kind, start_node.name)] = start_node
+            nodes_by_id[self._flow_node_key(start_node)] = start_node
         resolved: list[model.ResolvedSkillFlowEdge] = []
         for item in edge_items:
             if item.kind not in SKILL_FLOW_EDGE_KINDS:
@@ -496,6 +501,7 @@ class ResolveSkillFlowsMixin:
             if (
                 source_node.kind == target_node.kind
                 and source_node.name == target_node.name
+                and source_node.module_parts == target_node.module_parts
             ):
                 raise self._skill_flow_error(
                     detail=(
@@ -557,8 +563,8 @@ class ResolveSkillFlowsMixin:
                     source_span=item.source_span,
                 )
             )
-            nodes_by_id[(source_node.kind, source_node.name)] = source_node
-            nodes_by_id[(target_node.kind, target_node.name)] = target_node
+            nodes_by_id[self._flow_node_key(source_node)] = source_node
+            nodes_by_id[self._flow_node_key(target_node)] = target_node
         return tuple(resolved), nodes_by_id
 
     def _enforce_required_route_binding(
@@ -575,7 +581,7 @@ class ResolveSkillFlowsMixin:
         if source_node.kind != "stage":
             return
         emitted_receipt = self._lookup_stage_emitted_receipt(
-            stage_name=source_node.name,
+            stage_ref=edge.source_ref,
             unit=unit,
         )
         if emitted_receipt is None:
@@ -642,20 +648,39 @@ class ResolveSkillFlowsMixin:
         target_node: model.ResolvedSkillFlowNode,
     ) -> bool:
         if target_node.kind == "stage":
-            return choice.target_kind == "stage" and choice.target_name == target_node.name
+            return (
+                choice.target_kind == "stage"
+                and choice.target_name == target_node.name
+                and choice.target_module_parts == target_node.module_parts
+            )
         if target_node.kind == "flow":
-            return choice.target_kind == "flow" and choice.target_name == target_node.name
+            return (
+                choice.target_kind == "flow"
+                and choice.target_name == target_node.name
+                and choice.target_module_parts == target_node.module_parts
+            )
         return False
 
     def _lookup_stage_emitted_receipt(
         self,
         *,
-        stage_name: str,
+        stage_ref: model.NameRef | None = None,
+        stage_name: str | None = None,
         unit: IndexedUnit,
-    ):
-        decls = unit_declarations(unit)
-        stage_decl = decls.stages_by_name.get(stage_name)
-        if stage_decl is None:
+    ) -> model.ResolvedReceipt | None:
+        if stage_ref is not None:
+            stage_unit, stage_decl = self._resolve_decl_ref(
+                stage_ref,
+                unit=unit,
+                registry_name="stages_by_name",
+                missing_label="stage declaration",
+            )
+        elif stage_name is not None:
+            stage_unit = unit
+            stage_decl = unit_declarations(unit).stages_by_name.get(stage_name)
+            if stage_decl is None:
+                return None
+        else:
             return None
         emits_item: model.StageEmitsItem | None = None
         for item in stage_decl.items:
@@ -668,7 +693,7 @@ class ResolveSkillFlowsMixin:
         try:
             receipt_unit, receipt_decl = self._resolve_decl_ref(
                 receipt_ref,
-                unit=unit,
+                unit=stage_unit,
                 registry_name="receipts_by_name",
                 missing_label="receipt declaration",
             )
@@ -759,7 +784,10 @@ class ResolveSkillFlowsMixin:
             )
         if not self._receipt_route_choice_matches_target(choice, target_node=target_node):
             actual_target_kind = choice.target_kind
-            actual_target_name = choice.target_name
+            actual_target_name = dotted_decl_name(
+                choice.target_module_parts,
+                choice.target_name,
+            )
             raise self._skill_flow_error(
                 detail=(
                     f"Skill flow `{owner_label}` edge `{source_node.name} -> "
@@ -782,6 +810,7 @@ class ResolveSkillFlowsMixin:
             choice_key=choice.key,
             target_kind=choice.target_kind,
             target_name=choice.target_name,
+            target_module_parts=choice.target_module_parts,
             source_span=route.source_span,
         )
 
@@ -799,17 +828,20 @@ class ResolveSkillFlowsMixin:
         | None = None,
     ) -> None:
         sources_with_when: dict[
-            tuple[str, str], list[model.ResolvedSkillFlowEdge]
+            tuple[str, tuple[str, ...], str], list[model.ResolvedSkillFlowEdge]
         ] = {}
-        sources_all: dict[tuple[str, str], list[model.ResolvedSkillFlowEdge]] = {}
+        sources_all: dict[
+            tuple[str, tuple[str, ...], str], list[model.ResolvedSkillFlowEdge]
+        ] = {}
         for edge in edges:
-            key = (edge.source.kind, edge.source.name)
+            key = self._flow_node_key(edge.source)
             sources_all.setdefault(key, []).append(edge)
             if edge.when is not None:
                 sources_with_when.setdefault(key, []).append(edge)
 
         for source_key, branched in sources_with_when.items():
             enum_name = branched[0].when.enum_name
+            enum_identity = branched[0].when.enum_identity or enum_name
             # all outgoing edges from this source must use `when:` and the
             # same enum.
             for edge in sources_all[source_key]:
@@ -828,12 +860,13 @@ class ResolveSkillFlowsMixin:
                             "source, or remove the branching from the others.",
                         ),
                     )
-                if edge.when.enum_name != enum_name:
+                edge_enum_identity = edge.when.enum_identity or edge.when.enum_name
+                if edge_enum_identity != enum_identity:
                     raise self._skill_flow_error(
                         detail=(
                             f"Skill flow `{owner_label}` source "
                             f"`{edge.source.name}` branches on enum "
-                            f"`{enum_name}` and `{edge.when.enum_name}`. "
+                            f"`{enum_identity}` and `{edge_enum_identity}`. "
                             "Branch edges from one source must use one enum "
                             "family."
                         ),
@@ -845,11 +878,13 @@ class ResolveSkillFlowsMixin:
                         ),
                     )
             # Coverage: every enum member must appear exactly once.
-            enum_decl = self._lookup_enum_decl(enum_name=enum_name, unit=unit)
-            if enum_decl is None:
-                # Should not happen because resolve_branch_when checks this.
-                continue
-            members = {member.key for member in enum_decl.members}
+            members = set(branched[0].when.enum_members)
+            if not members:
+                enum_decl = self._lookup_enum_decl(enum_name=enum_name, unit=unit)
+                if enum_decl is None:
+                    # Should not happen because resolve_branch_when checks this.
+                    continue
+                members = {member.key for member in enum_decl.members}
             seen: dict[str, model.ResolvedSkillFlowEdge] = {}
             for edge in branched:
                 key = edge.when.member_key
@@ -906,19 +941,21 @@ class ResolveSkillFlowsMixin:
         | None,
     ) -> None:
         sources_with_when: dict[
-            tuple[str, str], list[model.ResolvedSkillFlowEdge]
+            tuple[str, tuple[str, ...], str], list[model.ResolvedSkillFlowEdge]
         ] = {}
         for edge in edges:
             if edge.when is None:
                 continue
-            key = (edge.source.kind, edge.source.name)
+            key = self._flow_node_key(edge.source)
             sources_with_when.setdefault(key, []).append(edge)
         for branched in sources_with_when.values():
             enum_name = branched[0].when.enum_name
-            enum_decl = self._lookup_enum_decl(enum_name=enum_name, unit=unit)
-            if enum_decl is None:
-                continue
-            members = {member.key for member in enum_decl.members}
+            members = set(branched[0].when.enum_members)
+            if not members:
+                enum_decl = self._lookup_enum_decl(enum_name=enum_name, unit=unit)
+                if enum_decl is None:
+                    continue
+                members = {member.key for member in enum_decl.members}
             seen = {edge.when.member_key for edge in branched}
             missing = tuple(sorted(members - seen))
             if not missing:
@@ -958,8 +995,11 @@ class ResolveSkillFlowsMixin:
         source_span,
         role: str,
     ) -> model.ResolvedSkillFlowEdgeWhen:
-        enum_decl = self._try_resolve_enum_decl(when_ref.enum_ref, unit=unit)
-        if enum_decl is None:
+        resolved_enum = self._try_resolve_enum_decl_with_unit(
+            when_ref.enum_ref,
+            unit=unit,
+        )
+        if resolved_enum is None:
             dotted = self._dotted_ref(when_ref.enum_ref)
             raise self._skill_flow_error(
                 detail=(
@@ -974,6 +1014,7 @@ class ResolveSkillFlowsMixin:
                     "ref to name an existing enum member.",
                 ),
             )
+        enum_unit, enum_decl = resolved_enum
         if not any(member.key == when_ref.member_key for member in enum_decl.members):
             raise self._skill_flow_error(
                 detail=(
@@ -990,8 +1031,19 @@ class ResolveSkillFlowsMixin:
         return model.ResolvedSkillFlowEdgeWhen(
             enum_name=enum_decl.name,
             member_key=when_ref.member_key,
+            enum_identity=self._branch_enum_identity(enum_unit, enum_decl),
+            enum_members=tuple(member.key for member in enum_decl.members),
             source_span=when_ref.source_span,
         )
+
+    def _branch_enum_identity(
+        self,
+        enum_unit: IndexedUnit,
+        enum_decl: model.EnumDecl,
+    ) -> str:
+        if enum_unit.module_parts:
+            return ".".join((*enum_unit.module_parts, enum_decl.name))
+        return enum_decl.name
 
     def _lookup_enum_decl(
         self,
@@ -1122,18 +1174,19 @@ class ResolveSkillFlowsMixin:
         # nodes are templates and never close a cycle by themselves; an
         # edge that re-enters a stage from a repeat node is a real cycle.
         adjacency: dict[
-            tuple[str, str], list[tuple[tuple[str, str], model.ResolvedSkillFlowEdge]]
+            tuple[str, tuple[str, ...], str],
+            list[tuple[tuple[str, tuple[str, ...], str], model.ResolvedSkillFlowEdge]],
         ] = {}
         for edge in edges:
-            src = (edge.source.kind, edge.source.name)
-            tgt = (edge.target.kind, edge.target.name)
+            src = self._flow_node_key(edge.source)
+            tgt = self._flow_node_key(edge.target)
             adjacency.setdefault(src, []).append((tgt, edge))
 
         WHITE, GRAY, BLACK = 0, 1, 2
-        color: dict[tuple[str, str], int] = {}
+        color: dict[tuple[str, tuple[str, ...], str], int] = {}
         cycle_edge: model.ResolvedSkillFlowEdge | None = None
 
-        def visit(node: tuple[str, str]) -> None:
+        def visit(node: tuple[str, tuple[str, ...], str]) -> None:
             nonlocal cycle_edge
             color[node] = GRAY
             for tgt, edge in adjacency.get(node, ()):
@@ -1188,6 +1241,7 @@ class ResolveSkillFlowsMixin:
             return model.ResolvedSkillFlowNode(
                 name=repeat.name,
                 kind="repeat",
+                module_parts=(),
                 source_span=ref.source_span,
             )
 
@@ -1200,12 +1254,14 @@ class ResolveSkillFlowsMixin:
                 return model.ResolvedSkillFlowNode(
                     name=target_name,
                     kind="stage",
+                    module_parts=lookup_target.unit.module_parts,
                     source_span=ref.source_span,
                 )
             if target_name in target_decls.skill_flows_by_name:
                 return model.ResolvedSkillFlowNode(
                     name=target_name,
                     kind="flow",
+                    module_parts=lookup_target.unit.module_parts,
                     source_span=ref.source_span,
                 )
         dotted = self._dotted_ref(ref)
@@ -1260,22 +1316,29 @@ class ResolveSkillFlowsMixin:
         self,
         edges: tuple[model.ResolvedSkillFlowEdge, ...],
         *,
-        nodes_by_id: dict[tuple[str, str], model.ResolvedSkillFlowNode],
+        nodes_by_id: dict[tuple[str, tuple[str, ...], str], model.ResolvedSkillFlowNode],
     ) -> tuple[str, ...]:
-        sources = {(edge.source.kind, edge.source.name) for edge in edges}
+        sources = {self._flow_node_key(edge.source) for edge in edges}
         terminals: list[str] = []
-        seen: set[str] = set()
+        seen: set[tuple[tuple[str, ...], str]] = set()
         for edge in edges:
-            key = (edge.target.kind, edge.target.name)
+            key = self._flow_node_key(edge.target)
             if key in sources:
                 continue
-            if edge.target.name in seen:
+            terminal_key = (edge.target.module_parts, edge.target.name)
+            if terminal_key in seen:
                 continue
-            seen.add(edge.target.name)
+            seen.add(terminal_key)
             terminals.append(edge.target.name)
         return tuple(terminals)
 
     # ---- Helpers --------------------------------------------------------
+
+    def _flow_node_key(
+        self,
+        node: model.ResolvedSkillFlowNode,
+    ) -> tuple[str, tuple[str, ...], str]:
+        return (node.kind, node.module_parts, node.name)
 
     def _dotted_ref(self, ref: model.NameRef) -> str:
         if ref.module_parts:

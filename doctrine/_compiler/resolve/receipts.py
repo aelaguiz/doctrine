@@ -464,7 +464,11 @@ class ResolveReceiptsMixin:
                         ),
                     )
                 seen_choice_keys.add(choice.key)
-                target_kind, target_name = self._resolve_receipt_route_target(
+                (
+                    target_kind,
+                    target_name,
+                    target_module_parts,
+                ) = self._resolve_receipt_route_target(
                     choice.target,
                     receipt_decl=receipt_decl,
                     route_field=item,
@@ -478,6 +482,7 @@ class ResolveReceiptsMixin:
                         title=choice.title,
                         target_kind=target_kind,
                         target_name=target_name,
+                        target_module_parts=target_module_parts,
                         source_span=choice.source_span,
                     )
                 )
@@ -500,9 +505,9 @@ class ResolveReceiptsMixin:
         choice: model.ReceiptRouteChoice,
         unit: IndexedUnit,
         owner_label: str,
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, tuple[str, ...]]:
         if isinstance(target, model.ReceiptRouteSentinelTarget):
-            return ("sentinel", target.sentinel)
+            return ("sentinel", target.sentinel, ())
         if isinstance(target, model.ReceiptRouteStageTarget):
             try:
                 stage_unit, stage_decl = self._resolve_decl_ref(
@@ -533,8 +538,7 @@ class ResolveReceiptsMixin:
                         "fix the stage ref to point at an existing declaration.",
                     ),
                 ) from exc
-            _ = stage_unit
-            return ("stage", stage_decl.name)
+            return ("stage", stage_decl.name, stage_unit.module_parts)
         if isinstance(target, model.ReceiptRouteFlowTarget):
             try:
                 flow_unit, flow_decl = self._resolve_decl_ref(
@@ -567,8 +571,7 @@ class ResolveReceiptsMixin:
                         "declaration.",
                     ),
                 ) from exc
-            _ = flow_unit
-            return ("flow", flow_decl.name)
+            return ("flow", flow_decl.name, flow_unit.module_parts)
         raise compile_error(
             code="E901",
             summary="Internal compiler error",

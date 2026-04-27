@@ -7,6 +7,7 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
+from doctrine._compiler.support import dotted_decl_name
 
 
 @dataclass(slots=True)
@@ -17,6 +18,7 @@ class _NodeExpansion:
     reached_flow_names: set[str] = field(default_factory=set)
     stage_edges: list[model.ResolvedSkillGraphStageEdge] = field(default_factory=list)
     stage_reaching_flows: dict[str, set[str]] = field(default_factory=dict)
+    stage_reaching_flow_identities: dict[str, set[str]] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -29,6 +31,7 @@ class _FlowExpansion:
     reached_flow_names: tuple[str, ...]
     stage_edges: tuple[model.ResolvedSkillGraphStageEdge, ...]
     stage_reaching_flows: dict[str, tuple[str, ...]]
+    stage_reaching_flow_identities: dict[str, tuple[str, ...]]
 
 
 _CHECKED_SKILL_MENTION_RE = re.compile(
@@ -82,6 +85,46 @@ class ResolveSkillGraphsMixin:
             path=unit.prompt_file.source_path,
             source_span=source_span,
             hints=hints,
+        )
+
+    def _check_public_graph_name_collision(
+        self,
+        *,
+        owner_label: str,
+        kind: str,
+        public_name: str,
+        existing_unit: IndexedUnit | None,
+        owner_unit: IndexedUnit,
+        source_span,
+        fallback_span,
+        keyed_by: str | None = None,
+        plural_kind: str | None = None,
+    ) -> None:
+        if (
+            existing_unit is None
+            or existing_unit.module_parts == owner_unit.module_parts
+        ):
+            return
+        existing_label = dotted_decl_name(
+            existing_unit.module_parts,
+            public_name,
+        )
+        new_label = dotted_decl_name(owner_unit.module_parts, public_name)
+        keyed_by = keyed_by or f"{kind} name"
+        plural_kind = plural_kind or f"{kind}s"
+        raise self._skill_graph_error(
+            detail=(
+                f"Skill graph `{owner_label}` reaches {kind} name "
+                f"`{public_name}` from both `{existing_label}` and "
+                f"`{new_label}`. Public graph artifacts are keyed by "
+                f"{keyed_by}, so this graph cannot include both."
+            ),
+            unit=owner_unit,
+            source_span=source_span or fallback_span,
+            hints=(
+                f"Rename one {kind}, or keep one of the same-named "
+                f"{plural_kind} outside this graph.",
+            ),
         )
 
     def _resolve_skill_graph_decl(
@@ -274,10 +317,30 @@ class ResolveSkillGraphsMixin:
         reached_package_decls: dict[str, model.SkillPackageDecl] = {}
         reached_artifact_units: dict[str, IndexedUnit] = {}
         reached_artifact_decls: dict[str, model.ArtifactDecl] = {}
+        reached_artifact_path_family_units: dict[tuple[str, str], IndexedUnit] = {}
         reached_receipt_units: dict[str, IndexedUnit] = {}
         reached_receipt_decls: dict[str, model.ReceiptDecl] = {}
         aggregate_edges: list[model.ResolvedSkillGraphStageEdge] = []
         aggregate_stage_reaching_flows: dict[str, set[str]] = {}
+        aggregate_stage_reaching_flow_identities: dict[str, set[str]] = {}
+
+        def fail_on_public_name_collision(
+            *,
+            kind: str,
+            public_name: str,
+            existing_unit: IndexedUnit | None,
+            owner_unit: IndexedUnit,
+            source_span,
+        ) -> None:
+            self._check_public_graph_name_collision(
+                owner_label=owner_label,
+                kind=kind,
+                public_name=public_name,
+                existing_unit=existing_unit,
+                owner_unit=owner_unit,
+                source_span=source_span,
+                fallback_span=graph_decl.source_span,
+            )
 
         def remember_stage(
             stage_name: str,
@@ -285,13 +348,32 @@ class ResolveSkillGraphsMixin:
             owner_unit: IndexedUnit,
             stage_decl: model.StageDecl,
         ) -> None:
+            fail_on_public_name_collision(
+                kind="stage",
+                public_name=stage_name,
+                existing_unit=reached_stage_units.get(stage_name),
+                owner_unit=owner_unit,
+                source_span=stage_decl.source_span,
+            )
             if stage_name not in reached_stage_seen:
                 reached_stage_seen.add(stage_name)
                 reached_stage_order.append(stage_name)
             reached_stage_units.setdefault(stage_name, owner_unit)
             reached_stage_decls.setdefault(stage_name, stage_decl)
 
-        def remember_flow(flow_name: str, *, owner_unit: IndexedUnit) -> None:
+        def remember_flow(
+            flow_name: str,
+            *,
+            owner_unit: IndexedUnit,
+            source_span,
+        ) -> None:
+            fail_on_public_name_collision(
+                kind="skill_flow",
+                public_name=flow_name,
+                existing_unit=reached_flow_units.get(flow_name),
+                owner_unit=owner_unit,
+                source_span=source_span,
+            )
             if flow_name not in reached_flow_seen:
                 reached_flow_seen.add(flow_name)
                 reached_flow_order.append(flow_name)
@@ -303,6 +385,13 @@ class ResolveSkillGraphsMixin:
             owner_unit: IndexedUnit,
             receipt_decl: model.ReceiptDecl,
         ) -> None:
+            fail_on_public_name_collision(
+                kind="receipt",
+                public_name=receipt_name,
+                existing_unit=reached_receipt_units.get(receipt_name),
+                owner_unit=owner_unit,
+                source_span=receipt_decl.source_span,
+            )
             reached_receipt_units.setdefault(receipt_name, owner_unit)
             reached_receipt_decls.setdefault(receipt_name, receipt_decl)
 
@@ -312,6 +401,13 @@ class ResolveSkillGraphsMixin:
             owner_unit: IndexedUnit,
             artifact_decl: model.ArtifactDecl,
         ) -> None:
+            fail_on_public_name_collision(
+                kind="artifact",
+                public_name=artifact_name,
+                existing_unit=reached_artifact_units.get(artifact_name),
+                owner_unit=owner_unit,
+                source_span=artifact_decl.source_span,
+            )
             reached_artifact_units.setdefault(artifact_name, owner_unit)
             reached_artifact_decls.setdefault(artifact_name, artifact_decl)
 
@@ -321,6 +417,13 @@ class ResolveSkillGraphsMixin:
             owner_unit: IndexedUnit,
             skill_decl: model.SkillDecl,
         ) -> None:
+            fail_on_public_name_collision(
+                kind="skill",
+                public_name=skill_name,
+                existing_unit=reached_skill_units.get(skill_name),
+                owner_unit=owner_unit,
+                source_span=skill_decl.source_span,
+            )
             reached_skill_units.setdefault(skill_name, owner_unit)
             reached_skill_decls.setdefault(skill_name, skill_decl)
             if skill_decl.package_link is None:
@@ -337,6 +440,17 @@ class ResolveSkillGraphsMixin:
                 source_span=skill_decl.package_link.source_span,
             )
             package_id = skill_decl.package_link.package_id
+            self._check_public_graph_name_collision(
+                owner_label=owner_label,
+                kind="skill package",
+                public_name=package_id,
+                existing_unit=reached_package_units.get(package_id),
+                owner_unit=package_unit,
+                source_span=skill_decl.package_link.source_span,
+                fallback_span=graph_decl.source_span,
+                keyed_by="package id",
+                plural_kind="skill packages",
+            )
             reached_package_units.setdefault(package_id, package_unit)
             reached_package_decls.setdefault(package_id, package_decl)
             process_skill_relations(
@@ -565,18 +679,32 @@ class ResolveSkillGraphsMixin:
             dest.stage_edges.extend(src.stage_edges)
             for stage_name, flow_names in src.stage_reaching_flows.items():
                 dest.stage_reaching_flows.setdefault(stage_name, set()).update(flow_names)
+            for stage_name, flow_ids in src.stage_reaching_flow_identities.items():
+                dest.stage_reaching_flow_identities.setdefault(stage_name, set()).update(
+                    flow_ids
+                )
 
         def augment_with_parent_flow(
             expansion: _FlowExpansion,
             *,
             parent_flow_name: str,
+            parent_flow_identity: str,
         ) -> _NodeExpansion:
             stage_reaching_flows = {
                 stage_name: set(flow_names)
                 for stage_name, flow_names in expansion.stage_reaching_flows.items()
             }
+            stage_reaching_flow_identities = {
+                stage_name: set(flow_ids)
+                for stage_name, flow_ids in (
+                    expansion.stage_reaching_flow_identities.items()
+                )
+            }
             for stage_name in expansion.reached_stage_names:
                 stage_reaching_flows.setdefault(stage_name, set()).add(parent_flow_name)
+                stage_reaching_flow_identities.setdefault(stage_name, set()).add(
+                    parent_flow_identity
+                )
             return _NodeExpansion(
                 start_stages=expansion.start_stages,
                 terminal_stages=expansion.terminal_stages,
@@ -584,15 +712,50 @@ class ResolveSkillGraphsMixin:
                 reached_flow_names=set(expansion.reached_flow_names),
                 stage_edges=list(expansion.stage_edges),
                 stage_reaching_flows=stage_reaching_flows,
+                stage_reaching_flow_identities=stage_reaching_flow_identities,
             )
 
-        def resolve_stage_by_name(
-            stage_name: str,
+        def resolve_unit_for_module_parts(
+            module_parts: tuple[str, ...],
             *,
             current_unit: IndexedUnit,
             source_span,
             role: str,
+        ) -> IndexedUnit:
+            if not module_parts or module_parts == current_unit.module_parts:
+                return current_unit
+            try:
+                return self.session.load_module(module_parts)
+            except CompileError as exc:
+                dotted = ".".join(module_parts)
+                raise self._skill_graph_error(
+                    detail=(
+                        f"Skill graph `{owner_label}` {role} module `{dotted}` "
+                        "does not resolve."
+                    ),
+                    unit=current_unit,
+                    source_span=source_span,
+                    hints=("Import the module or fix the qualified ref.",),
+                ) from exc
+
+        def resolve_stage_by_name(
+            stage_name: str,
+            *,
+            module_parts: tuple[str, ...],
+            current_unit: IndexedUnit,
+            source_span,
+            role: str,
         ) -> tuple[IndexedUnit, model.StageDecl]:
+            if module_parts:
+                target_unit = resolve_unit_for_module_parts(
+                    module_parts,
+                    current_unit=current_unit,
+                    source_span=source_span,
+                    role=role,
+                )
+                stage_decl = unit_declarations(target_unit).stages_by_name.get(stage_name)
+                if stage_decl is not None:
+                    return target_unit, stage_decl
             ref = model.NameRef(
                 module_parts=(),
                 declaration_name=stage_name,
@@ -619,10 +782,23 @@ class ResolveSkillGraphsMixin:
         def resolve_flow_by_name(
             flow_name: str,
             *,
+            module_parts: tuple[str, ...],
             current_unit: IndexedUnit,
             source_span,
             role: str,
         ) -> tuple[IndexedUnit, model.SkillFlowDecl]:
+            if module_parts:
+                target_unit = resolve_unit_for_module_parts(
+                    module_parts,
+                    current_unit=current_unit,
+                    source_span=source_span,
+                    role=role,
+                )
+                flow_decl = unit_declarations(target_unit).skill_flows_by_name.get(
+                    flow_name
+                )
+                if flow_decl is not None:
+                    return target_unit, flow_decl
             ref = model.NameRef(
                 module_parts=(),
                 declaration_name=flow_name,
@@ -649,10 +825,23 @@ class ResolveSkillGraphsMixin:
         def resolve_receipt_by_name(
             receipt_name: str,
             *,
+            module_parts: tuple[str, ...] = (),
             current_unit: IndexedUnit,
             source_span,
             role: str,
         ) -> tuple[IndexedUnit, model.ReceiptDecl]:
+            if module_parts:
+                target_unit = resolve_unit_for_module_parts(
+                    module_parts,
+                    current_unit=current_unit,
+                    source_span=source_span,
+                    role=role,
+                )
+                receipt_decl = unit_declarations(target_unit).receipts_by_name.get(
+                    receipt_name
+                )
+                if receipt_decl is not None:
+                    return target_unit, receipt_decl
             ref = model.NameRef(
                 module_parts=(),
                 declaration_name=receipt_name,
@@ -844,6 +1033,24 @@ class ResolveSkillGraphsMixin:
                 target_name = lookup_target.declaration_name
                 for kind, registry_name in registry_kinds:
                     if target_name in getattr(target_decls, registry_name):
+                        path_family_key = (kind, target_name)
+                        self._check_public_graph_name_collision(
+                            owner_label=owner_label,
+                            kind="artifact path_family",
+                            public_name=target_name,
+                            existing_unit=reached_artifact_path_family_units.get(
+                                path_family_key
+                            ),
+                            owner_unit=lookup_target.unit,
+                            source_span=ref.source_span or source_span,
+                            fallback_span=artifact_decl.source_span,
+                            keyed_by="artifact path_family kind and name",
+                            plural_kind="artifact path_family refs",
+                        )
+                        reached_artifact_path_family_units.setdefault(
+                            path_family_key,
+                            lookup_target.unit,
+                        )
                         return kind, target_name
             dotted = self._dotted_ref(ref)
             raise self._skill_graph_error(
@@ -946,11 +1153,13 @@ class ResolveSkillGraphsMixin:
             *,
             current_unit: IndexedUnit,
             current_flow_name: str,
+            current_flow_identity: str,
             graph_flow: model.ResolvedSkillGraphFlow,
         ) -> _NodeExpansion:
             if node.kind == "stage":
                 stage_unit, stage_decl = resolve_stage_by_name(
                     node.name,
+                    module_parts=node.module_parts,
                     current_unit=current_unit,
                     source_span=node.source_span,
                     role="reached",
@@ -962,16 +1171,24 @@ class ResolveSkillGraphsMixin:
                     terminal_stages=(node.name,),
                     reached_stage_names={node.name},
                     stage_reaching_flows={node.name: {current_flow_name}},
+                    stage_reaching_flow_identities={
+                        node.name: {current_flow_identity}
+                    },
                 )
             if node.kind == "flow":
                 child_unit, child_decl = resolve_flow_by_name(
                     node.name,
+                    module_parts=node.module_parts,
                     current_unit=current_unit,
                     source_span=node.source_span,
                     role="reached",
                 )
                 child = expand_flow(child_decl, owner_unit=child_unit)
-                return augment_with_parent_flow(child, parent_flow_name=current_flow_name)
+                return augment_with_parent_flow(
+                    child,
+                    parent_flow_name=current_flow_name,
+                    parent_flow_identity=current_flow_identity,
+                )
             repeat = next(
                 (entry for entry in graph_flow.repeats if entry.name == node.name),
                 None,
@@ -988,20 +1205,25 @@ class ResolveSkillGraphsMixin:
                 )
             child_unit, child_decl = resolve_flow_by_name(
                 repeat.target_flow_name,
+                module_parts=repeat.target_flow_module_parts,
                 current_unit=current_unit,
                 source_span=node.source_span,
                 role="repeat target",
             )
             child = expand_flow(child_decl, owner_unit=child_unit)
-            return augment_with_parent_flow(child, parent_flow_name=current_flow_name)
+            return augment_with_parent_flow(
+                child,
+                parent_flow_name=current_flow_name,
+                parent_flow_identity=current_flow_identity,
+            )
 
         def flow_terminal_nodes(
             graph_flow: model.ResolvedSkillGraphFlow,
         ) -> tuple[model.ResolvedSkillFlowNode, ...]:
             if not graph_flow.nodes:
                 return tuple()
-            incoming = {(edge.target.kind, edge.target.name) for edge in graph_flow.edges}
-            outgoing = {(edge.source.kind, edge.source.name) for edge in graph_flow.edges}
+            incoming = {self._flow_node_key(edge.target) for edge in graph_flow.edges}
+            outgoing = {self._flow_node_key(edge.source) for edge in graph_flow.edges}
             if not graph_flow.edges:
                 if graph_flow.start is not None:
                     return (graph_flow.start,)
@@ -1009,7 +1231,7 @@ class ResolveSkillGraphsMixin:
             terminal_nodes = tuple(
                 node
                 for node in graph_flow.nodes
-                if (node.kind, node.name) not in outgoing
+                if self._flow_node_key(node) not in outgoing
             )
             if terminal_nodes:
                 return terminal_nodes
@@ -1018,7 +1240,7 @@ class ResolveSkillGraphsMixin:
             return tuple(
                 node
                 for node in graph_flow.nodes
-                if (node.kind, node.name) not in incoming
+                if self._flow_node_key(node) not in incoming
             )
 
         def expand_flow(
@@ -1044,6 +1266,7 @@ class ResolveSkillGraphsMixin:
                 )
             flow_stack.append(cache_key)
             try:
+                flow_identity = dotted_decl_name(owner_unit.module_parts, flow_decl.name)
                 resolved_flow = self._resolve_skill_flow_decl(
                     flow_decl,
                     unit=owner_unit,
@@ -1107,6 +1330,7 @@ class ResolveSkillGraphsMixin:
                                 ),
                                 source_span=repeat.source_span or flow_decl.source_span,
                             ),
+                            target_flow_module_parts=repeat.target_flow_module_parts,
                             source_span=repeat.source_span,
                         )
                     )
@@ -1125,6 +1349,7 @@ class ResolveSkillGraphsMixin:
                     ),
                     start=resolved_flow.start,
                     approve=resolved_flow.approve,
+                    approve_module_parts=resolved_flow.approve_module_parts,
                     nodes=resolved_flow.nodes,
                     edges=resolved_edges,
                     repeats=tuple(graph_repeats),
@@ -1134,7 +1359,11 @@ class ResolveSkillGraphsMixin:
                     terminals=resolved_flow.terminals,
                     source_span=resolved_flow.source_span,
                 )
-                remember_flow(flow_decl.name, owner_unit=owner_unit)
+                remember_flow(
+                    flow_decl.name,
+                    owner_unit=owner_unit,
+                    source_span=flow_decl.source_span,
+                )
 
                 result = _NodeExpansion()
                 if graph_flow.start is not None:
@@ -1142,6 +1371,7 @@ class ResolveSkillGraphsMixin:
                         graph_flow.start,
                         current_unit=owner_unit,
                         current_flow_name=flow_decl.name,
+                        current_flow_identity=flow_identity,
                         graph_flow=graph_flow,
                     )
                     if not result.start_stages:
@@ -1149,13 +1379,13 @@ class ResolveSkillGraphsMixin:
                     merge_node_expansion(result, start_expansion)
                 elif graph_flow.nodes:
                     incoming = {
-                        (edge.target.kind, edge.target.name)
+                        self._flow_node_key(edge.target)
                         for edge in graph_flow.edges
                     }
                     start_nodes = tuple(
                         node
                         for node in graph_flow.nodes
-                        if (node.kind, node.name) not in incoming
+                        if self._flow_node_key(node) not in incoming
                     )
                     start_stages: list[str] = []
                     for start_node in start_nodes:
@@ -1163,6 +1393,7 @@ class ResolveSkillGraphsMixin:
                             start_node,
                             current_unit=owner_unit,
                             current_flow_name=flow_decl.name,
+                            current_flow_identity=flow_identity,
                             graph_flow=graph_flow,
                         )
                         merge_node_expansion(result, start_expansion)
@@ -1176,12 +1407,14 @@ class ResolveSkillGraphsMixin:
                         edge.source,
                         current_unit=owner_unit,
                         current_flow_name=flow_decl.name,
+                        current_flow_identity=flow_identity,
                         graph_flow=graph_flow,
                     )
                     target_expansion = node_expansion(
                         edge.target,
                         current_unit=owner_unit,
                         current_flow_name=flow_decl.name,
+                        current_flow_identity=flow_identity,
                         graph_flow=graph_flow,
                     )
                     merge_node_expansion(result, source_expansion)
@@ -1227,6 +1460,7 @@ class ResolveSkillGraphsMixin:
                         terminal_node,
                         current_unit=owner_unit,
                         current_flow_name=flow_decl.name,
+                        current_flow_identity=flow_identity,
                         graph_flow=graph_flow,
                     )
                     merge_node_expansion(result, terminal_expansion)
@@ -1237,6 +1471,7 @@ class ResolveSkillGraphsMixin:
                 if graph_flow.approve is not None:
                     approve_unit, approve_decl = resolve_flow_by_name(
                         graph_flow.approve,
+                        module_parts=graph_flow.approve_module_parts,
                         current_unit=owner_unit,
                         source_span=graph_flow.source_span,
                         role="approve",
@@ -1245,6 +1480,7 @@ class ResolveSkillGraphsMixin:
                     approve_node = augment_with_parent_flow(
                         approve_expansion,
                         parent_flow_name=flow_decl.name,
+                        parent_flow_identity=flow_identity,
                     )
                     merge_node_expansion(result, approve_node)
                     for source_stage in terminal_stages:
@@ -1279,6 +1515,12 @@ class ResolveSkillGraphsMixin:
                         stage_name: tuple(sorted(flow_names))
                         for stage_name, flow_names in result.stage_reaching_flows.items()
                     },
+                    stage_reaching_flow_identities={
+                        stage_name: tuple(sorted(flow_ids))
+                        for stage_name, flow_ids in (
+                            result.stage_reaching_flow_identities.items()
+                        )
+                    },
                 )
                 flow_cache[cache_key] = expansion
                 return expansion
@@ -1291,6 +1533,7 @@ class ResolveSkillGraphsMixin:
                 remember_stage(root_decl.name, owner_unit=root_unit, stage_decl=root_decl)
                 resolve_stage_dependencies(root_decl, owner_unit=root_unit)
                 aggregate_stage_reaching_flows.setdefault(root_decl.name, set())
+                aggregate_stage_reaching_flow_identities.setdefault(root_decl.name, set())
             else:
                 flow_expansion = expand_flow(root_decl, owner_unit=root_unit)
                 aggregate_edges.extend(flow_expansion.stage_edges)
@@ -1300,11 +1543,19 @@ class ResolveSkillGraphsMixin:
                     remember_stage(stage_name, owner_unit=stage_unit, stage_decl=stage_decl)
                 for stage_name, flow_names in flow_expansion.stage_reaching_flows.items():
                     aggregate_stage_reaching_flows.setdefault(stage_name, set()).update(flow_names)
+                for stage_name, flow_ids in (
+                    flow_expansion.stage_reaching_flow_identities.items()
+                ):
+                    aggregate_stage_reaching_flow_identities.setdefault(
+                        stage_name,
+                        set(),
+                    ).update(flow_ids)
 
         if graph_recovery is not None:
             if graph_recovery.flow_receipt_name is not None:
                 receipt_unit, receipt_decl = resolve_receipt_by_name(
                     graph_recovery.flow_receipt_name,
+                    module_parts=graph_recovery.flow_receipt_module_parts,
                     current_unit=unit,
                     source_span=graph_decl.source_span,
                     role="recovery",
@@ -1395,10 +1646,17 @@ class ResolveSkillGraphsMixin:
                     )
                 ),
             )
-            reaching_flows = aggregate_stage_reaching_flows.get(stage_name, set())
+            reaching_flow_identities = aggregate_stage_reaching_flow_identities.get(
+                stage_name,
+                set(),
+            )
             if resolved_stage.applies_to_flow_names:
+                allowed_flows = set(
+                    resolved_stage.applies_to_flow_identities
+                    or resolved_stage.applies_to_flow_names
+                )
                 missing_flows = sorted(
-                    set(reaching_flows) - set(resolved_stage.applies_to_flow_names)
+                    set(reaching_flow_identities) - allowed_flows
                 )
                 if missing_flows:
                     raise self._skill_graph_error(
@@ -1487,9 +1745,9 @@ class ResolveSkillGraphsMixin:
             graph_decl=graph_decl,
             graph_name=graph_decl.name,
             flow=self.session.flow_for_unit(unit),
-            reached_stage_decls=reached_stage_decls,
+            graph_unit=unit,
             reached_stage_units=reached_stage_units,
-            reached_skill_decls=reached_skill_decls,
+            reached_skill_units=reached_skill_units,
             reached_receipt_decls=reached_receipt_decls,
             resolved_stages=tuple(resolved_stages),
             resolved_flows=tuple(resolved_flows),
@@ -1679,6 +1937,8 @@ class ResolveSkillGraphsMixin:
         if recovery_item is None:
             return None
         seen: set[str] = set()
+        recovery_enum_units: dict[str, IndexedUnit] = {}
+        flow_receipt_module_parts: tuple[str, ...] = ()
         values: dict[str, str] = {}
         for entry in recovery_item.entries:
             if entry.key in seen:
@@ -1693,8 +1953,11 @@ class ResolveSkillGraphsMixin:
                 )
             seen.add(entry.key)
             if entry.key == "flow_receipt":
-                receipt_unit, receipt_decl = self._resolve_receipt_ref(entry.target_ref, unit=unit)
-                _ = receipt_unit
+                receipt_unit, receipt_decl = self._resolve_receipt_ref(
+                    entry.target_ref,
+                    unit=unit,
+                )
+                flow_receipt_module_parts = receipt_unit.module_parts
                 values[entry.key] = receipt_decl.name
                 continue
             resolved_enum = self._try_resolve_enum_decl_with_unit(entry.target_ref, unit=unit)
@@ -1709,12 +1972,25 @@ class ResolveSkillGraphsMixin:
                     source_span=entry.source_span or graph_decl.source_span,
                     hints=("Point recovery enum refs at declared top-level enums.",),
                 )
-            _enum_unit, enum_decl = resolved_enum
+            enum_unit, enum_decl = resolved_enum
+            self._check_public_graph_name_collision(
+                owner_label=owner_label,
+                kind="recovery enum",
+                public_name=enum_decl.name,
+                existing_unit=recovery_enum_units.get(enum_decl.name),
+                owner_unit=enum_unit,
+                source_span=entry.source_span or enum_decl.source_span,
+                fallback_span=graph_decl.source_span,
+                keyed_by="recovery enum name",
+                plural_kind="recovery enum refs",
+            )
+            recovery_enum_units.setdefault(enum_decl.name, enum_unit)
             values[entry.key] = enum_decl.name
         return model.ResolvedSkillGraphRecovery(
             flow_receipt_name=values.get("flow_receipt"),
             stage_status_name=values.get("stage_status"),
             durable_artifact_status_name=values.get("durable_artifact_status"),
+            flow_receipt_module_parts=flow_receipt_module_parts,
             source_span=recovery_item.source_span,
         )
 
@@ -1729,6 +2005,7 @@ class ResolveSkillGraphsMixin:
         if policy_item is None:
             return tuple()
         seen: set[tuple[str, str]] = set()
+        seen_dag_key: str | None = None
         resolved: list[model.ResolvedSkillGraphPolicy] = []
         for entry in policy_item.entries:
             policy_key = (entry.action, entry.key)
@@ -1744,6 +2021,18 @@ class ResolveSkillGraphsMixin:
                 )
             seen.add(policy_key)
             if entry.action == "dag":
+                if seen_dag_key is not None and entry.key != seen_dag_key:
+                    raise self._skill_graph_error(
+                        detail=(
+                            f"Skill graph `{owner_label}` declares both "
+                            "`dag acyclic` and `dag allow_cycle`. These DAG "
+                            "policies are mutually exclusive."
+                        ),
+                        unit=unit,
+                        source_span=entry.source_span or graph_decl.source_span,
+                        hints=("Choose one DAG policy for the graph.",),
+                    )
+                seen_dag_key = entry.key
                 if entry.key not in model.SKILL_GRAPH_DAG_POLICY_KEYS:
                     raise self._skill_graph_error(
                         detail=(
@@ -1917,45 +2206,94 @@ class ResolveSkillGraphsMixin:
         graph_decl: model.SkillGraphDecl,
         graph_name: str,
         flow,
-        reached_stage_decls: dict[str, model.StageDecl],
+        graph_unit: IndexedUnit,
         reached_stage_units: dict[str, IndexedUnit],
-        reached_skill_decls: dict[str, model.SkillDecl],
+        reached_skill_units: dict[str, IndexedUnit],
         reached_receipt_decls: dict[str, model.ReceiptDecl],
         resolved_stages: tuple[model.ResolvedStage, ...],
         resolved_flows: tuple[model.ResolvedSkillGraphFlow, ...],
         graph_recovery: model.ResolvedSkillGraphRecovery | None,
         append_warning,
     ) -> None:
+        def reached_from_graph_unit(reached_unit: IndexedUnit | None) -> bool:
+            return (
+                reached_unit is not None
+                and reached_unit.prompt_root == graph_unit.prompt_root
+                and reached_unit.module_parts == graph_unit.module_parts
+            )
+
+        def reached_elsewhere_label(
+            *,
+            kind: str,
+            name: str,
+            reached_unit: IndexedUnit | None,
+        ) -> str | None:
+            if reached_unit is None or reached_from_graph_unit(reached_unit):
+                return None
+            dotted_name = dotted_decl_name(reached_unit.module_parts, name)
+            if dotted_name == name:
+                return f"another imported {kind} named `{name}`"
+            return f"{kind} `{dotted_name}`"
+
         for stage_name, stage_decl in sorted(flow.stages_by_name.items()):
-            if stage_name in reached_stage_decls:
+            reached_unit = reached_stage_units.get(stage_name)
+            if reached_from_graph_unit(reached_unit):
                 continue
+            same_public_name_reached = reached_elsewhere_label(
+                kind="stage",
+                name=stage_name,
+                reached_unit=reached_unit,
+            )
+            if same_public_name_reached is None:
+                detail = (
+                    f"Skill graph `{graph_name}` does not reach stage "
+                    f"`{stage_name}` from any root."
+                )
+            else:
+                detail = (
+                    f"Skill graph `{graph_name}` reaches {same_public_name_reached}, "
+                    f"but does not reach local stage `{stage_name}` from the "
+                    "graph entrypoint module."
+                )
             append_warning(
                 code="W201",
                 policy_key="orphan_stage",
                 summary="Stage is not reached by this graph",
                 owner_kind="stage",
                 owner_name=stage_name,
-                detail=(
-                    f"Skill graph `{graph_name}` does not reach stage "
-                    f"`{stage_name}` from any root."
-                ),
+                detail=detail,
                 source_span=stage_decl.source_span or graph_decl.source_span,
             )
 
         for skill_name, skill_decl in sorted(flow.skills_by_name.items()):
-            if skill_name in reached_skill_decls:
+            reached_unit = reached_skill_units.get(skill_name)
+            if reached_from_graph_unit(reached_unit):
                 continue
+            same_public_name_reached = reached_elsewhere_label(
+                kind="skill",
+                name=skill_name,
+                reached_unit=reached_unit,
+            )
+            if same_public_name_reached is None:
+                detail = (
+                    f"Skill graph `{graph_name}` does not reach skill "
+                    f"`{skill_name}` from a stage owner, stage support, "
+                    "relation, or checked skill mention."
+                )
+            else:
+                detail = (
+                    f"Skill graph `{graph_name}` reaches {same_public_name_reached}, "
+                    f"but does not reach local skill `{skill_name}` from a stage "
+                    "owner, stage support, relation, or checked skill mention in "
+                    "the graph entrypoint module."
+                )
             append_warning(
                 code="W202",
                 policy_key="orphan_skill",
                 summary="Skill is not reached by this graph",
                 owner_kind="skill",
                 owner_name=skill_name,
-                detail=(
-                    f"Skill graph `{graph_name}` does not reach skill "
-                    f"`{skill_name}` from a stage owner, stage support, "
-                    "relation, or checked skill mention."
-                ),
+                detail=detail,
                 source_span=skill_decl.source_span or graph_decl.source_span,
             )
 

@@ -6,10 +6,11 @@ from doctrine import model
 
 
 _NON_ID_CHARS = re.compile(r"[^a-zA-Z0-9_]+")
+_SAFE_UNQUOTED_TITLE = re.compile(r"^[a-zA-Z0-9 _.-]+$")
 
 
 def render_skill_graph_d2(graph: model.ResolvedSkillGraph) -> str:
-    lines = [f"title: {graph.title}", "direction: right", ""]
+    lines = [f"title: {_title_value(graph.title)}", "direction: right", ""]
     for stage in graph.stages:
         node_id = _node_id(stage.canonical_name)
         label_lines = [stage.title, f"owner: {stage.owner_skill_name}"]
@@ -19,7 +20,7 @@ def render_skill_graph_d2(graph: model.ResolvedSkillGraph) -> str:
     if graph.stages:
         lines.append("")
     for edge in graph.stage_edges:
-        label = edge.why
+        label = _escape_label_text(edge.why)
         if edge.route_receipt_name is not None:
             label = (
                 f"{label}\\nroute: {edge.route_receipt_name}."
@@ -36,4 +37,16 @@ def _node_id(name: str) -> str:
 
 
 def _escape_label(lines: list[str]) -> str:
-    return "\\n".join(line.replace('"', '\\"') for line in lines)
+    return "\\n".join(_escape_label_text(line) for line in lines)
+
+
+def _title_value(value: str) -> str:
+    escaped = _escape_label_text(value)
+    if _SAFE_UNQUOTED_TITLE.fullmatch(value):
+        return escaped
+    return f'"{escaped}"'
+
+
+def _escape_label_text(value: str) -> str:
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
+    return normalized.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")

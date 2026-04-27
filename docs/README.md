@@ -61,38 +61,15 @@ for repo setup and proof commands.
   error codes
 - [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md): easy author mistakes the compiler
   still accepts today and should turn into clear compile errors
-- [WARNINGS.md](WARNINGS.md): evergreen plan for a first-class compiler
-  warning layer, including goals, non-goals, candidate families, and
-  guardrails
+- [WARNINGS.md](WARNINGS.md): shipped graph warning codes plus guardrails for
+  future warning families
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
-- [LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md](LESSONS_STUDIO_SKILL_GRAPH_AUDIT.md):
-  use-case audit for first-class skill graph support
 - [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md):
-  shipped Doctrine-side language support for typed skill graphs
-- [EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md](EPIC_DOCTRINE_SKILL_GRAPH_2026-04-26.md):
-  active epic that decomposes the skill graph spec into shipped sub-plans
-- [ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md](ARCH_RECEIPT_CORE_PACKAGE_BRIDGE_2026-04-26.md):
-  shipped sub-plan 1 — top-level `receipt` declarations, inheritance, and
-  the `host_contract: receipt key: ReceiptRef` bridge
-- [ARCH_STAGE_CORE_ROUTED_RECEIPTS_2026-04-26.md](ARCH_STAGE_CORE_ROUTED_RECEIPTS_2026-04-26.md):
-  shipped sub-plan 2 — top-level `stage` declarations, skeletal
-  `skill_flow` registration, and receipt route fields targeting `stage`,
-  `flow`, and the closed `human`/`external`/`terminal` sentinel set
-- [ARCH_SKILL_FLOW_CORE_2026-04-26.md](ARCH_SKILL_FLOW_CORE_2026-04-26.md):
-  shipped sub-plan 3 — full top-level `skill_flow` body with `start:`,
-  `approve:`, `edge`, `route:`, `kind:`, `when:`, `repeat`, `variation`,
-  `unsafe`, and `changed_workflow:`, plus local DAG and route-binding
-  checks. Graph closure across flows, graph policies, and graph emit are
-  covered by sub-plans 4 and 5 below
-- [ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md](ARCH_SKILL_GRAPH_CLOSURE_EMIT_2026-04-26.md):
-  shipped sub-plan 4 — top-level `skill_graph`, graph closure, graph JSON
-  and Markdown emit, graph source receipts, `emit_skill_graph`, and
-  `verify_skill_graph`
-- [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md): shipped
-  Doctrine-side graph language surface, including skill relations, checked
-  skill mentions, graph warnings, `GRAPH.prompt`, receipt schema views, and
-  `dag allow_cycle`; examples `160` through `164` prove the phase 5 surface
+  shipped Doctrine-side graph language surface, including reusable receipts,
+  artifacts, stages, skill flows, skill graphs, skill relations, checked skill
+  mentions, graph warnings, `GRAPH.prompt`, receipt schema views, and
+  `dag allow_cycle`
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor

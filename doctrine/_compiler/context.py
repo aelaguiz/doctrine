@@ -217,6 +217,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_rules_in_flow(flow)
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
+        self._validate_all_skill_graphs_in_flow(flow)
         return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(
@@ -247,6 +248,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         flow = self.session.flow_for_unit(owner_unit)
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
+        self._validate_all_skill_graphs_in_flow(flow)
         return self._compile_skill_package_decl(declaration, unit=owner_unit)
 
     def compile_skill_graph(

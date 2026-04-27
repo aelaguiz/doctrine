@@ -306,19 +306,18 @@ Every public release uses one release class.
   `receipt_lock_mismatch`, and `unsupported_receipt_version`. Existing skill
   packages keep compiling; they now gain a receipt sidecar. Advances the
   language line from `5.6` to `5.7`.
-- The unreleased `5.7` graph slice now includes sub-plans 1 through 5 as one
-  backward-compatible language move. It covers top-level `receipt`, `stage`,
-  `skill_flow`, `skill_graph`, and `artifact` declarations; receipt routes;
-  skill-flow DAGs, route binding, branches, repeats, variations, and
-  changed-workflow facts; graph closure and graph emit; `skill.relations:`;
-  checked `{{skill:...}}` mentions; graph warnings `W201` through `W211`;
-  `GRAPH.prompt`; `receipt_schema_dir`; graph policy relaxers such as
-  `allow unbound_edges` and `dag allow_cycle "Reason"`; view-scoped graph
-  emit; graph-path repeat sources; and the graph authoring metadata proven by
-  examples `150` through `164`. Existing prompts that do not author the new
-  graph shapes keep compiling unchanged. This remains inside the unreleased
-  `5.7` line and only crosses a new language version line at the next public
-  release.
+- The unreleased `5.7` graph surface is one backward-compatible language move.
+  It covers top-level `receipt`, `stage`, `skill_flow`, `skill_graph`, and
+  `artifact` declarations; receipt routes; skill-flow DAGs, route binding,
+  branches, repeats, variations, and changed-workflow facts; graph closure and
+  graph emit; `skill.relations:`; checked `{{skill:...}}` mentions; graph
+  warnings `W201` through `W211`; `GRAPH.prompt`; `receipt_schema_dir`; graph
+  policy relaxers such as `allow unbound_edges` and
+  `dag allow_cycle "Reason"`; view-scoped graph emit; graph-path repeat
+  sources; and the graph authoring metadata proven by examples `150` through
+  `164`. Existing prompts that do not author the new graph shapes keep
+  compiling unchanged. This remains inside the unreleased `5.7` line and only
+  crosses a new language version line at the next public release.
 - Adding `route field`, `final_output.route:`, and additive `route.selector`
   metadata is an `additive` release when existing `route_from`,
   `handoff_routing`, review, and emitted contract shapes keep working.

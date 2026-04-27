@@ -111,28 +111,7 @@ def emit_target_skill_graph(
     output_dir_override: Path | None = None,
     selected_views: frozenset[str] | None = None,
 ) -> tuple[Path, ...]:
-    ensure_supported_entrypoint(
-        target.entrypoint,
-        allowed_entrypoints=GRAPH_EMIT_ENTRYPOINTS,
-        owner_label=f"emit_skill_graph target `{target.name}`",
-    )
-    try:
-        prompt_file = parse_file(target.entrypoint)
-    except DoctrineError as exc:
-        raise exc.prepend_trace(
-            f"emit target `{target.name}` entrypoint",
-            location=path_location(target.entrypoint),
-        )
-
-    session = CompilationSession(prompt_file, project_config=target.project_config)
-    try:
-        graph = session.compile_skill_graph(target.graph)
-    except DoctrineError as exc:
-        raise exc.prepend_trace(
-            f"emit target `{target.name}`",
-            location=path_location(target.entrypoint),
-        )
-
+    graph, input_paths = compile_skill_graph_for_target(target, trace_label="emit target")
     if not graph.stages and not graph.flows:
         raise emit_error(
             "E565",
@@ -220,7 +199,6 @@ def emit_target_skill_graph(
         emitted_paths.append(resolved_paths["diagram_svg"])
 
     linked_package_receipts = _linked_package_receipts(target=target, graph=graph)
-    input_paths = tuple(session.root_flow.member_paths)
     receipt_payload = build_graph_source_receipt_payload(
         target=target,
         graph=graph,
@@ -229,14 +207,45 @@ def emit_target_skill_graph(
         emitted_paths=tuple(emitted_paths),
         resolved_view_paths=resolved_paths,
         linked_package_receipts=linked_package_receipts,
+        selected_view_keys=selected_view_keys,
     )
     source_receipt_path = resolved_paths["graph_source"]
+    source_receipt_path.parent.mkdir(parents=True, exist_ok=True)
     source_receipt_path.write_text(
         render_graph_source_receipt_json(receipt_payload),
         encoding="utf-8",
     )
     emitted_paths.append(source_receipt_path)
     return tuple(emitted_paths)
+
+
+def compile_skill_graph_for_target(
+    target: EmitTarget,
+    *,
+    trace_label: str,
+) -> tuple[model.ResolvedSkillGraph, tuple[Path, ...]]:
+    ensure_supported_entrypoint(
+        target.entrypoint,
+        allowed_entrypoints=GRAPH_EMIT_ENTRYPOINTS,
+        owner_label=f"{trace_label} `{target.name}`",
+    )
+    try:
+        prompt_file = parse_file(target.entrypoint)
+    except DoctrineError as exc:
+        raise exc.prepend_trace(
+            f"{trace_label} `{target.name}` entrypoint",
+            location=path_location(target.entrypoint),
+        )
+
+    session = CompilationSession(prompt_file, project_config=target.project_config)
+    try:
+        graph = session.compile_skill_graph(target.graph)
+    except DoctrineError as exc:
+        raise exc.prepend_trace(
+            f"{trace_label} `{target.name}`",
+            location=path_location(target.entrypoint),
+        )
+    return graph, tuple(session.root_flow.member_paths)
 
 
 def _normalize_selected_views(

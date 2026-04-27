@@ -295,6 +295,7 @@ class ResolvedSkillFlowNode:
 
     name: str
     kind: str
+    module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -307,6 +308,7 @@ class ResolvedSkillFlowEdgeRouteBinding:
     choice_key: str
     target_kind: str
     target_name: str
+    target_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -316,6 +318,8 @@ class ResolvedSkillFlowEdgeWhen:
 
     enum_name: str
     member_key: str
+    enum_identity: str | None = None
+    enum_members: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -342,6 +346,7 @@ class ResolvedSkillFlowRepeat:
     over_name: str
     order: str
     why: str
+    target_flow_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -393,6 +398,7 @@ class ResolvedSkillFlow:
     unsafe_variations: tuple[ResolvedSkillFlowUnsafe, ...]
     changed_workflow: ResolvedSkillFlowChangedWorkflow | None
     terminals: tuple[str, ...]
+    approve_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -475,6 +481,7 @@ class ResolvedReceiptRouteChoice:
     title: str
     target_kind: str
     target_name: str
+    target_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -760,6 +767,7 @@ class ResolvedStage:
     repair_routes: str | None
     waiver_policy: str | None
     forbidden_outputs: tuple[str, ...]
+    applies_to_flow_identities: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -791,6 +799,7 @@ class ResolvedSkillGraphRecovery:
     flow_receipt_name: str | None
     stage_status_name: str | None
     durable_artifact_status_name: str | None
+    flow_receipt_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -823,6 +832,7 @@ class ResolvedSkillGraphRepeat:
     over_name: str
     order: str
     why: str
+    target_flow_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -842,6 +852,7 @@ class ResolvedSkillGraphFlow:
     unsafe_variations: tuple[ResolvedSkillFlowUnsafe, ...]
     changed_workflow: ResolvedSkillFlowChangedWorkflow | None
     terminals: tuple[str, ...]
+    approve_module_parts: tuple[str, ...] = ()
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
