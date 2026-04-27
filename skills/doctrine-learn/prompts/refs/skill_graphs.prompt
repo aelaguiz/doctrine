@@ -1,0 +1,208 @@
+document SkillGraphs: "Skill Graphs"
+    """This reference teaches the shipped compiler-owned graph surface in
+Doctrine. Load it when the author needs top-level `artifact`, `receipt`,
+`stage`, `skill_flow`, `skill_graph`, skill relations, checked skill mentions,
+or graph warnings to close one checked graph and emit graph artifacts from it.
+
+Use this with `references/emit-targets.md` when the author also needs target
+wiring, graph source receipts, or `verify_skill_graph`."""
+
+    section what_shipped: "What Shipped"
+        bullets items:
+            """Top-level `receipt` declarations give graph stages one shared typed
+  handoff surface. Start with `examples/150_receipt_top_level_decl` and
+  `examples/152_receipt_stage_route`."""
+            """Top-level `artifact` declarations give durable graph targets stable
+  symbols. Stages can own them with `artifacts:` and later stages can read
+  them through `inputs:`. Start with `examples/164_skill_graph_artifacts`."""
+            """Top-level `stage` declarations name one graph node with an owner
+  skill, lane, inputs, owned artifacts, receipt emit, and durable checkpoint facts. Start
+  with `examples/151_stage_basics`."""
+            """Top-level `skill_flow` declarations own the typed DAG of stages,
+  nested flows, branches, approvals, and repeats. Start with
+  `examples/153_skill_flow_linear` through
+  `examples/156_skill_flow_repeat`."""
+            """Top-level `skill_graph` declarations close those smaller
+  declarations into one graph boundary with roots, sets, recovery refs,
+  policy, views, and emit. Start with
+  `examples/157_skill_graph_closure` through
+  `examples/164_skill_graph_artifacts`."""
+
+    section graph_surface: "Graph Surface"
+        """Teach the graph surface as small declaration families that compose.
+Do not collapse them into one giant block."""
+        bullets items:
+            "`receipt` owns the typed handoff fact and any routed next-step choices."
+            "`artifact` owns one durable target symbol, its owner stage, and optional path-family or anchor facts."
+            "`stage` owns one graph node: owner skill, support skills, lane, inputs, owned artifacts, emitted receipt, and durable checkpoint facts."
+            "`skill_flow` owns the local graph shape: start node, stage edges, nested flows, variations, approvals, and repeats."
+            "`skill relations:` on top-level `skill` declarations own direct skill-to-skill edges."
+            "`skill_graph` owns the graph boundary: roots, graph-local sets, recovery refs, policy, views, closure, checked mentions, warnings, and graph emit."
+
+        "The key rule: `skill_graph` selects top-level declarations. It does not redeclare them inline."
+
+    section skill_graph_body: "What Goes In A Skill Graph"
+        "Use this capstone shape from `examples/158_skill_graph_emit`:"
+        code:
+            language: prompt
+            text: """skill_graph ControllerGraph: "Controller Graph"
+    purpose: "Emit the full controller graph bundle from one closure."
+    roots:
+        flow F1AuthorLesson
+    policy:
+        dag acyclic
+        require edge_reason
+        require durable_checkpoint
+        require route_targets_resolve
+        require stage_lane
+    views:
+        graph_markdown: "references/controller-graph.md"
+        diagram_mermaid: "references/controller-graph.mmd"
+"""
+        "Teach each block this way:"
+        bullets rules:
+            "`purpose:` is required. It says what graph the boundary owns."
+            "`roots:` is required. Each root is `flow <Ref>` or `stage <Ref>`."
+            "`sets:` is optional. It declares graph-local names that graph compile may use for repeat late binding."
+            "`recovery:` is optional. It points at one top-level `receipt` and two top-level `enum` declarations."
+            """`policy:` is optional. The shipped strict keys are `dag acyclic`,
+  `dag allow_cycle "Reason"`, `allow unbound_edges`,
+  `require edge_reason`, `require durable_checkpoint`,
+  `require relation_reason`, `require route_targets_resolve`,
+  `require checked_skill_mentions`, `require branch_coverage`, and
+  `require stage_lane`."""
+            """The shipped warning keys are `warn orphan_stage`,
+  `warn orphan_skill`, `warn receipt_without_consumer`,
+  `warn checked_skill_mention_unknown`, `warn relation_without_reason`,
+  `warn stage_owner_shared`, `warn flow_without_approve`,
+  `warn stage_without_risk_guard`, `warn edge_route_binding_missing`,
+  `warn branch_coverage_incomplete`, and
+  `warn manual_only_default_flow_conflict`."""
+            """`views:` is optional. It may override any shipped graph output path:
+  `graph_contract`, `graph_source`, `graph_json`, `graph_markdown`,
+  `skill_inventory`, `artifact_inventory`, `flow_registry`, `stage_contracts`,
+  `recovery_audit`, `stepwise_manifest`, `diagram_d2`, `diagram_svg`,
+  `diagram_mermaid`, and `receipt_schema_dir`."""
+
+    section relations_and_mentions: "Relations And Checked Mentions"
+        "Use `examples/160_skill_graph_relations_mentions` for this layer."
+        code:
+            language: prompt
+            text: """skill AuthorSkill: "Author Skill"
+    purpose: "Own the first draft."
+    package: "author-package"
+    relations:
+        requires ReviewSkill:
+            why: "Review uses the ReviewSkill package."
+
+skill ReviewSkill: "Review Skill"
+    purpose: "Review the draft."
+    package: "review-package"
+"""
+        bullets rules:
+            """Relation kinds are closed. The shipped set includes `requires`,
+  `delegates_to`, `wraps`, `audits`, `baseline_for`, `blocks`,
+  `owns_surface`, `reads_surface`, `writes_surface`, `extends`,
+  `supports`, `composes`, `teaches`, `repairs`, `supersedes`, and
+  `related`."""
+            "`require relation_reason` makes every reached relation need `why:`."
+            "Reached skill relations add their target skills to graph closure."
+            "Skill inventory metadata can use `category:`, `visibility:`, `manual_only:`, `default_flow_member:`, and `aliases:` on a top-level `skill`."
+            "Stages can carry `entry:`, `repair_routes:`, and `waiver_policy:` when the graph needs audit-facing stage metadata."
+            "Graph compile may resolve repeat `over:` to a declared graph set or keep a dotted graph-path source such as `GraphInputs.lesson_slots`."
+            "Write two left braces, `skill:Name`, and two right braces to render the skill title."
+            "Use the `.package` projection to render the linked package id, or an empty string when there is no package."
+            "Use the `.purpose` projection to render the skill purpose, or an empty string when there is no purpose."
+            "`require checked_skill_mentions` makes bad checked mentions fail with `E562`."
+            "Invalid relation kinds, missing relation targets, and missing required relation reasons fail with `E566`."
+
+    section closure_behavior: "Closure Behavior"
+        """Graph compile walks the graph from the roots and closes one compiler-owned
+object. Teach that object as the source of truth for every graph view."""
+        bullets rules:
+            "Closure walks root stages, root flows, nested flows, repeat nodes, reached stages, owner skills, support skills, skill relation targets, checked skill mentions, package ids, receipts, route bindings, and recovery refs."
+            """Graph compile may late-bind `repeat over:` to a graph `sets:` name,
+  but only on the graph compile path. Ordinary agent and skill-package
+  compile still keep the older strict `enum` / `table` / `schema` flow
+  check."""
+            """A reached stage that declares `applies_to:` must list every
+  reaching flow. If it does not, graph compile fails with `E562`."""
+            """Strict policy checks and view generation both read the same resolved
+  graph object. No graph view may rebuild truth from raw prompt strings
+  or from another emitted view."""
+            """Bad roots, bad recovery refs, unsupported policy keys, unresolved
+  graph-set repeats, and expanded graph cycles all fail loud with
+  `E562`, unless the graph declares `dag allow_cycle "Reason"`."""
+
+    section emit_and_receipts: "Emit And Source Receipts"
+        "One graph target emits one full graph bundle from one closure:"
+        bullets artifacts:
+            "`SKILL_GRAPH.contract.json` — authoritative graph contract."
+            "`SKILL_GRAPH.source.json` — graph source receipt with hashed inputs, outputs, tree hashes, linked package receipt hashes, and top-level graph artifact hashes."
+            "`references/skill-graph.json` — query-friendly graph JSON."
+            "`references/skill-graph.md` — graph overview Markdown."
+            "`references/skill-inventory.md` — skill and package inventory."
+            "`references/flow-registry.md` — reached flow view."
+            "`references/stage-contracts.md` — stage contract view."
+            "`references/recovery-audit.md` — static recovery truth."
+            "`references/stepwise-manifest.md` — static stepwise projection."
+            "`references/receipts/*.schema.json` — one JSON schema per reached receipt by default."
+            "`references/skill-graph.d2`, `.svg`, and `.mmd` — graph diagrams from the same closure."
+
+        "Target wiring from `examples/158_skill_graph_emit`:"
+        code:
+            language: toml
+            text: """[[tool.doctrine.emit.targets]]
+name = "example_158_skill_graph_emit"
+entrypoint = "examples/158_skill_graph_emit/prompts/skills/controller/SKILL.prompt"
+graph = "ControllerGraph"
+output_dir = "examples/158_skill_graph_emit/build"
+"""
+        "Run graph emit and verify with:"
+        code:
+            language: bash
+            text: """uv run --locked python -m doctrine.emit_skill_graph --target example_158_skill_graph_emit
+uv run --locked python -m doctrine.verify_skill_graph --target example_158_skill_graph_emit
+"""
+        bullets rules:
+            """Teach `graph = "<Name>"` as the target-level selector when the
+  entrypoint can see more than one graph or when the target is meant to
+  prove one named graph bundle."""
+            """Teach `SKILL_GRAPH.source.json` as a build receipt, not as runtime
+  state. It proves the source tree and emitted graph tree that built the
+  bundle."""
+            """When `views:` overrides a graph output path, the source receipt still
+  records the actual emitted file in `outputs` and in the top-level graph
+  hash summary."""
+            """Use `GRAPH.prompt` for a standalone graph package. Existing graph
+  targets may still use `AGENTS.prompt`, `SOUL.prompt`, or `SKILL.prompt`
+  when the graph is visible from that entrypoint."""
+            """Direct graph emit supports `--view <key>` and `--diagram d2|svg|mermaid`
+  selectors with `--entrypoint`, `--output-dir`, and optional `--graph`."""
+
+    section examples_150_164: "Examples 150 Through 164"
+        "Teach the graph stack in this order:"
+        bullets items:
+            "`examples/150_receipt_top_level_decl` — reusable top-level `receipt` declarations."
+            "`examples/151_stage_basics` — top-level `stage` declarations and stage facts."
+            "`examples/152_receipt_stage_route` — receipt route fields that target stages, flows, and sentinels."
+            "`examples/153_skill_flow_linear` — the smallest real `skill_flow`."
+            "`examples/154_skill_flow_route_binding` — route-bound flow edges."
+            "`examples/155_skill_flow_branch` — branch conditions, variations, and changed-workflow truth."
+            "`examples/156_skill_flow_repeat` — repeat nodes and repeat ordering."
+            "`examples/157_skill_graph_closure` — graph roots, graph-local `sets:`, recovery refs, and closure failures."
+            "`examples/158_skill_graph_emit` — the full graph bundle, view overrides, and graph source receipt."
+            "`examples/159_skill_graph_policy` — strict graph policy failures and graph-owned cycle checks."
+            "`examples/160_skill_graph_relations_mentions` — `GRAPH.prompt`, skill relations, checked mentions, graph warnings, unbound-edge policy, and receipt schemas."
+            "`examples/161_skill_graph_policy_allowances` — `dag allow_cycle \"Reason\"` for a documented graph loop."
+            "`examples/162_skill_graph_negative_cases` — checked mention and relation failures."
+            "`examples/163_skill_graph_authoring_metadata` — skill inventory metadata, aliases, stage entry/repair/waiver text, and graph-path repeat targets."
+            "`examples/164_skill_graph_artifacts` — durable artifact declarations, stage ownership, and artifact-typed stage inputs."
+
+    section teaching_script: "Teaching Script"
+        sequence steps:
+            "Start with the smallest missing layer. If the author needs routed handoff truth, begin with `receipt` or `stage`, not with `skill_graph`."
+            "When the author is graph-ready, show the top-level split: `receipt`, `stage`, `skill_flow`, `skill_graph`."
+            "Use `examples/157_skill_graph_closure` before `examples/158_skill_graph_emit`, then use `examples/160_skill_graph_relations_mentions` for relation and checked-mention work."
+            "Load `references/emit-targets.md` before you explain `emit_skill_graph`, `verify_skill_graph`, or target `graph =` wiring."
+            "End with the exact verify command for the example or target the author is editing."

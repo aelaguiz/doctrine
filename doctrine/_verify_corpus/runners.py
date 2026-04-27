@@ -13,6 +13,7 @@ from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
 from doctrine.emit_skill import emit_target_skill
+from doctrine.emit_skill_graph import emit_target_skill_graph
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown, render_readable_block
 
@@ -302,6 +303,7 @@ def _run_build_contract(
     emit_target_fn=emit_target,
     emit_target_flow_fn=emit_target_flow,
     emit_target_skill_fn=emit_target_skill,
+    emit_target_skill_graph_fn=emit_target_skill_graph,
 ) -> CaseResult:
     try:
         targets = load_emit_targets_fn(start_dir=REPO_ROOT)
@@ -328,6 +330,7 @@ def _run_build_contract(
                 emit_target_fn=emit_target_fn,
                 emit_target_flow_fn=emit_target_flow_fn,
                 emit_target_skill_fn=emit_target_skill_fn,
+                emit_target_skill_graph_fn=emit_target_skill_graph_fn,
             )
         except DoctrineError as exc:
             raise VerificationError(str(exc)) from exc
@@ -353,7 +356,11 @@ def _emit_build_contract_target(
     emit_target_fn,
     emit_target_flow_fn,
     emit_target_skill_fn,
+    emit_target_skill_graph_fn,
 ) -> None:
+    if target.graph is not None:
+        emit_target_skill_graph_fn(target, output_dir_override=actual_root)
+        return
     if target.entrypoint.name == "SKILL.prompt":
         emit_target_skill_fn(target, output_dir_override=actual_root)
         return
@@ -385,13 +392,15 @@ def _run_compile_fail(
             prompt_file = parse_file(case.prompt_path)
             active_session = CompilationSession(prompt_file)
 
-        if case.agent is not None:
+        if case.graph is not None:
+            active_session.compile_skill_graph(case.graph)
+        elif case.agent is not None:
             active_session.compile_agent(case.agent)
         elif active_session.root_flow.skill_packages_by_name:
             active_session.compile_skill_package()
         else:
             raise VerificationError(
-                "compile_fail case omitted `agent`, but the prompt does not define a skill package."
+                "compile_fail case omitted both `agent` and `graph`, and the prompt does not define a skill package."
             )
     except Exception as exc:
         _assert_expected_exception(case, exc)

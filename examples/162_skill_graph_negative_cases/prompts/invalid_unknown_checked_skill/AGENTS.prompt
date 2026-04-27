@@ -1,0 +1,16 @@
+skill OwnerSkill: "Owner Skill"
+    purpose: "Own the stage."
+
+stage StartStage: "Start Stage"
+    owner: OwnerSkill
+    intent: "Use {{skill:MissingSkill}}."
+    durable_target: "Start receipt."
+    durable_evidence: "Start receipt."
+    advance_condition: "Start receipt lands."
+
+skill_graph BrokenGraph: "Broken Graph"
+    purpose: "Checked mentions must resolve."
+    roots:
+        stage StartStage
+    policy:
+        require checked_skill_mentions

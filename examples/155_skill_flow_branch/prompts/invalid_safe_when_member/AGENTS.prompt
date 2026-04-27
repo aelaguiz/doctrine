@@ -1,0 +1,23 @@
+enum ExactMoveProofNeeded: "Exact Move Proof Needed"
+    yes: "Yes"
+    no: "No"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage SituationSynthesis: "Situation Synthesis"
+    owner: StudioSkill
+    intent: "Build situations."
+    durable_target: "Situation brief."
+    durable_evidence: "Situation receipt."
+    advance_condition: "Situation receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "safe_when references an unknown enum member."
+    start: SituationSynthesis
+    variation skip_exact_move_proof: "Skip exact-move proof."
+        safe_when: ExactMoveProofNeeded.maybe
+
+agent FlowDemo:
+    role: "Run the bad safe_when flow."

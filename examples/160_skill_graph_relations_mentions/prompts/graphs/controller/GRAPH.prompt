@@ -1,0 +1,65 @@
+skill AuthorSkill: "Author Skill"
+    purpose: "Own the first draft."
+    package: "author-package"
+    relations:
+        requires ReviewSkill:
+            why: "Review uses {{skill:ReviewSkill.package}}."
+
+skill ReviewSkill: "Review Skill"
+    purpose: "Review the draft."
+    package: "review-package"
+
+skill package AuthorPackage: "Author Package"
+    metadata:
+        name: "author-package"
+        description: "Authoring package."
+    "Authoring package."
+
+skill package ReviewPackage: "Review Package"
+    metadata:
+        name: "review-package"
+        description: "Review package."
+    "Review package."
+
+receipt DraftReceipt: "Draft Receipt"
+    draft_id: string
+    route next_route: "Next Route"
+        review: "Review the draft." -> stage ReviewStage
+
+stage DraftStage: "Draft Stage"
+    owner: AuthorSkill
+    intent: "Draft with {{skill:ReviewSkill.purpose}} nearby."
+    durable_target: "Draft receipt."
+    durable_evidence: "Draft receipt."
+    advance_condition: "Draft receipt lands."
+    risk_guarded: "Do not publish the draft before review."
+    emits: DraftReceipt
+
+stage ReviewStage: "Review Stage"
+    owner: ReviewSkill
+    inputs:
+        draft: DraftReceipt
+    intent: "Review the draft."
+    durable_target: "Review notes."
+    durable_evidence: "Review notes."
+    advance_condition: "Review notes land."
+    risk_guarded: "Check that review notes name the draft."
+
+skill_flow AuthorFlow: "Author Flow"
+    intent: "Run {{skill:AuthorSkill}} with {{skill:ReviewSkill}}."
+    start: DraftStage
+    edge DraftStage -> ReviewStage:
+        why: "The draft moves to {{skill:ReviewSkill}}."
+
+skill_graph ControllerGraph: "Controller Graph"
+    purpose: "Graph for {{skill:AuthorSkill}}."
+    roots:
+        flow AuthorFlow
+    policy:
+        require checked_skill_mentions
+        require relation_reason
+        allow unbound_edges
+        warn edge_route_binding_missing
+    views:
+        graph_markdown: "references/controller-graph.md"
+        receipt_schema_dir: "references/receipt-schemas"

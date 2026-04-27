@@ -1,0 +1,111 @@
+{
+  "contract_version": 1,
+  "package": {
+    "name": "controller-package",
+    "title": "Controller Package"
+  },
+  "host_contract": {
+    "flow_receipt": {
+      "family": "receipt",
+      "title": "Stage Receipt",
+      "receipt": "StageReceipt",
+      "fields": {
+        "stage": {
+          "type": "string",
+          "kind": "builtin"
+        },
+        "status": {
+          "type": "StageStatus",
+          "kind": "enum"
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "status"
+        ]
+      }
+    },
+    "plan_receipt": {
+      "family": "receipt",
+      "title": "Lesson Plan Receipt",
+      "receipt": "LessonPlanReceipt",
+      "fields": {
+        "stage": {
+          "type": "string",
+          "kind": "builtin"
+        },
+        "status": {
+          "type": "StageStatus",
+          "kind": "enum"
+        },
+        "fit_grid_written": {
+          "type": "boolean",
+          "kind": "builtin"
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "fit_grid_written": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stage",
+          "status",
+          "fit_grid_written"
+        ]
+      }
+    },
+    "handoff_receipt": {
+      "family": "receipt",
+      "title": "Shared Handoff Receipt",
+      "receipt": "SharedHandoffReceipt",
+      "fields": {
+        "stage": {
+          "type": "string",
+          "kind": "builtin"
+        },
+        "status": {
+          "type": "HandoffStatus",
+          "kind": "enum"
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "status"
+        ]
+      }
+    }
+  },
+  "artifacts": {}
+}

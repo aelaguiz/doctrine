@@ -1,0 +1,129 @@
+{
+  "graph": {
+    "name": "AuthoringGraph",
+    "title": "Authoring Graph",
+    "purpose": "Close the authoring graph over roots sets and recovery refs."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "F2AuthorSection"
+    }
+  ],
+  "sets": [
+    {
+      "name": "LessonSlots",
+      "title": "The slots in the section plan."
+    }
+  ],
+  "recovery": {
+    "flow_receipt": "FlowReceipt",
+    "stage_status": "StageStatus",
+    "durable_artifact_status": "DurableArtifactStatus"
+  },
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic",
+      "reason": null
+    },
+    {
+      "action": "require",
+      "key": "edge_reason",
+      "reason": null
+    },
+    {
+      "action": "require",
+      "key": "durable_checkpoint",
+      "reason": null
+    },
+    {
+      "action": "require",
+      "key": "route_targets_resolve",
+      "reason": null
+    }
+  ],
+  "skills": [
+    {
+      "name": "ControllerSkill",
+      "title": "Controller Skill",
+      "purpose": "Own the authoring stages.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  ],
+  "skill_relations": [],
+  "stages": [
+    {
+      "name": "ControllerRecoveryAudit",
+      "title": "Controller Recovery Audit",
+      "owner": "ControllerSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "F2AuthorSection"
+      ]
+    },
+    {
+      "name": "LessonPlan",
+      "title": "Lesson Plan",
+      "owner": "ControllerSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "F1AuthorLesson",
+        "F2AuthorSection"
+      ]
+    }
+  ],
+  "artifacts": [],
+  "flows": [
+    {
+      "name": "F1AuthorLesson",
+      "title": "F1 - Author One Lesson",
+      "intent": "Author one lesson from a locked slot.",
+      "start": {
+        "kind": "stage",
+        "name": "LessonPlan"
+      },
+      "approve": null
+    },
+    {
+      "name": "F2AuthorSection",
+      "title": "F2 - Author Section",
+      "intent": "Audit the section, then run one lesson per slot.",
+      "start": {
+        "kind": "stage",
+        "name": "ControllerRecoveryAudit"
+      },
+      "approve": null
+    }
+  ],
+  "receipts": [
+    {
+      "name": "FlowReceipt",
+      "title": "Flow Receipt"
+    }
+  ],
+  "packages": [],
+  "stage_edges": [
+    {
+      "from": "ControllerRecoveryAudit",
+      "to": "LessonPlan",
+      "via_flow": "F2AuthorSection",
+      "kind": "normal",
+      "why": "Audit before per-slot authoring starts."
+    }
+  ],
+  "warnings": []
+}

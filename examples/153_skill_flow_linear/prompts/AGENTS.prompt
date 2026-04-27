@@ -1,0 +1,44 @@
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioSkill
+    intent: "Plan one lesson."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Plan receipt landed."
+
+stage AuthorRender: "Author Render"
+    owner: StudioSkill
+    intent: "Render the plan."
+    durable_target: "Render brief."
+    durable_evidence: "Render write receipt."
+    advance_condition: "Render receipt landed."
+
+stage Publish: "Publish"
+    owner: StudioSkill
+    intent: "Publish the lesson."
+    durable_target: "Published lesson."
+    durable_evidence: "Publish receipt."
+    advance_condition: "Publish receipt landed."
+
+skill_flow F18PublishHandoff: "F18 - Publish Handoff"
+    intent: "Publish the lesson when authoring is done."
+    start: Publish
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Turn one stable lesson slot into a complete review-ready lesson."
+    start: LessonPlan
+    edge LessonPlan -> AuthorRender:
+        kind: review
+        why: "The author reviews the plan before downstream work depends on it."
+    edge AuthorRender -> Publish:
+        why: "Publish the rendered lesson."
+    approve: F18PublishHandoff
+
+agent FlowDemo:
+    role: "Run the linear authoring flow."

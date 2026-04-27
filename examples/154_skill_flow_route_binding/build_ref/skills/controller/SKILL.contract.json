@@ -1,0 +1,64 @@
+{
+  "contract_version": 1,
+  "package": {
+    "name": "controller-package",
+    "title": "Controller Package"
+  },
+  "host_contract": {
+    "plan_receipt": {
+      "family": "receipt",
+      "title": "Lesson Plan Receipt",
+      "receipt": "LessonPlanReceipt",
+      "fields": {
+        "plan_status": {
+          "type": "string",
+          "kind": "builtin"
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "plan_status": {
+            "type": "string"
+          },
+          "next_route": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "revise",
+              "done"
+            ]
+          }
+        },
+        "required": [
+          "plan_status",
+          "next_route"
+        ]
+      },
+      "routes": {
+        "next_route": {
+          "title": "Next Route",
+          "choices": {
+            "approve": {
+              "title": "Show review.",
+              "target_kind": "stage",
+              "target": "AuthorRender"
+            },
+            "revise": {
+              "title": "Re-plan.",
+              "target_kind": "stage",
+              "target": "LessonPlan"
+            },
+            "done": {
+              "title": "Done.",
+              "target_kind": "sentinel",
+              "target": "terminal"
+            }
+          }
+        }
+      }
+    }
+  },
+  "artifacts": {}
+}

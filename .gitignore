@@ -25,3 +25,4 @@ __pycache__/
 /repomix.config.json
 repomix*
 build
+.arch_skill/arch-epic/

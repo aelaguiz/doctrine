@@ -1,0 +1,18 @@
+skill PlaceholderSkill: "Placeholder Skill"
+    purpose: "Hold the default prompt path for this manifest."
+
+stage PlaceholderStage: "Placeholder Stage"
+    owner: PlaceholderSkill
+    intent: "Hold the default prompt path."
+    durable_target: "Placeholder target."
+    durable_evidence: "Placeholder evidence."
+    advance_condition: "Placeholder landed."
+
+skill_flow PlaceholderFlow: "Placeholder Flow"
+    intent: "Hold the default prompt path."
+    start: PlaceholderStage
+
+skill_graph PlaceholderGraph: "Placeholder Graph"
+    purpose: "Hold the default prompt path for this manifest."
+    roots:
+        flow PlaceholderFlow

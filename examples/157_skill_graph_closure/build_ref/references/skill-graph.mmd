@@ -1,0 +1,4 @@
+flowchart LR
+    stage_ControllerRecoveryAudit["Controller Recovery Audit<br/>owner: ControllerSkill"]
+    stage_LessonPlan["Lesson Plan<br/>owner: ControllerSkill"]
+    stage_ControllerRecoveryAudit -->|Audit before per-slot authoring starts.| stage_LessonPlan

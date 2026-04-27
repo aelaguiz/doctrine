@@ -1,0 +1,33 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the cycle demo."
+
+stage StageA: "Stage A"
+    owner: ControllerSkill
+    intent: "Start the first flow."
+    durable_target: "Stage A target."
+    durable_evidence: "Stage A evidence."
+    advance_condition: "Stage A landed."
+
+stage StageB: "Stage B"
+    owner: ControllerSkill
+    intent: "Start the second flow."
+    durable_target: "Stage B target."
+    durable_evidence: "Stage B evidence."
+    advance_condition: "Stage B landed."
+
+skill_flow FlowA: "Flow A"
+    intent: "Call FlowB after StageA."
+    start: StageA
+    edge StageA -> FlowB:
+        why: "The second flow runs after StageA."
+
+skill_flow FlowB: "Flow B"
+    intent: "Call FlowA after StageB."
+    start: StageB
+    edge StageB -> FlowA:
+        why: "The first flow runs again after StageB."
+
+skill_graph CycleGraph: "Cycle Graph"
+    purpose: "Fail on an expanded nested flow cycle."
+    roots:
+        flow FlowA

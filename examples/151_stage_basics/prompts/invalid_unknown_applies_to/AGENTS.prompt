@@ -1,0 +1,24 @@
+skill StudioLessonPlan: "Studio Lesson Plan"
+    purpose: "Plan one lesson from the current section."
+    package: "studio-lesson-plan"
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioLessonPlan
+    applies_to:
+        MissingFlow
+    inputs:
+        flow_receipt: FlowReceipt
+    emits: LessonPlanReceipt
+    intent: "Turn the section strategy into a lesson plan."
+    durable_target: "Lesson plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Author approval plus write receipt."
+
+agent StagePlanDemo:
+    role: "Plan stage demo."

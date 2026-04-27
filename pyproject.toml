@@ -221,3 +221,54 @@ output_dir = "examples/149_external_skill_source_target/consumer/build"
 source_root = "examples/149_external_skill_source_target/upstream"
 source_id = "examples.external-source-skill"
 lock_file = "examples/149_external_skill_source_target/consumer/doctrine.skill.lock"
+
+[[tool.doctrine.emit.targets]]
+name = "example_150_receipt_top_level_decl"
+entrypoint = "examples/150_receipt_top_level_decl/prompts/skills/controller/SKILL.prompt"
+output_dir = "examples/150_receipt_top_level_decl/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_152_receipt_stage_route"
+entrypoint = "examples/152_receipt_stage_route/prompts/skills/controller/SKILL.prompt"
+output_dir = "examples/152_receipt_stage_route/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_154_skill_flow_route_binding"
+entrypoint = "examples/154_skill_flow_route_binding/prompts/skills/controller/SKILL.prompt"
+output_dir = "examples/154_skill_flow_route_binding/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_157_skill_graph_closure"
+entrypoint = "examples/157_skill_graph_closure/prompts/AGENTS.prompt"
+graph = "AuthoringGraph"
+output_dir = "examples/157_skill_graph_closure/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_158_skill_graph_emit"
+entrypoint = "examples/158_skill_graph_emit/prompts/skills/controller/SKILL.prompt"
+graph = "ControllerGraph"
+output_dir = "examples/158_skill_graph_emit/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_160_skill_graph_relations_mentions"
+entrypoint = "examples/160_skill_graph_relations_mentions/prompts/graphs/controller/GRAPH.prompt"
+graph = "ControllerGraph"
+output_dir = "examples/160_skill_graph_relations_mentions/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_161_skill_graph_policy_allowances"
+entrypoint = "examples/161_skill_graph_policy_allowances/prompts/AGENTS.prompt"
+graph = "LoopGraph"
+output_dir = "examples/161_skill_graph_policy_allowances/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_163_skill_graph_authoring_metadata"
+entrypoint = "examples/163_skill_graph_authoring_metadata/prompts/AGENTS.prompt"
+graph = "AuthoringMetadataGraph"
+output_dir = "examples/163_skill_graph_authoring_metadata/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_164_skill_graph_artifacts"
+entrypoint = "examples/164_skill_graph_artifacts/prompts/AGENTS.prompt"
+graph = "ArtifactGraph"
+output_dir = "examples/164_skill_graph_artifacts/build"

@@ -1,0 +1,14 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the authoring stages."
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan one lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_graph BrokenGraph: "Broken Graph"
+    purpose: "Fail on an unknown root."
+    roots:
+        flow MissingFlow

@@ -1,0 +1,16 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "package contract emits routes metadata and json_schema for a receipt-by-ref slot covering stage, flow, and sentinel targets"
+status = "active"
+kind = "build_contract"
+build_target = "example_152_receipt_stage_route"
+
+[[cases]]
+name = "receipt route target pointing at a missing stage fails with E560"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_stage_target/skills/controller/SKILL.prompt"
+exception_type = "CompileError"
+error_code = "E560"

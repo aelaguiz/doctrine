@@ -1,0 +1,8 @@
+skill CycleSkill: "Cycle Skill"
+    purpose: "Skill package references a receipt with a cyclic parent chain."
+    package: "cycle-package"
+
+agent ControllerDemo:
+    role: "Run the package so E544 can fire."
+    skills: "Skills"
+        skill controller: CycleSkill

@@ -1,0 +1,4 @@
+flowchart LR
+    stage_AuthorReview["Author Review<br/>owner: ControllerSkill<br/>lane: StageLane.review"]
+    stage_LessonPlan["Lesson Plan<br/>owner: ControllerSkill<br/>lane: StageLane.pipeline"]
+    stage_LessonPlan -->|The review stage must follow the plan receipt route.| stage_AuthorReview

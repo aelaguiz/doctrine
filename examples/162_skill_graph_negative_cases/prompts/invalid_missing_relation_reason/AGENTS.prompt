@@ -1,0 +1,22 @@
+skill OwnerSkill: "Owner Skill"
+    purpose: "Own the stage."
+    relations:
+        requires HelperSkill:
+            why: ""
+
+skill HelperSkill: "Helper Skill"
+    purpose: "Help the owner."
+
+stage StartStage: "Start Stage"
+    owner: OwnerSkill
+    intent: "Start."
+    durable_target: "Start receipt."
+    durable_evidence: "Start receipt."
+    advance_condition: "Start receipt lands."
+
+skill_graph BrokenGraph: "Broken Graph"
+    purpose: "Relation reasons are required."
+    roots:
+        stage StartStage
+    policy:
+        require relation_reason

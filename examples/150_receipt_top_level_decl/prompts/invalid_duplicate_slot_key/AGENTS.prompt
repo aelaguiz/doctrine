@@ -1,0 +1,8 @@
+skill DuplicateSlotSkill: "Duplicate Slot Skill"
+    purpose: "Skill package declares the same host slot key twice."
+    package: "duplicate-slot-package"
+
+agent ControllerDemo:
+    role: "Run the package so E535 can fire."
+    skills: "Skills"
+        skill controller: DuplicateSlotSkill

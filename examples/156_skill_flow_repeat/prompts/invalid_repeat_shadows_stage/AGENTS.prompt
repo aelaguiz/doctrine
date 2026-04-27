@@ -1,0 +1,29 @@
+enum LessonSlots: "Lesson Slots"
+    intro: "Intro slot"
+    core: "Core slot"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage ControllerRecoveryAudit: "Controller Recovery Audit"
+    owner: StudioSkill
+    intent: "Audit recovery state."
+    durable_target: "Audit brief."
+    durable_evidence: "Audit receipt."
+    advance_condition: "Audit receipt landed."
+
+skill_flow F1: "F1"
+    intent: "Inner flow."
+    start: ControllerRecoveryAudit
+
+skill_flow F2: "F2"
+    intent: "Repeat name shadows a top-level stage."
+    start: ControllerRecoveryAudit
+    repeat ControllerRecoveryAudit: F1
+        over: LessonSlots
+        order: serial
+        why: "Repeat name collides with the top-level stage."
+
+agent FlowDemo:
+    role: "Run the shadowing flow."

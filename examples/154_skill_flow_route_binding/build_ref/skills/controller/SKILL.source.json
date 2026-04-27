@@ -1,0 +1,37 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ControllerPackage",
+    "title": "Controller Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "controller-package",
+    "root": "examples/154_skill_flow_route_binding/prompts/skills/controller",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "23825befef633208f6bd29cedadd29daa579ff1374f76f0b4478c343f061001c"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.contract.json",
+      "kind": "host_contract",
+      "sha256": "1883187020a99068e3e74e87557be493d0e28de4441206820b3daf54a9e2467b"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "a244e10340732d897d543eebf51d5720357384970f459b51581ff44fc8280b4b"
+    }
+  ],
+  "source_tree_sha256": "1a1dab6d0fc135fb2ccfa546db8bead28c991caca1255ef36903d8aaed494579",
+  "output_tree_sha256": "85c11b307d1a0e8fac76ef5e33ae70a976ec8b9f17aa1437c5795a6f44008f9e"
+}

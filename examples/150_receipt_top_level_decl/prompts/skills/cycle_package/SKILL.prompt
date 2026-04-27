@@ -1,0 +1,12 @@
+receipt CycleA[CycleB]: "Cycle A"
+    inherit field
+
+receipt CycleB[CycleA]: "Cycle B"
+    inherit field
+    field: string
+
+skill package CyclePackage: "Cycle Package"
+    metadata:
+        name: "cycle-package"
+    host_contract:
+        receipt slot: CycleA

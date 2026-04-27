@@ -21,9 +21,11 @@ from doctrine._model.io import (
     SkillPackageDecl,
 )
 from doctrine._model.readable import DocumentDecl, TableDecl
+from doctrine._model.receipts import ReceiptDecl
 from doctrine._model.review import ReviewDecl
 from doctrine._model.rule import RuleDecl
 from doctrine._model.schema import SchemaDecl
+from doctrine._model.skill_graph import ArtifactDecl, SkillFlowDecl, SkillGraphDecl, StageDecl
 from doctrine._model.workflow import (
     GroundingDecl,
     RouteOnlyDecl,
@@ -56,6 +58,11 @@ Declaration: _TypeAlias = (
     | OutputSchemaDecl
     | SkillDecl
     | SkillPackageDecl
+    | ArtifactDecl
+    | ReceiptDecl
+    | StageDecl
+    | SkillFlowDecl
+    | SkillGraphDecl
     | EnumDecl
     | RuleDecl
 )

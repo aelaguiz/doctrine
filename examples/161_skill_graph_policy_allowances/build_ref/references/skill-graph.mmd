@@ -1,0 +1,5 @@
+flowchart LR
+    stage_DraftStage["Draft Stage<br/>owner: ControllerSkill"]
+    stage_ReviewStage["Review Stage<br/>owner: ControllerSkill"]
+    stage_ReviewStage -->|The reviewer can send the work back to drafting.| stage_DraftStage
+    stage_DraftStage -->|Drafting enters the review loop.| stage_ReviewStage

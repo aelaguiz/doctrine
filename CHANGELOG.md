@@ -8,7 +8,171 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-- Next release planning starts after this cut.
+### Added
+- Top-level `receipt Name[Parent]?: "Title"` declarations. Receipts list
+  required typed fields with builtin scalar (`string`, `integer`, `number`,
+  `boolean`), declared `enum`, `table`, `schema`, or another declared
+  `receipt`. `list[Type]` marks a repeating field. Receipts use the
+  explicit `[Parent]` inheritance model shared with `output`, `workflow`,
+  and `document`: inherited fields must be accounted for with
+  `inherit <key>` or `override <key>: <Type>`.
+- Skill package `host_contract:` may now write `receipt key: <ReceiptRef>`
+  to point a slot at a top-level `receipt` declaration. The inline
+  `receipt key: "Title" + fields` form still works.
+- `SKILL.contract.json` records receipt-by-reference slots with the slot
+  key, the canonical receipt name, and a lowered `fields` map keyed by
+  field name. Each lowered field carries its `kind` (`builtin`, `enum`,
+  `table`, `schema`, or `receipt`).
+- New compile errors: `E544` (invalid receipt declaration: empty body,
+  duplicate field key, missing or extra inherit/override accounting,
+  invalid field type, inheritance cycle, or receipt-of-receipt cycle) and
+  `E545` (receipt-by-reference slot does not resolve to a top-level
+  receipt). Existing `E535` now also fires when `host_contract:` declares
+  the same slot key twice.
+- New example `150_receipt_top_level_decl` covers a reusable top-level
+  receipt with inheritance plus a package that points three receipt slots
+  at top-level receipts by name, including one imported through an alias.
+- Top-level `stage Name: "Title"` declarations bind a graph node to an
+  owner skill, optional `lane: EnumName.member`, optional `supports:`
+  block, optional `applies_to:` skill-flow list, optional `inputs:` map,
+  optional `emits: ReceiptRef`, required `intent:` and
+  `advance_condition:`, optional `id:`, `risk_guarded:`, and
+  `forbidden_outputs:`, plus a closed `checkpoint:` value set
+  (`durable`, `review_only`, `diagnostic`, `none`; default `durable`).
+  Durable stages must declare `durable_target:` and `durable_evidence:`.
+  Ordinary stage validation checks that each `applies_to:` ref resolves to a
+  top-level `skill_flow` and that the resolved flow does not repeat. Graph
+  compile also checks that reached stages list every reaching flow.
+- Top-level `skill_flow Name: "Title"` declarations register graph flow names
+  so receipt route targets can resolve `flow FlowName`. The unreleased graph
+  slice now also ships the full `skill_flow` body described below.
+- Top-level receipts may declare `route <key>: "Title"` fields whose
+  choices target `stage <Name>`, `flow <Name>`, or the closed sentinel
+  set `human`, `external`, or `terminal`. Route fields lower into a
+  deterministic per-receipt `routes:` metadata map.
+- `SKILL.contract.json` adds a `routes:` block on each receipt-by-ref
+  slot whose receipt declares route fields. Each route entry carries
+  `title` plus `choices` keyed by choice name; each choice records
+  `title`, `target_kind` (`stage`, `flow`, or `sentinel`), and `target`
+  (canonical declaration name or sentinel keyword). Receipt-by-ref slots
+  also add a conservative `json_schema` object. It includes the receipt
+  data fields plus each route key as a required string enum property over
+  the authored choice keys.
+- New compile errors: `E546` (stage owner is not a declared skill),
+  `E547` (stage support is not a declared skill), `E548` (stage input
+  type is invalid), `E549` (stage emit type is invalid), `E559`
+  (invalid stage declaration: missing required field, duplicate
+  scalar/support/input, support repeats owner, bad `applies_to:` block or
+  ref, bad lane member ref, bad checkpoint value, or durable checkpoint
+  missing target/evidence), and `E560` (receipt route target stage or
+  flow does not resolve).
+- New examples `151_stage_basics` and `152_receipt_stage_route` cover
+  the typed-fields stage surface, the five receipt route target forms,
+  and one focused negative case for each new error code.
+- Top-level `skill_flow Name: "Title"` now supports the full flow-local
+  body. The optional `start: NodeRef` and `approve: SkillFlowRef` lines
+  bind the entry node and the approve handoff. `edge Source -> Target:`
+  blocks accept `route: <ReceiptRef>.<route_field>.<choice>`, optional
+  `kind:` from the closed `normal`/`review`/`repair`/`recovery`/
+  `approval`/`handoff` set, optional `when: <EnumName>.<member>`, and a
+  required `why:` reason. A `repeat <Name>: <FlowRef>` block declares a
+  repeat node with required `over:`, `order:` (`serial`, `parallel`, or
+  `unspecified`), and `why:`. `variation <name>: "Title"` blocks may
+  carry `safe_when: <EnumName>.<member>`. `unsafe <name>: "Title"` and
+  `changed_workflow:` (with `allow provisional_flow` and closed `require`
+  keys `nearest_flow`, `difference`, `safety_rationale`) lower into
+  compiler-owned facts only.
+- The compiler resolves edge endpoints against top-level `stage`,
+  top-level `skill_flow`, and local repeat names; checks the local DAG;
+  binds edges to typed receipt route choices and enforces the strict
+  default that a routed source stage must bind the exact route choice on
+  every edge whose target the receipt route choice names; enforces local
+  enum-branch coverage from one source; resolves `repeat over:` against
+  top-level `enum`, `table`, or `schema`; and checks repeat-name
+  shadowing and uniqueness.
+- New compile error: `E561` (invalid skill flow). Existing `E551` and
+  `E552` keep their emit-target source-id/root meanings. `E560` keeps
+  its receipt route target meaning.
+- New examples `153_skill_flow_linear`, `154_skill_flow_route_binding`,
+  `155_skill_flow_branch`, and `156_skill_flow_repeat` cover the
+  flow-local DAG, route binding, branches plus variations plus
+  changed-workflow facts, and repeats. Each manifest includes one
+  positive case plus focused `E561` negatives.
+- Top-level `skill_graph Name: "Title"` now closes one graph over root
+  `stage` and `skill_flow` declarations. The body supports required
+  `purpose:`, required `roots:`, optional `sets:`, optional `recovery:`,
+  optional `policy:`, and optional `views:`.
+- Doctrine now resolves one canonical graph closure object. It closes roots,
+  nested flows, repeat targets, reached stages, owner and support skills,
+  receipts, route bindings, package ids, recovery refs, and expanded
+  stage-edge DAG facts. Repeats may late-bind `over:` to graph-local
+  `sets:` on the graph compile path while ordinary agent and skill-package
+  compiles keep the older strict local flow rule.
+- Added `python -m doctrine.emit_skill_graph` and
+  `python -m doctrine.verify_skill_graph`. Graph emit writes
+  `SKILL_GRAPH.contract.json`, `SKILL_GRAPH.source.json`,
+  `references/skill-graph.json`, graph Markdown views, `.d2`, `.svg`, and
+  Mermaid from one resolved closure. Graph verify checks the emitted tree,
+  graph receipt, and linked package receipts when they were recorded.
+- New errors: `E562` (invalid skill graph), `E563` (invalid skill graph
+  target), `E564` (invalid skill graph view path), and `E565` (skill graph
+  emit failed).
+- New examples `157_skill_graph_closure`, `158_skill_graph_emit`, and
+  `159_skill_graph_policy` cover graph closure, graph emit from both
+  `AGENTS.prompt` and `SKILL.prompt`, and graph-owned policy failures.
+- Top-level `skill` declarations now accept a checked `relations:` block.
+  Relation targets must resolve to top-level skills. Relation kinds are
+  closed. `require relation_reason` fails missing `why:` lines with `E566`,
+  while `warn relation_without_reason` emits `W210` when the strict policy is
+  off. Graph closure and graph JSON include reached skill relation facts.
+- Skill graphs now support checked `{{skill:Name}}`,
+  `{{skill:Name.package}}`, and `{{skill:Name.purpose}}` mentions in
+  graph-owned text. `require checked_skill_mentions` fails unknown mentions
+  with `E562`; `warn checked_skill_mention_unknown` emits `W204` when strict
+  checked mentions are off.
+- Graph warning policies now emit real graph warnings `W201` through `W211`
+  into graph contracts and graph Markdown. The warning set covers orphan
+  stages, orphan skills, shared stage owners, unknown checked skill mentions,
+  incomplete branch coverage, receipts without consumers, flows without
+  approve routes, stages without risk guards, missing relaxed route bindings,
+  missing relation reasons, and manual-only/default-flow conflicts.
+- Graph policy relaxers now include `allow unbound_edges`,
+  `dag allow_cycle "Reason"`, and `warn branch_coverage_incomplete`. Local
+  `skill_flow` compile stays strict by default; the relaxed behavior is graph
+  policy owned.
+- `GRAPH.prompt` is now a supported graph entrypoint for configured targets,
+  direct `emit_skill_graph`, graph verification, and manifest-backed corpus
+  proof.
+- Graph emit now supports `receipt_schema_dir`, `artifact_inventory`, and
+  view-scoped graph output. `SKILL_GRAPH.source.json` records emitted receipt
+  schemas, and `verify_skill_graph` checks them.
+- Top-level `artifact` declarations now model durable graph targets. Stages
+  can own artifacts with `artifacts:` and later stages can read them through
+  typed `inputs:`.
+- Graph contracts and graph views now carry additional authoring metadata:
+  skill `category`, `visibility`, `manual_only`, `default_flow_member`, and
+  `aliases`; stage `entry`, `repair_routes`, and `waiver_policy`; and
+  graph-path repeat targets backed by graph sets or dotted graph paths.
+- New examples `160_skill_graph_relations_mentions`,
+  `161_skill_graph_policy_allowances`, `162_skill_graph_negative_cases`,
+  `163_skill_graph_authoring_metadata`, and `164_skill_graph_artifacts` cover
+  the restored phase 5 graph language and emit surface.
+- Updated public graph docs, `docs/LANGUAGE_REFERENCE.md`,
+  `docs/VERSIONING.md`, `docs/README.md`, `docs/WARNINGS.md`,
+  `docs/COMPILER_ERRORS.md`, `examples/README.md`, and the shipped
+  `doctrine-learn` skill so release truth matches examples `150` through
+  `164`.
+
+### Verification
+
+- Phase 5 implementation proof on 2026-04-26: `make verify-examples`
+  passed 486/486 manifest cases, `make verify-package` passed, and
+  `uv run --locked python -m unittest discover tests` passed 581/581 tests.
+- Phase 5 repair proof on 2026-04-26: `make verify-examples` passed,
+  `make verify-package` passed, `uv run --locked python -m unittest discover
+  tests` passed 581/581 tests, and
+  `git -C ../lessons_studio status --short` returned no output after the
+  public-doc repair.
 
 ## v5.1.0 - 2026-04-24
 

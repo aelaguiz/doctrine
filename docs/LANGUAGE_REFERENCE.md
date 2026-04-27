@@ -35,25 +35,29 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `review`, `review_family`, `abstract review`
 - `skill package`
 - `skill`, `skills`
+- `receipt`, `artifact`, `stage`, `skill_flow`, `skill_graph`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `output schema`
 - `enum`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
-skill-package entrypoint is `SKILL.prompt`. `emit_docs` compiles concrete
-agents from the agent entrypoints into runtime Markdown artifacts whose
-basename matches the entrypoint stem. It also emits imported
-directory-backed runtime packages when a selected `AGENTS.prompt` uses them as
-runtime homes. Structured final outputs also emit the exact lowered schema at
-`schemas/<output-slug>.schema.json` beside that Markdown file. When a turn
-also needs final-response, review, route, or resolved previous-turn IO
-metadata, `emit_docs` writes `final_output.contract.json` beside that Markdown
-file. `emit_skill`
-compiles one top-level `skill package` from `SKILL.prompt` into `SKILL.md`
-plus bundled source-root files. Doctrine does that work through shared
-compilation and indexing so module loading happens once per entrypoint and
-batch emit or verification surfaces can fan out safely while preserving
-deterministic output order.
+skill-package entrypoint is `SKILL.prompt`. The normal standalone graph
+entrypoint is `GRAPH.prompt`. `emit_docs` compiles concrete agents from the
+agent entrypoints into runtime Markdown artifacts whose basename matches the
+entrypoint stem. It also emits imported directory-backed runtime packages when
+a selected `AGENTS.prompt` uses them as runtime homes. Structured final
+outputs also emit the exact lowered schema at
+`schemas/<output-slug>.schema.json` beside that Markdown file. When a turn also
+needs final-response, review, route, or resolved previous-turn IO metadata,
+`emit_docs` writes `final_output.contract.json` beside that Markdown file.
+`emit_skill` compiles one top-level `skill package` from `SKILL.prompt` into
+`SKILL.md` plus bundled source-root files. `emit_skill_graph` compiles one
+top-level `skill_graph` from a supported entrypoint such as `AGENTS.prompt`,
+`SKILL.prompt`, or `GRAPH.prompt` into checked graph contracts, source
+receipts, Markdown views, graph JSON, diagrams, and receipt schemas. Doctrine
+does that work through shared compilation and indexing so module loading
+happens once per entrypoint and batch emit or verification surfaces can fan out
+safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
@@ -592,10 +596,26 @@ skill RepoSearch: "repo-search"
     purpose: "Find the right repo surface for the current job."
 ```
 
-The shipped skill surface has two layers:
+Top-level skills may also declare checked graph relations:
+
+```prompt
+skill AuthorSkill: "Author Skill"
+    purpose: "Own the first draft."
+    package: "author-package"
+    relations:
+        requires ReviewSkill:
+            why: "Review uses {{skill:ReviewSkill.package}}."
+
+skill ReviewSkill: "Review Skill"
+    purpose: "Review the draft."
+    package: "review-package"
+```
+
+The shipped skill surface has three connected layers:
 
 - `skill`: the reusable capability object and its typed metadata
 - `skills`: a reusable block of role-specific skill relationships
+- `relations:` on `skill`: checked skill-to-skill graph edges
 
 Skill relationships are authored where they are used:
 
@@ -607,6 +627,8 @@ Skill relationships are authored where they are used:
   elsewhere
 - when Doctrine should own a real skill-package filesystem tree instead of an
   inline reusable capability, use `skill package` in `SKILL.prompt`
+- graph-level skill relations live on the top-level `skill`, not on each
+  role-local `skills` use site
 
 Rendered Markdown keeps each inline skill compact:
 
@@ -616,6 +638,23 @@ Rendered Markdown keeps each inline skill compact:
   labeled blocks instead of deeper nested headings
 - readable blocks attached to the skill reference body, such as `callout`,
   still render as ordinary readable blocks
+
+Skill relation rules:
+
+- Relation targets must resolve to top-level `skill` declarations.
+- Relation kinds are closed. The shipped kinds are `requires`,
+  `delegates_to`, `wraps`, `audits`, `extends`, `supports`, `composes`,
+  `teaches`, `repairs`, `baseline_for`, `blocks`, `supersedes`, `related`,
+  `owns_surface`, `reads_surface`, and `writes_surface`.
+- A graph with `require relation_reason` fails with `E566` when a relation
+  omits `why:`.
+- A graph with `warn relation_without_reason` emits `W210` for a relation that
+  omits `why:` when the strict policy is off.
+- Graph closure includes relation target skills for reached skills. Graph JSON
+  and graph contracts carry the resolved relation facts.
+- Graph skill inventories carry package ids and optional authored metadata
+  such as `category`, `visibility`, `manual_only`, `default_flow_member`, and
+  `aliases` when those fields are present.
 
 When a field is really a list, author a titleless `bullets` or `checklist`
 block inside that field so the emitted Markdown stays easy to scan.
@@ -849,6 +888,470 @@ Rules:
 - When a package has host-binding truth, `SKILL.contract.json` records the
   package host contract and the host paths used by each emitted prompt-authored
   artifact.
+- Two `host_contract:` slots may not share the same key. Duplicate slot
+  keys fail with `E535`.
+
+#### Top-Level Receipt Declarations
+
+Receipts can also live at the top level so many packages or graph stages
+can share the same typed handoff fact. Top-level receipts use the same
+explicit `[Parent]` inheritance model as `output`, `workflow`, and
+`document`.
+
+```prompt
+enum StageStatus: "Stage Status"
+    not_started: "Not Started"
+    approved: "Approved"
+
+receipt StageReceipt: "Stage Receipt"
+    stage: string
+    status: StageStatus
+
+receipt LessonPlanReceipt[StageReceipt]: "Lesson Plan Receipt"
+    inherit {stage, status}
+    fit_grid_written: boolean
+```
+
+Rules:
+
+- All fields are required. Model an absent value with an enum member or
+  point at a nullable schema instead.
+- Field types are closed: builtin scalars (`string`, `integer`, `number`,
+  `boolean`), declared `enum`, `table`, `schema`, or another declared
+  `receipt`. `list[Type]` marks a repeating field.
+- Inherited fields must be accounted for with `inherit <key>` or
+  `override <key>: <Type>`. Redeclaring an inherited field without one of
+  those keywords, missing accounting for an inherited field, overriding
+  an undefined parent field, or repeating a field key fails with `E544`.
+- Receipt inheritance cycles and receipt-of-receipt field cycles fail
+  with `E544`.
+
+A skill package can point a host contract slot at a top-level receipt by
+reference. The slot keeps its package-local key while the receipt fields
+come from the shared declaration.
+
+```prompt
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+    host_contract:
+        receipt flow_receipt: StageReceipt
+        receipt plan_receipt: LessonPlanReceipt
+```
+
+Rules:
+
+- The receipt name after the colon must resolve to a top-level `receipt`
+  declaration in scope. Unresolved refs fail with `E545`.
+- The slot title and field map come from the resolved receipt; do not
+  restate them inside the package.
+- The inline `receipt key: "Title"` form with a body still works, side by
+  side with by-reference slots.
+- `SKILL.contract.json` records each by-reference slot with the slot key,
+  the canonical receipt name under `receipt`, the lowered `fields` map,
+  and a `json_schema` object so consumers do not need to re-resolve the
+  source declaration. Each field carries its `kind` (`builtin`, `enum`,
+  `table`, `schema`, or `receipt`). When the resolved receipt also
+  declares route fields, the slot adds a `routes` map keyed by route name,
+  and the route keys also appear in `json_schema` as required string enum
+  properties over the authored choice keys.
+
+#### Top-Level Artifact Declarations
+
+An `artifact` declaration names one durable graph target. It is a symbol that
+stages can write or read. Doctrine checks ownership and typed use, but it does
+not inspect live files.
+
+```prompt
+document PacketPathFamily: "Packet Path Family"
+    "Section packet paths."
+
+artifact SectionPacket: "Section Packet"
+    owner: ProducePacket
+    path_family: PacketPathFamily
+    section: "Template"
+    anchor: "Section Packet"
+    intent: "Carry checked section facts."
+```
+
+Rules:
+
+- `owner:` is required and must resolve to a top-level `stage`.
+- `path_family:` is optional. When present, it must resolve to a supported
+  top-level type such as `document`, `schema`, `table`, `enum`, `receipt`,
+  `input`, `output`, or `output target`.
+- An artifact must declare at least one location hint: `path:`, `section:`, or
+  `anchor:`.
+- Only the owner stage may list that artifact under `artifacts:`.
+- Later stages may read the artifact by listing it in `inputs:`.
+- Reached artifact anchors must be unique inside one graph. Duplicate anchors
+  fail with `E562`.
+
+#### Top-Level Stage Declarations
+
+A `stage` declaration names one graph node and binds an owner skill to
+typed inputs, optional durable artifacts, an optional emitted receipt, an
+advance condition, and a durable checkpoint rule. Stages compose with
+`skill_flow` and `skill_graph` declarations in the shipped graph surface.
+
+```prompt
+enum StageLane: "Stage Lane"
+    pipeline: "Pipeline Stage"
+    primitive: "Primitive"
+
+skill StudioLessonPlan: "Studio Lesson Plan"
+    purpose: "Plan one lesson."
+    package: "studio-lesson-plan"
+
+skill CatalogOps: "Catalog Ops"
+    purpose: "Write exact catalog facts."
+    package: "catalog-ops"
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+
+artifact LessonPlanPacket: "Lesson Plan Packet"
+    owner: LessonPlan
+    section: "Brief"
+    intent: "Carry the checked lesson plan packet."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson end-to-end."
+
+stage LessonPlan: "Lesson Plan"
+    id: "lesson_plan"
+    owner: StudioLessonPlan
+    lane: StageLane.pipeline
+    supports:
+        CatalogOps
+    applies_to:
+        F1AuthorLesson
+    inputs:
+        flow_receipt: FlowReceipt
+    artifacts:
+        LessonPlanPacket
+    emits: LessonPlanReceipt
+    intent: "Turn the section strategy into a lesson plan."
+    entry: "Start after the graph inputs are current."
+    durable_target: "Lesson plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Author approval plus write receipt."
+    risk_guarded: "Reps chosen before pool exists."
+    repair_routes: "Route stale input back to preparation."
+    waiver_policy: "Only a human owner can waive stale input."
+    forbidden_outputs:
+        "rep selection"
+        "correct action columns"
+```
+
+Rules:
+
+- `owner:` is required and must resolve to a top-level `skill`. Unresolved
+  refs fail with `E546`.
+- `intent:` and `advance_condition:` are required. Missing required fields
+  fail with `E559`.
+- `id:` is optional; it gives the public stage id used in rendered docs.
+- `lane:` is optional. When present it must resolve to an enum member
+  (`EnumName.member`); unknown enums or members fail with `E559`.
+- `supports:` lists top-level skill refs. Each ref must resolve
+  (`E547`). Duplicates and entries that repeat the owner fail with
+  `E559`.
+- `applies_to:` is optional. Each ref must resolve to a top-level
+  `skill_flow`. Duplicate resolved flows fail with `E559`. On the graph path,
+  a reached stage that declares `applies_to:` must list every reaching flow, or
+  graph compile fails with `E562`.
+- `inputs:` map keys must be unique (`E559`). Each value must resolve to
+  a top-level `receipt`, `artifact`, `document`, `schema`, or `table` (`E548`).
+- `artifacts:` is optional. Each value must resolve to a top-level `artifact`
+  declaration owned by this stage. Other stages read artifacts through
+  `inputs:`.
+- `emits:` must resolve to a top-level `receipt` (`E549`).
+- `entry:`, `repair_routes:`, and `waiver_policy:` are optional text fields
+  used by graph contracts and stage-contract views.
+- `forbidden_outputs:` is an optional list of strings.
+- `checkpoint:` is optional. The closed value set is `durable`,
+  `review_only`, `diagnostic`, and `none`; the default is `durable`.
+  Other values fail with `E559`.
+- A stage with `checkpoint: durable` must declare `durable_target:` and
+  `durable_evidence:` (`E559`).
+
+#### Top-Level `skill_flow` Declarations
+
+A `skill_flow` is a typed DAG of stages and nested flows. The body owns
+`intent:`, `start:`, `approve:`, `edge` blocks, `repeat` blocks,
+`variation`, `unsafe`, and `changed_workflow:`. Graph closure across
+flows, graph policies, and graph emit are now owned by top-level
+`skill_graph`.
+
+```prompt
+enum ExactMoveProofNeeded: "Exact Move Proof Needed"
+    yes: "Yes"
+    no: "No"
+
+skill_flow F18PublishHandoff: "F18 - Publish Handoff"
+    intent: "Publish the lesson when authoring is done."
+    start: Publish
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Turn one stable lesson slot into a complete review-ready lesson."
+    start: LessonPlan
+    edge LessonPlan -> AuthorRender:
+        route: LessonPlanReceipt.next_route.approve
+        kind: review
+        why: "The author reviews the plan before downstream work depends on it."
+    edge AuthorRender -> SituationSynthesis:
+        why: "Concrete situations must be built from approved plan truth."
+    edge SituationSynthesis -> ExactMoveProof:
+        when: ExactMoveProofNeeded.yes
+        why: "Exact action claims need solver proof before build."
+    edge SituationSynthesis -> PlayableMaterialization:
+        when: ExactMoveProofNeeded.no
+        why: "No exact-action proof is needed for this lesson contract."
+    edge ExactMoveProof -> PlayableMaterialization:
+        why: "The proof must land before the manifest relies on it."
+    variation skip_exact_move_proof: "Skip exact-move proof for family recognition lessons."
+        safe_when: ExactMoveProofNeeded.no
+    unsafe concrete_hands_in_plan: "Pick concrete hands during planning."
+    changed_workflow:
+        allow provisional_flow
+        require nearest_flow
+        require difference
+        require safety_rationale
+    approve: F18PublishHandoff
+```
+
+Rules:
+
+- `intent:` is optional. When present it captures one short statement of
+  flow purpose.
+- `start:` is optional. When present it must resolve to a top-level
+  `stage`, top-level `skill_flow`, or a local `repeat` name. Unresolved
+  refs fail with `E561`.
+- `approve:` is optional and must resolve to a top-level `skill_flow`
+  declaration. Unresolved refs fail with `E561`.
+- Each `edge Source -> Target:` block requires a `why:` reason and resolves
+  the source and target against top-level `stage`, top-level `skill_flow`,
+  or local repeat names. Direct self-edges (same source and target) and
+  edges that close a local cycle fail with `E561`.
+- Edge `kind:` is optional. The closed v1 set is `normal`, `review`,
+  `repair`, `recovery`, `approval`, and `handoff`. The default is
+  `normal`. Other values fail with `E561`.
+- Edge `route:` accepts the form `<ReceiptRef>.<route_field>.<choice>`.
+  The receipt must resolve to a top-level `receipt`, the route field must
+  exist on that receipt, the choice must exist on that route field, and
+  the choice target must match the edge target. Otherwise `E561`.
+- Strict default: if a source stage emits a routed receipt and a route
+  choice on that receipt targets the edge target, the edge must bind that
+  exact route choice with `route:`. A missing required binding fails with
+  `E561` on ordinary flow compile. On the graph compile path, `allow
+  unbound_edges` may relax this case; if `warn edge_route_binding_missing` is
+  also present, Doctrine emits `W209`.
+- Edge `when:` accepts declared enum members in the form
+  `EnumName.member`. Unresolved enums or members fail with `E561`.
+- Branch coverage: if any outgoing edge from one source uses `when:`,
+  every outgoing edge from that source must use `when:` on the same enum
+  family and must cover each member exactly once. Mixed enum families,
+  duplicate member branches, or missing members all fail with `E561`.
+  On the graph compile path, `warn branch_coverage_incomplete` may let missing
+  enum members compile as `W205` when `require branch_coverage` is not also
+  present. Mixed enum families and duplicate member branches still fail.
+- `repeat <Name>: <FlowRef>` requires `over:`, `order:`, and `why:`. The
+  target flow ref must resolve to a top-level `skill_flow`. The `over:`
+  ref must resolve to a top-level `enum`, `table`, or `schema` on ordinary
+  flow compile. On the graph compile path it may also resolve to a graph
+  `sets:` name or a dotted graph input or field path. The `order:` value is one
+  of the closed set `serial`, `parallel`, or `unspecified`. The repeat name is
+  local to one flow. It may not shadow a top-level `stage`, top-level
+  `skill_flow`, or another repeat in the same flow. Local repeat names take
+  precedence over top-level stage and flow refs when resolving edge endpoints.
+  Missing or duplicate parser-owned body lines such as `over:`, `order:`, or
+  `why:` still fail during parse with `E199`. Repeat resolution and shadowing
+  failures use `E561`.
+- `variation <name>: "<Title>"` is optional. The optional `safe_when:`
+  body line uses the same `EnumName.member` form as `when:` and reports
+  unresolved enums or members with `E561`. Duplicate variation names
+  fail with `E561`.
+- `unsafe <name>: "<Title>"` lists unsafe variations as compiler-owned
+  facts. Duplicate names fail with `E561`.
+- `changed_workflow:` is optional. The closed body keys are
+  `allow provisional_flow` and `require <name>`, where `<name>` is one of
+  `nearest_flow`, `difference`, or `safety_rationale`. Unknown keys fail
+  with `E561`.
+- Parser-level `skill_flow` syntax or block-shape failures still use
+  fallback parse `E199`. That includes missing required body lines,
+  duplicate parser-owned body keys, and malformed dotted `route:` or
+  enum-member refs. Compile-time flow validation uses `E561`. Receipt
+  route target resolution still uses `E560` so that diagnostic surface
+  stays stable.
+
+#### Top-Level `skill_graph` Declarations
+
+A `skill_graph` closes one authored graph over root stages and flows. The
+graph owns graph-local sets, recovery refs, policy facts, and emitted graph
+views.
+
+```prompt
+enum StageStatus: "Stage Status"
+    ready: "Ready"
+    blocked: "Blocked"
+
+enum DurableArtifactStatus: "Durable Artifact Status"
+    current: "Current"
+    stale: "Stale"
+
+skill_graph AuthoringGraph: "Authoring Graph"
+    purpose: "Close the authoring graph over roots sets and recovery refs."
+    roots:
+        flow F2AuthorSection
+    sets:
+        LessonSlots: "The slots in the section plan."
+    recovery:
+        flow_receipt: FlowReceipt
+        stage_status: StageStatus
+        durable_artifact_status: DurableArtifactStatus
+    policy:
+        dag acyclic
+        require edge_reason
+        require relation_reason
+        require durable_checkpoint
+        require route_targets_resolve
+        require checked_skill_mentions
+        allow unbound_edges
+        warn edge_route_binding_missing
+        warn receipt_without_consumer
+    views:
+        graph_markdown: "references/controller-graph.md"
+        artifact_inventory: "references/artifact-inventory.md"
+        receipt_schema_dir: "references/receipt-schemas"
+        diagram_mermaid: "references/controller-graph.mmd"
+```
+
+Rules:
+
+- `purpose:` is required. Missing `purpose:` fails with `E562`.
+- `roots:` is required. Each root line is either `flow <Ref>` or
+  `stage <Ref>`. Missing or wrong roots fail with `E562`.
+- `sets:` is optional. It declares graph-local names for repeat late
+  binding. A graph compile may late-bind `repeat over:` to a graph set
+  or dotted graph input or field path only on the graph path. Agent and
+  skill-package compile still keep the strict `enum` / `table` / `schema`
+  flow check.
+- `recovery:` is optional. `flow_receipt:` must resolve to a top-level
+  `receipt`. `stage_status:` and `durable_artifact_status:` must resolve to
+  top-level `enum` declarations. Wrong-kind or missing refs fail with
+  `E562`.
+- `policy:` is optional. The shipped DAG keys are `dag acyclic` and
+  `dag allow_cycle "Reason"`. The shipped allow key is
+  `allow unbound_edges`. The shipped strict keys are `require edge_reason`,
+  `require durable_checkpoint`, `require route_targets_resolve`,
+  `require branch_coverage`, `require stage_lane`,
+  `require relation_reason`, and `require checked_skill_mentions`.
+  Unsupported keys fail with `E562`.
+- `views:` is optional. The shipped keys are `graph_contract`,
+  `graph_source`, `graph_json`, `graph_markdown`, `skill_inventory`,
+  `artifact_inventory`, `flow_registry`, `stage_contracts`,
+  `recovery_audit`, `stepwise_manifest`, `receipt_schema_dir`,
+  `diagram_d2`, `diagram_svg`, and `diagram_mermaid`. Invalid keys or
+  output paths that escape the target output dir fail with `E564`.
+- Graph compile closes roots over nested flows, repeat targets, reached
+  stages, owner and support skills, skill relations, checked skill mentions,
+  receipts, durable artifacts, route bindings, package ids, and recovery refs.
+- A reached stage that declares `applies_to:` must list every reaching
+  flow. Otherwise graph compile fails with `E562`.
+- The graph compile path checks the expanded stage DAG. A cross-flow stage
+  cycle fails with `E562` unless the graph declares
+  `dag allow_cycle "Reason"`.
+- `emit_skill_graph` writes `SKILL_GRAPH.contract.json`,
+  `SKILL_GRAPH.source.json`, `references/skill-graph.json`, the requested
+  Markdown views, diagrams, and receipt schema files under
+  `receipt_schema_dir`.
+- `verify_skill_graph` checks the graph outputs, graph source receipt, emitted
+  receipt schemas, and linked package receipts when those package receipts are
+  present.
+
+Graph warning policy keys are live. They only emit warnings when the graph
+opts in with the matching `warn <key>` policy line.
+
+| Code | Policy key | Meaning |
+| --- | --- | --- |
+| `W201` | `orphan_stage` | A visible stage is not reached from this graph's roots. |
+| `W202` | `orphan_skill` | A visible skill is not reached from a stage, relation, or checked skill mention. |
+| `W203` | `stage_owner_shared` | One skill owns more than one reached stage. |
+| `W204` | `checked_skill_mention_unknown` | A checked skill mention does not resolve, and strict checked mentions are off. |
+| `W205` | `branch_coverage_incomplete` | A graph allowed an enum branch source that does not cover every enum member. |
+| `W206` | `receipt_without_consumer` | A reached receipt is not read by a reached stage input or recovery ref. |
+| `W207` | `flow_without_approve` | A reached flow has no `approve:` flow. |
+| `W208` | `stage_without_risk_guard` | A reached stage has no `risk_guarded:` field. |
+| `W209` | `edge_route_binding_missing` | `allow unbound_edges` let a routed edge compile without `route:`. |
+| `W210` | `relation_without_reason` | A skill relation has no `why:` and `require relation_reason` is off. |
+| `W211` | `manual_only_default_flow_conflict` | A reached skill is marked both manual-only and a default flow member. |
+
+#### Checked Skill Mentions
+
+Checked skill mentions let graph-owned prose name skills without stale
+hand-written package names.
+
+```prompt
+"Use {{skill:CatalogOps}} for exact catalog writes."
+"The owner package is {{skill:StudioLessonPlan.package}}."
+"The purpose is {{skill:StudioLessonPlan.purpose}}."
+```
+
+Rules:
+
+- `{{skill:Name}}` must resolve to a top-level `skill`.
+- The default projection renders the skill title.
+- `{{skill:Name.package}}` renders the package id.
+- `{{skill:Name.purpose}}` renders the purpose text.
+- Checked mentions are resolved in graph-owned text such as graph purpose,
+  stage text, flow text, edge reasons, repeat reasons, and relation reasons.
+- Unknown skill mentions fail with `E562` when the graph declares
+  `require checked_skill_mentions`.
+- Unknown skill mentions emit `W204` when the graph declares
+  `warn checked_skill_mention_unknown` and the strict policy is off.
+
+The manifest-backed graph examples prove the shipped graph ladder through
+`164_skill_graph_artifacts`. Examples `160` through `164` cover
+`GRAPH.prompt`, skill relations, checked mentions, warning policies, receipt
+schema views, graph policy relaxers, authoring metadata, and durable artifacts.
+
+#### Receipt Route Fields
+
+Top-level receipts may declare route fields that name typed handoff
+choices. Each choice points at one of `stage <Name>`, `flow <Name>`, or
+the closed sentinel set `human`, `external`, or `terminal`.
+
+```prompt
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+    route next_route: "Next Route"
+        approve: "Show review." -> stage AuthorRender
+        revise: "Re-plan." -> stage LessonPlan
+        flow: "Jump to flow." -> flow F1AuthorLesson
+        human: "Hand to human." -> human
+        external: "External system." -> external
+        done: "Done." -> terminal
+```
+
+Rules:
+
+- `stage StageRef` must resolve to a top-level `stage` (`E560`).
+- `flow SkillFlowRef` must resolve to a top-level `skill_flow` (`E560`).
+- The sentinel set is closed to `human`, `external`, and `terminal`. The
+  parser rejects any other bare keyword.
+- Route field keys must be unique within one receipt; duplicate route
+  fields or duplicate choice keys fail with `E544`.
+- When a skill package's `host_contract:` slot points at a receipt with
+  routes, `SKILL.contract.json` adds a deterministic `routes` map under
+  the slot. Each entry carries `title`, then `choices` keyed by choice
+  name. Each choice entry carries `title`, `target_kind` (one of `stage`,
+  `flow`, or `sentinel`), and `target` (the canonical declaration name or
+  the sentinel keyword). The same slot also adds `json_schema`, where each
+  route key lowers to a required string enum property over the authored
+  choice keys.
 
 #### Skill Binding Mode
 

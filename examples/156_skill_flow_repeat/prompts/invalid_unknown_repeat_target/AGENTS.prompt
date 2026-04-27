@@ -1,0 +1,25 @@
+enum LessonSlots: "Lesson Slots"
+    intro: "Intro slot"
+    core: "Core slot"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage ControllerRecoveryAudit: "Controller Recovery Audit"
+    owner: StudioSkill
+    intent: "Audit recovery state."
+    durable_target: "Audit brief."
+    durable_evidence: "Audit receipt."
+    advance_condition: "Audit receipt landed."
+
+skill_flow F2: "F2"
+    intent: "Repeat target ref does not resolve."
+    start: ControllerRecoveryAudit
+    repeat LessonSlotRun: MissingFlow
+        over: LessonSlots
+        order: serial
+        why: "Repeat target must resolve."
+
+agent FlowDemo:
+    role: "Run the bad-repeat-target flow."

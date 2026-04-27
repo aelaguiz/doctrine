@@ -1,0 +1,116 @@
+{
+  "graph": {
+    "name": "ArtifactGraph",
+    "title": "Artifact Graph",
+    "purpose": "Emit durable artifact contracts from graph truth."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "PacketFlow"
+    }
+  ],
+  "sets": [],
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic",
+      "reason": null
+    }
+  ],
+  "skills": [
+    {
+      "name": "ConsumerSkill",
+      "title": "Consumer Skill",
+      "purpose": "Read durable graph packets.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    },
+    {
+      "name": "ProducerSkill",
+      "title": "Producer Skill",
+      "purpose": "Write durable graph packets.",
+      "package_id": null,
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  ],
+  "skill_relations": [],
+  "stages": [
+    {
+      "name": "ConsumePacket",
+      "title": "Consume Packet",
+      "owner": "ConsumerSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "PacketFlow"
+      ]
+    },
+    {
+      "name": "ProducePacket",
+      "title": "Produce Packet",
+      "owner": "ProducerSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [
+        "SectionPacket"
+      ],
+      "reaching_flows": [
+        "PacketFlow"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "SectionPacket",
+      "title": "Section Packet",
+      "owner_stage": "ProducePacket",
+      "path_family": {
+        "kind": "document",
+        "name": "PacketPathFamily"
+      },
+      "path": null,
+      "section": "Template",
+      "anchor": "Section Packet",
+      "intent": "Carry checked section facts."
+    }
+  ],
+  "flows": [
+    {
+      "name": "PacketFlow",
+      "title": "Packet Flow",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "ProducePacket"
+      },
+      "approve": null
+    }
+  ],
+  "receipts": [],
+  "packages": [],
+  "stage_edges": [
+    {
+      "from": "ProducePacket",
+      "to": "ConsumePacket",
+      "via_flow": "PacketFlow",
+      "kind": "normal",
+      "why": "The consumer reads the producer artifact."
+    }
+  ],
+  "warnings": []
+}

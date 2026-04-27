@@ -1,0 +1,149 @@
+{
+  "graph": {
+    "name": "ControllerGraph",
+    "title": "Controller Graph",
+    "purpose": "Graph for Author Skill."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "AuthorFlow"
+    }
+  ],
+  "sets": [],
+  "recovery": null,
+  "policies": [
+    {
+      "action": "require",
+      "key": "checked_skill_mentions",
+      "reason": null
+    },
+    {
+      "action": "require",
+      "key": "relation_reason",
+      "reason": null
+    },
+    {
+      "action": "allow",
+      "key": "unbound_edges",
+      "reason": null
+    },
+    {
+      "action": "warn",
+      "key": "edge_route_binding_missing",
+      "reason": null
+    }
+  ],
+  "skills": [
+    {
+      "name": "AuthorSkill",
+      "title": "Author Skill",
+      "purpose": "Own the first draft.",
+      "package_id": "author-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    },
+    {
+      "name": "ReviewSkill",
+      "title": "Review Skill",
+      "purpose": "Review the draft.",
+      "package_id": "review-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  ],
+  "skill_relations": [
+    {
+      "from": "AuthorSkill",
+      "to": "ReviewSkill",
+      "kind": "requires",
+      "why": "Review uses review-package."
+    }
+  ],
+  "stages": [
+    {
+      "name": "DraftStage",
+      "title": "Draft Stage",
+      "owner": "AuthorSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "AuthorFlow"
+      ]
+    },
+    {
+      "name": "ReviewStage",
+      "title": "Review Stage",
+      "owner": "ReviewSkill",
+      "lane": null,
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "AuthorFlow"
+      ]
+    }
+  ],
+  "artifacts": [],
+  "flows": [
+    {
+      "name": "AuthorFlow",
+      "title": "Author Flow",
+      "intent": "Run Author Skill with Review Skill.",
+      "start": {
+        "kind": "stage",
+        "name": "DraftStage"
+      },
+      "approve": null
+    }
+  ],
+  "receipts": [
+    {
+      "name": "DraftReceipt",
+      "title": "Draft Receipt"
+    }
+  ],
+  "packages": [
+    {
+      "package_id": "author-package",
+      "name": "AuthorPackage",
+      "title": "Author Package"
+    },
+    {
+      "package_id": "review-package",
+      "name": "ReviewPackage",
+      "title": "Review Package"
+    }
+  ],
+  "stage_edges": [
+    {
+      "from": "DraftStage",
+      "to": "ReviewStage",
+      "via_flow": "AuthorFlow",
+      "kind": "normal",
+      "why": "The draft moves to Review Skill."
+    }
+  ],
+  "warnings": [
+    {
+      "code": "W209",
+      "policy": "edge_route_binding_missing",
+      "summary": "Edge route binding is missing",
+      "owner": {
+        "kind": "skill_flow",
+        "name": "AuthorFlow"
+      },
+      "detail": "Skill flow `AuthorFlow` edge `DraftStage -> ReviewStage` is allowed by graph policy but has no `route:` binding."
+    }
+  ]
+}

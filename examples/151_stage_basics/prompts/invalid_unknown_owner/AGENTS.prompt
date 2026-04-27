@@ -1,0 +1,9 @@
+stage LessonPlan: "Lesson Plan"
+    owner: MissingSkill
+    intent: "Plan."
+    durable_target: "Plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+agent StagePlanDemo:
+    role: "Plan stage demo."

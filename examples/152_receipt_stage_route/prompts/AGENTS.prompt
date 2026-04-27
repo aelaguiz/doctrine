@@ -1,0 +1,8 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Run the controller package and emit the lesson plan receipt."
+    package: "controller-package"
+
+agent ControllerDemo:
+    role: "Run the controller package and emit the lesson plan receipt."
+    skills: "Skills"
+        skill controller: ControllerSkill

@@ -1,0 +1,48 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "skill flow with repeat node over an enum compiles, repeat name takes precedence over stage refs"
+status = "active"
+kind = "render_contract"
+agent = "FlowDemo"
+assertion = "exact_lines"
+expected_lines = [
+  "Run the repeat-bearing flow.",
+]
+
+[[cases]]
+name = "skill flow repeat target that does not resolve to a top-level skill_flow fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_repeat_target/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow repeat name that shadows a top-level stage fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_repeat_shadows_stage/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow repeat over: that does not resolve to an enum, table, or schema fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_repeat_over_unknown/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"
+
+[[cases]]
+name = "skill flow repeat order outside the closed serial/parallel/unspecified set fails with E561"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_repeat_order/AGENTS.prompt"
+agent = "FlowDemo"
+exception_type = "CompileError"
+error_code = "E561"

@@ -1,0 +1,4 @@
+flowchart LR
+    stage_PrepareGraph["Prepare Graph<br/>owner: ControllerSkill"]
+    stage_RunSlot["Run Slot<br/>owner: SlotWorkerSkill"]
+    stage_PrepareGraph -->|Prepared inputs feed each slot run.| stage_RunSlot

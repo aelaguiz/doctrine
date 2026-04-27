@@ -1,7 +1,7 @@
 document ExamplesLadder: "Examples Ladder"
     """Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `149_external_skill_source_target`. It is
+from `01_hello_world` through `164_skill_graph_artifacts`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -190,6 +190,46 @@ silent drift."""
         """After this rung, you can keep the harness thin and still hand it a
 complete loadable package."""
 
+    section ninth_rung: "Ninth Rung — Compiler-Owned Graphs"
+        """This rung teaches the graph stack in order. Read the smaller pieces
+before the capstone graph bundle."""
+        bullets items:
+            """`examples/150_receipt_top_level_decl` — reusable top-level
+  `receipt` declarations."""
+            """`examples/151_stage_basics` — top-level `stage` declarations and
+  stage facts."""
+            """`examples/152_receipt_stage_route` — receipt route fields that
+  point at stages, flows, and sentinels."""
+            """`examples/153_skill_flow_linear` — the smallest real
+  `skill_flow`."""
+            """`examples/154_skill_flow_route_binding` — route-bound flow edges."""
+            """`examples/155_skill_flow_branch` — branch conditions, variations,
+  and changed-workflow truth."""
+            """`examples/156_skill_flow_repeat` — repeat nodes and repeat
+  ordering."""
+            """`examples/157_skill_graph_closure` — graph roots, graph-local
+  `sets:`, recovery refs, and closure failures."""
+            """`examples/158_skill_graph_emit` — the full graph bundle, graph
+  target wiring, view overrides, and `SKILL_GRAPH.source.json`."""
+            """`examples/159_skill_graph_policy` — strict graph policy failures
+  and graph-owned cycle checks."""
+            """`examples/160_skill_graph_relations_mentions` — `GRAPH.prompt`,
+  skill relations, checked skill mentions, graph warnings, receipt schemas,
+  and allowed unbound routed edges."""
+            """`examples/161_skill_graph_policy_allowances` — documented
+  `dag allow_cycle "Reason"` loops."""
+            """`examples/162_skill_graph_negative_cases` — checked mention and
+  relation diagnostics."""
+            """`examples/163_skill_graph_authoring_metadata` — skill inventory
+  metadata, aliases, richer stage entry/repair/waiver text, and graph-path
+  repeat targets."""
+            """`examples/164_skill_graph_artifacts` — top-level durable
+  artifact symbols, stage ownership, and artifact-typed stage inputs."""
+
+        """After this rung, you can author compiler-owned graph truth from routed
+receipts and durable artifacts through graph emit without hand-maintained
+Markdown registries."""
+
     section pick_next: "How To Pick Your Next Example"
         "Use this short rule-set."
         bullets rules:
@@ -218,6 +258,8 @@ complete loadable package."""
   `route field`, and `final_output:`."""
             """`references/skills-and-packages.md` — deep dive on `skill` and
   `skill package`."""
+            """`references/skill-graphs.md` — deep dive on `receipt`, `stage`,
+  `skill_flow`, `skill_graph`, and graph emit."""
             "`examples/README.md` — the full corpus index in teaching order."
 
         "**Load when:** the author wants a guided reading order through the numbered corpus or needs the closest example to copy for a real job."

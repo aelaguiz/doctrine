@@ -1,0 +1,24 @@
+from shared_receipts import SharedHandoffReceipt as AliasedHandoffReceipt
+
+enum StageStatus: "Stage Status"
+    not_started: "Not Started"
+    partial: "Partial"
+    approved: "Approved"
+
+receipt StageReceipt: "Stage Receipt"
+    stage: string
+    status: StageStatus
+
+receipt LessonPlanReceipt[StageReceipt]: "Lesson Plan Receipt"
+    inherit {stage, status}
+    fit_grid_written: boolean
+
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+        description: "Route and recover authoring flows."
+    host_contract:
+        receipt flow_receipt: StageReceipt
+        receipt plan_receipt: LessonPlanReceipt
+        receipt handoff_receipt: AliasedHandoffReceipt
+    "Every run reads the flow receipt and emits the lesson plan and handoff receipts."

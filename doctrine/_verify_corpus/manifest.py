@@ -29,6 +29,7 @@ class CaseSpec:
     prompt_path: Path
     approx_ref_path: Path | None
     agent: str | None = None
+    graph: str | None = None
     build_target: str | None = None
     declaration_kind: str | None = None
     declaration_name: str | None = None
@@ -202,6 +203,9 @@ def _load_case(
 
     if kind == "build_contract":
         build_target = _require_str(raw_case, "build_target", case_index=case_index)
+        graph = raw_case.get("graph")
+        if graph is not None and not isinstance(graph, str):
+            raise ManifestError(f"cases[{case_index}].graph must be a string when provided.")
         return CaseSpec(
             manifest_path=manifest_path,
             example_dir=example_dir,
@@ -209,6 +213,7 @@ def _load_case(
             kind=kind,
             prompt_path=prompt_path,
             approx_ref_path=approx_ref_path,
+            graph=graph,
             build_target=build_target,
         )
 
@@ -220,6 +225,9 @@ def _load_case(
     agent = raw_case.get("agent")
     if agent is not None and not isinstance(agent, str):
         raise ManifestError(f"cases[{case_index}].agent must be a string when provided.")
+    graph = raw_case.get("graph")
+    if graph is not None and not isinstance(graph, str):
+        raise ManifestError(f"cases[{case_index}].graph must be a string when provided.")
 
     if kind == "parse_fail":
         message_contains = _require_string_list(
@@ -233,6 +241,7 @@ def _load_case(
             prompt_path=prompt_path,
             approx_ref_path=approx_ref_path,
             agent=agent,
+            graph=graph,
             exception_type=exception_type,
             error_code=error_code,
             message_contains=message_contains,
@@ -254,6 +263,7 @@ def _load_case(
         prompt_path=prompt_path,
         approx_ref_path=approx_ref_path,
         agent=agent,
+        graph=graph,
         exception_type=exception_type,
         error_code=error_code,
         expected_location=_load_expected_location(

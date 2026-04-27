@@ -24,6 +24,7 @@ class SkillsBodyParts:
 class SkillDeclBodyParts:
     items: tuple[model.RecordItem, ...]
     package_link: model.SkillPackageLink | None
+    relations: tuple[model.SkillRelation, ...] = ()
 
 
 @dataclass(slots=True, frozen=True)

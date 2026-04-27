@@ -1,0 +1,45 @@
+enum ExactMoveProofNeeded: "Exact Move Proof Needed"
+    yes: "Yes"
+    no: "No"
+
+enum ReadyForRender: "Ready For Render"
+    ready: "Ready"
+    not_ready: "Not Ready"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage SituationSynthesis: "Situation Synthesis"
+    owner: StudioSkill
+    intent: "Build situations from approved plan."
+    durable_target: "Situation brief."
+    durable_evidence: "Situation receipt."
+    advance_condition: "Situation receipt landed."
+
+stage ExactMoveProof: "Exact Move Proof"
+    owner: StudioSkill
+    intent: "Prove the exact action."
+    durable_target: "Move proof."
+    durable_evidence: "Proof receipt."
+    advance_condition: "Proof receipt landed."
+
+stage PlayableMaterialization: "Playable Materialization"
+    owner: StudioSkill
+    intent: "Build the playable manifest."
+    durable_target: "Playable manifest."
+    durable_evidence: "Manifest receipt."
+    advance_condition: "Manifest receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Branch edges from one source must use one enum family."
+    start: SituationSynthesis
+    edge SituationSynthesis -> ExactMoveProof:
+        when: ExactMoveProofNeeded.yes
+        why: "Yes branch uses the proof enum."
+    edge SituationSynthesis -> PlayableMaterialization:
+        when: ReadyForRender.ready
+        why: "Branch on a different enum family is invalid."
+
+agent FlowDemo:
+    role: "Run the mixed-enum branch flow."

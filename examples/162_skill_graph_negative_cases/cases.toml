@@ -1,0 +1,29 @@
+schema_version = 1
+default_prompt = "prompts/invalid_unknown_checked_skill/AGENTS.prompt"
+
+[[cases]]
+name = "required checked skill mention fails when the target is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_checked_skill/AGENTS.prompt"
+graph = "BrokenGraph"
+exception_type = "CompileError"
+error_code = "E562"
+
+[[cases]]
+name = "required relation reason fails when why is missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_relation_reason/AGENTS.prompt"
+graph = "BrokenGraph"
+exception_type = "CompileError"
+error_code = "E566"
+
+[[cases]]
+name = "unknown skill relation kind fails"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_relation_kind/AGENTS.prompt"
+graph = "BrokenGraph"
+exception_type = "CompileError"
+error_code = "E566"

@@ -18,6 +18,7 @@ from doctrine._compiler.resolved_types import (
     IndexedUnit,
     SkillPackageHostCompileContext,
 )
+from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown, render_readable_block
 
@@ -31,11 +32,28 @@ class CompileSkillPackageMixin:
         unit: IndexedUnit,
         decl: model.SkillPackageDecl,
     ) -> SkillPackageHostCompileContext:
+        host_slots_by_key: dict[str, model.SkillPackageHostSlotItem] = {}
+        for slot in decl.host_contract:
+            existing = host_slots_by_key.get(slot.key)
+            if existing is not None:
+                raise package_compile_error(
+                    code="E535",
+                    summary="Receipt host slot must declare at least one typed field",
+                    detail=(
+                        f"Skill package `{decl.name}` declares host slot "
+                        f"`{slot.key}` more than once."
+                    ),
+                    path=unit.prompt_file.source_path,
+                    source_span=getattr(slot, "source_span", None)
+                    or decl.source_span,
+                    hints=("Use a unique key for each host slot.",),
+                )
+            host_slots_by_key[slot.key] = slot
         return SkillPackageHostCompileContext(
             package_unit=unit,
             package_decl=decl,
             package_id=skill_package_id(decl),
-            host_slots_by_key={slot.key: slot for slot in decl.host_contract},
+            host_slots_by_key=host_slots_by_key,
         )
 
     def _skill_package_source_root(
@@ -316,14 +334,21 @@ class CompileSkillPackageMixin:
         decl: model.SkillPackageDecl,
         *,
         unit: IndexedUnit,
+        host_context: SkillPackageHostCompileContext,
     ) -> None:
         for slot in decl.host_contract:
+            if isinstance(slot, model.ReceiptHostSlotRef):
+                resolved = self._resolve_receipt_host_slot_ref(
+                    slot, decl=decl, unit=unit
+                )
+                host_context.host_slots_by_key[slot.key] = resolved
+                continue
             if not isinstance(slot, model.ReceiptHostSlot):
                 continue
             if not slot.fields:
                 raise package_compile_error(
                     code="E535",
-                    summary="Receipt slot declared without fields",
+                    summary="Receipt host slot must declare at least one typed field",
                     detail=(
                         f"Skill package `{decl.name}` declares receipt host slot "
                         f"`{slot.key}` without any typed fields. Receipt slots must "
@@ -343,7 +368,7 @@ class CompileSkillPackageMixin:
                 if field.key in seen_field_keys:
                     raise package_compile_error(
                         code="E535",
-                        summary="Receipt slot declared without fields",
+                    summary="Receipt host slot must declare at least one typed field",
                         detail=(
                             f"Skill package `{decl.name}` declares receipt host slot "
                             f"`{slot.key}` with duplicate field `{field.key}`."
@@ -407,13 +432,54 @@ class CompileSkillPackageMixin:
             ),
         )
 
+    def _resolve_receipt_host_slot_ref(
+        self,
+        slot: model.ReceiptHostSlotRef,
+        *,
+        decl: model.SkillPackageDecl,
+        unit: IndexedUnit,
+    ) -> model.ResolvedReceiptHostSlotRef:
+        try:
+            target_unit, receipt_decl = self._resolve_receipt_ref(
+                slot.receipt_ref, unit=unit
+            )
+        except CompileError as exc:
+            ref = slot.receipt_ref
+            dotted = (
+                ".".join((*ref.module_parts, ref.declaration_name))
+                if ref.module_parts
+                else ref.declaration_name
+            )
+            raise package_compile_error(
+                code="E545",
+                summary="Receipt slot ref does not resolve",
+                detail=(
+                    f"Skill package `{decl.name}` declares receipt host slot "
+                    f"`{slot.key}` pointed at `{dotted}`, but no top-level "
+                    "receipt declaration with that name is in scope."
+                ),
+                path=unit.prompt_file.source_path,
+                source_span=ref.source_span or slot.source_span,
+                hints=(
+                    "Declare `receipt <Name>: \"<Title>\"` at the top level, or "
+                    "fix the receipt ref to point at an existing declaration.",
+                ),
+            ) from exc
+        resolved = self._resolve_resolved_receipt(receipt_decl, unit=target_unit)
+        return model.ResolvedReceiptHostSlotRef(
+            key=slot.key,
+            receipt=resolved,
+            receipt_ref=slot.receipt_ref,
+            canonical_name=resolved.canonical_name,
+            source_span=slot.source_span,
+        )
+
     def _compile_skill_package_decl(
         self,
         decl: model.SkillPackageDecl,
         *,
         unit: IndexedUnit,
     ) -> CompiledSkillPackage:
-        self._validate_receipt_host_slots(decl, unit=unit)
         frontmatter: list[tuple[str, str]] = [("name", decl.metadata.name or decl.name)]
         if decl.metadata.description is not None:
             frontmatter.append(("description", decl.metadata.description))
@@ -430,6 +496,7 @@ class CompileSkillPackageMixin:
             read_label="skill package bundled file",
         )
         host_context = self._new_skill_package_host_context(unit=unit, decl=decl)
+        self._validate_receipt_host_slots(decl, unit=unit, host_context=host_context)
         with self._with_skill_package_host_context(host_context):
             with self._with_skill_package_artifact_context(
                 path="SKILL.md",

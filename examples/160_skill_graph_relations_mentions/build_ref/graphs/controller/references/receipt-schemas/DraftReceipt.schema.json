@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "draft_id": {
+      "type": "string"
+    },
+    "next_route": {
+      "type": "string",
+      "enum": [
+        "review"
+      ]
+    }
+  },
+  "required": [
+    "draft_id",
+    "next_route"
+  ]
+}

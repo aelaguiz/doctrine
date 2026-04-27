@@ -1,0 +1,9 @@
+receipt FlowReceipt: "Flow Receipt"
+    stage: string
+
+skill package DuplicateSlotPackage: "Duplicate Slot Package"
+    metadata:
+        name: "duplicate-slot-package"
+    host_contract:
+        receipt slot: FlowReceipt
+        receipt slot: FlowReceipt

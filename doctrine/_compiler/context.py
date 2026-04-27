@@ -213,7 +213,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                 detail=f"Agent `{agent_name}` is marked abstract and cannot render output directly.",
                 hints=("Render a concrete child agent instead.",),
             )
-        self._validate_all_rules_in_flow(self.session.flow_for_unit(unit))
+        flow = self.session.flow_for_unit(unit)
+        self._validate_all_rules_in_flow(flow)
+        self._validate_all_stages_in_flow(flow)
+        self._validate_all_skill_flows_in_flow(flow)
+        self._validate_all_skill_graphs_in_flow(flow)
         return self._compile_agent_decl(agent, unit=unit)
 
     def compile_skill_package(
@@ -241,7 +245,56 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                     detail=f"Missing target skill package: {package_name}",
                 )
         owner_unit = self.root_flow.declaration_owner_units_by_id[id(declaration)]
+        flow = self.session.flow_for_unit(owner_unit)
+        self._validate_all_stages_in_flow(flow)
+        self._validate_all_skill_flows_in_flow(flow)
+        self._validate_all_skill_graphs_in_flow(flow)
         return self._compile_skill_package_decl(declaration, unit=owner_unit)
+
+    def compile_skill_graph(
+        self,
+        graph_name: str | None = None,
+    ) -> model.ResolvedSkillGraph:
+        flow = self.root_flow
+        if graph_name is None:
+            graphs = tuple(flow.skill_graphs_by_name.values())
+            if not graphs:
+                raise _context_compile_error(
+                    path=flow.entrypoint_path,
+                    code="E563",
+                    summary="Invalid skill graph target",
+                    detail="Missing target skill graph.",
+                )
+            if len(graphs) != 1:
+                raise _context_compile_error(
+                    path=flow.entrypoint_path,
+                    code="E563",
+                    summary="Invalid skill graph target",
+                    detail=(
+                        "Root flow defines multiple skill graphs; choose one explicitly."
+                    ),
+                )
+            declaration = graphs[0]
+            owner_unit = flow.declaration_owner_units_by_id[id(declaration)]
+        else:
+            ref = model.NameRef(module_parts=(), declaration_name=graph_name)
+            try:
+                owner_unit, declaration = self._resolve_decl_ref(
+                    ref,
+                    unit=self.root_entrypoint_unit,
+                    registry_name="skill_graphs_by_name",
+                    missing_label="skill_graph declaration",
+                )
+            except CompileError as exc:
+                raise _context_compile_error(
+                    path=flow.entrypoint_path,
+                    code="E563",
+                    summary="Invalid skill graph target",
+                    detail=f"Missing target skill graph: {graph_name}",
+                ) from exc
+        owner_flow = self.session.flow_for_unit(owner_unit)
+        self._validate_all_stages_in_flow(owner_flow)
+        return self._resolve_skill_graph_decl(declaration, unit=owner_unit)
 
     def compile_readable_declaration(
         self, declaration_kind: str, declaration_name: str

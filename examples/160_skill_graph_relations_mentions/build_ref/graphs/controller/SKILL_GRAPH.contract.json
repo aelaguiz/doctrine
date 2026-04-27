@@ -1,0 +1,253 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "ControllerGraph",
+    "title": "Controller Graph",
+    "purpose": "Graph for Author Skill."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "AuthorFlow"
+    }
+  ],
+  "sets": {},
+  "recovery": null,
+  "policies": [
+    {
+      "action": "require",
+      "key": "checked_skill_mentions",
+      "reason": null
+    },
+    {
+      "action": "require",
+      "key": "relation_reason",
+      "reason": null
+    },
+    {
+      "action": "allow",
+      "key": "unbound_edges",
+      "reason": null
+    },
+    {
+      "action": "warn",
+      "key": "edge_route_binding_missing",
+      "reason": null
+    }
+  ],
+  "views": {
+    "graph_markdown": "references/controller-graph.md",
+    "receipt_schema_dir": "references/receipt-schemas"
+  },
+  "skills": {
+    "AuthorSkill": {
+      "title": "Author Skill",
+      "purpose": "Own the first draft.",
+      "package_id": "author-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    },
+    "ReviewSkill": {
+      "title": "Review Skill",
+      "purpose": "Review the draft.",
+      "package_id": "review-package",
+      "category": null,
+      "visibility": null,
+      "manual_only": null,
+      "default_flow_member": null,
+      "aliases": null
+    }
+  },
+  "skill_relations": [
+    {
+      "from": "AuthorSkill",
+      "to": "ReviewSkill",
+      "kind": "requires",
+      "why": "Review uses review-package."
+    }
+  ],
+  "stages": {
+    "DraftStage": {
+      "title": "Draft Stage",
+      "id": null,
+      "owner": "AuthorSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": "DraftReceipt",
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Draft with Review the draft. nearby.",
+      "durable_target": "Draft receipt.",
+      "durable_evidence": "Draft receipt.",
+      "advance_condition": "Draft receipt lands.",
+      "risk_guarded": "Do not publish the draft before review.",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    },
+    "ReviewStage": {
+      "title": "Review Stage",
+      "id": null,
+      "owner": "ReviewSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {
+        "draft": {
+          "kind": "receipt",
+          "type": "DraftReceipt"
+        }
+      },
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Review the draft.",
+      "durable_target": "Review notes.",
+      "durable_evidence": "Review notes.",
+      "advance_condition": "Review notes land.",
+      "risk_guarded": "Check that review notes name the draft.",
+      "entry": null,
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    }
+  },
+  "artifacts": {},
+  "flows": {
+    "AuthorFlow": {
+      "title": "Author Flow",
+      "intent": "Run Author Skill with Review Skill.",
+      "start": {
+        "kind": "stage",
+        "name": "DraftStage"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "DraftStage"
+        },
+        {
+          "kind": "stage",
+          "name": "ReviewStage"
+        }
+      ],
+      "edges": [
+        {
+          "from": "DraftStage",
+          "from_kind": "stage",
+          "to": "ReviewStage",
+          "to_kind": "stage",
+          "kind": "normal",
+          "why": "The draft moves to Review Skill.",
+          "route": null,
+          "when": null
+        }
+      ],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "ReviewStage"
+      ]
+    }
+  },
+  "receipts": {
+    "DraftReceipt": {
+      "title": "Draft Receipt",
+      "fields": {
+        "draft_id": {
+          "type": "string",
+          "kind": "builtin"
+        }
+      },
+      "routes": {
+        "next_route": {
+          "title": "Next Route",
+          "choices": {
+            "review": {
+              "title": "Review the draft.",
+              "target_kind": "stage",
+              "target": "ReviewStage"
+            }
+          }
+        }
+      },
+      "json_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "draft_id": {
+            "type": "string"
+          },
+          "next_route": {
+            "type": "string",
+            "enum": [
+              "review"
+            ]
+          }
+        },
+        "required": [
+          "draft_id",
+          "next_route"
+        ]
+      }
+    }
+  },
+  "packages": {
+    "author-package": {
+      "name": "AuthorPackage",
+      "title": "Author Package"
+    },
+    "review-package": {
+      "name": "ReviewPackage",
+      "title": "Review Package"
+    }
+  },
+  "warnings": [
+    {
+      "code": "W209",
+      "policy": "edge_route_binding_missing",
+      "summary": "Edge route binding is missing",
+      "owner": {
+        "kind": "skill_flow",
+        "name": "AuthorFlow"
+      },
+      "detail": "Skill flow `AuthorFlow` edge `DraftStage -> ReviewStage` is allowed by graph policy but has no `route:` binding."
+    }
+  ],
+  "stage_edges": [
+    {
+      "from": "DraftStage",
+      "to": "ReviewStage",
+      "via_flow": "AuthorFlow",
+      "kind": "normal",
+      "why": "The draft moves to Review Skill."
+    }
+  ],
+  "stage_successors": {
+    "DraftStage": [
+      "ReviewStage"
+    ]
+  },
+  "stage_predecessors": {
+    "ReviewStage": [
+      "DraftStage"
+    ]
+  },
+  "stage_reaching_flows": {
+    "DraftStage": [
+      "AuthorFlow"
+    ],
+    "ReviewStage": [
+      "AuthorFlow"
+    ]
+  }
+}

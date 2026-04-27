@@ -1,0 +1,51 @@
+enum ExactMoveProofNeeded: "Exact Move Proof Needed"
+    yes: "Yes"
+    no: "No"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage SituationSynthesis: "Situation Synthesis"
+    owner: StudioSkill
+    intent: "Build situations from approved plan."
+    durable_target: "Situation brief."
+    durable_evidence: "Situation receipt."
+    advance_condition: "Situation receipt landed."
+
+stage ExactMoveProof: "Exact Move Proof"
+    owner: StudioSkill
+    intent: "Prove the exact action."
+    durable_target: "Move proof."
+    durable_evidence: "Proof receipt."
+    advance_condition: "Proof receipt landed."
+
+stage PlayableMaterialization: "Playable Materialization"
+    owner: StudioSkill
+    intent: "Build the playable manifest."
+    durable_target: "Playable manifest."
+    durable_evidence: "Manifest write receipt."
+    advance_condition: "Manifest receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson with branch coverage."
+    start: SituationSynthesis
+    edge SituationSynthesis -> ExactMoveProof:
+        when: ExactMoveProofNeeded.yes
+        why: "Exact action claims need proof before build."
+    edge SituationSynthesis -> PlayableMaterialization:
+        when: ExactMoveProofNeeded.no
+        why: "Family recognition lessons skip exact-move proof."
+    edge ExactMoveProof -> PlayableMaterialization:
+        why: "Proof must land before the manifest depends on it."
+    variation skip_exact_move_proof: "Skip exact-move proof for family recognition."
+        safe_when: ExactMoveProofNeeded.no
+    unsafe concrete_hands_in_plan: "Pick concrete hands during planning."
+    changed_workflow:
+        allow provisional_flow
+        require nearest_flow
+        require difference
+        require safety_rationale
+
+agent FlowDemo:
+    role: "Run the branched authoring flow."

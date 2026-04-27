@@ -26,15 +26,16 @@ for repo setup and proof commands.
   declaration reference for composition rules, refs, `output schema`,
   `route field`, `final_output.route:`, target-owned `delivery_skill:`,
   runtime packages, top-level `output[...]` inheritance, markdown emission,
-  and `skill package`
+  `skill package`, and the shipped skill graph language
 - [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md): canonical guide to
   `SKILL.prompt`, explicit `emit:` document companions, source-root package
-  bundles, `SKILL.source.json`, `emit_skill`, and the package example gallery
+  bundles, `SKILL.source.json`, package-scoped graph targets, `emit_skill`,
+  and the package example gallery
 - [EMIT_GUIDE.md](EMIT_GUIDE.md): configure emit targets, generate runtime
   Markdown, emit structured-output schema files, emit final-output, review,
-  and route metadata, generate runtime-package and skill-package trees, verify
-  skill source receipts, generate workflow flow diagrams, and troubleshoot emit
-  failures
+  and route metadata, generate runtime-package and skill-package trees, emit
+  checked graph bundles, verify skill and graph source receipts, generate
+  workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
 
@@ -60,11 +61,15 @@ for repo setup and proof commands.
   error codes
 - [FAIL_LOUD_GAPS.md](FAIL_LOUD_GAPS.md): easy author mistakes the compiler
   still accepts today and should turn into clear compile errors
-- [WARNINGS.md](WARNINGS.md): evergreen plan for a first-class compiler
-  warning layer, including goals, non-goals, candidate families, and
-  guardrails
+- [WARNINGS.md](WARNINGS.md): shipped graph warning codes plus guardrails for
+  future warning families
 - [LANGUAGE_DESIGN_NOTES.md](LANGUAGE_DESIGN_NOTES.md): design principles,
   guardrails, and current non-goals
+- [SKILL_GRAPH_LANGUAGE_SPEC.md](SKILL_GRAPH_LANGUAGE_SPEC.md):
+  shipped Doctrine-side graph language surface, including reusable receipts,
+  artifacts, stages, skill flows, skill graphs, skill relations, checked skill
+  mentions, graph warnings, `GRAPH.prompt`, receipt schema views, and
+  `dag allow_cycle`
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
 - [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor

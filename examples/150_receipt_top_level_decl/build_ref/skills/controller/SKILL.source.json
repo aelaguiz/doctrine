@@ -1,0 +1,42 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "ControllerPackage",
+    "title": "Controller Package"
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "controller-package",
+    "root": "examples/150_receipt_top_level_decl/prompts/skills/controller",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "08ed02742f1e3db6ec49b7cc835c6a77c8a06fd7f317636a9450864565533946"
+    },
+    {
+      "path": "examples/150_receipt_top_level_decl/prompts/shared_receipts/AGENTS.prompt",
+      "kind": "prompt",
+      "sha256": "671a71a38903f97be77a4788f90c389c29f6115702345ed9fa8c1c03b2550969"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.contract.json",
+      "kind": "host_contract",
+      "sha256": "5ceee70075755bd98cb200505d3b359607dc6ef7cf3f4cc0d88edd53e600949f"
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "46732bdd05bd76f622aa49a3db8139dc534cdaa3f823888dfc4c9c2e708a160c"
+    }
+  ],
+  "source_tree_sha256": "0b9f87a240f6f34534867494595b8bdcb0f6e356d613e956ae42f21a2e4665da",
+  "output_tree_sha256": "fd1242b2270ec6e9282517bab909998cc3c21e03989078406cf05c95118b3b8d"
+}

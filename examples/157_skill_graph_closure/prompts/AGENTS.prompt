@@ -1,0 +1,57 @@
+enum StageStatus: "Stage Status"
+    ready: "Ready"
+    blocked: "Blocked"
+
+enum DurableArtifactStatus: "Durable Artifact Status"
+    current: "Current"
+    stale: "Stale"
+
+skill ControllerSkill: "Controller Skill"
+    purpose: "Own the authoring stages."
+
+receipt FlowReceipt: "Flow Receipt"
+    current_stage: string
+
+stage ControllerRecoveryAudit: "Controller Recovery Audit"
+    owner: ControllerSkill
+    intent: "Audit the section state before work starts."
+    durable_target: "Recovery brief."
+    durable_evidence: "Recovery receipt."
+    advance_condition: "Recovery receipt landed."
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan one lesson."
+    durable_target: "Lesson plan."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson from a locked slot."
+    start: LessonPlan
+
+skill_flow F2AuthorSection: "F2 - Author Section"
+    intent: "Audit the section, then run one lesson per slot."
+    start: ControllerRecoveryAudit
+    repeat LessonSlotRun: F1AuthorLesson
+        over: LessonSlots
+        order: serial
+        why: "Each slot changes the evidence for the next slot."
+    edge ControllerRecoveryAudit -> LessonSlotRun:
+        why: "Audit before per-slot authoring starts."
+
+skill_graph AuthoringGraph: "Authoring Graph"
+    purpose: "Close the authoring graph over roots sets and recovery refs."
+    roots:
+        flow F2AuthorSection
+    sets:
+        LessonSlots: "The slots in the section plan."
+    recovery:
+        flow_receipt: FlowReceipt
+        stage_status: StageStatus
+        durable_artifact_status: DurableArtifactStatus
+    policy:
+        dag acyclic
+        require edge_reason
+        require durable_checkpoint
+        require route_targets_resolve

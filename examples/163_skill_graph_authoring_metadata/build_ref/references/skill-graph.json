@@ -1,0 +1,111 @@
+{
+  "graph": {
+    "name": "AuthoringMetadataGraph",
+    "title": "Authoring Metadata Graph",
+    "purpose": "Emit graph authoring metadata."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "RunGraph"
+    }
+  ],
+  "sets": [],
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic",
+      "reason": null
+    }
+  ],
+  "skills": [
+    {
+      "name": "ControllerSkill",
+      "title": "Controller Skill",
+      "purpose": "Own the graph.",
+      "package_id": null,
+      "category": "controller",
+      "visibility": "default",
+      "manual_only": "false",
+      "default_flow_member": "true",
+      "aliases": "controller, graph-owner"
+    },
+    {
+      "name": "SlotWorkerSkill",
+      "title": "Slot Worker Skill",
+      "purpose": "Run one slot.",
+      "package_id": null,
+      "category": "worker",
+      "visibility": "explicit-only",
+      "manual_only": "true",
+      "default_flow_member": "false",
+      "aliases": null
+    }
+  ],
+  "skill_relations": [],
+  "stages": [
+    {
+      "name": "PrepareGraph",
+      "title": "Prepare Graph",
+      "owner": "ControllerSkill",
+      "lane": null,
+      "entry": "Start only after graph inputs are current.",
+      "repair_routes": "Route stale inputs back to preparation.",
+      "waiver_policy": "Only a human owner can waive stale inputs.",
+      "artifacts": [],
+      "reaching_flows": [
+        "RunGraph"
+      ]
+    },
+    {
+      "name": "RunSlot",
+      "title": "Run Slot",
+      "owner": "SlotWorkerSkill",
+      "lane": null,
+      "entry": "Start after preparation succeeds.",
+      "repair_routes": null,
+      "waiver_policy": null,
+      "artifacts": [],
+      "reaching_flows": [
+        "RunGraph",
+        "RunOneSlot"
+      ]
+    }
+  ],
+  "artifacts": [],
+  "flows": [
+    {
+      "name": "RunGraph",
+      "title": "Run Graph",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "PrepareGraph"
+      },
+      "approve": null
+    },
+    {
+      "name": "RunOneSlot",
+      "title": "Run One Slot",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "RunSlot"
+      },
+      "approve": null
+    }
+  ],
+  "receipts": [],
+  "packages": [],
+  "stage_edges": [
+    {
+      "from": "PrepareGraph",
+      "to": "RunSlot",
+      "via_flow": "RunGraph",
+      "kind": "normal",
+      "why": "Prepared inputs feed each slot run."
+    }
+  ],
+  "warnings": []
+}

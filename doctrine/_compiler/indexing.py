@@ -62,10 +62,15 @@ class UnitDeclarations:
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skill_packages_by_id: dict[str, model.SkillPackageDecl]
+    artifacts_by_name: dict[str, model.ArtifactDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     rules_by_name: dict[str, model.RuleDecl]
+    receipts_by_name: dict[str, model.ReceiptDecl]
+    stages_by_name: dict[str, model.StageDecl]
+    skill_flows_by_name: dict[str, model.SkillFlowDecl]
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl]
 
 
 @dataclass(slots=True, frozen=True)
@@ -129,10 +134,15 @@ class IndexedFlow:
     skills_by_name: dict[str, model.SkillDecl]
     skill_packages_by_name: dict[str, model.SkillPackageDecl]
     skill_packages_by_id: dict[str, model.SkillPackageDecl]
+    artifacts_by_name: dict[str, model.ArtifactDecl]
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
     rules_by_name: dict[str, model.RuleDecl]
+    receipts_by_name: dict[str, model.ReceiptDecl]
+    stages_by_name: dict[str, model.StageDecl]
+    skill_flows_by_name: dict[str, model.SkillFlowDecl]
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl]
 
 
 def unit_declarations(unit: IndexedUnit) -> UnitDeclarations:
@@ -715,9 +725,14 @@ def index_unit(
     skills_by_name: dict[str, model.SkillDecl] = {}
     skill_packages_by_name: dict[str, model.SkillPackageDecl] = {}
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
+    artifacts_by_name: dict[str, model.ArtifactDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
+    receipts_by_name: dict[str, model.ReceiptDecl] = {}
+    stages_by_name: dict[str, model.StageDecl] = {}
+    skill_flows_by_name: dict[str, model.SkillFlowDecl] = {}
+    skill_graphs_by_name: dict[str, model.SkillGraphDecl] = {}
 
     for declaration in prompt_file.declarations:
         if isinstance(declaration, model.ImportDecl):
@@ -944,6 +959,16 @@ def index_unit(
                 source_path=prompt_file.source_path,
             )
             continue
+        if isinstance(declaration, model.ArtifactDecl):
+            _register_decl(
+                artifacts_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            artifacts_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.EnumDecl):
             _register_decl(
                 enums_by_name,
@@ -978,6 +1003,46 @@ def index_unit(
                 source_path=prompt_file.source_path,
             )
             rules_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.ReceiptDecl):
+            _register_decl(
+                receipts_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            receipts_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.StageDecl):
+            _register_decl(
+                stages_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            stages_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.SkillFlowDecl):
+            _register_decl(
+                skill_flows_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            skill_flows_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.SkillGraphDecl):
+            _register_decl(
+                skill_graphs_by_name,
+                declaration,
+                declaration.name,
+                module_parts,
+                source_path=prompt_file.source_path,
+            )
+            skill_graphs_by_name[declaration.name] = declaration
             continue
         raise compile_error(
             code="E901",
@@ -1028,10 +1093,15 @@ def index_unit(
         skills_by_name=skills_by_name,
         skill_packages_by_name=skill_packages_by_name,
         skill_packages_by_id=skill_packages_by_id,
+        artifacts_by_name=artifacts_by_name,
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
         rules_by_name=rules_by_name,
+        receipts_by_name=receipts_by_name,
+        stages_by_name=stages_by_name,
+        skill_flows_by_name=skill_flows_by_name,
+        skill_graphs_by_name=skill_graphs_by_name,
     )
     indexed_unit = IndexedUnit(
         prompt_root=prompt_root,

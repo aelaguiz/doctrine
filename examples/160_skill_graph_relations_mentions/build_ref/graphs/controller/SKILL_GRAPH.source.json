@@ -1,0 +1,98 @@
+{
+  "receipt_version": 1,
+  "graph": {
+    "name": "ControllerGraph",
+    "title": "Controller Graph",
+    "purpose": "Graph for Author Skill."
+  },
+  "doctrine": {
+    "language_version": "5.7",
+    "package_version": "5.1.0"
+  },
+  "target": {
+    "name": "example_160_skill_graph_relations_mentions",
+    "entrypoint": "examples/160_skill_graph_relations_mentions/prompts/graphs/controller/GRAPH.prompt"
+  },
+  "inputs": [
+    {
+      "path": "examples/160_skill_graph_relations_mentions/prompts/graphs/controller/GRAPH.prompt",
+      "kind": "prompt",
+      "sha256": "6a092f5a2cf9889731daf629914e5ae11c1904c375975828c46cc767eb29df30"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL_GRAPH.contract.json",
+      "kind": "graph_artifact",
+      "sha256": "7e8f65e4700ac0f7322efef7204c26e654ba5e9c215be03b4a1f93ee72a20a3b"
+    },
+    {
+      "path": "references/artifact-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "f33bacbd97085c8c953d3535b87026dc9ad2460c917107f7e4817e216f0fa6c7"
+    },
+    {
+      "path": "references/controller-graph.md",
+      "kind": "graph_artifact",
+      "sha256": "73ce8a2d149a311bf417b5cdf2a928aa51960cbc7773b04eeaa3897d3706c176"
+    },
+    {
+      "path": "references/flow-registry.md",
+      "kind": "graph_artifact",
+      "sha256": "5c12c5aef6db4f04dcd9134c46313e6e13349bb738c1fdf99ca63882f896cac9"
+    },
+    {
+      "path": "references/receipt-schemas/DraftReceipt.schema.json",
+      "kind": "graph_artifact",
+      "sha256": "d21e9d4d2219bc7ee0eff39b4a22a0a3f0e426d7e3eaa9fbe17acecc1ea19157"
+    },
+    {
+      "path": "references/recovery-audit.md",
+      "kind": "graph_artifact",
+      "sha256": "665baf9f9537ba6cf2e9a3357de7add0d770f23155a0c05032368da68a1ced47"
+    },
+    {
+      "path": "references/skill-graph.d2",
+      "kind": "graph_artifact",
+      "sha256": "8589cdd7fed7492b374f147293d49ba9b8ef5ea7aaca50afa9dac863637ebd55"
+    },
+    {
+      "path": "references/skill-graph.json",
+      "kind": "graph_artifact",
+      "sha256": "feacd093b7e9c871aac0716a36eafd50101bdead25c213015c82a1eb66b69688"
+    },
+    {
+      "path": "references/skill-graph.mmd",
+      "kind": "graph_artifact",
+      "sha256": "0c3984ad159d2b2f39983cd548c6f95a10d181351edace4d2b58534377b7e999"
+    },
+    {
+      "path": "references/skill-graph.svg",
+      "kind": "graph_artifact",
+      "sha256": "ad8f45eb2a863d8ed6301a8e6534ac804c4e6428fd31d5a476e2b532ee374917"
+    },
+    {
+      "path": "references/skill-inventory.md",
+      "kind": "graph_artifact",
+      "sha256": "ee90201e7f583db2246a981719ddd9488119f1551adb60b7c5b2a99b5f113d21"
+    },
+    {
+      "path": "references/stage-contracts.md",
+      "kind": "graph_artifact",
+      "sha256": "04337d298d493a7f09f863faaf0e994bb65dd4d8293576efec93bb58bc9e61c1"
+    },
+    {
+      "path": "references/stepwise-manifest.md",
+      "kind": "graph_artifact",
+      "sha256": "c1e11c5339e8e6c784e3ea8079a1a831d0170524413710370cd57479d6b2e57e"
+    }
+  ],
+  "source_tree_sha256": "2b4e36a030cb64f461e571d09e9895bf7b61e7a86b1e2f14090e45cd5916f6e9",
+  "output_tree_sha256": "a9e1b6461d0a6d69d096994447e60a76d5bff0716d4723e0d6e3378325b25a18",
+  "graph_contract_sha256": "7e8f65e4700ac0f7322efef7204c26e654ba5e9c215be03b4a1f93ee72a20a3b",
+  "graph_json_sha256": "feacd093b7e9c871aac0716a36eafd50101bdead25c213015c82a1eb66b69688",
+  "diagram_d2_sha256": "8589cdd7fed7492b374f147293d49ba9b8ef5ea7aaca50afa9dac863637ebd55",
+  "diagram_svg_sha256": "ad8f45eb2a863d8ed6301a8e6534ac804c4e6428fd31d5a476e2b532ee374917",
+  "diagram_mermaid_sha256": "0c3984ad159d2b2f39983cd548c6f95a10d181351edace4d2b58534377b7e999",
+  "linked_package_receipts": []
+}

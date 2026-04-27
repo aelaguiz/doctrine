@@ -1,17 +1,38 @@
 # Warnings
 
 Doctrine treats fail-loud errors as the default.
-Some authoring shapes compile cleanly today but still push against the
-project principles: context budget, reuse pressure, narrow typed-truth
-shadowing, weak load boundaries.
+Some valid authoring shapes still signal likely drift. Doctrine uses warnings
+for those cases when a hard error would be too strict.
 
-A first-class warning layer would flag those shapes without turning the
-compiler into a second harness or a style linter.
-
-This doc is the evergreen landing page for that work.
-No warning codes ship in the compiler today.
+Doctrine currently ships graph-scoped warnings for `skill_graph` policy lines.
+Warnings are emitted into graph contracts and graph Markdown. They do not fail
+compile by themselves.
 The [agent-linter skill](AGENT_LINTER.md) is the current home for
 judgment-first authoring review.
+
+## Shipped Graph Warnings
+
+These warnings only run when a graph opts in with a matching `warn <key>`
+policy line.
+
+| Code | Policy key | Meaning |
+| --- | --- | --- |
+| `W201` | `orphan_stage` | A visible stage is not reached from this graph's roots. |
+| `W202` | `orphan_skill` | A visible skill is not reached from a stage, relation, or checked skill mention. |
+| `W203` | `stage_owner_shared` | One skill owns more than one reached stage. |
+| `W204` | `checked_skill_mention_unknown` | A checked skill mention does not resolve, and strict checked mentions are off. |
+| `W205` | `branch_coverage_incomplete` | A graph allowed an enum branch source that does not cover every enum member. |
+| `W206` | `receipt_without_consumer` | A reached receipt is not read by a reached stage input or recovery ref. |
+| `W207` | `flow_without_approve` | A reached flow has no `approve:` flow. |
+| `W208` | `stage_without_risk_guard` | A reached stage has no `risk_guarded:` field. |
+| `W209` | `edge_route_binding_missing` | `allow unbound_edges` let a routed edge compile without `route:`. |
+| `W210` | `relation_without_reason` | A skill relation has no `why:` and `require relation_reason` is off. |
+| `W211` | `manual_only_default_flow_conflict` | A reached skill is marked both manual-only and a default flow member. |
+
+Graph warning `owner` fields use the public declaration name. They do not carry
+a module path. When two modules use the same public name, the warning detail
+must say which local graph-entrypoint declaration is not reached and which
+imported declaration was reached instead.
 
 ## Goals
 
@@ -35,7 +56,7 @@ If the compiler can prove a shape is semantically wrong, the long-term
 home is an error in [COMPILER_ERRORS.md](COMPILER_ERRORS.md), not a
 warning.
 
-## Candidate First-Wave Families
+## Future Candidate Families
 
 These are the families most aligned with Doctrine principles. They are
 candidates, not shipped codes.
@@ -81,4 +102,4 @@ If any answer is weak, do not ship the warning by default.
   compiler still accepts. Some may earn a warning bridge before they
   become hard errors.
 - [COMPILER_ERRORS.md](COMPILER_ERRORS.md): canonical error catalog.
-  Shipped warnings will land alongside errors in the same catalog.
+  Error codes live there. Shipped graph warning codes are listed in this file.

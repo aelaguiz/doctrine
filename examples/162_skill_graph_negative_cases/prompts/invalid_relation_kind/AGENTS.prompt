@@ -1,0 +1,20 @@
+skill OwnerSkill: "Owner Skill"
+    purpose: "Own the stage."
+    relations:
+        borrows HelperSkill:
+            why: "This kind is not in the closed relation set."
+
+skill HelperSkill: "Helper Skill"
+    purpose: "Help the owner."
+
+stage StartStage: "Start Stage"
+    owner: OwnerSkill
+    intent: "Start."
+    durable_target: "Start receipt."
+    durable_evidence: "Start receipt."
+    advance_condition: "Start receipt lands."
+
+skill_graph BrokenGraph: "Broken Graph"
+    purpose: "Relation kinds are closed."
+    roots:
+        stage StartStage

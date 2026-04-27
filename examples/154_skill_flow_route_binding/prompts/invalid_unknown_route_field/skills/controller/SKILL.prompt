@@ -1,0 +1,38 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Run the controller package and emit the lesson plan receipt."
+    package: "controller-package"
+
+stage AuthorRender: "Author Render"
+    owner: ControllerSkill
+    intent: "Render the approved plan."
+    durable_target: "Render output."
+    durable_evidence: "Render write receipt."
+    advance_condition: "Render receipt landed."
+
+stage LessonPlan: "Lesson Plan"
+    owner: ControllerSkill
+    intent: "Plan the lesson."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Plan receipt landed."
+
+receipt LessonPlanReceipt: "Lesson Plan Receipt"
+    plan_status: string
+    route next_route: "Next Route"
+        approve: "Show review." -> stage AuthorRender
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson end-to-end."
+    start: LessonPlan
+    edge LessonPlan -> AuthorRender:
+        route: LessonPlanReceipt.missing_route.approve
+        kind: review
+        why: "Route binding names a route field that does not exist."
+
+skill package ControllerPackage: "Controller Package"
+    metadata:
+        name: "controller-package"
+        description: "Route the lesson plan handoff."
+    host_contract:
+        receipt plan_receipt: LessonPlanReceipt
+    "Demo of the missing route field case."

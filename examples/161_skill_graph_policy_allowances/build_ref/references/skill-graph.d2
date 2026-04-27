@@ -1,0 +1,8 @@
+title: Loop Graph
+direction: right
+
+stage_DraftStage: "Draft Stage\nowner: ControllerSkill"
+stage_ReviewStage: "Review Stage\nowner: ControllerSkill"
+
+stage_ReviewStage -> stage_DraftStage: "The reviewer can send the work back to drafting."
+stage_DraftStage -> stage_ReviewStage: "Drafting enters the review loop."

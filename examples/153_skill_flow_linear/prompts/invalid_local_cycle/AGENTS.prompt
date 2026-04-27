@@ -1,0 +1,28 @@
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioSkill
+    intent: "Plan one lesson."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan write receipt."
+    advance_condition: "Plan receipt landed."
+
+stage AuthorRender: "Author Render"
+    owner: StudioSkill
+    intent: "Render the plan."
+    durable_target: "Render brief."
+    durable_evidence: "Render write receipt."
+    advance_condition: "Render receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson."
+    start: LessonPlan
+    edge LessonPlan -> AuthorRender:
+        why: "Plan to render."
+    edge AuthorRender -> LessonPlan:
+        why: "Render back to plan creates a cycle."
+
+agent FlowDemo:
+    role: "Run the cyclic flow."

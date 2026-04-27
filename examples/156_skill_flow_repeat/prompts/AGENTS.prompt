@@ -1,0 +1,48 @@
+enum LessonSlots: "Lesson Slots"
+    intro: "Intro slot"
+    core: "Core slot"
+    review: "Review slot"
+
+skill StudioSkill: "Studio Skill"
+    purpose: "Run the studio job."
+    package: "studio-skill"
+
+stage ControllerRecoveryAudit: "Controller Recovery Audit"
+    owner: StudioSkill
+    intent: "Audit recovery state."
+    durable_target: "Audit brief."
+    durable_evidence: "Audit receipt."
+    advance_condition: "Audit receipt landed."
+
+stage SectionOverviewRender: "Section Overview Render"
+    owner: StudioSkill
+    intent: "Render the section overview."
+    durable_target: "Section overview."
+    durable_evidence: "Render receipt."
+    advance_condition: "Render receipt landed."
+
+stage LessonPlan: "Lesson Plan"
+    owner: StudioSkill
+    intent: "Plan one lesson."
+    durable_target: "Plan brief."
+    durable_evidence: "Plan receipt."
+    advance_condition: "Plan receipt landed."
+
+skill_flow F1AuthorLesson: "F1 - Author One Lesson"
+    intent: "Author one lesson."
+    start: LessonPlan
+
+skill_flow F2AuthorEmptySection: "F2 - Author All Lessons"
+    intent: "Fill every slot in a locked empty section."
+    start: ControllerRecoveryAudit
+    repeat LessonSlotRun: F1AuthorLesson
+        over: LessonSlots
+        order: serial
+        why: "Each lesson changes the evidence for later slots."
+    edge ControllerRecoveryAudit -> LessonSlotRun:
+        why: "Audit before slot authoring starts."
+    edge LessonSlotRun -> SectionOverviewRender:
+        why: "The overview should see all completed slots."
+
+agent FlowDemo:
+    role: "Run the repeat-bearing flow."

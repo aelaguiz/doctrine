@@ -178,6 +178,24 @@ def render_skill_package_contract_json(compiled) -> str:
 
 
 def _render_host_slot(slot) -> dict:
+    if isinstance(slot, model.ResolvedReceiptHostSlotRef):
+        receipt = slot.receipt
+        payload: dict = {
+            "family": slot.family,
+            "title": receipt.title,
+            "receipt": slot.canonical_name,
+            "fields": {
+                field.key: _render_resolved_receipt_field(field)
+                for field in receipt.fields
+            },
+            "json_schema": _render_resolved_receipt_json_schema(receipt),
+        }
+        if receipt.routes:
+            payload["routes"] = {
+                route.key: _render_resolved_receipt_route(route)
+                for route in receipt.routes
+            }
+        return payload
     if isinstance(slot, model.ReceiptHostSlot):
         return {
             "family": slot.family,
@@ -190,11 +208,85 @@ def _render_host_slot(slot) -> dict:
     }
 
 
+def _render_resolved_receipt_route(
+    route: model.ResolvedReceiptRouteField,
+) -> dict:
+    return {
+        "title": route.title,
+        "choices": {
+            choice.key: {
+                "title": choice.title,
+                "target_kind": choice.target_kind,
+                "target": choice.target_name,
+            }
+            for choice in route.choices
+        },
+    }
+
+
 def _render_receipt_field(field) -> dict:
     payload: dict = {"type": field.type_ref.declaration_name}
     if field.list_element:
         payload["list"] = True
     return payload
+
+
+def _render_resolved_receipt_field(field: model.ResolvedReceiptField) -> dict:
+    payload: dict = {"type": field.type_name, "kind": field.type_kind}
+    if field.list_element:
+        payload["list"] = True
+    return payload
+
+
+def _render_resolved_receipt_json_schema(
+    receipt: model.ResolvedReceipt,
+) -> dict:
+    properties: dict[str, object] = {
+        field.key: _render_resolved_receipt_field_json_schema(field)
+        for field in receipt.fields
+    }
+    required = [field.key for field in receipt.fields]
+    for route in receipt.routes:
+        properties[route.key] = {
+            "type": "string",
+            "enum": [choice.key for choice in route.choices],
+        }
+        required.append(route.key)
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": properties,
+        "required": required,
+    }
+
+
+def _render_resolved_receipt_field_json_schema(
+    field: model.ResolvedReceiptField,
+) -> dict:
+    item_schema = _render_resolved_receipt_type_json_schema(
+        type_kind=field.type_kind,
+        type_name=field.type_name,
+    )
+    if field.list_element:
+        return {
+            "type": "array",
+            "items": item_schema,
+        }
+    return item_schema
+
+
+def _render_resolved_receipt_type_json_schema(
+    *,
+    type_kind: str,
+    type_name: str,
+) -> dict:
+    if type_kind == "builtin":
+        return {"type": type_name}
+    if type_kind == "enum":
+        return {"type": "string"}
+    if type_kind in {"receipt", "schema", "table"}:
+        return {"type": "object"}
+    raise ValueError(f"Unsupported resolved receipt field kind: {type_kind}")
 
 
 def _should_emit_skill_package_contract_json(compiled) -> bool:

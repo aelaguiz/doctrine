@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from lark import v_args
 
 from doctrine import model
@@ -27,6 +29,69 @@ from doctrine._parser.parts import (
     _with_source_span,
 )
 from doctrine.diagnostics import TransformParseFailure
+
+
+@dataclass(frozen=True, slots=True)
+class _EdgeKindPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _EdgeWhyPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _SkillRelationsBlockPart:
+    relations: tuple[model.SkillRelation, ...]
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _SkillRelationWhyPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _RepeatOverPart:
+    ref: model.NameRef
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _RepeatOrderPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _RepeatWhyPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _ChangedWorkflowAllowPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class _ChangedWorkflowRequirePart:
+    value: str
+    line: int | None
+    column: int | None
 
 
 def _split_record_scalar_body(
@@ -105,6 +170,18 @@ class SkillsTransformerMixin:
                 title=title,
                 items=body.items,
                 package_link=body.package_link,
+                relations=body.relations,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.ArtifactDecl(
+                name=name,
+                title=title,
+                items=tuple(body),
             ),
             meta,
         )
@@ -235,6 +312,8 @@ class SkillsTransformerMixin:
     def skill_decl_body(self, items):
         record_items: list[model.RecordItem] = []
         package_link: model.SkillPackageLink | None = None
+        relations: tuple[model.SkillRelation, ...] = ()
+        seen_relations = False
         for item in items:
             if isinstance(item, model.SkillPackageLink):
                 if package_link is not None:
@@ -246,8 +325,102 @@ class SkillsTransformerMixin:
                     )
                 package_link = item
                 continue
+            if isinstance(item, _SkillRelationsBlockPart):
+                if seen_relations:
+                    raise TransformParseFailure(
+                        "Skills may define `relations:` only once.",
+                        hints=("Keep exactly one `relations:` block per skill.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                relations = item.relations
+                seen_relations = True
+                continue
             record_items.append(item)
-        return SkillDeclBodyParts(items=tuple(record_items), package_link=package_link)
+        return SkillDeclBodyParts(
+            items=tuple(record_items),
+            package_link=package_link,
+            relations=relations,
+        )
+
+    @v_args(meta=True)
+    def skill_relations_block(self, meta, items):
+        line, column = _meta_line_column(meta)
+        return _SkillRelationsBlockPart(
+            relations=tuple(items),
+            line=line,
+            column=column,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_relation_stmt(self, meta, kind, target_ref, body):
+        why: str | None = None
+        for item in body:
+            if isinstance(item, _SkillRelationWhyPart):
+                if why is not None:
+                    raise TransformParseFailure(
+                        "Skill relations may declare `why:` only once.",
+                        hints=("Keep one `why:` per skill relation.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                why = item.value
+        return _with_source_span(
+            model.SkillRelation(kind=kind, target_ref=target_ref, why=why),
+            meta,
+        )
+
+    def skill_relation_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_relation_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_relation_why_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _SkillRelationWhyPart(value=value, line=line, column=column)
+
+    def artifact_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def artifact_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def artifact_owner_stmt(self, meta, ref):
+        return _with_source_span(
+            model.ArtifactOwnerItem(stage_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_path_family_stmt(self, meta, ref):
+        return _with_source_span(
+            model.ArtifactPathFamilyItem(target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def artifact_scalar_stmt(self, meta, key, value):
+        return _with_source_span(
+            model.ArtifactScalarItem(key=key, value=value),
+            meta,
+        )
+
+    def artifact_scalar_key_path(self, _children):
+        return "path"
+
+    def artifact_scalar_key_section(self, _children):
+        return "section"
+
+    def artifact_scalar_key_anchor(self, _children):
+        return "anchor"
+
+    def artifact_scalar_key_intent(self, _children):
+        return "intent"
 
     def skill_entry_body(self, items):
         record_items: list[model.RecordItem] = []
@@ -478,6 +651,13 @@ class SkillsTransformerMixin:
             meta,
         )
 
+    @v_args(meta=True, inline=True)
+    def package_host_receipt_slot_ref(self, meta, key, receipt_ref):
+        return _with_source_span(
+            model.ReceiptHostSlotRef(key=key, receipt_ref=receipt_ref),
+            meta,
+        )
+
     def receipt_slot_body(self, items):
         return tuple(items)
 
@@ -502,6 +682,829 @@ class SkillsTransformerMixin:
     @v_args(inline=True)
     def receipt_field_list_type(self, name_ref):
         return (name_ref, True)
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
+        parent_ref: model.NameRef | None = None
+        title = parent_ref_or_title
+        decl_body = title_or_body
+        if body is not None:
+            parent_ref = parent_ref_or_title
+            title = title_or_body
+            decl_body = body
+        return _with_source_span(
+            model.ReceiptDecl(
+                name=name,
+                title=title,
+                items=tuple(decl_body),
+                parent_ref=parent_ref,
+            ),
+            meta,
+        )
+
+    def receipt_decl_body(self, items):
+        return _flatten_grouped_items(items)
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl_field(self, meta, key, type_value):
+        type_ref, list_element = type_value
+        return _with_source_span(
+            model.ReceiptDeclField(
+                key=key,
+                type_ref=type_ref,
+                list_element=list_element,
+            ),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def receipt_decl_field_type(self, value):
+        if isinstance(value, tuple):
+            return value
+        return (value, False)
+
+    @v_args(inline=True)
+    def receipt_decl_field_list_type(self, name_ref):
+        return (name_ref, True)
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl_inherit(self, meta, key):
+        return _with_source_span(model.InheritItem(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl_inherit_group(self, meta, keys=()):
+        return _expand_grouped_inherit(meta, keys, model.InheritItem)
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl_override(self, meta, key, type_value):
+        type_ref, list_element = type_value
+        return _with_source_span(
+            model.ReceiptDeclOverride(
+                key=key,
+                type_ref=type_ref,
+                list_element=list_element,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def receipt_decl_route_field(self, meta, key, title, *choices):
+        return _with_source_span(
+            model.ReceiptDeclRouteField(
+                key=key,
+                title=title,
+                choices=tuple(choices),
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def receipt_route_choice(self, meta, key, title, target):
+        return _with_source_span(
+            model.ReceiptRouteChoice(key=key, title=title, target=target),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def receipt_route_target_stage(self, meta, ref):
+        return _with_source_span(
+            model.ReceiptRouteStageTarget(stage_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def receipt_route_target_flow(self, meta, ref):
+        return _with_source_span(
+            model.ReceiptRouteFlowTarget(flow_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def receipt_route_target_human(self, meta, _children=None):
+        return _with_source_span(
+            model.ReceiptRouteSentinelTarget(sentinel="human"),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def receipt_route_target_external(self, meta, _children=None):
+        return _with_source_span(
+            model.ReceiptRouteSentinelTarget(sentinel="external"),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def receipt_route_target_terminal(self, meta, _children=None):
+        return _with_source_span(
+            model.ReceiptRouteSentinelTarget(sentinel="terminal"),
+            meta,
+        )
+
+    # Stage declarations -------------------------------------------------
+
+    @v_args(meta=True, inline=True)
+    def stage_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.StageDecl(
+                name=name,
+                title=title,
+                items=tuple(body),
+            ),
+            meta,
+        )
+
+    def stage_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def stage_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def stage_owner_stmt(self, meta, ref):
+        return _with_source_span(
+            model.StageOwnerItem(owner_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def stage_lane_stmt(self, meta, ref):
+        return _with_source_span(
+            model.StageLaneItem(lane_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def stage_supports_block(self, meta, items):
+        refs = tuple(items)
+        return _with_source_span(
+            model.StageSupportsItem(skill_refs=refs),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def stage_supports_item(self, ref):
+        return ref
+
+    @v_args(meta=True)
+    def stage_applies_to_block(self, meta, items):
+        refs = tuple(items)
+        return _with_source_span(
+            model.StageAppliesToItem(flow_refs=refs),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def stage_applies_to_item(self, ref):
+        return ref
+
+    @v_args(meta=True)
+    def stage_inputs_block(self, meta, items):
+        return _with_source_span(
+            model.StageInputsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def stage_input_item(self, meta, key, ref):
+        return _with_source_span(
+            model.StageInputEntry(key=key, type_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def stage_artifacts_block(self, meta, items):
+        return _with_source_span(
+            model.StageArtifactsItem(artifact_refs=tuple(items)),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def stage_artifact_item(self, ref):
+        return ref
+
+    @v_args(meta=True, inline=True)
+    def stage_emits_stmt(self, meta, ref):
+        return _with_source_span(
+            model.StageEmitsItem(receipt_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def stage_forbidden_outputs_block(self, meta, items):
+        return _with_source_span(
+            model.StageForbiddenOutputsItem(values=tuple(items)),
+            meta,
+        )
+
+    @v_args(inline=True)
+    def stage_forbidden_outputs_item(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def stage_scalar_stmt(self, meta, key, value):
+        return _with_source_span(
+            model.StageScalarItem(key=key, value=value),
+            meta,
+        )
+
+    def stage_scalar_key_id(self, _children):
+        return "id"
+
+    def stage_scalar_key_intent(self, _children):
+        return "intent"
+
+    def stage_scalar_key_durable_target(self, _children):
+        return "durable_target"
+
+    def stage_scalar_key_durable_evidence(self, _children):
+        return "durable_evidence"
+
+    def stage_scalar_key_advance_condition(self, _children):
+        return "advance_condition"
+
+    def stage_scalar_key_risk_guarded(self, _children):
+        return "risk_guarded"
+
+    def stage_scalar_key_entry(self, _children):
+        return "entry"
+
+    def stage_scalar_key_repair_routes(self, _children):
+        return "repair_routes"
+
+    def stage_scalar_key_waiver_policy(self, _children):
+        return "waiver_policy"
+
+    def stage_scalar_key_checkpoint(self, _children):
+        return "checkpoint"
+
+    # Top-level skill_flow declarations ----------------------------------
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_decl_bare(self, meta, name, title):
+        return _with_source_span(
+            model.SkillFlowDecl(name=name, title=title, items=()),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_decl_body(self, meta, name, title, body):
+        return _with_source_span(
+            model.SkillFlowDecl(name=name, title=title, items=tuple(body)),
+            meta,
+        )
+
+    def skill_flow_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_flow_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_intent_stmt(self, meta, value):
+        return _with_source_span(
+            model.SkillFlowIntentItem(value=value),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_start_stmt(self, meta, ref):
+        return _with_source_span(
+            model.SkillFlowStartItem(node_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_approve_stmt(self, meta, ref):
+        return _with_source_span(
+            model.SkillFlowApproveItem(flow_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_edge_stmt(self, meta, source_ref, target_ref, body):
+        kind = "normal"
+        why: str | None = None
+        route: model.SkillFlowEdgeRouteRef | None = None
+        when: model.SkillFlowEdgeWhenRef | None = None
+        seen_kind = False
+        seen_why = False
+        seen_route = False
+        seen_when = False
+        for item in body:
+            if isinstance(item, _EdgeKindPart):
+                if seen_kind:
+                    raise TransformParseFailure(
+                        "Skill flow edges may declare `kind:` only once.",
+                        hints=("Keep one `kind:` per `edge` block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                kind = item.value
+                seen_kind = True
+                continue
+            if isinstance(item, _EdgeWhyPart):
+                if seen_why:
+                    raise TransformParseFailure(
+                        "Skill flow edges may declare `why:` only once.",
+                        hints=("Keep one `why:` per `edge` block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                why = item.value
+                seen_why = True
+                continue
+            if isinstance(item, model.SkillFlowEdgeRouteRef):
+                if seen_route:
+                    line = item.source_span.line if item.source_span else None
+                    column = item.source_span.column if item.source_span else None
+                    raise TransformParseFailure(
+                        "Skill flow edges may declare `route:` only once.",
+                        hints=("Keep one `route:` per `edge` block.",),
+                        line=line,
+                        column=column,
+                    )
+                route = item
+                seen_route = True
+                continue
+            if isinstance(item, model.SkillFlowEdgeWhenRef):
+                if seen_when:
+                    line = item.source_span.line if item.source_span else None
+                    column = item.source_span.column if item.source_span else None
+                    raise TransformParseFailure(
+                        "Skill flow edges may declare `when:` only once.",
+                        hints=("Keep one `when:` per `edge` block.",),
+                        line=line,
+                        column=column,
+                    )
+                when = item
+                seen_when = True
+                continue
+        if why is None:
+            line, column = _meta_line_column(meta)
+            raise TransformParseFailure(
+                "Skill flow edges require a `why:` reason.",
+                hints=("Add a `why: \"...\"` line under the `edge` block.",),
+                line=line,
+                column=column,
+            )
+        return _with_source_span(
+            model.SkillFlowEdgeItem(
+                source_ref=source_ref,
+                target_ref=target_ref,
+                why=why,
+                kind=kind,
+                route=route,
+                when=when,
+            ),
+            meta,
+        )
+
+    def skill_flow_edge_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_flow_edge_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_edge_route_stmt(self, meta, ref):
+        # The author writes `route: ReceiptRef.route_field.choice`. The grammar
+        # parses one `name_ref`; the trailing two dotted parts are the route
+        # field key and the choice key. The receipt ref keeps the leading
+        # module-dotted path when present.
+        if not ref.module_parts or len(ref.module_parts) < 2:
+            line = ref.source_span.line if ref.source_span else None
+            column = ref.source_span.column if ref.source_span else None
+            raise TransformParseFailure(
+                "Skill flow edge `route:` must be `ReceiptRef.route_field.choice`.",
+                hints=(
+                    "Use `route: <ReceiptRef>.<route_field>.<choice>` so the "
+                    "binding names a receipt route choice.",
+                ),
+                line=line,
+                column=column,
+            )
+        receipt_ref = model.NameRef(
+            module_parts=ref.module_parts[:-2],
+            declaration_name=ref.module_parts[-2],
+            source_span=ref.source_span,
+        )
+        route_field_key = ref.module_parts[-1]
+        choice_key = ref.declaration_name
+        return _with_source_span(
+            model.SkillFlowEdgeRouteRef(
+                receipt_ref=receipt_ref,
+                route_field_key=route_field_key,
+                choice_key=choice_key,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_edge_kind_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _EdgeKindPart(value=value, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_edge_when_stmt(self, meta, ref):
+        # `when:` accepts only `EnumName.member`. Lower it into a typed
+        # branch ref where the last dotted segment is the enum member key
+        # and the remainder names the enum declaration.
+        if not ref.module_parts:
+            raise TransformParseFailure(
+                "Skill flow `when:` must be a dotted `EnumName.member` ref.",
+                hints=(
+                    "Use `when: <EnumName>.<member>` so the branch resolves to "
+                    "a declared enum member.",
+                ),
+                line=ref.source_span.line if ref.source_span else None,
+                column=ref.source_span.column if ref.source_span else None,
+            )
+        enum_ref = model.NameRef(
+            module_parts=ref.module_parts[:-1],
+            declaration_name=ref.module_parts[-1],
+            source_span=ref.source_span,
+        )
+        return _with_source_span(
+            model.SkillFlowEdgeWhenRef(
+                enum_ref=enum_ref,
+                member_key=ref.declaration_name,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_edge_why_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _EdgeWhyPart(value=value, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_repeat_stmt(self, meta, name, target_flow_ref, body):
+        over_ref: model.NameRef | None = None
+        order: str | None = None
+        why: str | None = None
+        seen_over = False
+        seen_order = False
+        seen_why = False
+        for item in body:
+            if isinstance(item, _RepeatOverPart):
+                if seen_over:
+                    raise TransformParseFailure(
+                        "Skill flow repeats may declare `over:` only once.",
+                        hints=("Keep one `over:` per `repeat` block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                over_ref = item.ref
+                seen_over = True
+                continue
+            if isinstance(item, _RepeatOrderPart):
+                if seen_order:
+                    raise TransformParseFailure(
+                        "Skill flow repeats may declare `order:` only once.",
+                        hints=("Keep one `order:` per `repeat` block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                order = item.value
+                seen_order = True
+                continue
+            if isinstance(item, _RepeatWhyPart):
+                if seen_why:
+                    raise TransformParseFailure(
+                        "Skill flow repeats may declare `why:` only once.",
+                        hints=("Keep one `why:` per `repeat` block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                why = item.value
+                seen_why = True
+                continue
+        line, column = _meta_line_column(meta)
+        if over_ref is None:
+            raise TransformParseFailure(
+                f"Skill flow repeat `{name}` is missing required `over:`.",
+                hints=("Add `over: <Enum|Table|Schema>` under `repeat`.",),
+                line=line,
+                column=column,
+            )
+        if order is None:
+            raise TransformParseFailure(
+                f"Skill flow repeat `{name}` is missing required `order:`.",
+                hints=("Add `order: serial`, `order: parallel`, or `order: unspecified`.",),
+                line=line,
+                column=column,
+            )
+        if why is None:
+            raise TransformParseFailure(
+                f"Skill flow repeat `{name}` is missing required `why:`.",
+                hints=("Add `why: \"...\"` under the `repeat` block.",),
+                line=line,
+                column=column,
+            )
+        return _with_source_span(
+            model.SkillFlowRepeatItem(
+                name=name,
+                target_flow_ref=target_flow_ref,
+                over_ref=over_ref,
+                order=order,
+                why=why,
+            ),
+            meta,
+        )
+
+    def skill_flow_repeat_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_flow_repeat_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_repeat_over_stmt(self, meta, ref):
+        line, column = _meta_line_column(meta)
+        return _RepeatOverPart(ref=ref, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_repeat_order_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _RepeatOrderPart(value=value, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_repeat_why_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _RepeatWhyPart(value=value, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_variation_stmt(self, meta, name, title, body=None):
+        safe_when: model.SkillFlowEdgeWhenRef | None = None
+        if body is not None:
+            for item in body:
+                if isinstance(item, model.SkillFlowEdgeWhenRef):
+                    if safe_when is not None:
+                        line = item.source_span.line if item.source_span else None
+                        column = item.source_span.column if item.source_span else None
+                        raise TransformParseFailure(
+                            "Skill flow variations may declare `safe_when:` only once.",
+                            hints=("Keep one `safe_when:` per `variation` block.",),
+                            line=line,
+                            column=column,
+                        )
+                    safe_when = item
+        return _with_source_span(
+            model.SkillFlowVariationItem(
+                name=name,
+                title=title,
+                safe_when=safe_when,
+            ),
+            meta,
+        )
+
+    def skill_flow_variation_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_flow_variation_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_variation_safe_when_stmt(self, meta, ref):
+        if not ref.module_parts:
+            raise TransformParseFailure(
+                "Skill flow `safe_when:` must be a dotted `EnumName.member` ref.",
+                hints=(
+                    "Use `safe_when: <EnumName>.<member>` so the branch resolves "
+                    "to a declared enum member.",
+                ),
+                line=ref.source_span.line if ref.source_span else None,
+                column=ref.source_span.column if ref.source_span else None,
+            )
+        enum_ref = model.NameRef(
+            module_parts=ref.module_parts[:-1],
+            declaration_name=ref.module_parts[-1],
+            source_span=ref.source_span,
+        )
+        return _with_source_span(
+            model.SkillFlowEdgeWhenRef(
+                enum_ref=enum_ref,
+                member_key=ref.declaration_name,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_unsafe_stmt(self, meta, name, title):
+        return _with_source_span(
+            model.SkillFlowUnsafeItem(name=name, title=title),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_changed_workflow_stmt(self, meta, body):
+        allow_provisional_flow = False
+        requires: list[str] = []
+        seen_requires: set[str] = set()
+        line, column = _meta_line_column(meta)
+        for item in body:
+            if isinstance(item, _ChangedWorkflowAllowPart):
+                if item.value != "provisional_flow":
+                    raise TransformParseFailure(
+                        f"Skill flow `changed_workflow:` only allows `provisional_flow`, got `{item.value}`.",
+                        hints=("Use `allow provisional_flow` exactly.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                if allow_provisional_flow:
+                    raise TransformParseFailure(
+                        "Skill flow `changed_workflow:` may declare `allow provisional_flow` only once.",
+                        hints=("Keep one `allow provisional_flow` line per block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                allow_provisional_flow = True
+                continue
+            if isinstance(item, _ChangedWorkflowRequirePart):
+                if item.value in seen_requires:
+                    raise TransformParseFailure(
+                        f"Skill flow `changed_workflow:` declares `require {item.value}` more than once.",
+                        hints=("List each required field once per block.",),
+                        line=item.line,
+                        column=item.column,
+                    )
+                seen_requires.add(item.value)
+                requires.append(item.value)
+                continue
+        return _with_source_span(
+            model.SkillFlowChangedWorkflowItem(
+                allow_provisional_flow=allow_provisional_flow,
+                requires=tuple(requires),
+            ),
+            meta,
+        )
+
+    def skill_flow_changed_workflow_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_flow_changed_workflow_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_changed_workflow_allow_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _ChangedWorkflowAllowPart(value=value, line=line, column=column)
+
+    @v_args(meta=True, inline=True)
+    def skill_flow_changed_workflow_require_stmt(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _ChangedWorkflowRequirePart(value=value, line=line, column=column)
+
+    # Top-level skill_graph declarations ---------------------------------
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_decl(self, meta, name, title, body):
+        return _with_source_span(
+            model.SkillGraphDecl(
+                name=name,
+                title=title,
+                items=tuple(body),
+            ),
+            meta,
+        )
+
+    def skill_graph_body(self, items):
+        return tuple(items)
+
+    @v_args(inline=True)
+    def skill_graph_body_line(self, value):
+        return value
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_purpose_stmt(self, meta, value):
+        return _with_source_span(
+            model.SkillGraphPurposeItem(value=value),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_roots_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphRootsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_root_flow(self, meta, ref):
+        return _with_source_span(
+            model.SkillGraphRootEntry(kind="flow", target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_root_stage(self, meta, ref):
+        return _with_source_span(
+            model.SkillGraphRootEntry(kind="stage", target_ref=ref),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_sets_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphSetsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_set_item(self, meta, name, title):
+        return _with_source_span(
+            model.SkillGraphSetEntry(name=name, title=title),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_recovery_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphRecoveryItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_recovery_item(self, meta, key, ref):
+        return _with_source_span(
+            model.SkillGraphRecoveryEntry(key=key, target_ref=ref),
+            meta,
+        )
+
+    def skill_graph_recovery_key_flow_receipt(self, _children):
+        return "flow_receipt"
+
+    def skill_graph_recovery_key_stage_status(self, _children):
+        return "stage_status"
+
+    def skill_graph_recovery_key_durable_artifact_status(self, _children):
+        return "durable_artifact_status"
+
+    @v_args(meta=True)
+    def skill_graph_policy_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphPolicyItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_policy_dag_acyclic_stmt(self, meta, _children=None):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="dag", key="acyclic"),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_dag_allow_cycle_stmt(self, meta, reason):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(
+                action="dag",
+                key="allow_cycle",
+                reason=reason,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_allow_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="allow", key=key),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_require_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="require", key=key),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_policy_warn_stmt(self, meta, key):
+        return _with_source_span(
+            model.SkillGraphPolicyEntry(action="warn", key=key),
+            meta,
+        )
+
+    @v_args(meta=True)
+    def skill_graph_views_block(self, meta, items):
+        return _with_source_span(
+            model.SkillGraphViewsItem(entries=tuple(items)),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def skill_graph_view_item(self, meta, key, path):
+        return _with_source_span(
+            model.SkillGraphViewEntry(key=key, path=path),
+            meta,
+        )
 
     def package_host_slot_family_input(self, _children):
         return "input"

@@ -1,0 +1,194 @@
+{
+  "contract_version": 1,
+  "graph": {
+    "name": "AuthoringMetadataGraph",
+    "title": "Authoring Metadata Graph",
+    "purpose": "Emit graph authoring metadata."
+  },
+  "roots": [
+    {
+      "kind": "flow",
+      "name": "RunGraph"
+    }
+  ],
+  "sets": {},
+  "recovery": null,
+  "policies": [
+    {
+      "action": "dag",
+      "key": "acyclic",
+      "reason": null
+    }
+  ],
+  "views": {},
+  "skills": {
+    "ControllerSkill": {
+      "title": "Controller Skill",
+      "purpose": "Own the graph.",
+      "package_id": null,
+      "category": "controller",
+      "visibility": "default",
+      "manual_only": "false",
+      "default_flow_member": "true",
+      "aliases": "controller, graph-owner"
+    },
+    "SlotWorkerSkill": {
+      "title": "Slot Worker Skill",
+      "purpose": "Run one slot.",
+      "package_id": null,
+      "category": "worker",
+      "visibility": "explicit-only",
+      "manual_only": "true",
+      "default_flow_member": "false",
+      "aliases": null
+    }
+  },
+  "skill_relations": [],
+  "stages": {
+    "PrepareGraph": {
+      "title": "Prepare Graph",
+      "id": null,
+      "owner": "ControllerSkill",
+      "lane": null,
+      "supports": [
+        "SlotWorkerSkill"
+      ],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Prepare graph inputs.",
+      "durable_target": "Graph input receipt.",
+      "durable_evidence": "Graph input receipt.",
+      "advance_condition": "Graph inputs are current.",
+      "risk_guarded": "Do not run slots with stale inputs.",
+      "entry": "Start only after graph inputs are current.",
+      "repair_routes": "Route stale inputs back to preparation.",
+      "waiver_policy": "Only a human owner can waive stale inputs.",
+      "forbidden_outputs": []
+    },
+    "RunSlot": {
+      "title": "Run Slot",
+      "id": null,
+      "owner": "SlotWorkerSkill",
+      "lane": null,
+      "supports": [],
+      "applies_to": [],
+      "inputs": {},
+      "emits": null,
+      "artifacts": [],
+      "checkpoint": "durable",
+      "intent": "Run one graph slot.",
+      "durable_target": "Slot receipt.",
+      "durable_evidence": "Slot receipt.",
+      "advance_condition": "Slot receipt lands.",
+      "risk_guarded": "Do not merge partial slot output.",
+      "entry": "Start after preparation succeeds.",
+      "repair_routes": null,
+      "waiver_policy": null,
+      "forbidden_outputs": []
+    }
+  },
+  "artifacts": {},
+  "flows": {
+    "RunGraph": {
+      "title": "Run Graph",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "PrepareGraph"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "PrepareGraph"
+        },
+        {
+          "kind": "repeat",
+          "name": "SlotRun"
+        }
+      ],
+      "edges": [
+        {
+          "from": "PrepareGraph",
+          "from_kind": "stage",
+          "to": "SlotRun",
+          "to_kind": "repeat",
+          "kind": "normal",
+          "why": "Prepared inputs feed each slot run.",
+          "route": null,
+          "when": null
+        }
+      ],
+      "repeat_nodes": {
+        "SlotRun": {
+          "target_flow": "RunOneSlot",
+          "over_kind": "graph_path",
+          "over": "GraphInputs.lesson_slots",
+          "order": "serial",
+          "why": "Each lesson slot gets one run from graph input facts."
+        }
+      },
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": [
+        "SlotRun"
+      ]
+    },
+    "RunOneSlot": {
+      "title": "Run One Slot",
+      "intent": null,
+      "start": {
+        "kind": "stage",
+        "name": "RunSlot"
+      },
+      "approve": null,
+      "nodes": [
+        {
+          "kind": "stage",
+          "name": "RunSlot"
+        }
+      ],
+      "edges": [],
+      "repeat_nodes": {},
+      "variations": {},
+      "unsafe_variations": {},
+      "changed_workflow": null,
+      "terminals": []
+    }
+  },
+  "receipts": {},
+  "packages": {},
+  "warnings": [],
+  "stage_edges": [
+    {
+      "from": "PrepareGraph",
+      "to": "RunSlot",
+      "via_flow": "RunGraph",
+      "kind": "normal",
+      "why": "Prepared inputs feed each slot run."
+    }
+  ],
+  "stage_successors": {
+    "PrepareGraph": [
+      "RunSlot"
+    ]
+  },
+  "stage_predecessors": {
+    "RunSlot": [
+      "PrepareGraph"
+    ]
+  },
+  "stage_reaching_flows": {
+    "PrepareGraph": [
+      "RunGraph"
+    ],
+    "RunSlot": [
+      "RunGraph",
+      "RunOneSlot"
+    ]
+  }
+}

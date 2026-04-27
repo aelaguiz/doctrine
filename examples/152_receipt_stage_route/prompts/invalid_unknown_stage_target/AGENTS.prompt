@@ -1,0 +1,8 @@
+skill ControllerSkill: "Controller Skill"
+    purpose: "Run."
+    package: "controller-package"
+
+agent ControllerDemo:
+    role: "Demo controller."
+    skills: "Skills"
+        skill controller: ControllerSkill
