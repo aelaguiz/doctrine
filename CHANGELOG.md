@@ -405,6 +405,10 @@ Support-surface version changes: Doctrine language 4.0 -> 5.3; package metadata 
   E500 behavior. That constraint is no longer part of the language.
 
 ### Fixed
+- `emit_skill` now ignores generated cache artifacts such as `__pycache__`,
+  `.pytest_cache`, `.pyc`, and `.pyo` when bundling package files and writing
+  `SKILL.source.json`. Explicit `source.track:` entries that name those cache
+  artifacts now fail with `E556`.
 - Output shape selector identity now compares the resolved
   `(owner_module_parts, enum_name)` pair instead of the enum basename. A
   selector on `mod_a.WriterRole` no longer accepts a binding or case on a

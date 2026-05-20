@@ -297,6 +297,10 @@ through `host_contract:` or referenced `host:` paths.
 - one source tree hash
 - one output tree hash
 
+Generated cache files such as `__pycache__`, `.pytest_cache`, `.pyc`, and
+`.pyo` files are not skill package source. `emit_skill` leaves them out of the
+emitted package tree and out of `SKILL.source.json`.
+
 Use the receipt to prove that a copied skill tree still matches the current
 source. It is not a runtime contract. Do not place host-slot or tool-call
 rules there.

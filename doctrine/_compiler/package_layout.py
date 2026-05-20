@@ -12,6 +12,21 @@ from doctrine._diagnostics.contracts import DiagnosticRelatedLocation
 from doctrine._model.core import SourceSpan
 
 
+GENERATED_PACKAGE_DIR_NAMES = frozenset(
+    {
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pyre",
+        ".tox",
+        ".nox",
+    }
+)
+GENERATED_PACKAGE_FILE_SUFFIXES = frozenset({".pyc", ".pyo"})
+GENERATED_PACKAGE_FILE_NAMES = frozenset({".DS_Store", "Thumbs.db"})
+
+
 @dataclass(slots=True, frozen=True)
 class BundledPackageFile:
     path: str
@@ -154,6 +169,19 @@ def register_package_output_path(
     registry.seen_folded[folded] = normalized
     registry.source_paths[normalized] = source_path.resolve() if source_path is not None else None
     return normalized
+
+
+def is_generated_package_artifact(path: Path, *, source_root: Path) -> bool:
+    try:
+        rel_path = path.relative_to(source_root)
+    except ValueError:
+        return False
+
+    if any(part in GENERATED_PACKAGE_DIR_NAMES for part in rel_path.parts):
+        return True
+    if rel_path.name in GENERATED_PACKAGE_FILE_NAMES:
+        return True
+    return rel_path.suffix in GENERATED_PACKAGE_FILE_SUFFIXES
 
 
 def bundle_ordinary_package_files(

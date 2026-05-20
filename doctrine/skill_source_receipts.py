@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any
 
 from doctrine import model
+from doctrine._compiler.package_layout import is_generated_package_artifact
 from doctrine._compiler.indexing import IndexedUnit
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
@@ -290,7 +291,12 @@ def _collect_source_inputs(
     source_paths: dict[Path, str] = {}
 
     package_root = target.entrypoint.parent.resolve()
-    package_files = sorted(path for path in package_root.rglob("*") if path.is_file())
+    package_files = sorted(
+        path
+        for path in package_root.rglob("*")
+        if path.is_file()
+        and not is_generated_package_artifact(path, source_root=package_root)
+    )
     reserved_prompt_dirs = {
         path.parent
         for path in package_files
@@ -392,10 +398,23 @@ def _resolve_tracked_paths(
             f"Tracked source path does not exist in target `{target.name}`: `{display_path(resolved)}`.",
             location=path_location_for(resolved),
         )
+    if is_generated_package_artifact(resolved, source_root=source_root):
+        raise emit_error(
+            "E556",
+            "Invalid tracked source path",
+            f"Tracked source path names a generated cache artifact in target `{target.name}`: {path_text}",
+            location=path_location_for(resolved),
+            hints=("Track real source files, not interpreter or tool cache files.",),
+        )
     if resolved.is_file():
         return (resolved,)
     if resolved.is_dir():
-        return tuple(path for path in sorted(resolved.rglob("*")) if path.is_file())
+        return tuple(
+            path
+            for path in sorted(resolved.rglob("*"))
+            if path.is_file()
+            and not is_generated_package_artifact(path, source_root=source_root)
+        )
     raise emit_error(
         "E554",
         "Missing tracked source path",
