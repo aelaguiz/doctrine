@@ -732,6 +732,8 @@ Important rules:
 - `emit:` writes extra `.md` files under the package-relative paths you name.
 - Any bundled file that is not a `.prompt` file emits under the same relative
   path, byte for byte, so relative Markdown links keep working after emit.
+  Generated cache files such as `__pycache__`, `.pytest_cache`, `.pyc`, and
+  `.pyo` files are not package source and are not emitted.
 - Bundled agent prompts under `agents/**/*.prompt` compile to markdown
   companions under the same relative paths, with `.prompt` replaced by `.md`.
 - Other files in the same `agents/` tree still bundle normally.
@@ -766,8 +768,9 @@ The source id comes from target `source_id`, then package `source.id`, then
 `metadata.name`, then the package key.
 
 `source.track:` lists extra files or directories that affect the package.
-Tracked paths are relative to the receipt source root. Missing paths and
-paths that leave the source root fail loud during `emit_skill`.
+Tracked paths are relative to the receipt source root. Missing paths,
+generated cache paths, and paths that leave the source root fail loud during
+`emit_skill`.
 
 An emit target may also declare `source_root`, `source_id`, and `lock_file`.
 Use that shape when a downstream repo emits a skill from an upstream source

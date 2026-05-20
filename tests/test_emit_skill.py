@@ -9,7 +9,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from doctrine.diagnostics import CompileError
+from doctrine.diagnostics import CompileError, DoctrineError
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_skill import emit_target_skill
 from doctrine.verify_skill_receipts import verify_target_skill_receipt
@@ -452,6 +452,127 @@ class EmitSkillTests(unittest.TestCase):
             self.assertIn('[target."demo"]', lock_text)
             self.assertIn(receipt["source_tree_sha256"], lock_text)
 
+    def test_emit_skill_ignores_generated_package_cache_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "cache_filtered"
+            (prompts / "scripts" / "__pycache__").mkdir(parents=True)
+            (prompts / ".pytest_cache" / "v" / "cache").mkdir(parents=True)
+            tracked = root / "tracked"
+            (tracked / "facts").mkdir(parents=True)
+            (tracked / "__pycache__").mkdir()
+            (tracked / ".pytest_cache" / "v" / "cache").mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package CacheFiltered: "Cache Filtered"
+                        metadata:
+                            name: "cache-filtered"
+                        source:
+                            track:
+                                "tracked"
+                        "Ignore generated cache files when emitting."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            (prompts / "scripts" / "helper.py").write_text("print('helper')\n", encoding="utf-8")
+            (prompts / "scripts" / "__pycache__" / "helper.cpython-314.pyc").write_bytes(b"cache")
+            (prompts / ".pytest_cache" / "v" / "cache" / "nodeids").write_text("[]\n", encoding="utf-8")
+            (tracked / "facts" / "catalog.txt").write_text("catalog\n", encoding="utf-8")
+            (tracked / "__pycache__" / "catalog.cpython-314.pyc").write_bytes(b"cache")
+            (tracked / ".pytest_cache" / "v" / "cache" / "nodeids").write_text("[]\n", encoding="utf-8")
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/cache_filtered/SKILL.prompt"
+                    output_dir = "build"
+                    source_root = "."
+                    source_id = "example.cache-filtered"
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            target = load_emit_targets(pyproject)["demo"]
+            emitted = emit_target_skill(target)
+
+            emitted_root = root / "build" / "skills" / "cache_filtered"
+            self.assertIn(emitted_root / "scripts" / "helper.py", emitted)
+            self.assertFalse((emitted_root / "scripts" / "__pycache__").exists())
+            self.assertFalse((emitted_root / ".pytest_cache").exists())
+
+            receipt = json.loads((emitted_root / "SKILL.source.json").read_text(encoding="utf-8"))
+            input_paths = {entry["path"] for entry in receipt["inputs"]}
+            output_paths = {entry["path"] for entry in receipt["outputs"]}
+            self.assertIn("prompts/skills/cache_filtered/scripts/helper.py", input_paths)
+            self.assertIn("tracked/facts/catalog.txt", input_paths)
+            self.assertFalse(any("__pycache__" in path for path in input_paths))
+            self.assertFalse(any(".pytest_cache" in path for path in input_paths))
+            self.assertFalse(any(path.endswith(".pyc") for path in input_paths))
+            self.assertEqual(output_paths, {"SKILL.md", "scripts/helper.py"})
+
+    def test_emit_skill_rejects_generated_cache_source_track(self) -> None:
+        cases = (
+            ("__pycache__/helper.cpython-314.pyc", "__pycache__/helper.cpython-314.pyc"),
+            (".pytest_cache", ".pytest_cache"),
+        )
+        for tracked_path, expected_text in cases:
+            with self.subTest(tracked_path=tracked_path):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    root = Path(temp_dir).resolve()
+                    prompts = root / "prompts" / "skills" / "tracked_cache"
+                    prompts.mkdir(parents=True)
+                    if tracked_path.endswith(".pyc"):
+                        generated_path = root / "__pycache__" / "helper.cpython-314.pyc"
+                        generated_path.parent.mkdir()
+                        generated_path.write_bytes(b"cache")
+                    else:
+                        generated_path = root / ".pytest_cache" / "v" / "cache" / "nodeids"
+                        generated_path.parent.mkdir(parents=True)
+                        generated_path.write_text("[]\n", encoding="utf-8")
+                    (prompts / "SKILL.prompt").write_text(
+                        textwrap.dedent(
+                            f"""\
+                            skill package TrackedCache: "Tracked Cache"
+                                metadata:
+                                    name: "tracked-cache"
+                                source:
+                                    track:
+                                        "{tracked_path}"
+                                "Reject explicit cache tracking."
+                            """
+                        ),
+                        encoding="utf-8",
+                    )
+                    pyproject = root / "pyproject.toml"
+                    pyproject.write_text(
+                        textwrap.dedent(
+                            """\
+                            [tool.doctrine.emit]
+
+                            [[tool.doctrine.emit.targets]]
+                            name = "demo"
+                            entrypoint = "prompts/skills/tracked_cache/SKILL.prompt"
+                            output_dir = "build"
+                            source_root = "."
+                            source_id = "example.tracked-cache"
+                            """
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    with self.assertRaises(DoctrineError) as ctx:
+                        emit_target_skill(load_emit_targets(pyproject)["demo"])
+
+                self.assertIn("E556", str(ctx.exception))
+                self.assertIn(expected_text, str(ctx.exception))
+
     def test_verify_skill_receipts_reports_current_stale_and_edited(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()
@@ -555,6 +676,55 @@ class EmitSkillTests(unittest.TestCase):
             result = verify_target_skill_receipt(target)
 
             self.assertEqual(result.status, "unexpected_artifact")
+
+    def test_verify_skill_receipts_reports_generated_cache_as_unexpected_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "verify_cache"
+            prompts.mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                textwrap.dedent(
+                    """\
+                    skill package VerifyCache: "Verify Cache"
+                        metadata:
+                            name: "verify-cache"
+                        "Keep generated cache files out of emitted trees."
+                    """
+                ),
+                encoding="utf-8",
+            )
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                textwrap.dedent(
+                    """\
+                    [tool.doctrine.emit]
+
+                    [[tool.doctrine.emit.targets]]
+                    name = "demo"
+                    entrypoint = "prompts/skills/verify_cache/SKILL.prompt"
+                    output_dir = "build"
+                    """
+                ),
+                encoding="utf-8",
+            )
+            target = load_emit_targets(pyproject)["demo"]
+            emit_target_skill(target)
+            cache_path = (
+                root
+                / "build"
+                / "skills"
+                / "verify_cache"
+                / "scripts"
+                / "__pycache__"
+                / "helper.cpython-314.pyc"
+            )
+            cache_path.parent.mkdir(parents=True)
+            cache_path.write_bytes(b"cache")
+
+            result = verify_target_skill_receipt(target)
+
+            self.assertEqual(result.status, "unexpected_artifact")
+            self.assertIn("scripts/__pycache__/helper.cpython-314.pyc", result.detail)
 
     def test_verify_skill_receipts_tracks_bundled_source_receipt_named_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -310,6 +310,10 @@ Doctrine currently owns five package output behaviors:
 - one package contract sidecar at `SKILL.contract.json` when the package has
   host-binding truth
 
+Generated cache files are not package source. Doctrine skips paths such as
+`__pycache__`, `.pytest_cache`, `.pyc`, and `.pyo` during package emit and
+receipt hashing.
+
 ## Host Binding
 
 Use package host binding when one fat skill package needs typed host facts from
