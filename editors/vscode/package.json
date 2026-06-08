@@ -29,7 +29,7 @@
     "package:vsix": "npm test && uv run --locked python scripts/validate_lark_alignment.py && uv run --locked python scripts/package_vsix.py && uv run --locked python scripts/run_packaged_vsix_smoke.py"
   },
   "devDependencies": {
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "2.25.0",
     "vscode-tmgrammar-test": "^0.1.3"
   },
