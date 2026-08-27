@@ -8,6 +8,7 @@ from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.package_layout import (
     PackageOutputRegistry,
     bundle_ordinary_package_files,
+    is_generated_package_artifact,
     new_package_output_registry,
     register_package_output_path,
 )
@@ -92,7 +93,12 @@ class CompileSkillPackageMixin:
         compiled_files: list[CompiledSkillPackageFile] = []
         ordinary_files: list[Path] = []
 
-        source_files = sorted(path for path in source_root.rglob("*") if path.is_file())
+        source_files = sorted(
+            path
+            for path in source_root.rglob("*")
+            if path.is_file()
+            and not is_generated_package_artifact(path, source_root=source_root)
+        )
         reserved_prompt_dirs = {
             path.parent
             for path in source_files
