@@ -88,7 +88,7 @@ def build_skill_source_receipt_payload(
         },
         "source": {
             "id": source_id,
-            "root": display_path(source_root),
+            "root": _receipt_source_root_path(target, source_root),
             "entrypoint": _relative_posix(target.entrypoint, source_root),
         },
         "inputs": inputs,
@@ -281,6 +281,24 @@ def _receipt_source_root(target: EmitTarget) -> Path:
     return (target.source_root or target.entrypoint.parent).resolve()
 
 
+def _project_anchor(target: EmitTarget) -> Path | None:
+    """The consuming project's root, when the target was loaded from one."""
+    return target.project_config.config_dir
+
+
+def _receipt_source_root_path(target: EmitTarget, source_root: Path) -> str:
+    """`source.root`, written against the consuming project when it lives there.
+
+    With no project config there is no stable base to measure from, and a source
+    tree outside the project has no portable project-relative spelling, so both
+    keep the previous rendering rather than gaining a cwd- or depth-dependent one.
+    """
+    project = _project_anchor(target)
+    if project is None:
+        return display_path(source_root)
+    return _relative_posix(source_root, project, project=project)
+
+
 def _collect_source_inputs(
     *,
     target: EmitTarget,
@@ -330,10 +348,14 @@ def _collect_source_inputs(
 
     source_paths[target.entrypoint.resolve()] = "entrypoint"
 
+    project = _project_anchor(target)
     return _entries_for_paths(
         (
-            (path, _relative_posix(path, source_root), kind)
-            for path, kind in sorted(source_paths.items(), key=lambda item: _relative_posix(item[0], source_root))
+            (path, _relative_posix(path, source_root, project=project), kind)
+            for path, kind in sorted(
+                source_paths.items(),
+                key=lambda item: _relative_posix(item[0], source_root, project=project),
+            )
         )
     )
 
@@ -484,9 +506,28 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _relative_posix(path: Path, root: Path) -> str:
+def _relative_posix(path: Path, root: Path, *, project: Path | None = None) -> str:
+    """Serialize one receipt path relative to `root`, always POSIX.
+
+    Receipts are committed alongside the emitted package, so an absolute path
+    pins them to the machine that compiled them: the same source emits a
+    different receipt in a second checkout.
+
+    Pass `project` to allow `walk_up`. It keeps an input that sits beside `root`
+    but still inside the project relative (`../../shared/AGENTS.prompt`), which
+    is stable because that distance is fixed by the project layout. It is
+    deliberately not used for a path outside the project: there the `../` chain
+    would encode how deep the checkout sits on disk, which is the same
+    non-portability wearing a different hat. Such a path keeps its previous
+    rendering.
+    """
     resolved_path = path.resolve()
     resolved_root = root.resolve()
+    if project is not None and resolved_path.is_relative_to(project.resolve()):
+        try:
+            return resolved_path.relative_to(resolved_root, walk_up=True).as_posix()
+        except ValueError:
+            pass
     try:
         return resolved_path.relative_to(resolved_root).as_posix()
     except ValueError:

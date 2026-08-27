@@ -163,6 +163,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `doctrine-learn` skill so release truth matches examples `150` through
   `164`.
 
+### Fixed
+
+- `SKILL.source.json` no longer records the absolute path of the machine that
+  compiled it. `source.root` is now written relative to the consuming project
+  root, and every `inputs[].path` is written relative to `source.root`, so one
+  path base covers both package-local and out-of-package inputs. A shared
+  prompt that lives beside the package now reads `../../shared/AGENTS.prompt`
+  instead of an absolute path. The receipt is committed proof, so the old
+  behaviour meant the same source emitted a different receipt in a second
+  checkout: a consumer that ran `emit_skill` from a git worktree saw tracked
+  manifests go dirty for no reason but the path they were compiled from.
+  Paths outside the consuming project, and targets built with no project
+  config, keep their previous rendering: a `../` chain to somewhere outside the
+  project would encode how deep the checkout sits on disk, and a cwd-relative
+  root would encode where the command was run from, so neither is portable.
+  `receipt_version` stays `1`; the keys and their meanings are unchanged, only
+  the path base is. Existing emitted receipts report `stale_source` until they
+  are re-emitted, which is the normal re-emit prompt, not a silent break.
+
 ### Verification
 
 - Phase 5 implementation proof on 2026-04-26: `make verify-examples`
