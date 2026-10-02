@@ -1,0 +1,279 @@
+direction: down
+
+overview: {
+  label: "Rally WSAPI Object Map"
+  direction: right
+  style: {
+    fill: "#F8FAFC"
+    stroke: "#94A3B8"
+  }
+
+  coverage_note: {
+    label: "Coverage\nBased on Broadcom article 113749.\nThat source says the list may not be exhaustive."
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+
+  reading_guide: {
+    label: "Reading Guide\nBlue solid edges = documented inheritance.\nOrange cards = work and planning families.\nGreen cards = testing and delivery families.\nGray cards = schema, admin, and access families."
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+}
+
+core_bases: {
+  label: "Core Lineage"
+  direction: down
+  style: {
+    fill: "#F5F8FF"
+    stroke: "#2F6FEB"
+  }
+
+  persistable_object: {
+    label: "PersistableObject"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  domain_object: {
+    label: "DomainObject"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  workspace_domain_object: {
+    label: "WorkspaceDomainObject"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  artifact: {
+    label: "Artifact"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  rankable_artifact: {
+    label: "RankableArtifact"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  schedulable_artifact: {
+    label: "SchedulableArtifact"
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+
+  lineage_note: {
+    label: "Known child types from docs\n- HierarchicalRequirement\n- Defect\n- Task\n- TestCase\nTestCaseResult is documented outside the Artifact tree."
+    shape: rectangle
+    style: {
+      fill: "#E8F1FF"
+      stroke: "#2F6FEB"
+    }
+  }
+}
+
+work_and_planning: {
+  label: "Work And Planning"
+  direction: down
+  style: {
+    fill: "#FFF8EB"
+    stroke: "#B54708"
+  }
+
+  work_artifacts: {
+    label: "Work Artifacts\n- HierarchicalRequirement\n- Defect\n- Task\n- TestCase\n- Risk\n- Requirement\n- DefectSuite"
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  artifact_sidecars: {
+    label: "Artifact Sidecars\n- Blocker\n- Tag\n- ConversationPost\n- Attachment\n- AttachmentContent\n- ArtifactNotification\n- Revision\n- RevisionHistory\n- WebLinkDefinition"
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  planning_timeboxes: {
+    label: "Planning And Timeboxes\n- Release\n- Iteration\n- Milestone\n- DeliveryGroup\n- Investment\n- PreliminaryEstimate\n- FlowState\n- State\n- Scope\n- Slice"
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  portfolio_family: {
+    label: "Portfolio Family\n- PortfolioItem\n- Feature\n- Objective\n- Program\n- PortfolioItem/Project\n- PortfolioItemPredecessorRelationship\nFeature, Objective, Program, and\nPortfolioItem/Project can vary by workspace naming."
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+
+  capacity_and_time: {
+    label: "Capacity And Time\n- TimeEntryItem\n- TimeEntryValue\n- UserIterationCapacity"
+    shape: rectangle
+    style: {
+      fill: "#FFF7E6"
+      stroke: "#B54708"
+    }
+  }
+}
+
+testing_and_delivery: {
+  label: "Testing And Delivery"
+  direction: down
+  style: {
+    fill: "#F3FFF8"
+    stroke: "#067647"
+  }
+
+  testing_family: {
+    label: "Testing Family\n- TestCaseResult\n- TestCaseStep\n- TestFolder\n- TestSet"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
+
+  delivery_family: {
+    label: "Delivery And Integrations\n- SCMRepository\n- Changeset\n- Change\n- PullRequest\n- BuildDefinition\n- Build\n- Connection\n- PPMConnection"
+    shape: rectangle
+    style: {
+      fill: "#ECFDF3"
+      stroke: "#067647"
+    }
+  }
+}
+
+people_and_workspace: {
+  label: "People And Workspace"
+  direction: down
+  style: {
+    fill: "#F8FAFC"
+    stroke: "#94A3B8"
+  }
+
+  identity_access: {
+    label: "Identity And Access\n- User\n- UserProfile\n- ProfileImage\n- ProjectPermission\n- WorkspacePermission\n- UserPermission\n- Preference"
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+
+  workspace_family: {
+    label: "Workspace Family\n- Workspace\n- Project\n- Subscription\n- WorkspaceConfiguration"
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+}
+
+schema_admin_analytics: {
+  label: "Schema, Admin, And Analytics"
+  direction: down
+  style: {
+    fill: "#F8FAFC"
+    stroke: "#94A3B8"
+  }
+
+  schema_family: {
+    label: "Schema\n- TypeDefinition\n- AttributeDefinition\n- ScopedAttributeDefinition\n- AllowedAttributeValue\n- AllowedQueryOperator"
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+
+  admin_family: {
+    label: "Admin And Capacity\n- Expertise\n- ExpertiseCapacity\n- ExpertiseDemand\n- RecycleBinEntry"
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+
+  analytics_family: {
+    label: "Analytics\n- CumulativeFlowData\n- IterationCumulativeFlowData\n- ReleaseCumulativeFlowData"
+    shape: rectangle
+    style: {
+      fill: "#F8FAFC"
+      stroke: "#94A3B8"
+    }
+  }
+}
+
+persistable_object -> domain_object: {
+  label: "inherits"
+  style: {
+    stroke: "#2F6FEB"
+  }
+}
+
+domain_object -> workspace_domain_object: {
+  label: "inherits"
+  style: {
+    stroke: "#2F6FEB"
+  }
+}
+
+workspace_domain_object -> artifact: {
+  label: "inherits"
+  style: {
+    stroke: "#2F6FEB"
+  }
+}
+
+artifact -> rankable_artifact: {
+  label: "inherits"
+  style: {
+    stroke: "#2F6FEB"
+  }
+}
+
+rankable_artifact -> schedulable_artifact: {
+  label: "inherits"
+  style: {
+    stroke: "#2F6FEB"
+  }
+}
