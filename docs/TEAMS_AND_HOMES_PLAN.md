@@ -101,8 +101,9 @@ each turn a silent loss into a loud error or a corrected render:
    inside one string.
 3. A readable block no longer prints a bare kind line such as `_section_`.
 4. New keywords can't be keys where their form can start: `drop` and `paragraph` in every
-   patchable body, and later `values`, `budget`, `roster`, and `details`. A key that used one
-   gets a parse error and a new name. Its rendered title doesn't change.
+   patchable body, `member` and `home` as agent slots, and `values`, `budget`, `roster`, and
+   `details`. A key that used one gets a parse error and a new name. Its rendered title
+   doesn't change.
 
 `docs/VERSIONING.md` and `CHANGELOG.md` record this as a major language move with
 upgrade steps. The release version in the changelog is 6.0.0. No tag or publish is part
@@ -389,10 +390,11 @@ An agent outside any team has no `home` or `folder`, and reading one is `E602`.
 
 | Code | When | Must say |
 | --- | --- | --- |
-| `E601` | A home reads a blank nothing fills | The home, every missing key, and each source line that reads that key, as file and line |
+| `E601` | A home reads a blank nothing fills, including an empty `members` or `others` | The home, every missing key, and each source line that reads that key, as file and line |
 | `E602` | A late root has no owner here | The root, the surface, and why |
 | `E603` | Values read each other in a cycle | The full cycle: `a -> b -> a` |
 | `E604` | `values:` sets a fact key | The key |
+| `E608` | One body sets a value twice, in one `values:` block or across two | The key |
 
 `E601` reports every blank in one error, so one build lists all a new member needs.
 
@@ -441,7 +443,9 @@ Rules:
   a parent, but not a level of this tree.
 - Typed agent fields are not legal on a team. Only `role`, `values`, `budget`, slots, and
   members are. Anything else is `E606`.
-- A team and its slots use the same key space as its members. A duplicate is `E606`.
+- A team and its slots use the same key space as its members. A duplicate is `E606`, and so
+  is a second `home:`.
+- A team and an agent can't share a name in a flow. That is the shipped duplicate error.
 
 **Team inheritance.** `team B[A]` inherits A's `role`, slots, values, budget, and members.
 Members declared on an abstract team are templates, stamped out once per concrete team.
@@ -515,7 +519,9 @@ roster calls: "Who makes each call"
 
 Each column is `key: "Header" = "cell template"`. There is one row per direct member of
 the team, in declared order. Inside a cell, `{{agent:...}}` means that row's member. A row
-is skipped when any of its cells reads a value that member lacks. Static `rows:` follow, keyed by column key, and every column must be filled.
+is skipped when any of its cells reads an `{{agent:...}}` value that member lacks. A blank
+under `{{team:...}}` is `E601` as usual, and so is a roster that skips every member, since
+that is a typo. Static `rows:` follow, keyed by column key, and every column must be filled.
 A `roster` needs a team. In a member's home it uses the member's team. Elsewhere it is
 `E609`. A cell with no `{{agent:...}}`, or an unknown column in `rows:`, is also `E609`.
 
@@ -585,7 +591,9 @@ The file reads as keyed structure:
 - Each `##` is a keyed section, and each `###` a keyed section inside it. Deeper headings
   stay text. Headings inside code fences do not count.
 - A section's key is its heading in lower case, with each run of other characters changed
-  to `_` and the ends trimmed. Two siblings with one key is `E653`, naming both lines.
+  to `_` and the ends trimmed. Two siblings with one key is `E653`, naming both lines. On an
+  abstract agent, a key that is a reserved agent field gets a final `_`, so `## Skills` is
+  `skills_` and renders as `## Skills`. A hand-written file keeps its ordinary headings.
 - Section text is verbatim, and `{{` stays literal. Links are the one exception below.
 - A line starting with `@` that would be a runtime import is `E654`, because its path
   would break once inlined. Declare that file too and compose it.
@@ -601,8 +609,8 @@ anything in a code span or code fence. Nothing checks that the linked file exist
 file can land in homes in different folders. A compile with no emit target leaves links as
 written.
 
-`drop`, `override`, dotted paths, and `{{Decl:key.title}}` all work on these keys. A `drop`
-naming a heading that is gone is `E610`. The file's content feeds the declaration's source
+`drop`, `override`, and dotted paths work on these keys, and `{{Decl:key.title}}` works on a
+workflow's, as it does on any workflow. A `drop` naming a heading that is gone is `E610`. The file's content feeds the declaration's source
 hash, and `--rev` extracts it too. The text lands in homes, so it counts in their load at
 its real size.
 
@@ -1541,14 +1549,18 @@ hints each kind gets.
 **`tests/test_late_binding.py`**: `test_value_reaches_parent_workflow_text`,
 `test_value_in_title`, `test_value_in_markdown_block`, `test_code_block_stays_literal`,
 `test_resolved_declaration_cache_shared_across_agents` (two agents, one resolve),
-`test_e601_lists_all_blanks_and_sites`, `test_e603_prints_cycle`,
+`test_e601_lists_all_blanks_and_sites`, `test_e601_empty_others`, `test_e603_prints_cycle`
+(from the cycle's first key, not the read that led there), `test_e608_value_set_twice`,
 `test_e602_in_skill_package`, `test_e602_in_output_schema`, `test_value_reads_value`.
 
 **`tests/test_teams.py`**: `test_member_name_and_folder`, `test_member_ref_resolves_in_route`,
 `test_abstract_team_stamps_members_per_team`, `test_overlay_render_order`,
 `test_team_doctrine_stays_out_of_member_home`, `test_tree_from_paths_only`,
 `test_team_contract_order_and_sections`, `test_roster_skips_row_without_value`,
-`test_roster_static_rows_follow`, `test_e607_member_folder_collides_with_team`.
+`test_roster_static_rows_follow`, `test_e607_member_folder_collides_with_team`,
+`test_roster_team_typo_is_e601`, `test_roster_skipping_every_member_is_e601`,
+`test_flow_graph_routes_to_a_member` (route field and workflow route, rendered to D2),
+`test_team_and_agent_cannot_share_a_name`, `test_second_home_is_e606`.
 
 **`tests/test_markdown_reader.py`**: `test_slug_rules`, `test_headings_in_fences_ignored`,
 `test_deeper_headings_stay_text`, `test_e653_duplicate_key`, `test_e654_import_line`,
@@ -1556,7 +1568,9 @@ hints each kind gets.
 `test_relative_link_rebased_per_home`, `test_anchor_kept_on_rebased_link`,
 `test_scheme_root_and_anchor_links_left_alone`, `test_links_in_code_left_alone`,
 `test_reference_definition_rebased`, `test_out_dir_keeps_rebased_bytes`,
-`test_no_emit_target_keeps_links_as_written`.
+`test_no_emit_target_keeps_links_as_written`, `test_fence_rules_follow_commonmark` (a longer
+fence holding a shorter one, a fence with an info string inside a fence, inline backticks),
+`test_reserved_heading_gets_final_underscore`.
 
 **`tests/test_home_tree.py`**: `test_claude_md_is_relative_symlink`,
 `test_header_hash_matches_body`, `test_emit_is_deterministic` (two builds, identical bytes),
@@ -1752,6 +1766,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E603` | `Value cycle` | `` Values read each other: `a -> b -> a` `` |
 | `E604` | `Value sets a fact` | `` `values:` can't set `<key>`. The compiler supplies it. `` |
 | `E605` | `Code fence split across strings` | `` A string in <owner> opens a code fence it doesn't close. `` Hint: ``Put the whole fence in one `"""` string, or use a `code` block.`` |
+| `E608` | `Value set twice` | `` `values:` sets `<key>` twice. `` |
 | `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
 | `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
 | `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |

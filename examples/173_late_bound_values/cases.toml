@@ -79,4 +79,4 @@ prompt = "prompts/invalid_team_root_outside_team/AGENTS.prompt"
 agent = "Alone"
 exception_type = "CompileError"
 error_code = "E602"
-location_line = 2
+location_line = 1
