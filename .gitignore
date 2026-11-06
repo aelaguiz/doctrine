@@ -12,14 +12,11 @@ __pycache__/
 *.egg-info/
 *.swp
 /node_modules/
-/editors/vscode/node_modules/
-/editors/vscode/.vscode-test/
 /examples/*/build/
 /skills/.curated/
 /.agents/
 /.claude/skills/
 /skills-lock.json
-/editors/vscode/*.vsix
 /repomix-output.md
 /repomix-output.xml
 /repomix.config.json

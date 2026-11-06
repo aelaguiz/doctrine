@@ -23,7 +23,6 @@
     "useDefaultPatterns": true,
     "customPatterns": [
       "example_agents/**",
-      "editors/vscode/tests/snap/**",
       "**/__pycache__/**"
     ]
   },

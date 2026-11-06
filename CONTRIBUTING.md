@@ -37,13 +37,6 @@ If you change diagnostics, also run:
 make verify-diagnostics
 ```
 
-If you change the VS Code extension under `editors/vscode/`, also run:
-
-```bash
-cd editors/vscode
-make
-```
-
 ## Repo rules
 
 - Treat `doctrine/` as the shipped source of truth for parser, compiler, and renderer behavior.
