@@ -45,16 +45,6 @@ message_contains = [
 ]
 
 [[cases]]
-name = "reordered fields fail in compile stage"
-status = "active"
-kind = "compile_fail"
-prompt = "prompts/invalid_compile_reordered/AGENTS.prompt"
-agent = "ReorderedFields"
-exception_type = "CompileError"
-error_code = "E206"
-location_line = 5
-
-[[cases]]
 name = "invalid string literal fails in parse stage"
 status = "active"
 kind = "parse_fail"

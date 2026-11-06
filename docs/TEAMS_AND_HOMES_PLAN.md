@@ -141,7 +141,8 @@ paths outside any prompt root. `E315` is unchanged.
 ### 4.5 `E206` Is Retired
 
 `role` already renders in authored order. `_enforce_legacy_role_workflow_order` and
-`E206` are deleted. `E206` moves to the retired list in `docs/COMPILER_ERRORS.md`.
+`E206` are deleted. `E206` moves to the retired list in `docs/COMPILER_ERRORS.md`. Example 01's
+case that expected it is gone from this branch, and example 168 proves the new behavior.
 
 ### 4.6 `paragraph`
 
@@ -847,7 +848,7 @@ and fails on no budget.
 
 - Everything else the selected homes load (levels above, shared companions) is compared,
   never written. A level that differs, or that this build no longer emits, prints
-  `W307 Stale level` with its path. Those files are shared by every session in a checkout,
+  `W307 stale level` with its path. Those files are shared by every session in a checkout,
   so one launch must not rewrite them.
 - `doctrine build .` selects everything, so it writes everything and removes obsolete files
   (section 6.2).
@@ -1587,33 +1588,131 @@ This plan file is deleted before merge, after a restore-point commit, per `AGENT
 Each workstream lands on `feat/teams-and-homes` in order. A later one starts only after the
 earlier one passes its gate.
 
-| WS | Builder | Why this setting |
-| --- | --- | --- |
-| 1 | Sol 6.1 at xhigh | Touches 15 resolvers and every render; several parts |
-| 2 | Sol 6.1 at xhigh | New pass across compile; several parts |
-| 3 | Sol 6.1 at xhigh | Emit, config, CLI; several parts |
-| 4 | Sol 6.1 at xhigh | New algorithms: map, diff, near-copy |
-| 5 | Terra 6.1 at xhigh | One piece from a full spec, with a check that proves it |
-| 6 | Terra 6.1 at xhigh | One piece from a full spec, with a check that proves it |
-| 7 | Terra 6.1 at xhigh | One tool plus bringing text in line with facts |
-| 8 | The designer writes `getting-good-results`; Terra 6.1 at xhigh aligns the rest | Teaching is judgment; alignment is checkable |
+| WS | Builder | Trip wire | Why this setting |
+| --- | --- | --- | --- |
+| 1 | Sol 6.1 at xhigh | 900 | Touches 15 resolvers and every render; several parts |
+| 2 | Sol 6.1 at xhigh | 1,400 | New pass across compile; several parts |
+| 3 | Sol 6.1 at xhigh | 1,600 | Emit, config, CLI; several parts |
+| 4 | Sol 6.1 at xhigh | 1,100 | New algorithms: map, diff, near-copy |
+| 5 | Terra 6.1 at xhigh | 400 | One piece from a full spec, with a check that proves it |
+| 6 | Terra 6.1 at xhigh | 200 | One piece from a full spec, with a check that proves it |
+| 7 | Terra 6.1 at xhigh | 250 | One tool plus bringing text in line with facts |
+| 8 | The designer writes `getting-good-results`; Terra 6.1 at xhigh aligns the rest | none | Teaching is judgment; alignment is checkable |
 
-Every brief says: the plainest version that meets this spec; no guards beyond it; if the
-spec is wrong, silent, or contradicts the code, stop and report; language design is closed.
+The trip wire is net new lines under `doctrine/`, leaving out tests, docs, examples, and
+skills. It is a stop, not a target. A worker that reaches it stops and reports what is
+taking the room.
+
+Every brief says: if the spec is wrong, silent, or contradicts the code, stop and report;
+language design is closed; and it carries the overbuild rules below.
+
+### Overbuild Is The Main Risk
+
+Workers from this maker add what nobody asked for: guards, options, fallbacks, helpers, and
+layers, each reasonable alone. Passing tests prove the code does what it should. They don't
+prove the code is only that. So overbuild fails a gate exactly as a failing test does.
+
+**The rule.** Every line of non-test code traces to a section of this spec, a named example,
+or a named test. What doesn't trace goes. What traces but is heavier than the job is cut to
+its plain version.
+
+**One author.** A worker writes all the code itself, with no helper agents, so the code has
+one voice and every line had the whole spec behind it.
+
+**Nothing extra, by name.** Each brief bans, unless this spec names it: a guard or error path
+for a case the spec doesn't name; a check for a state the compiler can't reach; a fallback,
+default, or retry; an option, flag, parameter, or config key; a class, base class, registry,
+or layer; a helper with one caller or a wrapper around one call; a `try` the spec gives no
+outcome for; a shim or second path beside what it replaced.
+
+**The audit belongs to the designer.** A builder never audits itself. Its report is a lead
+to check, not a finding. After proof passes and before any other review, the designer does
+all of this personally:
+
+1. Counts net lines by file against the trip wire.
+2. Checks the worker's list of new functions, classes, constants, and modules against the
+   diff. Anything missing from the list, or with no section behind it, is a cut.
+3. Runs the new code under the corpus and named tests with coverage. A line nothing runs is
+   presumed unneeded until shown otherwise.
+4. Reads every changed line against the rule, using the `overbuild-audit` families.
+
+**Send back.** Every cut goes back to the worker that wrote it, in the same thread, as a list
+of removals with file and line. A send-back only removes. It never asks for a new guard, test,
+or option. The designer decides, and the worker can't keep a piece by arguing for it. The
+designer then audits the cut diff. The gate stays shut until that audit is clean. What a
+worker got wrong goes into the next workstream's brief by name.
+
+**Review findings get the same test.** The worst bloat on record came after review, when
+findings became fix briefs as written. Before a finding becomes work, ask whether a user here
+meets that case, how often, and what the plain version costs them when they do.
 
 **Gate for each workstream:**
 
 1. The workstream's example manifests and new unit tests pass.
-2. `make verify-examples`, `make verify-diagnostics`, `make verify-skill-examples`, and
-   `make tests` pass. Runs once, when the workstream is ready.
+2. `make verify-diagnostics`, `make verify-skill-examples`, and `make tests` pass, and the
+   corpus passes for every example up to this workstream's last. `make verify-examples` runs
+   whole once WS8 is in. Each runs once, when the workstream is ready.
 3. `cd editors/vscode && make` passes when the editor surface changed.
-4. The designer reads the whole diff against this spec, line by line.
-5. Opus 5.5 at high, which built none of it, reviews the diff against this spec and for
-   what it doesn't need. Its findings are proposals. The designer decides each one.
+4. The designer's overbuild audit is clean, with every cut sent back and verified.
+5. The designer reads the whole diff against this spec, line by line.
+6. Opus 5.5 at high, which built none of it, reviews the diff against this spec and for what
+   it doesn't need. Its findings are proposals. The designer decides each one, and the cuts
+   go back the same way.
 
-**At the end:** one Opus 5.5 high read of the whole branch for what it doesn't need,
-`make check`, and a compile of Lesson Studio, Puzzle DB, and PS Mobile prompts against the
-new compiler in scratch copies. The report lists what each needs for 6.0. Nothing in those
-repositories changes here.
+**At the end:** one Opus 5.5 high read of the whole branch for what it doesn't need, one more
+designer audit of the whole branch by the same rule, `make check`, and a compile of Lesson
+Studio, Puzzle DB, and PS Mobile prompts against the new compiler in scratch copies. The report
+lists what each needs for 6.0. Nothing in those repositories changes here.
 
 Merging and releasing stay with the owner.
+
+## 17. Diagnostic Wording
+
+This is the binding wording for every new code. `<x>` is filled from the source. A code has
+the summary and detail given here, in the shipped diagnostic shape, and no hint or related
+site beyond what this table names. Where a row lists several details, each is one case.
+`E003`, `E301`, `RULE001`, and `RULE002` keep their shipped wording.
+
+| Code | Summary | Detail |
+| --- | --- | --- |
+| `E134` | `Missing block title` | `` `<kind> <key>` needs a title. `` Hints: section 4.3 |
+| `E601` | `Unfilled value` | `` Home `<home>` reads values nothing fills: `` then one line per blank, `` - `<root>:<key>` at <file>:<line> `` |
+| `E602` | `Value has no owner here` | `` `{{<root>:<key>}}` can't be read here: <why>. `` `<why>` is one of: `a skill package has no home`; `an emitted document has no home`; `output schema text is machine text`; `this agent is outside any team`; `a team's own file has no others` |
+| `E603` | `Value cycle` | `` Values read each other: `a -> b -> a` `` |
+| `E604` | `Value sets a fact` | `` `values:` can't set `<key>`. The compiler supplies it. `` |
+| `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
+| `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
+| `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |
+| `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. ``; `` `<owner>` drops `<path>`, but an abstract slot is a requirement, not an item. `` |
+| `E611` | `Invalid patch path` | `` `<owner>`: `<path>` steps through `<step>`, which has no keyed items. ``; `` `<owner>`: `override <path>` targets a `<kind>`. Override the section that holds it. ``; `` `<owner>`: `override <path>` gives a paragraph a body it can't hold. A paragraph takes prose and `details`. `` |
+| `E612` | `Conflicting patches` | `` `<owner>` patches `<path>` twice. ``; `` `<owner>` writes `inherit <key>` beside a patch under `<key>`. The patch already accounts for it. ``; `` `<owner>` patches `<path>` under `<parent>`, which it already dropped or overrode. ``; `` `<owner>` can't drop `role`. Write `role:` to replace it, or `inherit role` to keep it. `` |
+| `E613` | `Duplicate inherit *` | `` `<owner>` writes `inherit *` more than once. `` |
+| `E620` | `Details outside a home` | `` `details` can't be used in <surface>. It only works in text that lands in a home. `` |
+| `E621` | `Shared details read one agent's words` | `` `_details/<slug>.md` serves every home that points at it, so it can't read `{{<root>:<key>}}`. `` Hint: section 6.3 |
+| `E630` | `Over load budget` | Section 6.4 |
+| `E631` | `Invalid budget` | `` `budget` for `<key>` must be a positive integer. ``; `` `budget` for `<key>` is over the runtime's limit of <limit>. ``; `` `budget` names unknown runtime `<key>`. `` |
+| `E632` | `Invalid runtime settings` | `` Unknown runtime `<name>`. ``; `` `<setting>` for `<runtime>`: <what's wrong>. `` |
+| `E633` | `External file missing` | `` `<path>` is listed for <runtime>, but it is absent and has no `reserve`. `` |
+| `E634` | `Hand edit in a compiled file` | `` `<path>` was edited by hand. `` then, for a file the build would overwrite, one line per differing section, `` - <title>: <origin> at <site> ``; `` `<path>` was written by hand. ``; `` `<path>` is a link Doctrine didn't write. `` Hint: ``Move the edit to its source, then build. `--force` overwrites it.`` |
+| `E640` | `No home matches` | `` `<selector>` matches no home. `` |
+| `E641` | `Bad revision` | `` `<rev>` is not a revision in this repository. `` |
+| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` Inline quote: <what's wrong>. `` |
+| `E651` | `Invalid owner` | `` `<ref>` in `owns:` resolves to nothing. ``; `` Glob `<glob>` in `owns:` matches no file. `` |
+| `E652` | `Missing Markdown source` | `` `<decl>` reads `<path>`, which does not exist. `` |
+| `E653` | `Duplicate heading key` | `` `<path>` has two sibling headings with key `<key>`, at lines <a> and <b>. `` |
+| `E654` | `Import line in Markdown source` | `` `<path>` line <n> is a runtime import, and its path would break once inlined. Declare that file too and compose it. `` |
+| `E660` | `Message has no shape` | `` `Message` output `<name>` can't have `<field>`. A message is prose. `` |
+| `RULE006` | `Requires load` | `` - <agent> must load <target>. `` |
+| `RULE007` | `Forbids load` | Section 8.1 |
+
+Warnings print one line, then any detail lines:
+
+| Code | Line |
+| --- | --- |
+| `W301` | Section 8.3 |
+| `W302` | `` W302 double load: <origin> reaches <home> from <file a> and <file b>. `` |
+| `W303` | `` W303 message without reader: <output> goes to <to>, and nothing there reads it. `` |
+| `W304` | `` W304 unused value: <key> at <site> is read by no home. `` |
+| `W305` | `` W305 unused quote: <name> at <site> is cited nowhere. `` |
+| `W306` | `` W306 near budget: <home> loads <n> of <limit> on <runtime>. `` |
+| `W307` | `` W307 stale level: <path> differs from this build. `` |
