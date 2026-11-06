@@ -64,3 +64,22 @@ stderr_contains = [
   "homes",
   "other",
 ]
+
+[[cases]]
+name = "a relative link follows the text to its home"
+status = "active"
+kind = "cli_contract"
+project = "project_links"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "You test what users meet.",
+    "",
+    "## Older work",
+    "",
+    "See [older cases](../../../specialists/qa/cases.md), [the shared notes](../../../specialists/notes.md#today), [the site](https://example.com), and [more][more].",
+    "",
+    "Code stays as written: `cases.md` and `[older cases](cases.md)`.",
+    "",
+    "[more]: ../../../specialists/qa/more.md",
+] }

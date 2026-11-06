@@ -1442,8 +1442,8 @@ report, not an edit. Numbers continue the corpus.
 | 176 | `team_assembly` | Abstract team, `drop` of a member | 2 |
 | 177 | `roster` | `roster`, `E609` | 2 |
 | 178 | `team_contract` | `TEAM.contract.json` | 3 |
-| 179 | `markdown_backed_declarations` | `from`, `E652`, `E653`, `E654`, links that follow the text | 2, its link case 3 |
-| 180 | `home_tree` | Level files, link, header, tree record, `E607` | 3 |
+| 179 | `markdown_backed_declarations` | `from`, `E652`, `E653`, `E654` | 2 |
+| 180 | `home_tree` | Level files, link, header, tree record, `E607`, Markdown links that follow the text | 3 |
 | 181 | `details` | `DETAILS.md`, pointer | 3 |
 | 182 | `shared_details` | `_details/`, `E620`, `E621` | 3 |
 | 183 | `load_budgets` | `doctrine load`, `E630`, `E631`, `W306` | 3 |
