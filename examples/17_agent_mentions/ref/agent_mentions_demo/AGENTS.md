@@ -16,4 +16,5 @@ If the work is ready for review, hand it to AcceptanceCritic.
 ### Actual Transition
 
 Naming an owner is not a route by itself.
+
 If the work is ready for review -> AcceptanceCritic

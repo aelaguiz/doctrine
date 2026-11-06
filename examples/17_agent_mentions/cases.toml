@@ -27,6 +27,7 @@ expected_lines = [
   "### Actual Transition",
   "",
   "Naming an owner is not a route by itself.",
+  "",
   "If the work is ready for review -> AcceptanceCritic",
 ]
 
