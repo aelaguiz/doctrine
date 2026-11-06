@@ -252,7 +252,9 @@ Every body with an `inherit` form gains the same two forms. That is `agent`, `wo
 `inputs`, `outputs`, `output`, `output shape`, `output schema`, and `receipt`. WS2 adds
 `team`. `schema` body keys are `sections`, `gates`, `artifacts`, `groups`, and `preamble`. A
 `receipt`'s keys are its fields and its `route` fields, so a child accounts for a parent's
-route like any field.
+route like any field. A route has no `override` form: a child inherits or drops a parent's
+route, and adds a new key for anything else. A child `route` on a parent's key is the shipped
+`E544`.
 
 ```lark
 inherit_all: "inherit" "*" _NL?
@@ -1518,7 +1520,8 @@ win), `test_inherit_preamble_needs_a_parent_preamble`, `test_schema_unknown_inhe
 alias the child reuses for another module, a `from` import, a private declaration),
 `test_inherited_final_output_reaches_previous_turn`, `test_flow_keeps_inherited_role`,
 `test_receipt_routes_are_inherited_items`, `test_dotted_override_needs_a_body`,
-`test_paragraph_title_ref_inside_a_section`.
+`test_paragraph_title_ref_inside_a_section` (read from a role and from its own workflow),
+`test_route_cannot_replace_a_parent_key`, `test_inherited_selectors_cross_modules`.
 
 **`tests/test_prose_render.py`**: `test_adjacent_strings_get_blank_line_in_each_surface`
 over workflow root, section, document, record body, role block, callout;
