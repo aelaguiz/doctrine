@@ -264,9 +264,9 @@ the reason. It renders nowhere in a home. The home map keeps it (section 7).
 
 - It may appear once in a body. A second one is `E613`.
 - The body is ordered in three parts. First, items written before `inherit *`. Then the
-  parent's items in the parent's order, with each dropped item gone. A child item with a
-  parent's key takes that parent position wherever it is written, whether it is an
-  `override` or a typed field written plainly. Last, items written after `inherit *`.
+  parent's items in the parent's order, with each overridden item in its parent position
+  and each dropped item gone. Last, items written after `inherit *`. A plain `role:` or
+  typed field isn't an `override`, so it stays where it is written.
 - An item named by `inherit key` elsewhere in the body moves to that spot, which is the
   one way to reorder.
 - Grouped `inherit {a, b}` is unchanged.
@@ -1596,7 +1596,7 @@ about a 7th grade reading level applies to all of it.
 
 | WS | Live docs | Skills | Editor |
 | --- | --- | --- | --- |
-| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` | Keywords `drop`, `paragraph`; `*` after `inherit`; and the 46 shipped keywords the alignment check already reports missing, so `make` passes for every later workstream |
+| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` | Keywords `drop`, `paragraph`; `*` after `inherit`; `preamble`; and the 46 shipped keywords the alignment check already reports missing, so `make` passes for every later workstream |
 | 2 | `LANGUAGE_REFERENCE` (values, teams, roster, `from`, interpolation), `LANGUAGE_DESIGN_NOTES` (late binding, teams are folders), `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `agents_and_workflows`, new `teams_and_homes` | Keywords `team`, `member`, `values`, `roster`, `from`, `home`; `{{agent:` and `{{team:` scopes |
 | 3 | `EMIT_GUIDE` (home tree, runtimes, `DETAILS.md`, CLI), `LANGUAGE_REFERENCE` (`details`, `budget`), `WARNINGS`, `COMPILER_ERRORS`, `WHY_DOCTRINE`, `README` quick start | `emit_targets`, `verify_and_ship`, `teams_and_homes` | Keywords `details`, `budget` |
 | 4 | `LANGUAGE_REFERENCE` (Project Rules), `WARNINGS` (Project Warnings; remove the candidates now shipped), `AGENT_LINTER`, `COMPILER_ERRORS` | `rules`; linter `audit_method`, `finding_catalog`, `report_contract` | Rule keywords |
