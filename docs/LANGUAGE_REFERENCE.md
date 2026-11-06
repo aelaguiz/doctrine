@@ -260,9 +260,9 @@ The parent head comes first, then the child's own head prose.
 `drop key: "Reason"` removes an inherited item. The reason does not render.
 `inherit *` keeps all parent items the child does not name elsewhere. Write it
 once. Items before it come first. Parent items follow in parent order, with
-each child replacement in its parent position and dropped items gone. This
-also applies to typed fields written without `override`. Items after it come
-last. An explicit `inherit key` moves that item to the line's position.
+overrides in their parent positions and dropped items gone. Plain roles and
+typed fields stay where written. Items after it come last. An explicit
+`inherit key` moves that item to the line's position.
 
 On agents, `role`, `inputs`, `outputs`, `analysis`, `decision`, `skills`,
 `review`, `final_output`, and `selectors` need an account too. Write a field

@@ -136,6 +136,7 @@ agent Child:
     shape: MarkdownDocument
     requirement: Required
 schema Base: "Base"
+    "Head prose."
     sections:
         a: "Alpha"
             "First."
@@ -146,6 +147,7 @@ schema Base: "Base"
         c: "Charlie"
             ref: Doc
 schema Patched[Base]: "Patched"
+    inherit preamble
     PATCH
 """,
             keys=("sections", "gates", "artifacts"),
@@ -153,8 +155,7 @@ schema Patched[Base]: "Patched"
         )
 
     def _assert_review_patches(self, kind):
-        self._assert_patches(
-            """input Draft: "Draft"
+        source = """input Draft: "Draft"
     source: Prompt
     shape: MarkdownDocument
     requirement: Required
@@ -216,7 +217,13 @@ agent Child:
     outputs: "Outputs"
         Comment
 """.replace("KIND", kind)
-        )
+        self._assert_patches(source)
+        with self.assertRaises(CompileError) as caught:
+            self._render(
+                source.replace("    PATCH", '    drop fields: "Not used."\n    inherit *')
+            )
+        self.assertEqual(caught.exception.code, "E473")
+        self.assertIn("missing the required `fields:` block", str(caught.exception))
 
     def test_review(self):
         self._assert_review_patches("review")
@@ -460,6 +467,23 @@ agent Child[Base]:
         self.assertEqual(caught.exception.code, "E611")
         self.assertIn("targets a `table`", str(caught.exception))
 
+        with self.assertRaises(CompileError) as caught:
+            self._render("""input Draft: "Draft"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+abstract agent Base:
+    role: "Base."
+    inputs: "Inputs"
+        Draft
+agent Child[Base]:
+    inherit role
+    override inputs.thing: "Thing"
+        "Replacement."
+""")
+        self.assertEqual(caught.exception.code, "E611")
+        self.assertIn("steps through `inputs`", str(caught.exception))
+
     def test_paragraph_override_rejects_section_body(self):
         with self.assertRaises(CompileError) as caught:
             self._render("""abstract agent Base:
@@ -502,7 +526,7 @@ agent Child[Base]:
         replace = self._render(source.replace("    PATCH", "    inherit *\n    decision: Third"))
         self.assertNotIn("First Decision", replace)
         self.assertNotIn("Second Decision", replace)
-        self.assertLess(replace.index("## Third Decision"), replace.index("## Work"))
+        self.assertLess(replace.index("## Work"), replace.index("## Third Decision"))
 
         several = self._render(
             source.replace(
@@ -511,7 +535,7 @@ agent Child[Base]:
             )
         )
         self.assertLess(several.index("## Third Decision"), several.index("## First Decision"))
-        self.assertLess(several.index("## First Decision"), several.index("## Work"))
+        self.assertLess(several.index("## Work"), several.index("## Third Decision"))
         self.assertNotIn("Second Decision", several)
 
     def test_inherited_role_refs_resolve_in_parent_module(self):

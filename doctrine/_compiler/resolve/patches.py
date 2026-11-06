@@ -8,6 +8,20 @@ from doctrine._compiler.naming import _agent_typed_field_key
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem
 
 
+TYPED_FIELDS = (
+    model.RoleScalar,
+    model.RoleBlock,
+    model.InputsField,
+    model.OutputsField,
+    model.AnalysisField,
+    model.DecisionField,
+    model.SkillsField,
+    model.ReviewField,
+    model.FinalOutputField,
+    model.SelectorsField,
+)
+
+
 @dataclass(frozen=True, slots=True)
 class PatchExpansion:
     items: tuple
@@ -18,19 +32,7 @@ class PatchExpansion:
 def patch_item_key(item):
     if isinstance(item, (model.RoleScalar, model.RoleBlock)):
         return "role"
-    if isinstance(
-        item,
-        (
-            model.InputsField,
-            model.OutputsField,
-            model.AnalysisField,
-            model.DecisionField,
-            model.SkillsField,
-            model.ReviewField,
-            model.FinalOutputField,
-            model.SelectorsField,
-        ),
-    ):
+    if isinstance(item, TYPED_FIELDS):
         return _agent_typed_field_key(item).split(":", 1)[0]
     if isinstance(item, (model.ReviewFieldsConfig, model.ReviewOverrideFields)):
         return "fields"
@@ -129,26 +131,26 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                 paths[path] = item
             else:
                 dropped.add(path[0])
-    explicit_inherits = {
-        path[0]
-        for path, item in named.items()
-        if isinstance(item, (model.InheritItem, model.AuthoredSlotInherit))
+    written_keys = {
+        patch_item_key(item)
+        for item in items
+        if isinstance(item, (model.InheritItem, model.AuthoredSlotInherit, *TYPED_FIELDS))
     }
     replacements = {}
     for item in items:
         key = patch_item_key(item)
-        if key in parent_keys and key not in explicit_inherits:
-            replacements.setdefault(key, []).append(item)
+        if key in parent_keys and key not in written_keys:
+            replacements[key] = item
     result = []
     emitted_dotted = set()
     for item in items:
         if isinstance(item, model.InheritAll):
             for key in parent_keys:
-                if key not in dropped and key not in explicit_inherits:
-                    result.extend(
+                if key not in dropped and key not in written_keys:
+                    result.append(
                         replacements.get(
                             key,
-                            (inherit_type(key=key, source_span=item.source_span),),
+                            inherit_type(key=key, source_span=item.source_span),
                         )
                     )
             continue

@@ -1298,9 +1298,11 @@ class FlowMixin:
             route_semantics=route_semantics,
         )
         return tuple(
-            item[2:]
+            line[2:]
             for item in section.body
-            if isinstance(item, str) and item.startswith("- ")
+            if isinstance(item, str)
+            for line in item.splitlines()
+            if line.startswith("- ")
         )
 
     def _flow_carrier_label(

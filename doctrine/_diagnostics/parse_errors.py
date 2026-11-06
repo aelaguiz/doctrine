@@ -147,7 +147,6 @@ def _classify_unexpected_token(
             if kind != "section":
                 hints.append(f"Write `{kind}:` for a block with no heading.")
             return "E134", "Missing block title", tuple(hints)
-    if token_type == "_NL":
         return (
             "E101",
             "Unexpected newline",
