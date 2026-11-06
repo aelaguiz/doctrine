@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from doctrine._model.agent import (
+    Member,
+    Team,
+    ValuesField,
     Agent,
     AgentSelectorBinding,
     AnalysisField,

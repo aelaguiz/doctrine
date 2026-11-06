@@ -19,6 +19,7 @@ _INTERPOLATION_EXPR_RE = re.compile(
 )
 _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 _RESERVED_AGENT_FIELD_KEYS = {
+    "values",
     "role",
     "inputs",
     "outputs",

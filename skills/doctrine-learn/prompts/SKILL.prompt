@@ -15,6 +15,7 @@ skill package DoctrineLearn: "Doctrine Learn"
         "references/reviews.md": Reviews
         "references/rules.md": Rules
         "references/agents-and-workflows.md": AgentsAndWorkflows
+        "references/teams-and-homes.md": TeamsAndHomes
         "references/documents-and-tables.md": DocumentsAndTables
         "references/skills-and-packages.md": SkillsAndPackages
         "references/skill-graphs.md": SkillGraphs
@@ -62,6 +63,7 @@ skill package DoctrineLearn: "Doctrine Learn"
     reference_map: "Reference map"
         "`references/principles.md` owns the thin-harness rule, the typed-truth rule, the prompt-budget rule, and the nine principles. Load this first, every time."
         "`references/language-overview.md` owns the shipped grammar shape, the core declaration vocabulary, and the ladder of first examples. Load when the author is new to Doctrine or unsure which construct fits."
+        "`references/teams-and-homes.md` owns values, team folders, members, overlays, roster tables, and Markdown-backed declarations. Load when sharing a role across homes or porting a Markdown file. See examples 173 to 177 and 179."
         "`references/agents-and-workflows.md` owns `agent`, `workflow`, route-only turns, `handoff_routing`, `grounding`, and workflow law. Load when the author is wiring turn flow or handoffs."
         "`references/reviews.md` owns `review`, `review_family`, carried state, verdict coupling, and review-driven `final_output`. Load when the author is adding a gate, a verdict, or a reviewer agent."
         "`references/rules.md` owns the declarative project `rule` primitive, its closed scope and assertion predicate set, and the `RULE###` diagnostic band. Load when the author is adding a compile-time invariant across many concrete agents."

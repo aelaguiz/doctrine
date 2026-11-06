@@ -98,6 +98,8 @@ class ResolveAgentSlotsMixin:
     def _resolve_agent_slots(
         self, agent: model.Agent, *, unit: IndexedUnit
     ) -> tuple[ResolvedAgentSlotState, ...]:
+        if isinstance(agent, model.Member):
+            unit = agent.scope_unit or unit
         agent_key = (unit.module_parts, agent.name)
         cached = self._resolved_agent_slot_cache.get(agent_key)
         if cached is not None:

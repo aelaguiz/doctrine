@@ -335,3 +335,17 @@ evolution of the rule primitive.
 The checked-in error reference under
 [examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](../examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
 shows the canonical formatted shape for one shipped compile error.
+
+## Values, Teams, And Markdown Sources
+
+| Code | Summary | Detail |
+| --- | --- | --- |
+| `E601` | Unfilled value | `Home <home> reads values nothing fills:` followed by each blank as `<root>:<key>` and its file and line. |
+| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. |
+| `E603` | Value cycle | `Values read each other:` followed by the full cycle, such as `a -> b -> a`. |
+| `E604` | Value sets a fact | `values:` sets a key the compiler supplies. |
+| `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is invalid, a typed agent field is on a team, or a team uses one key twice. |
+| `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
+| `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
+| `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
+| `E654` | Import line in Markdown source | A runtime import path would break once its text is inlined. Declare that file too and compose it. |

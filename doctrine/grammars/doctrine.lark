@@ -48,6 +48,10 @@ prompt_file: _NL* declaration+ _NL*
                        | rule_decl
                        | abstract_agent
                        | agent
+                       | team_decl
+                       | abstract_team_decl
+                       | abstract_agent_markdown
+                       | workflow_markdown
 
 export_decl: "export" exportable_declaration
 
@@ -116,6 +120,30 @@ rule_message: "message" ":" string _NL
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
+
+abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
+workflow_markdown: "workflow" CNAME "from" string _NL
+values_block: "values" ":" _NL _INDENT value_item+ _DEDENT
+value_item: CNAME ":" string _NL?
+team_decl: "team" CNAME inheritance? ":" string _NL _INDENT team_body _DEDENT
+abstract_team_decl: "abstract" "team" CNAME inheritance? ":" string? _NL _INDENT team_body _DEDENT
+team_body: team_item+
+?team_item: team_home_stmt
+          | role_field
+          | values_block
+          | member_decl
+          | member_override_decl
+          | agent_slot_abstract
+          | agent_slot_inherit
+          | agent_slot_override
+          | override_path
+          | agent_slot_field
+          | inherit_all
+          | drop_item
+team_home_stmt: "home" ":" string _NL?
+member_decl: "member" CNAME inheritance? ":" string _NL member_body?
+member_override_decl: "override" "member" CNAME inheritance? ":" string _NL member_body?
+member_body: _INDENT agent_field+ _DEDENT
 inheritance: "[" name_ref "]"
 inherit_all: "inherit" "*" _NL?
 drop_item: "drop" patch_path ":" string _NL?
@@ -126,6 +154,7 @@ override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_
 // authored workflow slot, which keeps the grammar open without making typed
 // contract fields magical.
 ?agent_field: inherit_all
+            | values_block
             | drop_item
             | role_field
             | inputs_patch_field
@@ -497,6 +526,7 @@ document_section_block: "section" CNAME ":" string readable_requirement? readabl
 document_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 
 readable_nonsection_block: readable_paragraph_block
+                         | readable_roster_block
                          | readable_sequence_block
                          | readable_properties_block
                          | readable_inline_properties_block
@@ -630,6 +660,9 @@ readable_table_column: CNAME ":" string _NL readable_table_column_body?
 // body rule and call the helper from its resolver.
 readable_table_column_body: _INDENT typed_field_body_line+ _DEDENT
 readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
+readable_roster_block: "roster" CNAME ":" string _NL _INDENT roster_body _DEDENT
+roster_body: roster_column+ readable_table_rows_block?
+roster_column: CNAME ":" string "=" string _NL?
 readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
 readable_table_cell: CNAME ":" string _NL?                                   -> readable_table_cell_text
                    | CNAME ":" _NL _INDENT shared_readable_body _DEDENT      -> readable_table_cell_body

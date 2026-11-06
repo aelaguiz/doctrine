@@ -130,6 +130,9 @@ class ResolveAddressablesMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
+        from doctrine._compiler.late_binding import LATE_ROOT
+        if LATE_ROOT.fullmatch("{{" + expression + "}}"):
+            return "{{" + expression + "}}"
         ref = _parse_interpolated_addressable_ref(expression)
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
         if ref is None and match is None:

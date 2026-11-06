@@ -338,6 +338,9 @@ class CompileReadablesMixin:
                 block.payload, unit=unit, owner_label=f"paragraph {block.key}",
                 source_span=block.source_span,
             ), when_text)
+        if block.kind == "roster":
+            from doctrine._compiler.teams import compile_roster
+            return compile_roster(self, block, unit=unit)
         if block.kind == "section":
             return CompiledSection(
                 title=title or _humanize_key(block.key),

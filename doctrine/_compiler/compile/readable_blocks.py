@@ -70,6 +70,9 @@ class CompileReadableBlocksMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
+        if block.kind == "roster":
+            from doctrine._compiler.teams import compile_roster
+            return compile_roster(self, block, unit=unit)
         if block.when_expr is not None:
             self._validate_readable_guard_expr(
                 block.when_expr,

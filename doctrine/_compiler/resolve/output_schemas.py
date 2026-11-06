@@ -156,6 +156,8 @@ class ResolveOutputSchemasMixin:
         *,
         unit: IndexedUnit,
     ) -> model.OutputSchemaDecl:
+        from doctrine._compiler.late_binding import reject_late_roots
+        reject_late_roots(output_schema_decl, unit=unit, why="output schema text is machine text")
         output_schema_key = (unit.module_parts, output_schema_decl.name)
         cached = self._resolved_output_schema_cache.get(output_schema_key)
         if cached is not None:

@@ -16,6 +16,9 @@
       "include": "#analysisDeclaration"
     },
     {
+      "include": "#teamsAndValues"
+    },
+    {
       "include": "#decisionDeclaration"
     },
     {
@@ -311,24 +314,48 @@
       ]
     },
     "stringInterpolation": {
-      "match": "(\\{\\{)\\s*((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
-      "captures": {
-        "1": {
-          "name": "punctuation.definition.interpolation.begin.doctrine"
+      "patterns": [
+        {
+          "match": "(\\{\\{)\\s*(agent|team)(:)([A-Za-z_][A-Za-z0-9_]*)\\s*(\\}\\})",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.interpolation.begin.doctrine"
+            },
+            "2": {
+              "name": "variable.language.doctrine"
+            },
+            "3": {
+              "name": "punctuation.separator.interpolation.doctrine"
+            },
+            "4": {
+              "name": "variable.other.member.doctrine"
+            },
+            "5": {
+              "name": "punctuation.definition.interpolation.end.doctrine"
+            }
+          }
         },
-        "2": {
-          "name": "support.type.reference.doctrine"
-        },
-        "3": {
-          "name": "punctuation.separator.interpolation.doctrine"
-        },
-        "4": {
-          "name": "variable.other.member.doctrine"
-        },
-        "5": {
-          "name": "punctuation.definition.interpolation.end.doctrine"
+        {
+          "match": "(\\{\\{)\\s*((?:self|[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))(?:\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*(\\}\\})",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.interpolation.begin.doctrine"
+            },
+            "2": {
+              "name": "support.type.reference.doctrine"
+            },
+            "3": {
+              "name": "punctuation.separator.interpolation.doctrine"
+            },
+            "4": {
+              "name": "variable.other.member.doctrine"
+            },
+            "5": {
+              "name": "punctuation.definition.interpolation.end.doctrine"
+            }
+          }
         }
-      }
+      ]
     },
     "rootedRuntimePathInString": {
       "name": "markup.inline.raw.runtime-path.doctrine",
@@ -1823,6 +1850,66 @@
           "name": "punctuation.separator.key-value.doctrine"
         }
       }
+    },
+    "teamsAndValues": {
+      "patterns": [
+        {
+          "match": "^(\\s*)(?:(abstract|override)(\\s+))?(team|member)(\\s+)([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "2": {
+              "name": "keyword.control.doctrine"
+            },
+            "4": {
+              "name": "keyword.control.doctrine"
+            },
+            "6": {
+              "name": "entity.name.type.doctrine"
+            }
+          }
+        },
+        {
+          "match": "^(\\s*)(values|home)(\\s*)(:)",
+          "captures": {
+            "2": {
+              "name": "keyword.other.field.doctrine"
+            },
+            "4": {
+              "name": "punctuation.separator.key-value.doctrine"
+            }
+          }
+        },
+        {
+          "match": "^(\\s*)(roster)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+          "captures": {
+            "2": {
+              "name": "keyword.control.doctrine"
+            },
+            "4": {
+              "name": "entity.name.section.doctrine"
+            },
+            "6": {
+              "name": "punctuation.separator.key-value.doctrine"
+            }
+          }
+        },
+        {
+          "match": "^(\\s*)(?:(abstract)(\\s+))?(agent|workflow)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s+)(from)\\b",
+          "captures": {
+            "2": {
+              "name": "keyword.control.doctrine"
+            },
+            "4": {
+              "name": "keyword.control.doctrine"
+            },
+            "6": {
+              "name": "entity.name.type.doctrine"
+            },
+            "8": {
+              "name": "keyword.control.doctrine"
+            }
+          }
+        }
+      ]
     }
   }
 }

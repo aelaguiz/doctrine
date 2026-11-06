@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Values and teams (6.0.0; language 6.0)
+
+- `values:` supplies words to shared prose. Late `{{agent:key}}` and
+  `{{team:key}}` roots read each final home's values and facts. Missing
+  values name every blank and reading site. Cycles and fact assignments fail.
+- `team` and `member` add shared folders, member refs, and overlays with an
+  implied `inherit *`. Team doctrine stays in the team's own file.
+- `roster` builds tables from direct members, then adds static rows.
+- Markdown-backed abstract agents and workflows read keyed headings from
+  `from "path.md"`. They support checked refs and the shared patch language.
+- New errors are `E601` to `E604`, `E606`, `E609`, and `E652` to `E654`.
+  Rename `values` and `roster` keys where their new forms can start.
+
 ### Prose and patches (6.0.0; language 6.0)
 
 - Each authored prose string renders as its own paragraph, including list items.

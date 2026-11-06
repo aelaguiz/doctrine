@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
+from dataclasses import field as _field
 from pathlib import Path as _Path
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.agent import Agent
+from doctrine._model.agent import Agent, Team
 from doctrine._model.analysis import AnalysisDecl, DecisionDecl
-from doctrine._model.core import ImportDecl, RenderProfileDecl
+from doctrine._model.core import ImportDecl, RenderProfileDecl, SourceSpan
 from doctrine._model.io import (
     EnumDecl,
     InputDecl,
@@ -73,3 +74,4 @@ class PromptFile:
     declarations: tuple[Declaration, ...]
     exported_names: tuple[str, ...] = ()
     source_path: _Path | None = None
+    string_sites: dict[int, tuple[str, str, SourceSpan]] = _field(default_factory=dict, compare=False, repr=False)

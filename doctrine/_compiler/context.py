@@ -154,6 +154,8 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self.root_entrypoint_unit = session.root_flow.entrypoint_unit
 
     def _expand_agent_patches(self, agent, *, unit):
+        if isinstance(agent, model.Member):
+            unit = agent.scope_unit or unit
         key = (unit.module_parts, agent.name)
         if key not in self._expanded_agent_cache:
             self._expanded_agent_cache[key] = expand_agent_patches(self, agent, unit=unit)
@@ -182,14 +184,17 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         flow = self.session.flow_by_key(prompt_root, flow_root)
         if flow is None:
             return None
-        agent = flow.agents_by_name.get(agent_name)
-        if agent is None:
-            return None
-        owner_unit = flow.declaration_owner_units_by_id[id(agent)]
-        return owner_unit, agent
+        if agent_name in flow.teams_by_name:
+            team = flow.teams_by_name[agent_name]
+            return flow.declaration_owner_units_by_id[id(team)], team
+        return self._flow_decl_match(agent_name, unit=flow.entrypoint_unit, registry_name="agents_by_name")
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
-        agent = self.root_flow.agents_by_name.get(agent_name)
+        agent = self.root_flow.teams_by_name.get(agent_name) or self.root_flow.agents_by_name.get(agent_name)
+        if agent is None and "." in agent_name:
+            match = self._flow_decl_match(agent_name, unit=self.root_entrypoint_unit, registry_name="agents_by_name")
+            if match is not None:
+                return self.compile_agent_from_unit(match[0], agent_name)
         if agent is None:
             raise _context_compile_error(
                 path=self.root_flow.entrypoint_path,
@@ -205,7 +210,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         unit: IndexedUnit,
         agent_name: str,
     ) -> CompiledAgent:
-        agent = unit_declarations(unit).agents_by_name.get(agent_name)
+        agent = unit_declarations(unit).teams_by_name.get(agent_name) or unit_declarations(unit).agents_by_name.get(agent_name)
+        if agent is None and "." in agent_name:
+            match = self._flow_decl_match(agent_name, unit=unit, registry_name="agents_by_name")
+            if match is not None:
+                unit, agent = match
         if agent is None:
             raise _context_compile_error(
                 path=unit.prompt_file.source_path,
@@ -226,7 +235,9 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        return self._compile_agent_decl(agent, unit=unit)
+        from doctrine._compiler.late_binding import bind_home
+        return bind_home(self, self._compile_agent_decl(agent,
+            unit=agent.scope_unit or unit if isinstance(agent, model.Member) else unit), agent, unit=unit)
 
     def compile_skill_package(
         self,
@@ -257,7 +268,10 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        return self._compile_skill_package_decl(declaration, unit=owner_unit)
+        from doctrine._compiler.late_binding import reject_late_roots
+        compiled = self._compile_skill_package_decl(declaration, unit=owner_unit)
+        reject_late_roots(compiled, unit=owner_unit, why="a skill package has no home")
+        return compiled
 
     def compile_skill_graph(
         self,

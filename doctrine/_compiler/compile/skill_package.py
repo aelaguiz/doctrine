@@ -172,6 +172,8 @@ class CompileSkillPackageMixin:
                 source=".".join((*target_unit.module_parts, document_decl.name)) or document_decl.name,
             ):
                 compiled_document = self._compile_document_decl(document_decl, unit=target_unit)
+            from doctrine._compiler.late_binding import reject_late_roots
+            reject_late_roots(compiled_document, unit=target_unit, why="an emitted document has no home")
             compiled_files.append(
                 CompiledSkillPackageFile(
                     path=output_path,

@@ -53,7 +53,7 @@ class CompileAgentMixin:
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
         agent, _ = self._expand_agent_patches(agent, unit=unit)
-        agent_key = self._flow_agent_key(unit, agent.name)
+        agent_key = self._flow_agent_key(agent.team_unit if isinstance(agent, model.Member) else unit, agent.name)
         previous_turn_input_specs = tuple(
             spec
             for spec in (
@@ -198,6 +198,8 @@ class CompileAgentMixin:
             seen_typed_fields: dict[str, model.Field] = {}
 
             for field in agent.fields:
+                if isinstance(field, model.Member):
+                    continue
                 if isinstance(field, model.RoleScalar):
                     if seen_role:
                         raise compile_error(
@@ -291,7 +293,7 @@ class CompileAgentMixin:
                 seen_typed_fields[field_key] = field
                 field_specs.append(AgentFieldCompileSpec(field=field))
 
-            if not seen_role:
+            if not seen_role and not isinstance(agent, model.Team):
                 raise compile_error(
                     code="E205",
                     summary="Concrete agent is missing role field",

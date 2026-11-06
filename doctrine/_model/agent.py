@@ -100,6 +100,12 @@ class SelectorsField:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class ValuesField:
+    items: tuple[tuple[str, str, SourceSpan], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 Field: _TypeAlias = (
     RoleScalar
     | RoleBlock
@@ -118,6 +124,7 @@ Field: _TypeAlias = (
     | ReviewField
     | FinalOutputField
     | SelectorsField
+    | ValuesField
 )
 
 
@@ -129,3 +136,21 @@ class Agent:
     abstract: bool = False
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    markdown_path: str | None = None
+
+
+@_dataclass(slots=True, frozen=True)
+class Member(Agent):
+    override: bool = False
+    team_unit: object | None = _field(default=None, compare=False, repr=False)
+    scope_unit: object | None = _field(default=None, compare=False, repr=False)
+
+    @property
+    def key(self):
+        return self.name.rsplit(".", 1)[-1]
+
+
+@_dataclass(slots=True, frozen=True)
+class Team(Agent):
+    fields: tuple[Field | Member, ...]
+    home: str | None = None

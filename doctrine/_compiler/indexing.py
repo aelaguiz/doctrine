@@ -66,6 +66,7 @@ class UnitDeclarations:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    teams_by_name: dict[str, model.Team]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -138,6 +139,7 @@ class IndexedFlow:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    teams_by_name: dict[str, model.Team]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -726,6 +728,7 @@ def index_unit(
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
     artifacts_by_name: dict[str, model.ArtifactDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
+    teams_by_name: dict[str, model.Team] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
     receipts_by_name: dict[str, model.ReceiptDecl] = {}
@@ -734,6 +737,15 @@ def index_unit(
     skill_graphs_by_name: dict[str, model.SkillGraphDecl] = {}
 
     for declaration in prompt_file.declarations:
+        if isinstance(declaration, (model.Agent, model.WorkflowDecl)) and declaration.markdown_path:
+            from doctrine._compiler.markdown_reader import read_markdown
+            declaration = read_markdown(declaration, source_path=prompt_file.source_path,
+                project_path=session.project_config.path, prompt_root=prompt_root)
+        if isinstance(declaration, model.Team):
+            _register_decl(teams_by_name, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            teams_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.ImportDecl):
             imports.append(declaration)
             continue
@@ -1096,6 +1108,7 @@ def index_unit(
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
+        teams_by_name=teams_by_name,
         rules_by_name=rules_by_name,
         receipts_by_name=receipts_by_name,
         stages_by_name=stages_by_name,

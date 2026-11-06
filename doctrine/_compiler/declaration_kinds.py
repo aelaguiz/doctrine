@@ -17,6 +17,14 @@ class DeclarationKind:
 
 DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
     DeclarationKind(
+        name="team",
+        label="team declaration",
+        registry_attr="teams_by_name",
+        decl_type=model.Team,
+        readable=True,
+        addressable_root=True,
+    ),
+    DeclarationKind(
         name="agent",
         label="agent declaration",
         registry_attr="agents_by_name",

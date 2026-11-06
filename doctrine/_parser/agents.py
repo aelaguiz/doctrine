@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from lark import v_args
+from dataclasses import replace
 
 from doctrine import model
 from doctrine._parser.parts import (
@@ -8,6 +9,7 @@ from doctrine._parser.parts import (
     FinalOutputOutputPart,
     FinalOutputRoutePart,
     FinalOutputReviewFieldsPart,
+    _flatten_grouped_items,
     _meta_line_column,
     _source_span_from_meta,
     _with_source_span,
@@ -25,6 +27,63 @@ class AgentTransformerMixin:
     @v_args(meta=True)
     def abstract_agent(self, meta, items):
         return self._agent(items, abstract=True, source_span=_source_span_from_meta(meta))
+
+    @v_args(meta=True)
+    def values_block(self, meta, items):
+        return _with_source_span(model.ValuesField(items=tuple(items)), meta)
+
+    @v_args(meta=True, inline=True)
+    def value_item(self, meta, key, value):
+        return key, value, _source_span_from_meta(meta)
+
+    def team_body(self, items):
+        return items
+
+    def member_body(self, items):
+        return items
+
+    def team_home_stmt(self, items):
+        return ("home", items[0])
+
+    @v_args(meta=True)
+    def team_decl(self, meta, items):
+        return self._team(items, abstract=False, source_span=_source_span_from_meta(meta))
+
+    @v_args(meta=True)
+    def abstract_team_decl(self, meta, items):
+        return self._team(items, abstract=True, source_span=_source_span_from_meta(meta))
+
+    def _team(self, items, *, abstract, source_span):
+        head = self._agent(items[:-1], abstract=False, source_span=source_span)
+        body = items[-1]
+        return model.Team(
+            name=head.name, title=head.title, abstract=abstract, parent_ref=head.parent_ref,
+            fields=_flatten_grouped_items([item for item in body if not isinstance(item, tuple)]),
+            home=next((item[1] for item in body if isinstance(item, tuple)), None),
+            source_span=source_span,
+        )
+
+    @v_args(meta=True)
+    def member_decl(self, meta, items):
+        head_items = [*items[:-1], *items[-1]] if isinstance(items[-1], list) else items
+        head = self._agent(head_items, abstract=False, source_span=_source_span_from_meta(meta))
+        return model.Member(
+            name=head.name, title=head.title, parent_ref=head.parent_ref,
+            fields=head.fields, source_span=head.source_span,
+        )
+
+    @v_args(meta=True)
+    def member_override_decl(self, meta, items):
+        return replace(self.member_decl(meta, items), override=True)
+
+    @v_args(meta=True, inline=True)
+    def abstract_agent_markdown(self, meta, name, path):
+        return _with_source_span(model.Agent(name=name, fields=(), abstract=True, markdown_path=path), meta)
+
+    @v_args(meta=True, inline=True)
+    def workflow_markdown(self, meta, name, path):
+        return _with_source_span(model.WorkflowDecl(name=name, body=model.WorkflowBody(
+            title=name, preamble=(), items=()), markdown_path=path), meta)
 
     def role_body(self, items):
         return items[0]

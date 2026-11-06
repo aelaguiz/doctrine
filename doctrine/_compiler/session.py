@@ -338,9 +338,12 @@ class CompilationSession:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(self).compile_readable_declaration(
+            compiled = CompilationContext(self).compile_readable_declaration(
                 declaration_kind, declaration_name
             )
+            from doctrine._compiler.late_binding import reject_late_roots
+            reject_late_roots(compiled, unit=self.root_flow.entrypoint_unit, why="an emitted document has no home")
+            return compiled
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"compile {declaration_kind} declaration `{declaration_name}`",

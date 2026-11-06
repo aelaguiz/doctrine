@@ -741,3 +741,20 @@ If you want one short path through the guide, read these first:
   to emit a real `SKILL.prompt` package tree.
 - Use [../examples/README.md](../examples/README.md) when you want the full
   proof ladder in teaching order.
+
+## Shared Roles With Different Words
+
+When two roles differ only in a few words, keep the shared judgment in one
+role and put those words in `values:`. In example 173, the same QA role
+reads `bet` in one home and `feature` in another. A sentence for one team
+belongs in that team's override. It does not need a template language.
+
+A team gives shared doctrine a folder. Its members keep their own sections
+before their craft by default. The shared team text stays above them, rather
+than being copied into every member. Use `roster` when the team needs a table
+of who makes each call. Examples 174 to 177 show these forms.
+
+To port a Markdown home one file at a time, start with
+`abstract agent Craft from "craft.md"` or `workflow Shared from "shared.md"`.
+Its headings become keys you can inherit, override, or drop with a reason.
+The original file stays the source. Example 179 shows both declaration kinds.

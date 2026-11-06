@@ -35,8 +35,13 @@ class ValidateRulesMixin:
         self._validate_rule_scope_targets(rule, flow=flow, rule_unit=rule_unit)
         self._validate_rule_assertion_targets(rule, flow=flow, rule_unit=rule_unit)
 
-        for agent_name, agent in flow.agents_by_name.items():
-            agent_unit = flow.declaration_owner_units_by_id[id(agent)]
+        from doctrine._compiler.teams import team_members
+        agents = [(flow.declaration_owner_units_by_id[id(agent)], agent) for agent in flow.agents_by_name.values()]
+        for team in flow.teams_by_name.values():
+            if not team.abstract:
+                owner = flow.declaration_owner_units_by_id[id(team)]
+                agents.extend((owner, member) for member in team_members(self, team, unit=owner))
+        for agent_unit, agent in agents:
             if not self._agent_matches_rule_scope(
                 agent,
                 agent_unit=agent_unit,
@@ -54,6 +59,11 @@ class ValidateRulesMixin:
                     flow=flow,
                 )
 
+    def _rule_agent_name(self, ref, *, flow):
+        if ref.module_parts and ref.module_parts[-1] in flow.teams_by_name:
+            return ".".join((*ref.module_parts, ref.declaration_name))
+        return ref.declaration_name
+
     def _validate_rule_scope_targets(
         self,
         rule: model.RuleDecl,
@@ -63,12 +73,13 @@ class ValidateRulesMixin:
     ) -> None:
         for predicate in rule.scope.predicates:
             if isinstance(predicate, model.FlowPredicate):
-                if predicate.flow_ref.declaration_name not in flow.agents_by_name:
+                target = self._rule_agent_name(predicate.flow_ref, flow=flow)
+                if self._flow_decl_match(target, unit=rule_unit, registry_name="agents_by_name") is None:
                     self._raise_rule_unknown_scope_target(
                         rule=rule,
                         rule_unit=rule_unit,
                         source_span=predicate.source_span,
-                        target_name=predicate.flow_ref.declaration_name,
+                        target_name=target,
                     )
 
     def _validate_rule_assertion_targets(
@@ -83,12 +94,13 @@ class ValidateRulesMixin:
                 assertion,
                 (model.RequiresInheritAssertion, model.ForbidsBindAssertion),
             ):
-                if assertion.target.declaration_name not in flow.agents_by_name:
+                target = self._rule_agent_name(assertion.target, flow=flow)
+                if self._flow_decl_match(target, unit=rule_unit, registry_name="agents_by_name") is None:
                     self._raise_rule_unknown_assertion_target(
                         rule=rule,
                         rule_unit=rule_unit,
                         source_span=assertion.source_span,
-                        target_name=assertion.target.declaration_name,
+                        target_name=target,
                     )
 
     def _agent_matches_rule_scope(
@@ -105,7 +117,7 @@ class ValidateRulesMixin:
                     return True
                 continue
             if isinstance(predicate, model.FlowPredicate):
-                target = predicate.flow_ref.declaration_name
+                target = self._rule_agent_name(predicate.flow_ref, flow=flow)
                 if self._agent_ancestor_chain_includes(
                     agent,
                     agent_unit=agent_unit,
@@ -182,7 +194,7 @@ class ValidateRulesMixin:
         flow,
     ) -> None:
         if isinstance(assertion, model.RequiresInheritAssertion):
-            target = assertion.target.declaration_name
+            target = self._rule_agent_name(assertion.target, flow=flow)
             if not self._agent_ancestor_chain_includes(
                 agent,
                 agent_unit=agent_unit,
@@ -203,7 +215,7 @@ class ValidateRulesMixin:
                 )
             return
         if isinstance(assertion, model.ForbidsBindAssertion):
-            target = assertion.target.declaration_name
+            target = self._rule_agent_name(assertion.target, flow=flow)
             if self._agent_ancestor_chain_includes(
                 agent,
                 agent_unit=agent_unit,

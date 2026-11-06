@@ -7,6 +7,23 @@ For the shipped syntax and feature overview, use
 use [../examples/README.md](../examples/README.md).
 For release and compatibility policy, use [VERSIONING.md](VERSIONING.md).
 
+## Late Values And Team Folders
+
+A shared role keeps one meaning while each home supplies its words.
+`{{agent:key}}` and `{{team:key}}` resolve after inheritance. Cached
+shared declarations keep the roots until that final pass. Ordinary refs
+inside a value still resolve in the module that wrote the value.
+Values are text. They add no expression language.
+
+Teams describe folders. The path says which teams sit above a member;
+inheritance says which role it does. Team text stays in the team's own
+file, so members do not load it twice. Teams and members are overlays;
+ordinary agents keep explicit inherited-item accounting.
+
+A Markdown source feeds the same keyed sections as native Doctrine.
+Authors can share or patch a file before they port its prose.
+See examples 173 to 177 and 179.
+
 ## Core Principles
 
 - Runtime compatibility matters. Doctrine keeps the runtime artifact as

@@ -191,6 +191,115 @@ final_output:
 - scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
 
+## Values And Teams
+
+`values:` holds words that change between agents. It does not render.
+Shared prose reads the final home with `{{agent:key}}`. It reads the team
+with `{{team:key}}`. These roots work in prose, titles, and raw `markdown`
+and `html` blocks. Code blocks stay literal. A skill package, an emitted
+document, and machine `output schema` text cannot read home values.
+
+```doctrine
+abstract agent Tester:
+    role: "You test each {{agent:unit}}."
+    values:
+        unit: "change"
+
+team Core: "the core team"
+    home: "teams/core"
+    values:
+        unit: "feature"
+    member qa[Tester]: "QA"
+```
+
+The member above is `Core.qa`. Its folder is `teams/core/qa`.
+A member key changes `_` to `-` in its folder name.
+
+An agent reads a value from its own body first. Next come its team and the
+teams above it by folder, nearest first. Parent agents supply the defaults.
+A team reads its own values, then teams above it by folder, then its parent
+teams. A value may read another value or an ordinary declaration ref.
+Ordinary refs keep the meaning they had where the value was written.
+Values have no logic, filters, loops, or case changes.
+
+The compiler supplies these facts. Authors cannot set them in `values:`.
+
+| Fact | Agent | Team |
+| --- | --- | --- |
+| `key` | Agent name or member key | Team name |
+| `title` | Head title | Team title |
+| `home` | Member folder | Team folder |
+| `folder` | Last part of `home` | Last part of `home` |
+| `members` | No fact | Member titles in order |
+| `others` | No fact | Member titles except this member |
+
+A list of titles uses commas and a final ` and `. A team's own file cannot
+read `others`. An agent outside a team has no `home`, `folder`, or team values.
+A missing value fails with `E601`, which lists every blank and its reading sites.
+A value cycle is `E603`. Setting a fact is `E604`.
+
+A concrete `team` needs `home:`. An `abstract team` cannot have one.
+The path is relative to the output root. `.` means the root. Absolute paths,
+`..`, and a trailing `/` are errors. Folder paths alone form the team tree.
+A team holds a role, values, slots, and members. It cannot hold typed agent
+fields such as `inputs:` or `review:`. Slots and members share one key space.
+
+A team may inherit another team. Its inherited members come first, followed
+by new members. `override member key[Role]: "Title"` replaces an inherited
+member whole. `drop key: "Reason"` removes it. Each concrete team gets its
+own copy of the member templates from an abstract team.
+
+A member's parent may be an abstract agent, a concrete agent, or another
+member. Without a parent, it needs its own role. `Team.key` works in agent
+refs, routes, rule targets, `{{Team.key}}`, and `{{Team.key:title}}`.
+Members of abstract teams cannot be referenced.
+
+Team and member bodies are overlays. They keep parent items not named in
+the body, as if they ended with `inherit *`. The role renders first. Own
+items come next, then the parent's remaining items. An explicit `inherit *`
+places those parent items where it stands. Ordinary agent bodies still
+account for each inherited item in full.
+
+A team compiles only its own role and slots. That text stays out of member
+homes, because the runtime reads it from the folder above. A team needs no
+role. Its render may be empty.
+
+### Rosters
+
+`roster` makes a Markdown table from the team's direct members. Each column
+has the form `key: "Header" = "{{agent:value}}"`. Inside a cell, `agent`
+means that row's member. Every cell template must read at least one agent
+value. A member gets no row when any cell reads a value it lacks.
+
+An optional `rows:` block adds static rows after the member rows. It uses
+the same keyed cells as `table`. Each row must fill every column and cannot
+name a column the roster did not declare. A roster in a member home uses
+that member's team. Without a team, it fails with `E609`.
+
+See examples [173](../examples/173_late_bound_values),
+[174](../examples/174_team_members), [175](../examples/175_team_value_precedence),
+[176](../examples/176_team_assembly), and [177](../examples/177_roster).
+
+### Markdown Sources
+
+`abstract agent Craft from "craft.md"` and
+`workflow Shared from "shared.md"` read a Markdown file as a declaration.
+Paths start at the `pyproject.toml` folder. Without project config, they
+start at the parent of the prompt root. A missing file is `E652`.
+
+A first-line `# Heading` gives the workflow its title. An abstract agent
+drops that title. Text before the first `##` becomes the agent's role or
+the workflow's preamble. Each `##` is a keyed section. A `###` is a keyed
+section inside it. Deeper headings stay text. Headings in code fences do
+not count.
+
+A section key is its heading in lower case. Each run of other characters
+becomes `_`, with the ends trimmed. Two sibling headings with one key are
+`E653`, which names both lines. Text stays verbatim, including `{{`.
+A runtime import line starting with `@` is `E654`. Declare that file too
+and compose it. These keys support `drop`, `override`, dotted patches,
+and checked title refs. See [example 179](../examples/179_markdown_backed_declarations).
+
 ## Workflows
 
 `workflow` is Doctrine's reusable instruction surface.

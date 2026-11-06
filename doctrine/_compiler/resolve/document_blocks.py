@@ -28,6 +28,8 @@ class ResolveDocumentBlocksMixin:
         unit: IndexedUnit,
         owner_label: str,
     ) -> model.DocumentBlock:
+        if item.kind == "roster":
+            return item
         if item.when_expr is not None:
             self._validate_readable_guard_expr(
                 item.when_expr,

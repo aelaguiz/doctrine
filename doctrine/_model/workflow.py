@@ -162,6 +162,7 @@ class WorkflowDecl:
     body: WorkflowBody
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    markdown_path: str | None = None
 
 
 @_dataclass(slots=True, frozen=True)
