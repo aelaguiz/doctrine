@@ -24,7 +24,6 @@ agent PodQa[Specialist]: "Pod QA"
 
 workflow PodCraft[Craft]: "Pod Craft"
     drop how_you_think.daily: "Workflows patch by path too."
-    inherit how_you_think
 
 
 agent PodWriter: "Pod Writer"

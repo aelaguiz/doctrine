@@ -1,6 +1,6 @@
 # Teams And Homes: Implementation Plan For Issues #90 To #103
 
-Status: draft for review. This file is the binding spec for every implementer.
+Status: reviewed. This file is the binding spec for every implementer.
 
 **Language design is closed.** Every keyword, grammar rule, semantic rule, diagnostic
 code, CLI verb, JSON key, and render line below was set by the language designer. An
@@ -229,13 +229,18 @@ agent_slot_override_path: "override" CNAME "." patch_path ":" slot_value _NL slo
 workflow_override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
 ```
 
-A dotted `override` names one keyed item at any depth and replaces it in place. It keeps
-the target's kind: the string is the new title, and the body is the new body, which must
-be legal for that kind. A path steps through agent slot keys, workflow section keys, and
-keyed readable blocks. It never steps through anonymous items.
+A dotted `override` names one keyed section, slot, or `paragraph` at any depth and replaces
+it in place. It keeps the target's kind: the string is the new title, and the body is the
+new body. A `paragraph` body takes only prose and `details`. A block with its own body form,
+such as `table` or `callout`, can't be the target, because this one grammar can't parse its
+body. Override the section that holds it. `drop` works on any keyed item. A path steps
+through agent slot keys, workflow section keys, and keyed readable blocks. It never steps
+through anonymous items.
 
-A dotted patch on `a.b` keeps `a` and counts as the account for `a`. `a` renders where the
-first patch naming it stands, or in its parent position under `inherit *`.
+A dotted patch on `a.b` keeps `a` and is the account for `a`, so writing `inherit a` beside
+it is `E612`. Patches on different items under one parent are fine: `override a.b` and
+`drop a.c` live together. `a` renders where the first patch naming it stands, or in its
+parent position under `inherit *`.
 
 **`drop key: "reason"`** accounts for an inherited item and removes it. The reason is
 required and non-empty. It renders nowhere in a home. The home map keeps it (section 7).
@@ -255,8 +260,8 @@ Errors:
 | Code | When |
 | --- | --- |
 | `E610` | `drop` or a dotted `override` names a key the parent does not have |
-| `E611` | A dotted path steps through an anonymous item or a scalar |
-| `E612` | Two patches touch one item, or a path sits under a dropped item, or `drop role` |
+| `E611` | A dotted path steps through an anonymous item or a scalar, or a dotted `override` targets anything but a section, slot, or `paragraph`, or gives a `paragraph` a body it can't hold |
+| `E612` | Two patches name one item, `inherit a` sits beside a patch under `a`, a path sits under a dropped or overridden item, or `drop role`. The error sits on the later item |
 | `E613` | `inherit *` appears twice in one body |
 
 Dropping an `abstract` slot is `E610`: an abstract slot is a requirement, not an item.
@@ -533,9 +538,20 @@ The file reads as keyed structure:
   stay text. Headings inside code fences do not count.
 - A section's key is its heading in lower case, with each run of other characters changed
   to `_` and the ends trimmed. Two siblings with one key is `E653`, naming both lines.
-- Section text is verbatim. `{{` stays literal.
+- Section text is verbatim, and `{{` stays literal. Links are the one exception below.
 - A line starting with `@` that would be a runtime import is `E654`, because its path
   would break once inlined. Declare that file too and compose it.
+
+**Links follow the text.** The text moves into homes in other folders, so a relative link
+must keep pointing at the same file. Each destination in `[text](dest)`, `![alt](dest)`, and
+a reference definition `[id]: dest` is rewritten as the path from the emitted file's folder
+to the file `dest` names from the Markdown file's folder. A `#anchor` stays on the end. A
+destination with a URL scheme, or starting with `/`, `#`, or `~`, is left alone, and so is
+anything in a code span or code fence. Nothing checks that the linked file exists, because
+`--rev` doesn't extract it. The path is worked out against the target's `output_dir`, so
+`--out` gives the same bytes. The rewrite runs in the final pass of section 5.1, because one
+file can land in homes in different folders. A compile with no emit target leaves links as
+written.
 
 `drop`, `override`, dotted paths, and `{{Decl:key.title}}` all work on these keys. A `drop`
 naming a heading that is gone is `E610`. The file's content feeds the declaration's source
@@ -602,7 +618,8 @@ For a target with teams, each home lands at `<output_dir>/<home>/`:
 - `TEAM.contract.json`, for a team with members.
 
 Two homes with one path is `E607`, naming both owners. This covers a member folder that
-collides with a team home. Concrete agents outside a team emit as they do today.
+collides with a team home. Two targets with teams that share an `output_dir` is also `E607`,
+naming both targets. Concrete agents outside a team emit as they do today.
 
 No `@` line or import is ever written. Shared text reaches a home by inheritance or
 composition, so it is inlined.
@@ -619,10 +636,11 @@ strips the comment before injecting the file. Companions (`DETAILS.md`, `_detail
 carry the same header, with their owner's source. Files outside a team tree get no header,
 so today's output does not change.
 
-The header makes a file its own receipt. There is no sidecar, and it works the same
-whether compiled files are committed or built at launch.
+The header makes each file its own receipt, so the guard below works the same whether
+compiled files are committed or built at launch.
 
-**Hand-edit guard.** Before overwriting a team-tree file, the build reads its header.
+**Hand-edit guard.** Before it writes anything, the build reads the header of every
+Markdown file it would overwrite or remove. So `E634` leaves the tree as it was.
 
 | The file on disk | What happens |
 | --- | --- |
@@ -631,13 +649,42 @@ whether compiled files are committed or built at launch.
 | Hash doesn't match its bytes | `E634`: it was edited by hand |
 | No Doctrine header | `E634`: it was written by hand |
 
-`E634` names the file. For an edited file it also names each top-level section that
-differs from the fresh build and that section's origin and site, and says to move the
-edit there. `--force` overwrites. Nothing else does. A hand edit is never silently lost.
+`E634` names the file. For an edited file the build would overwrite, it also names each
+top-level section that differs from the fresh build and that section's origin and site, and
+says to move the edit there. `--force` overwrites or removes it. Nothing else does. A hand
+edit is never silently lost.
 
-**Atomic writes.** Write a temp file in the same folder, then `os.replace`. Skip the write
-when the bytes already match. Concurrent builds of one tree are safe because every writer
-produces identical bytes for each path.
+`TEAM.contract.json` and `HOMES.contract.json` are machine files. They carry no header and
+no guard, because no lesson lives in them, and `--check` shows them as `stale`.
+
+`CLAUDE.md` follows the same table. A link to `AGENTS.md` is left as it is. A real file
+goes through the guard and then becomes the link. Any other link is `E634`.
+
+**The tree record.** A whole-tree build also writes `HOMES.contract.json` in the output root:
+
+```json
+{
+  "format_version": 1,
+  "files": ["AGENTS.md", "CLAUDE.md", "pods/growth/AGENTS.md", "pods/growth/TEAM.contract.json"]
+}
+```
+
+`files` is every path the build emitted, sorted, without the record itself. A whole-tree
+build is `doctrine build .` or `doctrine build` with no selector. No other build reads or
+writes the record, and a missing record means nothing is obsolete.
+
+A path in the record that this build doesn't emit is **obsolete**: a removed member, a
+moved team, or a team that no longer renders any text. Its text would otherwise keep
+loading, because the runtimes read whatever is in the folder. A whole-tree build removes
+obsolete files after the guard passes, and leaves their folders alone. Scanning the tree
+instead would be too slow for a commit tool to run in a large repository.
+
+**Atomic writes.** Write a temp file in the same folder, then `os.replace`, so nobody reads
+half a file. Skip the write when the bytes already match. Builds of one source write
+identical bytes, so 16 launches at once are safe. Builds from different sources, such as a
+launch from `HEAD` beside an author's working tree, can leave one home with files from both
+until the next build, and `--check` shows it. There is no lock, because a launch must never
+wait on one.
 
 ### 6.3 `details`
 
@@ -671,11 +718,16 @@ Fuller cases, under the same headings: [DETAILS.md](DETAILS.md), [_details/waite
 
 Links are relative to the home file. A home with no details gets no line.
 
-**Companion layout.** A companion repeats the home's headings at the same depth for each
-section that has details, in home order, and nothing else. A named block gets a heading
-one level deeper. Text at the top of a slot sits under the slot's heading. Anchors are
-GitHub slugs of heading text, with `-1`, `-2` added to repeats in file order. The file has
-no preamble of its own.
+**Companion layout.** A `DETAILS.md` repeats its home's headings at the same depth for each
+section that has details, in home order, and nothing else. A `_details/` file follows its
+owner instead, because homes that share it can reorder or retitle those sections. Its bytes
+depend on the owner alone: an agent's slots are `##`, a workflow's or document's title is
+`##` with its sections under it, in the owner's written order, each only if it holds
+details.
+
+In both, a named block gets a heading one level deeper, and text at the top of a slot sits
+under the slot's heading. Anchors are GitHub slugs of heading text, with `-1`, `-2` added to
+repeats in file order. The file has no preamble of its own.
 
 **Shared details are shared words.** Text in a `_details/` file serves every home that
 points at it, so it may not read `{{agent:...}}` or `{{team:...}}`. That includes its
@@ -778,9 +830,12 @@ from failing on someone else's rule or budget.
 **Source flags.** `build`, `check`, `diff`, and `load` compile from the working tree unless
 told otherwise:
 
-- `--rev REV` compiles from that git revision. It extracts only the pyproject, the target's
-  prompt roots, and every `from` file with `git archive`, into a temp folder, because a
-  repository can be far larger than its prompts. A bad revision is `E641`.
+- `--rev REV` compiles from that git revision. It extracts only what the result depends on,
+  with `git archive`, into a temp folder, because a repository can be far larger than its
+  prompts: the pyproject, `.codex/config.toml` beside it, the target's prompt roots, every
+  `from` file, and every `external` path relative to the pyproject folder. An extra path the
+  revision doesn't hold is left out, so it counts as absent. A `~` path reads this machine.
+  A bad revision is `E641`.
 - `--with PATH` (repeatable, needs `--rev`) overlays that working-tree file on the
   revision. So one author's change compiles without another session's unfinished edits.
 
@@ -791,17 +846,20 @@ they point to when the build selects the whole tree. It evaluates no `rule` decl
 and fails on no budget.
 
 - Everything else the selected homes load (levels above, shared companions) is compared,
-  never written. A level that differs prints `W307 Stale level` with its path. Those files
-  are shared by every session in a checkout, so one launch must not rewrite them.
-- `doctrine build .` selects everything, so it writes everything.
-- `--out DIR` writes under `DIR` instead of the target's `output_dir`.
-- `--check` writes nothing. It prints each path as `stale`, `edited`, or `missing`, and exits
-  1 if any is. Output is deterministic, so a clean exit means the files match the source.
+  never written. A level that differs, or that this build no longer emits, prints
+  `W307 Stale level` with its path. Those files are shared by every session in a checkout,
+  so one launch must not rewrite them.
+- `doctrine build .` selects everything, so it writes everything and removes obsolete files
+  (section 6.2).
+- `--out DIR` writes under `DIR` instead of the target's `output_dir`, with its own record.
+- `--check` writes nothing. It prints each path as `stale`, `edited`, `missing`, or `obsolete`,
+  and exits 1 if any is. Output is deterministic, so a clean exit means the files match the
+  source. `obsolete` needs the whole tree, so only a whole-tree `--check` prints it.
 - With `--json` it prints `{"format_version": 1, "written": [...], "unchanged": [...],
-  "stale_levels": [...]}`.
+  "removed": [...], "stale_levels": [...]}`.
 
 Prints `built <N> homes, <M> files changed` on success, with `home` and `file` singular at
-1. A symlink counts as a file.
+1. A symlink, a contract, and a removed file each count as a file.
 
 **`doctrine check [--strict] [--json] [--rev REV] [--with PATH]`** compiles every home,
 writes nothing, and checks all rules, budgets, and warnings. Warnings print to stderr and
@@ -817,7 +875,8 @@ PodQa.whom_you_work_with  prompts/roles/qa.prompt:12
   reaches 3 homes: pods/growth/qa, pods/feature/qa, pods/product/qa
 ```
 
-A text set by a value also prints the value's site. No match exits 1.
+A home is reached when the matching text is in its load, so a sentence at a level counts
+every home under it. A text set by a value also prints the value's site. No match exits 1.
 
 **`doctrine load [SELECTOR...] [--runtime NAME] [--json]`** prints load by headroom:
 
@@ -875,6 +934,7 @@ class MapEntry:
     path: tuple[str, ...]   # slot key, then nested keys down to depth 2
     title: str | None
     origin: str             # declaration that authored this text, as "Decl" or "Team.key"
+    origin_path: tuple[str, ...]  # the same text's path inside `origin`, () at its top
     site: str               # "prompts/roles/qa.prompt:12"
     always_on: bool         # False for details
     text_hash: str          # sha256 of the entry's rendered text
@@ -984,8 +1044,12 @@ Over budget:
 
 Rules:
 
-- A declaration "reaches" a home when its source hash changed, it is in that home's `deps`,
-  and that home's rendered files or details differ from the base.
+- A home "changed" when any file in its load differs from the base, or its own details do.
+  So a change at a level changes every home under it. The size is the change in the home's
+  whole load.
+- A declaration "reaches" a home when its source hash changed and it is in the `deps` of a
+  level in that home's load whose file differs from the base, or in the home's own `deps`
+  when only its details differ.
 - When homes differ in size, print the range: `+120 to +612 characters`.
 - Characters are UTF-16 units of always-on text. `details` changes print separately as
   `(details +300)`.
@@ -1019,8 +1083,10 @@ JSON shape:
 }
 ```
 
-`status` is `added`, `removed`, or `changed`. `outputs` lists every emitted path that
-differs, so a commit that names exact paths can stage them. `doctrine diff` exits 0 even when things
+`status` is `added`, `removed`, or `changed`. `outputs` lists every emitted path added,
+changed, or removed, so a commit that names exact paths can stage them. It holds only files
+whose bytes differ, so a home changed by a level above it adds no path, and it holds
+`HOMES.contract.json` when the list of files changed. `doctrine diff` exits 0 even when things
 changed. A commit tool reads the JSON and decides. The compiler enforces nothing about
 ownership.
 
@@ -1065,7 +1131,9 @@ Hint: Share the paragraph and put the different words in `values:`.
 ```
 
 **`W302` method.** For each home and runtime, group always-on entries in the whole load by
-`origin` and `path`. Two files holding one group is a finding, naming both files.
+`origin` and `origin_path`. Those don't depend on the slot that placed the text, so one
+workflow bound under two keys still groups. Two files holding one group is a finding,
+naming both files.
 
 ### 8.4 The Agent Linter's Change Mode
 
@@ -1233,12 +1301,20 @@ at run time."
 It reads a Markdown file with the reader from section 5.5 and prints `.prompt` source to
 stdout. This is the lossless first step of a port: file by file, before any refactor.
 
-- A `##` heading becomes `key: "Title"`, and a `###` becomes `section key: "Title"`.
-- A paragraph opening with a bold run, `**Lead-in.** text`, becomes
+- A `##` heading becomes `key: "Title"`, and a `###` inside it becomes `key: "Title"` one
+  level deeper.
+- A paragraph opening with a bold run and followed by text, `**Lead-in.** text`, becomes
   `paragraph key: "Lead-in."` with the key slugged from the lead-in.
-- Every other run of text becomes one `"""` string, with blank lines kept.
+- Every other run of text becomes one string, with blank lines kept. Before the first keyed
+  item in its section it is a bare string, because the parser requires prose first. After
+  one it is an untitled `paragraph text_<N>:`, with `N` counting those in the section from 1.
+- A string is `"..."` when it fits on one line and holds no `"` or `\\`. Otherwise it is
+  `""".."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
+- A repeated key in one section gets `_2`, `_3`, in order.
 - Text before the first `##` becomes `role:` for `--kind agent`, or loose prose for
   `--kind workflow`.
+- Link destinations stay as written. Text in `.prompt` source doesn't follow its file, so
+  the port docs say to turn relative links into paths from the repository root first.
 
 `--check` compiles the printed source in memory and compares its render with the input,
 ignoring the first-line `# Heading` and trailing whitespace. A difference prints its first
@@ -1270,7 +1346,7 @@ lines. It must teach all of this, each point with one real corpus example:
 | Thin always-on text | Keep the idea and the one case that shows where it turns. Send the rest to `details`. Leave out what an agent sees by looking |
 | Prose or types | Judgment stays prose. Types carry exact truth. Don't turn teaching into a fill-in form |
 | Patterns that go bad | Values used as templating, deep inheritance, piles of `drop`, restating what the harness owns |
-| Porting order | `from` a Markdown file, then `doctrine import`, then roles, values, rules, and budgets. One file at a time |
+| Porting order | `from` a Markdown file, then `doctrine import`, then roles, values, rules, and budgets. One file at a time. Links follow a `from` file on their own, but not imported text, so write them from the repository root before `import` |
 | The loop | Edit, `doctrine diff`, `doctrine check`, the linter's change mode, then a fresh agent on a case the file never mentions, including one where the obvious move is wrong |
 
 **R4. Look outward.** A section titled "Read Current Practice" tells the author this field
@@ -1319,13 +1395,13 @@ report, not an edit. Numbers continue the corpus.
 | 175 | `team_value_precedence` | Member over team over outer team over role | 2 |
 | 176 | `team_assembly` | Abstract team, `drop` of a member | 2 |
 | 177 | `roster` | `roster`, `E609` | 2 |
-| 178 | `team_contract` | `TEAM.contract.json` | 2 |
-| 179 | `markdown_backed_declarations` | `from`, `E652`, `E653`, `E654` | 2 |
-| 180 | `home_tree` | Level files, link, header, `E607` | 3 |
+| 178 | `team_contract` | `TEAM.contract.json` | 3 |
+| 179 | `markdown_backed_declarations` | `from`, `E652`, `E653`, `E654`, links that follow the text | 2, its link case 3 |
+| 180 | `home_tree` | Level files, link, header, tree record, `E607` | 3 |
 | 181 | `details` | `DETAILS.md`, pointer | 3 |
 | 182 | `shared_details` | `_details/`, `E620`, `E621` | 3 |
 | 183 | `load_budgets` | `doctrine load`, `E630`, `E631`, `W306` | 3 |
-| 184 | `doctrine_build_modes` | `build`, `--check`, `E634`, `W307` | 3 |
+| 184 | `doctrine_build_modes` | `build`, `--check`, `E634`, `W307`, obsolete files | 3 |
 | 185 | `rule_team_scopes` | `team:`, `member:`, `home:` | 4 |
 | 186 | `rule_load_assertions` | `requires load`, `forbids load` | 4 |
 | 187 | `doctrine_diff` | `diff`, `where` | 4 |
@@ -1339,7 +1415,8 @@ report, not an edit. Numbers continue the corpus.
 ### New Corpus Proof Kind
 
 CLI behavior needs proof in the corpus too. `doctrine/_verify_corpus` gains
-`kind = "cli_contract"`:
+`kind = "cli_contract"`, in WS3 with the `doctrine` command. WS1 and WS2 use none. So
+`TEAM.contract.json` and the link rewrite land in WS3 too, even though section 5 defines them.
 
 ```toml
 [[cases]]
@@ -1384,7 +1461,9 @@ file below is new. Every named test is required.
 **`tests/test_patch_language.py`**: `expand_patch_items` on each of the 15 kinds, one test
 per kind: `drop` removes an item; `inherit *` keeps parent order; a dropped key counts as
 accounted; `E610`, `E612`, `E613` raise from every kind. `test_wildcard_keeps_override_in_parent_position`,
-`test_explicit_inherit_moves_item_past_wildcard`, `test_drop_requires_reason_parse_error`.
+`test_explicit_inherit_moves_item_past_wildcard`, `test_drop_requires_reason_parse_error`,
+`test_disjoint_dotted_patches_are_legal`, `test_inherit_beside_dotted_patch_is_e612`,
+`test_dotted_override_on_table_is_e611`, `test_paragraph_override_rejects_section_body`.
 
 **`tests/test_prose_render.py`**: `test_adjacent_strings_get_blank_line_in_each_surface`
 over workflow root, section, document, record body, role block;
@@ -1408,16 +1487,25 @@ over workflow root, section, document, record body, role block;
 
 **`tests/test_markdown_reader.py`**: `test_slug_rules`, `test_headings_in_fences_ignored`,
 `test_deeper_headings_stay_text`, `test_e653_duplicate_key`, `test_e654_import_line`,
-`test_role_from_text_before_first_heading`, `test_drop_gone_heading_is_e610`.
+`test_role_from_text_before_first_heading`, `test_drop_gone_heading_is_e610`,
+`test_relative_link_rebased_per_home`, `test_anchor_kept_on_rebased_link`,
+`test_scheme_root_and_anchor_links_left_alone`, `test_links_in_code_left_alone`,
+`test_reference_definition_rebased`, `test_out_dir_keeps_rebased_bytes`,
+`test_no_emit_target_keeps_links_as_written`.
 
 **`tests/test_home_tree.py`**: `test_claude_md_is_relative_symlink`,
 `test_header_hash_matches_body`, `test_emit_is_deterministic` (two builds, identical bytes),
 `test_no_import_lines_emitted`, `test_concurrent_builds_are_safe` (8 processes),
-`test_write_skipped_when_bytes_match` (mtime kept), `test_files_outside_team_tree_unchanged`.
+`test_write_skipped_when_bytes_match` (mtime kept), `test_files_outside_team_tree_unchanged`,
+`test_contract_files_have_no_guard`, `test_claude_md_link_left_alone`,
+`test_real_claude_md_goes_through_guard`, `test_other_claude_md_link_is_e634`,
+`test_record_lists_every_emitted_path_sorted`, `test_missing_record_means_nothing_obsolete`.
 
 **`tests/test_details.py`**: `test_owner_table` (one test per row of the table in section
 6.3), `test_e620_in_skill_package`, `test_one_pointer_line_per_home`, `test_companion_keeps_headings_and_depth`,
-`test_repeat_headings_get_suffix_anchors`, `test_details_not_in_load`.
+`test_repeat_headings_get_suffix_anchors`, `test_details_not_in_load`,
+`test_shared_companion_bytes_ignore_consumers` (two members reorder and retitle one inherited
+section, and one `_details/` file results).
 
 **`tests/test_load.py`**: `test_claude_counts_utf16_units` (with an astral character),
 `test_codex_counts_bytes`, `test_codex_limit_read_from_project_config`,
@@ -1429,20 +1517,24 @@ over workflow root, section, document, record body, role block;
 `test_build_writes_only_selected_folders`, `test_build_prints_w307_for_stale_level`,
 `test_build_never_fails_on_budget_or_rule`, `test_check_fails_on_budget_and_rule`,
 `test_check_mode_reports_stale_edited_missing`, `test_e634_names_section_and_origin`,
-`test_force_overwrites_edit`, `test_rev_extracts_only_prompts_and_from_files`,
-`test_with_overlays_one_file`, `test_e640_selector`, `test_e641_revision`,
+`test_e634_writes_nothing`, `test_force_overwrites_edit`, `test_force_removes_edited_obsolete_file`,
+`test_rev_extracts_only_what_the_result_depends_on`, `test_rev_reads_codex_limit_from_revision`,
+`test_w307_for_level_no_longer_emitted`, `test_with_overlays_one_file`, `test_e640_selector`, `test_e641_revision`,
 `test_where_finds_value_text`, `test_where_reports_reach`, `test_console_scripts_declared`.
 
 **`tests/test_diff.py`**: `test_moving_a_declaration_changes_no_hash`,
-`test_reach_lists_only_changed_homes`, `test_size_range_printed_when_homes_differ`,
+`test_reach_lists_only_changed_homes`, `test_change_at_a_level_reaches_homes_below`,
+`test_size_range_printed_when_homes_differ`,
 `test_details_delta_separate`, `test_owned_change_reported`, `test_person_change_reported`,
 `test_new_section_through_wildcard`, `test_explicit_member_fails_instead_of_new_section`,
-`test_outputs_list_exact_paths`, `test_with_ignores_other_uncommitted_edits`,
+`test_outputs_list_exact_paths`, `test_outputs_hold_only_changed_files`,
+`test_outputs_list_removed_paths`, `test_with_ignores_other_uncommitted_edits`,
 `test_json_format_version`.
 
 **`tests/test_project_warnings.py`**: `test_w301_type_1_and_near`,
 `test_w301_short_paragraph_skipped`, `test_w301_shared_section_not_a_copy`,
-`test_w301_groups_by_declaration_pair`, `test_w302_double_load`, `test_w304_unused_value`,
+`test_w301_groups_by_declaration_pair`, `test_w302_double_load`,
+`test_w302_groups_across_slot_keys`, `test_w304_unused_value`,
 `test_check_disable_list`, `test_strict_fails_on_warning`.
 
 **`tests/test_provenance.py`**: `test_quote_render_forms` (bare, `to`, `about`, both),
@@ -1455,7 +1547,9 @@ over workflow root, section, document, record body, role block;
 `test_string_to_has_no_reader_check`, `test_same_agent_sends_and_reads`.
 
 **`tests/test_import.py`**: `test_lead_in_becomes_paragraph`, `test_check_passes_on_lossless`,
-`test_check_reports_first_difference`.
+`test_check_reports_first_difference`, `test_text_after_keyed_item_gets_untitled_paragraph`,
+`test_one_line_text_uses_plain_string`, `test_bold_only_paragraph_stays_text`,
+`test_repeated_key_gets_suffix`, `test_printed_source_parses`.
 
 **`doctrine/_diagnostic_smoke`** gains a fixture for every new `E6xx`, `RULE006`, `RULE007`,
 and `W3xx`.

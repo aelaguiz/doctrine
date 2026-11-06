@@ -9,8 +9,9 @@ project = "project"
 args = ["build", "."]
 expected_exit = 0
 stdout_contains = [
-  "built 4 homes, 9 files changed",
+  "built 4 homes, 10 files changed",
 ]
+expected_files = { "HOMES.contract.json" = "expected/homes_contract.json" }
 expected_file_lines = { "AGENTS.md" = [
     "This file is for every agent here. If your session started in `.` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
     "",
@@ -49,4 +50,17 @@ stderr_contains = [
   "E607",
   "Pods.growth",
   "GrowthPod",
+]
+
+[[cases]]
+name = "two team targets may not share an output folder"
+status = "active"
+kind = "cli_contract"
+project = "project_shared_output"
+args = ["build", ".", "--target", "homes"]
+expected_exit = 1
+stderr_contains = [
+  "E607",
+  "homes",
+  "other",
 ]

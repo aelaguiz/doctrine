@@ -9,10 +9,10 @@ project = "project"
 args = ["diff", "--base-tree", "base"]
 expected_exit = 0
 expected_stdout_lines = [
-  "1 declaration changed. 1 home changed.",
+  "1 declaration changed. 2 homes changed.",
   "",
-  "EveryAgent (prompts/AGENTS.prompt) reaches 1 home, +9 characters:",
-  "  .",
+  "EveryAgent (prompts/AGENTS.prompt) reaches 2 homes, +9 characters each:",
+  "  ., chief",
   "",
   "Owned declarations changed:",
   "  EveryAgent, owned by Owner",

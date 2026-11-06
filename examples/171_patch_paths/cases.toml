@@ -46,3 +46,23 @@ agent = "PodQa"
 exception_type = "CompileError"
 error_code = "E611"
 location_line = 12
+
+[[cases]]
+name = "a dotted override can not target a table"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_override_path_into_table/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E611"
+location_line = 16
+
+[[cases]]
+name = "inherit beside a dotted patch accounts twice"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_inherit_beside_path/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 10

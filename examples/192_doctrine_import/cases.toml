@@ -16,8 +16,9 @@ expected_stdout_lines = [
   "            \"Grow it with the design.\"",
   "        paragraph sending_it_back: \"Sending it back.\"",
   "            \"Say what failed.\"",
-  "        \"\"\"Plain text in the section.\"\"\"",
-  "        section testing: \"Testing\"",
+  "        paragraph text_1:",
+  "            \"Plain text in the section.\"",
+  "        testing: \"Testing\"",
   "            \"\"\"- Test on a real phone.",
   "- Test as a new user.\"\"\"",
 ]
