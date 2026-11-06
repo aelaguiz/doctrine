@@ -1694,9 +1694,9 @@ all of this personally:
    presumed unneeded until shown otherwise.
 4. Reads every changed line against the rule, using the `overbuild-audit` families.
 5. Compares every changed existing example file with its base, line by line, including blank
-   lines. A blank line may change only between two authored strings, and generated lines
-   stay byte for byte. Anything else is a regression, however the worker filed it. A
-   comparison that ignores blank lines missed a real break here.
+   lines. A blank line may change only beside an authored string, and generated lines stay
+   byte for byte. Anything else is a regression, however the worker filed it. A comparison
+   that ignores blank lines missed a real break here.
 
 **Send back.** Every cut goes back to the worker that wrote it, in the same thread, as a list
 of removals with file and line. A send-back only removes. It never asks for a new guard, test,
