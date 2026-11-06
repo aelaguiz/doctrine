@@ -1308,8 +1308,8 @@ stdout. This is the lossless first step of a port: file by file, before any refa
 - Every other run of text becomes one string, with blank lines kept. Before the first keyed
   item in its section it is a bare string, because the parser requires prose first. After
   one it is an untitled `paragraph text_<N>:`, with `N` counting those in the section from 1.
-- A string is `"..."` when it fits on one line and holds no `"` or `\\`. Otherwise it is
-  `""".."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
+- A string is `"..."` when it fits on one line and holds no `"` or `\`. Otherwise it is
+  `"""..."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
 - A repeated key in one section gets `_2`, `_3`, in order.
 - Text before the first `##` becomes `role:` for `--kind agent`, or loose prose for
   `--kind workflow`.
