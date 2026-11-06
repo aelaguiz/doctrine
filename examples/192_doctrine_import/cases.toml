@@ -1,0 +1,31 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "import prints source for a Markdown file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent"]
+expected_exit = 0
+expected_stdout_lines = [
+  "abstract agent QaCraft:",
+  "    role: \"You are the QA specialist.\"",
+  "    how_you_think: \"How you think\"",
+  "        paragraph a_test_plan: \"A test plan.\"",
+  "            \"Grow it with the design.\"",
+  "        paragraph sending_it_back: \"Sending it back.\"",
+  "            \"Say what failed.\"",
+  "        \"\"\"Plain text in the section.\"\"\"",
+  "        section testing: \"Testing\"",
+  "            \"\"\"- Test on a real phone.",
+  "- Test as a new user.\"\"\"",
+]
+
+[[cases]]
+name = "import check proves the port is lossless"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent", "--check"]
+expected_exit = 0

@@ -1,0 +1,101 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a selected home writes only its own folder and warns on a stale level"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "pods/growth/qa"]
+expected_exit = 0
+setup = [["build", "."]]
+edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text changed.\"\n    member qa: \"QA\"\n        role: \"QA text changed.\"\n    member analyst: \"analyst\"\n        role: \"Analyst text.\"\n" }
+stdout_contains = [
+  "built 1 home, 1 file changed",
+]
+stderr_contains = [
+  "W307",
+  "pods/growth/AGENTS.md",
+]
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "QA text changed.",
+], "pods/growth/AGENTS.md" = [
+    "Team text.",
+] }
+
+[[cases]]
+name = "check mode reports stale files and writes nothing"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--check"]
+expected_exit = 1
+setup = [["build", "."]]
+edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text changed.\"\n    member qa: \"QA\"\n        role: \"QA text changed.\"\n    member analyst: \"analyst\"\n        role: \"Analyst text.\"\n" }
+stdout_contains = [
+  "stale pods/growth/AGENTS.md",
+  "stale pods/growth/qa/AGENTS.md",
+]
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "QA text.",
+] }
+
+[[cases]]
+name = "check mode is clean on a fresh tree"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--check"]
+expected_exit = 0
+setup = [["build", "."]]
+
+[[cases]]
+name = "a hand edit stops the build and names the file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+setup = [["build", "."]]
+edit = { "pods/growth/qa/AGENTS.md" = "<!-- doctrine sha256=000000000000 source=prompts/AGENTS.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\nA hand edit.\n" }
+stderr_contains = [
+  "E634",
+  "pods/growth/qa/AGENTS.md",
+]
+
+[[cases]]
+name = "check mode labels a hand edit"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--check"]
+expected_exit = 1
+setup = [["build", "."]]
+edit = { "pods/growth/qa/AGENTS.md" = "<!-- doctrine sha256=000000000000 source=prompts/AGENTS.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\nA hand edit.\n" }
+stdout_contains = [
+  "edited pods/growth/qa/AGENTS.md",
+]
+
+[[cases]]
+name = "force overwrites a hand edit"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--force"]
+expected_exit = 0
+setup = [["build", "."]]
+edit = { "pods/growth/qa/AGENTS.md" = "<!-- doctrine sha256=000000000000 source=prompts/AGENTS.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\nA hand edit.\n" }
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "QA text.",
+] }
+
+[[cases]]
+name = "a selector that matches nothing fails loud"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "pods/ghost"]
+expected_exit = 1
+stderr_contains = [
+  "E640",
+]

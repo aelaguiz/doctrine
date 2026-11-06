@@ -1,0 +1,9 @@
+team Pods: "the pods"
+    home: "pods"
+    member growth: "growth"
+        role: "A member whose folder is a team's home."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "A team."

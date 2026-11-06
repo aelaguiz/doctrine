@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "rules pass when the text lands by the folder walk"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+expected_exit = 0
+
+[[cases]]
+name = "a rule that never lands fails check"
+status = "active"
+kind = "cli_contract"
+project = "project_missing"
+args = ["check"]
+expected_exit = 1
+stderr_contains = [
+  "RULE006",
+  "GrowthPod.qa",
+  "NumbersRule",
+]
+
+[[cases]]
+name = "build evaluates no rules"
+status = "active"
+kind = "cli_contract"
+project = "project_missing"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 1 home",
+]
+
+[[cases]]
+name = "a forbidden lesson prints the path it arrived by"
+status = "active"
+kind = "cli_contract"
+project = "project_forbidden"
+args = ["check"]
+expected_exit = 1
+stderr_contains = [
+  "RULE007",
+  "It arrives by: GrowthPod.qa -> PodQa -> QaCraft -> SpecialistsLesson",
+]

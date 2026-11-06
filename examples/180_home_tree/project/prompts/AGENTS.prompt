@@ -1,0 +1,37 @@
+# Each level is a team. Its folder gives the tree. Each level writes one file.
+# `CLAUDE.md` links to `AGENTS.md`. No import line is ever written.
+# The scope sentence is written once, in a shared base, and filled by values.
+
+abstract team Level:
+    role: "This file is for {{team:audience}}. If your session started in `{{team:home}}` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one."
+
+
+team Root[Level]: "the repository"
+    home: "."
+    values:
+        audience: "every agent here"
+    shared: "What everyone shares"
+        "Say what you found."
+
+
+team Pods[Level]: "the pods"
+    home: "pods"
+    values:
+        audience: "every pod member"
+    pods_note: "How pods work"
+        "A pod works toward one goal."
+
+
+abstract agent Member:
+    role: "You are {{team:title}}'s {{agent:title}}."
+    job: "Your job"
+        "Do the work."
+
+
+team GrowthPod[Level]: "the growth pod"
+    home: "pods/growth"
+    values:
+        audience: "every member of the growth pod"
+    win: "What counts as a win"
+        "More users who pay."
+    member qa[Member]: "QA"

@@ -1,0 +1,57 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "every form renders the same way"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "AGENTS.md" = [
+    "## How code gets out",
+    "",
+    "Every pod's code goes out by one contract (The owner, November 5, 2026, to the growth pod's lead: \"There needs to be a shared contract\").",
+    "",
+    "Check the length of each ad (The owner, October 25, 2026, about one ad: \"This one ad is too long\").",
+    "",
+    "Keep what you make plain (The owner, November 4, 2026: \"Plain words win\").",
+] }
+
+[[cases]]
+name = "sources lists quotes by person and flags those with no source"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["sources"]
+expected_exit = 0
+stdout_contains = [
+  "The owner: 3 quotes, 1 with no source",
+  "2026-11-05  SharedContract  prompts/AGENTS.prompt:8",
+  "  source: session:abc123",
+  "No source:",
+  "  OneAdRemark  prompts/AGENTS.prompt:15",
+]
+
+[[cases]]
+name = "a bad date fails loud"
+status = "active"
+kind = "cli_contract"
+project = "project_bad_date"
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = [
+  "E650",
+]
+
+[[cases]]
+name = "a quote nothing cites warns"
+status = "active"
+kind = "cli_contract"
+project = "project_unused"
+args = ["check"]
+expected_exit = 0
+stderr_contains = [
+  "W305",
+  "NeverCited",
+]

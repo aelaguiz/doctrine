@@ -1,0 +1,66 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "adjacent strings are separate paragraphs and no bare kind line prints"
+status = "active"
+kind = "render_contract"
+agent = "Writer"
+assertion = "exact_lines"
+expected_lines = [
+  "Write the weekly note.",
+  "",
+  "## Habits",
+  "",
+  "Read the brief.",
+  "",
+  "Then read the notes.",
+  "",
+  "### Steps",
+  "",
+  "Start with the hardest part.",
+  "",
+  "Stop when it works.",
+  "",
+  "#### Review",
+  "",
+  "Read your work once.",
+  "",
+  "#### Checks",
+  "",
+  "| Check |",
+  "| --- |",
+  "| It runs |",
+]
+
+[[cases]]
+name = "a block with a requirement keeps its metadata line"
+status = "active"
+kind = "render_contract"
+agent = "Signer"
+assertion = "exact_lines"
+expected_lines = [
+  "Sign the weekly note.",
+  "",
+  "## Gate",
+  "",
+  "### Check",
+  "",
+  "#### Sign Off",
+  "",
+  "_Required · section_",
+  "",
+  "Get a yes.",
+]
+
+[[cases]]
+name = "a named table with no title names the three fixes"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_table_without_title/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E134"
+message_contains = [
+  "Missing block title",
+  "Write `table calls_table: \"Title\"`.",
+]

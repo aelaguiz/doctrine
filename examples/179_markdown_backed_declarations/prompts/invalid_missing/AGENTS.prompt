@@ -1,0 +1,5 @@
+abstract agent Gone from "specialists/none.md"
+
+agent A[Gone]: "A"
+    role: "A."
+    inherit *

@@ -1,0 +1,30 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "one row per member with a value, then static rows"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod"
+assertion = "exact_lines"
+expected_lines = [
+  "## How we work",
+  "",
+  "### Who makes each call",
+  "",
+  "| The call | Who makes it |",
+  "| --- | --- |",
+  "| Which bet to take | lead |",
+  "| Whether a change passes | QA |",
+  "| The goal and the money | the owner |",
+]
+
+[[cases]]
+name = "a roster needs a team"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_roster_outside_team/AGENTS.prompt"
+agent = "Alone"
+exception_type = "CompileError"
+error_code = "E609"
+location_line = 3

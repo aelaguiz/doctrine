@@ -1,0 +1,60 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "an override keeps its parent position under the wildcard"
+status = "active"
+kind = "render_contract"
+agent = "Patched"
+assertion = "exact_lines"
+expected_lines = [
+  "My role.",
+  "",
+  "## Intro",
+  "",
+  "Mine comes before the inherited items.",
+  "",
+  "## One",
+  "",
+  "First.",
+  "",
+  "## Two, Reworded",
+  "",
+  "My second.",
+  "",
+  "## Outro",
+  "",
+  "Mine comes after the inherited items.",
+]
+
+[[cases]]
+name = "naming an item elsewhere moves it"
+status = "active"
+kind = "render_contract"
+agent = "Reordered"
+assertion = "exact_lines"
+expected_lines = [
+  "Base role.",
+  "",
+  "## Two",
+  "",
+  "Second.",
+  "",
+  "## Three",
+  "",
+  "Third.",
+  "",
+  "## One",
+  "",
+  "First.",
+]
+
+[[cases]]
+name = "a second wildcard fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_two_wildcards/AGENTS.prompt"
+agent = "Twice"
+exception_type = "CompileError"
+error_code = "E613"
+location_line = 8

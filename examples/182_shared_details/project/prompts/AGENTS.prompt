@@ -1,0 +1,22 @@
+# Details in a shared declaration land once, in `_details/`.
+# Every home that inherits them points at that one file.
+
+abstract agent Waiter:
+    role: "You wait well."
+    when: "When to wait"
+        "Wait only when it could change what you do."
+        details older: "Older cases"
+            "On October 13 a watcher moved a member mid test pass."
+
+
+workflow Habits: "Habits"
+    "Keep notes."
+    details:
+        "Long history of note keeping."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[Waiter]: "QA"
+        habits: Habits
+    member analyst[Waiter]: "analyst"

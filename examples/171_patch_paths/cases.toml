@@ -1,0 +1,48 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "dotted override and drop reach a paragraph inside a slot"
+status = "active"
+kind = "render_contract"
+agent = "PodQa"
+assertion = "exact_lines"
+expected_lines = [
+  "Pod QA.",
+  "",
+  "## Craft",
+  "",
+  "### How you think",
+  "",
+  "**Test plans.** Grow them with the design.",
+  "",
+  "**Sending it back.** A failure goes to whoever built the change.",
+]
+
+[[cases]]
+name = "workflows take dotted patches too"
+status = "active"
+kind = "render_contract"
+agent = "PodWriter"
+assertion = "exact_lines"
+expected_lines = [
+  "Pod Writer.",
+  "",
+  "## Pod Craft",
+  "",
+  "### How you think",
+  "",
+  "**Test plans.** Grow them with the design.",
+  "",
+  "**Sending it back.** Say what failed.",
+]
+
+[[cases]]
+name = "a path that steps past a keyed leaf fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_path_through_paragraph/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E611"
+location_line = 12

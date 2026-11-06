@@ -1,0 +1,70 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "load lists homes by headroom"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load"]
+expected_exit = 0
+setup = [["build", "."]]
+expected_stdout_lines = [
+  "Home               Runtime  Load   Limit  Headroom",
+  "pods/growth/big    codex    935    800    -135",
+  "pods/growth/big    claude   1,035  1,000  -35",
+  "pods/growth/small  codex    242    800    558",
+  "pods/growth/small  claude   342    1,000  658",
+]
+
+[[cases]]
+name = "build writes an over-budget home and warns"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 3 homes",
+]
+stderr_contains = [
+  "W306",
+]
+
+[[cases]]
+name = "check fails an over-budget home and names the biggest parts"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+expected_exit = 1
+setup = [["build", "."]]
+stderr_contains = [
+  "E630",
+  "Over load budget",
+  "pods/growth/big loads",
+  "Biggest parts",
+]
+
+[[cases]]
+name = "a team budget tightens the limit"
+status = "active"
+kind = "cli_contract"
+project = "project_team_budget"
+args = ["check"]
+expected_exit = 1
+stderr_contains = [
+  "E630",
+  "on claude",
+]
+
+[[cases]]
+name = "a budget past the runtime limit fails loud"
+status = "active"
+kind = "cli_contract"
+project = "project_bad_budget"
+args = ["check"]
+expected_exit = 1
+stderr_contains = [
+  "E631",
+]

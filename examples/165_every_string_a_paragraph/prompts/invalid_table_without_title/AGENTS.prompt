@@ -1,0 +1,9 @@
+workflow Calls: "Calls"
+    how: "How"
+        table calls_table:
+            columns:
+                call: "Call"
+
+agent Lead: "Lead"
+    role: "Lead."
+    calls: Calls

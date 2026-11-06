@@ -1,0 +1,28 @@
+# A value comes from the member, its team, the teams above by folder, then the role.
+
+abstract agent Role:
+    role: "{{agent:a}} {{agent:b}} {{agent:c}} {{agent:d}}"
+    values:
+        a: "role"
+        b: "role"
+        c: "role"
+        d: "role"
+
+
+team Outer: "outer"
+    home: "pods"
+    values:
+        b: "outer"
+        c: "outer"
+        d: "outer"
+
+
+team Inner: "inner"
+    home: "pods/inner"
+    values:
+        c: "inner"
+        d: "inner"
+    member m[Role]: "m"
+        values:
+            d: "member"
+    member n[Role]: "n"

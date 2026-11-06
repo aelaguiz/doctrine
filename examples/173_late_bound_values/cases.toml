@@ -1,0 +1,82 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "shared text reads the words of the agent it lands in"
+status = "active"
+kind = "render_contract"
+agent = "GrowthQa"
+assertion = "exact_lines"
+expected_lines = [
+  "You test each bet.",
+  "",
+  "## Whom you work with",
+  "",
+  "You follow the opportunity's card from the design on.",
+  "",
+  "The analyst tells you what the bet measures.",
+  "",
+  "## Your handle is qa-bet",
+  "",
+  "Use it everywhere.",
+]
+
+[[cases]]
+name = "a parent value is the default"
+status = "active"
+kind = "render_contract"
+agent = "FeatureQa"
+assertion = "exact_lines"
+expected_lines = [
+  "You test each feature.",
+  "",
+  "## Whom you work with",
+  "",
+  "You follow the pod's card from the design on.",
+  "",
+  "The analyst tells you what the feature measures.",
+  "",
+  "## Your handle is qa-feature",
+  "",
+  "Use it everywhere.",
+]
+
+[[cases]]
+name = "an unfilled blank fails the build"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_value/AGENTS.prompt"
+agent = "Bare"
+exception_type = "CompileError"
+error_code = "E601"
+location_line = 4
+
+[[cases]]
+name = "a value cycle fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_value_cycle/AGENTS.prompt"
+agent = "Loop"
+exception_type = "CompileError"
+error_code = "E603"
+location_line = 4
+
+[[cases]]
+name = "a fact cannot be set"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_fact_key/AGENTS.prompt"
+agent = "Facts"
+exception_type = "CompileError"
+error_code = "E604"
+location_line = 4
+
+[[cases]]
+name = "a team root needs a team"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_team_root_outside_team/AGENTS.prompt"
+agent = "Alone"
+exception_type = "CompileError"
+error_code = "E602"
+location_line = 2

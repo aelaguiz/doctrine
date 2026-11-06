@@ -1,0 +1,6 @@
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    budget:
+        claude: 10
+    member qa: "QA"
+        role: "This line is longer than ten."

@@ -1,0 +1,8 @@
+abstract agent Base:
+    role: "Base role."
+    one: "One"
+        "First."
+
+agent Twice[Base]: "Twice"
+    inherit *
+    inherit *

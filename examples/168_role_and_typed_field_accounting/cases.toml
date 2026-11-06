@@ -1,0 +1,62 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "inherit role and inherit inputs keep them"
+status = "active"
+kind = "render_contract"
+agent = "Keeps"
+assertion = "exact_lines"
+expected_lines = [
+  "Shared role text.",
+  "",
+  "## Inputs",
+  "",
+  "### Brief",
+  "",
+  "- Source: Prompt",
+  "- Shape: Markdown Document",
+  "- Requirement: Required",
+  "",
+  "## Notes",
+  "",
+  "Keep notes.",
+]
+
+[[cases]]
+name = "a restated role and a dropped field"
+status = "active"
+kind = "render_contract"
+agent = "Replaces"
+assertion = "exact_lines"
+expected_lines = [
+  "Own role text.",
+  "",
+  "## Notes",
+  "",
+  "Keep notes.",
+]
+
+[[cases]]
+name = "E206 is retired and role keeps its authored place"
+status = "active"
+kind = "render_contract"
+agent = "RoleLast"
+assertion = "exact_lines"
+expected_lines = [
+  "## First",
+  "",
+  "A slot may come before the role.",
+  "",
+  "The role renders where it is written.",
+]
+
+[[cases]]
+name = "an unaccounted typed field fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unaccounted_inputs/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E003"
+location_line = 11

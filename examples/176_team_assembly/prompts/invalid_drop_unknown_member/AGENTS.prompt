@@ -1,0 +1,7 @@
+abstract team Base:
+    member lead: "lead"
+        role: "Lead."
+
+team T[Base]: "t"
+    home: "t"
+    drop ghost: "Nothing here has that key."

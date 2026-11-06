@@ -1,0 +1,11 @@
+person Owner: "The owner"
+
+
+quote Bad: "Words"
+    by: Owner
+    on: "November 5"
+
+
+team Root: "the repository"
+    home: "."
+    role: "See {{Bad}}."

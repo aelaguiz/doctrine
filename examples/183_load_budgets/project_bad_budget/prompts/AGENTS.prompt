@@ -1,0 +1,6 @@
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    budget:
+        claude: 999999
+    member qa: "QA"
+        role: "Fine."

@@ -1,0 +1,16 @@
+# `details` sends text to a companion, under the same headings.
+# The home gets one pointer line at its end.
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    wait: "When to wait"
+        "Wait only when what you wait for could change what you'd do."
+        details:
+            "On October 13 a watcher moved a member mid test pass."
+    member qa: "QA"
+        role: "You test."
+        how: "How you think"
+            paragraph plan: "A test plan."
+                "Grow it with the design."
+                details older: "Older cases"
+                    "November 5: the long case."

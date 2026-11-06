@@ -1,0 +1,32 @@
+# A dotted patch reaches inside an inherited item and accounts for its top key.
+
+workflow Craft: "Craft"
+    how_you_think: "How you think"
+        paragraph test_plan: "Test plans."
+            "Grow them with the design."
+        paragraph sending_back: "Sending it back."
+            "Say what failed."
+        paragraph daily: "A daily step back."
+            "Look at the queue."
+
+
+abstract agent Specialist:
+    role: "Specialist."
+    craft: Craft
+
+
+agent PodQa[Specialist]: "Pod QA"
+    role: "Pod QA."
+    override craft.how_you_think.sending_back: "Sending it back."
+        "A failure goes to whoever built the change."
+    drop craft.how_you_think.daily: "A pod's QA has no daily queue review."
+
+
+workflow PodCraft[Craft]: "Pod Craft"
+    drop how_you_think.daily: "Workflows patch by path too."
+    inherit how_you_think
+
+
+agent PodWriter: "Pod Writer"
+    role: "Pod Writer."
+    craft: PodCraft

@@ -1,0 +1,44 @@
+# Rule scopes match how teams are organized: by team, by member key, by folder of homes.
+
+abstract agent TeamBase:
+    role: "You are on a team."
+
+
+abstract agent SharedQa[TeamBase]:
+    inherit *
+    craft: "Craft"
+        "Test what users meet."
+
+
+abstract agent SpecialistsBase:
+    role: "You work alone."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[SharedQa]: "QA"
+    member lead[TeamBase]: "lead"
+
+
+rule QaInheritsSharedRole: "Every team's QA inherits the shared QA role"
+    scope:
+        member: qa
+    assertions:
+        requires inherit SharedQa
+    message: "A team's QA inherits the shared QA role, so one fix reaches every team."
+
+
+rule EveryMemberInheritsBase: "Every team member inherits the team base"
+    scope:
+        team: *
+    assertions:
+        requires inherit TeamBase
+    message: "Every member of every team inherits the team base."
+
+
+rule NothingInPodsTakesSpecialists: "Nothing under pods inherits the specialists' base"
+    scope:
+        home: "pods/**"
+    assertions:
+        forbids bind SpecialistsBase
+    message: "A pod member does not inherit the specialists' base."

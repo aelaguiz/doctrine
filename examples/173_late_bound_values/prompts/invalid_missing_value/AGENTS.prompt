@@ -1,0 +1,5 @@
+abstract agent PodQa:
+    role: "You test each {{agent:unit}} for the {{agent:audience}}."
+
+agent Bare[PodQa]: "QA"
+    inherit *

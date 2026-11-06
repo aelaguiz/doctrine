@@ -1,0 +1,4 @@
+agent Facts: "Facts"
+    role: "{{agent:title}}"
+    values:
+        title: "Not settable."

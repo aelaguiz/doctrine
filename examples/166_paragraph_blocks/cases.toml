@@ -1,0 +1,52 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a titled paragraph runs its lead-in into its first string"
+status = "active"
+kind = "render_contract"
+agent = "Tester"
+assertion = "exact_lines"
+expected_lines = [
+  "Test the change.",
+  "",
+  "## How you think",
+  "",
+  "**A test plan that grows with the design.** You test a change best having followed it from the start.",
+  "",
+  "Write the plan while the design settles.",
+  "",
+  "A quiet note with an address and no lead-in.",
+]
+
+[[cases]]
+name = "a child overrides one paragraph by key"
+status = "active"
+kind = "render_contract"
+agent = "PodTester"
+assertion = "exact_lines"
+expected_lines = [
+  "Test the pod's change.",
+  "",
+  "## How you think",
+  "",
+  "**A test plan that grows with the design.** You test a change best having followed it from the start.",
+  "",
+  "Write the plan while the design settles.",
+  "",
+  "The pod's own quiet note.",
+]
+
+[[cases]]
+name = "a paragraph title is addressable"
+status = "active"
+kind = "render_contract"
+agent = "Reader"
+assertion = "exact_lines"
+expected_lines = [
+  "Read.",
+  "",
+  "## Pointers",
+  "",
+  "See A test plan that grows with the design.",
+]

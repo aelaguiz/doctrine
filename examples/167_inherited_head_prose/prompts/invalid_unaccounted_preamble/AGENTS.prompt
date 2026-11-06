@@ -1,0 +1,11 @@
+workflow Base: "Base"
+    "Everyone reads this first."
+    keep: "Keep"
+        "Keep your notes."
+
+workflow Child[Base]: "Child"
+    inherit keep
+
+agent A: "A"
+    role: "A."
+    work: Child
