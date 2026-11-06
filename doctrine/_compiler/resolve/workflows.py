@@ -432,6 +432,7 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        origin=child_origin(origin, key, item.source_span),
                         unit=unit,
                         parent_item=parent_item,
                         parent_body=parent_body,
@@ -896,6 +897,7 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        origin=child_origin(origin, key, item.source_span),
                         unit=unit,
                         parent_item=parent_item,
                         parent_body=parent_body,
@@ -1196,6 +1198,7 @@ class ResolveWorkflowsMixin:
         self,
         item: model.ReadableOverrideBlock,
         *,
+        origin: tuple | None,
         unit: IndexedUnit,
         parent_item: ResolvedWorkflowItem | None,
         parent_body: model.WorkflowBody | None,
@@ -1251,6 +1254,7 @@ class ResolveWorkflowsMixin:
             )
         return model.ReadableBlock(
             kind=item.kind,
+            origin=origin,
             key=item.key,
             title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
             payload=item.payload,

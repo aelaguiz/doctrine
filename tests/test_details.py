@@ -11,6 +11,30 @@ from tests.ws3_support import HomeProject
 
 
 class DetailsTests(HomeProject, unittest.TestCase):
+    def test_details_override_keeps_its_lexical_owner(self):
+        source = '''workflow Parent: "Parent"
+    details cases: "Cases"
+        "Old case."
+workflow Child[Parent]: "Child"
+    override details cases:
+        "New case."
+team T: "Team"
+    home: "t"
+    work: Child
+'''
+        root = self.project(source)
+        code, _, error = self.cli(root, 'build', '.')
+        self.assertEqual(code, 0, error)
+        companion = (root / '_details/child.md').read_text()
+        self.assertIn('## Child\n\n### Cases\n\nNew case.', companion)
+        self.assertNotIn('Old case.', companion)
+        self.assertFalse((root / '_details/parent.md').exists())
+        path = root / 'prompts/AGENTS.prompt'
+        path.write_text(source.replace('override details cases:', 'override details absent:'))
+        code, _, error = self.cli(root, 'build', '.')
+        self.assertEqual(code, 1)
+        self.assertIn('E001', error)
+
     def test_details_inside_guard_move_to_companion(self):
         root = self.project('''enum State: "State"
     ready: "Ready"
