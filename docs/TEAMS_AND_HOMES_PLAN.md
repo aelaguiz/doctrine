@@ -93,12 +93,15 @@ Measured November 6, 2026 on Claude Code 2.1.317 and Codex source `54201ea65a`.
 
 ## 3. Language Version
 
-This plan is language version **6.0**. It breaks three things on purpose, each a silent
-loss turned into a loud error or a corrected render:
+This plan is language version **6.0**. It breaks four things on purpose. The first three
+each turn a silent loss into a loud error or a corrected render:
 
 1. Children must account for inherited head prose, `role`, and typed agent fields.
-2. Every prose string renders as its own paragraph.
+2. Every authored prose string renders as its own paragraph.
 3. A readable block no longer prints a bare kind line such as `_section_`.
+4. New keywords can't be keys where their form can start: `drop` and `paragraph` in every
+   patchable body, and later `values`, `budget`, `roster`, and `details`. A key that used one
+   gets a parse error and a new name. Its rendered title doesn't change.
 
 `docs/VERSIONING.md` and `CHANGELOG.md` record this as a major language move with
 upgrade steps. The release version in the changelog is 6.0.0. No tag or publish is part
@@ -113,7 +116,14 @@ one blank line between them. This holds for workflow roots, sections, documents,
 bodies, and role blocks. List items, table cells, and definitions are not body prose and
 keep their own layout. A triple-quoted string keeps its inner newlines as written.
 
-Today's single-newline join is removed. There is no opt-out.
+Today's single-newline join is removed for authored strings. There is no opt-out.
+
+This rule is about strings an author wrote. A line the compiler generates, such as a row of a
+contract table, an item of a generated list, or a line of a JSON example, keeps the layout it
+ships with today. So the compile step marks authored strings at the one place they all pass,
+`_interpolate_authored_prose_line`, with a `str` subclass, and `_render_body_lines` puts a
+blank line around a marked string and around an `EmphasizedLine`. Everything else takes the
+shipped path, so a generator needs no change.
 
 ### 4.2 Block Metadata
 
@@ -218,7 +228,9 @@ An agent may have several `decision:` fields. Together they are one item, `decis
 `inherit decision` keeps them all, in order, at that spot. `drop decision` removes them all.
 Writing `decision:` in the child replaces them all.
 
-An inherited typed field's declaration refs resolve in the parent's module. Prose inside an
+An inherited typed field's declaration refs resolve in the parent's module, whatever the
+parent imported and under whatever alias, and whether or not the declaration is exported. So
+each `NameRef` in the field is pinned to the module that wrote it. Prose inside an
 inline `inputs:`, `outputs:`, or `skills:` body resolves where it lands, which is what shipped
 `output` inheritance does.
 
@@ -229,7 +241,9 @@ inline `inputs:`, `outputs:`, or `skills:` body resolves where it lands, which i
 Every body with an `inherit` form gains the same two forms. That is `agent`, `workflow`,
 `document`, `analysis`, `schema`, `review`, `review_family`, `abstract review`, `skills`,
 `inputs`, `outputs`, `output`, `output shape`, `output schema`, and `receipt`. WS2 adds
-`team`. `schema` body keys are `sections`, `gates`, `artifacts`, `groups`, and `preamble`.
+`team`. `schema` body keys are `sections`, `gates`, `artifacts`, `groups`, and `preamble`. A
+`receipt`'s keys are its fields and its `route` fields, so a child accounts for a parent's
+route like any field.
 
 ```lark
 inherit_all: "inherit" "*" _NL?
@@ -237,11 +251,10 @@ drop_item: "drop" patch_path ":" string _NL?
 patch_path: CNAME ("." CNAME)*
 ```
 
-`override` gains a dotted form on `agent` and `workflow` bodies:
+`override` gains a dotted form on `agent` and `workflow` bodies. One rule serves both:
 
 ```lark
-agent_slot_override_path: "override" CNAME "." patch_path ":" slot_value _NL slot_body?
-workflow_override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
+override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
 ```
 
 A dotted `override` names one keyed section, slot, or `paragraph` at any depth and replaces
@@ -275,7 +288,7 @@ Errors:
 
 | Code | When |
 | --- | --- |
-| `E610` | `drop` or a dotted `override` names a key the parent does not have |
+| `E610` | `drop` or a dotted `override` names a key the parent does not have, or `inherit *` has nothing to inherit |
 | `E611` | A dotted path steps through an item with no keyed children, or a dotted `override` targets anything but a section, slot, or `paragraph`, or gives a `paragraph` a body it can't hold |
 | `E612` | A `drop` or dotted `override` names an item the body already names, `inherit a` sits beside a patch under `a`, a path sits under a dropped or overridden item, or `drop role`. The error sits on the later item |
 | `E613` | `inherit *` appears twice in one body |
@@ -393,7 +406,7 @@ team_body: team_item+
           | agent_slot_abstract
           | agent_slot_inherit
           | agent_slot_override
-          | agent_slot_override_path
+          | override_path
           | agent_slot_field
           | inherit_all
           | drop_item
@@ -1331,7 +1344,8 @@ stdout. This is the lossless first step of a port: file by file, before any refa
   one it is an untitled `paragraph text_<N>:`, with `N` counting those in the section from 1.
 - A string is `"..."` when it fits on one line and holds no `"` or `\`. Otherwise it is
   `"""..."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
-- A repeated key in one section gets `_2`, `_3`, in order.
+- A repeated key in one section gets `_2`, `_3`, in order. A key that is a keyword in that
+  position gets a final `_`, as Python does, so `## Details` prints `details_: "Details"`.
 - Text before the first `##` becomes `role:` for `--kind agent`, or loose prose for
   `--kind workflow`.
 - Link destinations stay as written. Text in `.prompt` source doesn't follow its file, so
@@ -1489,11 +1503,18 @@ a dropped key counts as accounted; `E610`, `E612`, `E613` raise from every kind.
 `test_several_decisions_are_one_item` (keep, drop, replace, order),
 `test_inherited_role_refs_resolve_in_parent_module` (a same-named local declaration must not
 win), `test_inherit_preamble_needs_a_parent_preamble`, `test_schema_unknown_inherit_fails`,
-`test_drop_abstract_slot_is_e610`, `test_old_forms_keep_shipped_duplicate_errors`.
+`test_drop_abstract_slot_is_e610`, `test_old_forms_keep_shipped_duplicate_errors`,
+`test_second_override_under_wildcard_keeps_shipped_error`, `test_inherit_star_with_nothing_is_e610`,
+`test_dropped_slot_fails_requires_declare`, `test_inherited_field_keeps_parent_imports` (an
+alias the child reuses for another module, a `from` import, a private declaration),
+`test_inherited_final_output_reaches_previous_turn`, `test_flow_keeps_inherited_role`,
+`test_receipt_routes_are_inherited_items`, `test_dotted_override_needs_a_body`,
+`test_paragraph_title_ref_inside_a_section`.
 
 **`tests/test_prose_render.py`**: `test_adjacent_strings_get_blank_line_in_each_surface`
 over workflow root, section, document, record body, role block, callout;
-`test_paragraph_renders_in_document`;
+`test_paragraph_renders_in_document`; `test_generated_lines_keep_their_layout` (a JSON example
+fence, a final-answer quote, and a generated list);
 `test_multiline_string_keeps_inner_newlines`; `test_section_metadata_only_with_requirement`;
 `test_paragraph_title_runs_in`; `test_untitled_paragraph_has_no_heading`.
 
@@ -1662,6 +1683,10 @@ all of this personally:
 3. Runs the new code under the corpus and named tests with coverage. A line nothing runs is
    presumed unneeded until shown otherwise.
 4. Reads every changed line against the rule, using the `overbuild-audit` families.
+5. Compares every changed existing example file with its base, line by line, including blank
+   lines. A blank line may change only between two authored strings, never inside a code
+   fence, table, list, or block quote. Anything else is a regression, however the worker
+   filed it. A comparison that ignores blank lines missed a real break here.
 
 **Send back.** Every cut goes back to the worker that wrote it, in the same thread, as a list
 of removals with file and line. A send-back only removes. It never asks for a new guard, test,
@@ -1713,7 +1738,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
 | `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
 | `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |
-| `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. `` |
+| `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. ``; `` `<owner>` writes `inherit *`, but it has nothing to inherit. `` |
 | `E611` | `Invalid patch path` | `` `<owner>`: `<path>` steps through `<step>`, which has no keyed items. ``; `` `<owner>`: `override <path>` targets a `<kind>`. Override the section that holds it. ``; `` `<owner>`: `override <path>` gives a paragraph a body it can't hold. A paragraph takes prose and `details`. `` |
 | `E612` | `Conflicting patches` | `` `<owner>` patches `<path>` twice. ``; `` `<owner>` writes `inherit <key>` beside a patch under `<key>`. The patch already accounts for it. ``; `` `<owner>` patches `<path>` under `<parent>`, which it already dropped or overrode. ``; `` `<owner>` can't drop `role`. Write `role:` to replace it, or `inherit role` to keep it. `` |
 | `E613` | `Duplicate inherit *` | `` `<owner>` writes `inherit *` more than once. `` |
