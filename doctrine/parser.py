@@ -118,7 +118,8 @@ class ToAst(
     @v_args(meta=True, inline=True)
     def agent_slot_override_path(self, meta, key, path, value, body=None):
         return _with_source_span(
-            model.OverridePath(path=(key, *path), value=self._workflow_slot_value(value, body)), meta,
+            model.OverridePath(path=(key, *path), value=self._workflow_slot_value(value, body)),
+            meta,
         )
 
     def grouped_inherit_keys(self, items):

@@ -54,7 +54,9 @@ class ReadableNodeTransformerMixin:
     def readable_paragraph_block(self, meta, key, *parts):
         title = parts[0] if isinstance(parts[0], str) else None
         return _with_source_span(
-            self._readable_block("paragraph", key, title, parts[1:] if title is not None else parts),
+            self._readable_block(
+                "paragraph", key, title, parts[1:] if title is not None else parts,
+            ),
             meta,
         )
 

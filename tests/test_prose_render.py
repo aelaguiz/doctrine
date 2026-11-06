@@ -24,45 +24,67 @@ class ProseRenderTests(unittest.TestCase):
             'agent A:\n    role: "Role."\n    work: "Work"\n        section: "Section"\n            "First."\n            "Second."\n',
             'document D: "Doc"\n    "First."\n    "Second."\ninput I: "Input"\n    source: Prompt\n    shape: MarkdownDocument\n    requirement: Required\n    structure: D\nagent A:\n    role: "Role."\n    inputs: "Inputs"\n        I\n',
             'skill S: "Skill"\n    purpose: "Purpose."\n    "First."\n    "Second."\nagent A:\n    role: "Role."\n    skills: "Skills"\n        skill s: S\n',
+            'agent A:\n    role: "Role."\n    work: "Work"\n        callout note: "Note"\n            "First."\n            "Second."\n',
         ):
             with self.subTest(source=source):
-                self.assertIn("First.\n\nSecond.", self._render(source))
+                rendered = self._render(source).replace("> ", "").replace("\n>\n", "\n\n")
+                self.assertIn("First.\n\nSecond.", rendered)
 
     def test_multiline_string_keeps_inner_newlines(self):
-        self.assertIn("First.\nSecond.\n\nThird.", self._render('''agent A:
+        self.assertIn(
+            "First.\nSecond.\n\nThird.",
+            self._render('''agent A:
     role: "Role."
     work: "Work"
         """First.
 Second."""
         "Third."
-'''))
+'''),
+        )
 
     def test_section_metadata_only_with_requirement(self):
-        source = '''agent A:
+        source = """agent A:
     role: "Role."
     work: "Work"
         step: "Step"
             section check: "Check"%s
                 "Check it."
-'''
+"""
         self.assertNotIn("_section_", self._render(source % ""))
         self.assertIn("_Required · section_", self._render(source % " required"))
 
     def test_paragraph_title_runs_in(self):
-        result = self._render('''agent A:
+        result = self._render("""agent A:
     role: "Role."
     work: "Work"
         paragraph lead: "Read this."
             "First."
             "Second."
-''')
+""")
         self.assertIn("**Read this.** First.\n\nSecond.", result)
 
     def test_untitled_paragraph_has_no_heading(self):
-        result = self._render('''agent A:
+        result = self._render("""agent A:
     role: "Role."
     work: "Work"
         paragraph lead:
             "First."
-''')
+""")
         self.assertEqual(result, "Role.\n\n## Work\n\nFirst.\n")
+
+    def test_paragraph_renders_in_document(self):
+        result = self._render("""document D: "Doc"
+    paragraph lead: "Read this."
+        "First."
+        "Second."
+input I: "Input"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    structure: D
+agent A:
+    role: "Role."
+    inputs: "Inputs"
+        I
+""")
+        self.assertIn("**Read this.** First.\n\nSecond.", result)

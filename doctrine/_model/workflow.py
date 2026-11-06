@@ -103,7 +103,10 @@ class OverrideSkillsSection:
 
 
 SkillsItem: _TypeAlias = (
-    SkillsSection | SkillEntry | InheritItem | InheritAll | DropItem | OverrideSkillsSection | OverrideSkillEntry
+    SkillsSection | SkillEntry | InheritItem
+    | InheritAll
+    | DropItem
+    | OverrideSkillsSection | OverrideSkillEntry
 )
 
 

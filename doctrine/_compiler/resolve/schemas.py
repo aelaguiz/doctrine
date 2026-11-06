@@ -143,7 +143,8 @@ class ResolveSchemasMixin:
         )
         apply_path_patches(
             self, {} if parent_schema is None else {
-                key: getattr(parent_schema, key) for key in ("sections", "gates", "artifacts", "groups")
+                key: getattr(parent_schema, key)
+                for key in ("sections", "gates", "artifacts", "groups")
             }, patches.path_overrides, owner_label=owner_label, unit=unit,
         )
         resolved_preamble = tuple(

@@ -43,7 +43,8 @@ def compile_paragraph(block, body, when_text):
     return CompiledRawTextBlock(
         kind="paragraph", title=block.title,
         text="\n\n".join(
-            f"**{line.kind.upper()}**: {line.text}" if isinstance(line, model.EmphasizedLine) else line
+            f"**{line.kind.upper()}**: {line.text}"
+            if isinstance(line, model.EmphasizedLine) else line
             for line in body
         ),
         requirement=block.requirement, when_text=when_text,

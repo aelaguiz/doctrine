@@ -132,7 +132,7 @@ class CompileOutputsMixin:
                     )
                 )
 
-            if decl.structure_ref is None or previous_turn_spec is not None:
+            else:
                 body = ["\n".join(body)]
             if extras:
                 body.append("")

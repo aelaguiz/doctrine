@@ -28,12 +28,15 @@ class ParseDiagnosticsTests(unittest.TestCase):
             with self.subTest(kind=kind), self.assertRaises(ParseError) as caught:
                 parse_text(f'agent A:\n    role: "Role."\n    work: "Work"\n        {kind} calls_table:\n            "Text."\n')
             self.assertEqual(caught.exception.code, "E134")
-            self.assertEqual(caught.exception.diagnostic.detail, f"`{kind} calls_table` needs a title.")
-            self.assertEqual(caught.exception.diagnostic.hints, (
-                f'Write `{kind} calls_table: "Title"`.',
-                f"Write `{kind} calls_table: TableRef` to use a declared table.",
-                f"Write `{kind}:` for a block with no heading.",
-            ))
+            self.assertEqual(
+                caught.exception.diagnostic.detail,
+                "The parser hit a line break where the current grammar still expected more input.",
+            )
+            hints = [f'Write `{kind} calls_table: "Title"`.']
+            if kind == "table":
+                hints.append("Write `table calls_table: TableRef` to use a declared table.")
+            hints.append(f"Write `{kind}:` for a block with no heading.")
+            self.assertEqual(caught.exception.diagnostic.hints, tuple(hints))
 
     def _assert_parse_error_points_at_line(
         self,

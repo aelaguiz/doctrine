@@ -1327,7 +1327,10 @@ def load_flow(
 ) -> IndexedFlow:
     resolved_prompt_root = prompt_root.resolve()
     entrypoint_path = resolve_flow_entrypoint(source_path, prompt_root=resolved_prompt_root)
-    flow_root = entrypoint_path.parent if flow_boundary_kind_for_path(entrypoint_path) is not None else entrypoint_path
+    flow_root = (
+        entrypoint_path.parent
+        if flow_boundary_kind_for_path(entrypoint_path) is not None else entrypoint_path
+    )
     flow_key = _flow_load_key(resolved_prompt_root, flow_root)
     cached = session._flow_cache.get(flow_key)
     if cached is not None:

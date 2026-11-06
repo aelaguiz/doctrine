@@ -260,14 +260,19 @@ The parent head comes first, then the child's own head prose.
 `drop key: "Reason"` removes an inherited item. The reason does not render.
 `inherit *` keeps all parent items the child does not name elsewhere. Write it
 once. Items before it come first. Parent items follow in parent order, with
-overrides in their parent positions and dropped items gone. Items after it
-come last. An explicit `inherit key` moves that item to the line's position.
+each child replacement in its parent position and dropped items gone. This
+also applies to typed fields written without `override`. Items after it come
+last. An explicit `inherit key` moves that item to the line's position.
 
 On agents, `role`, `inputs`, `outputs`, `analysis`, `decision`, `skills`,
 `review`, `final_output`, and `selectors` need an account too. Write a field
 to replace it, or use `inherit <field>`. Typed fields may be dropped. A role
 must be kept or replaced; it cannot be dropped. An `inputs[Parent]:` or
-`outputs[Parent]:` field counts as an account of that field.
+`outputs[Parent]:` field counts as an account of that field. An inherited
+role's refs resolve in the parent's module.
+Several `decision:` fields form one inherited item. `inherit decision` keeps
+them all in order. `drop decision` removes them all, and a child's `decision:`
+fields replace them all.
 
 Agents and workflows can patch a section, slot, or paragraph at depth:
 `override craft.habits.test_plan: "Test plans."` replaces that item in place.

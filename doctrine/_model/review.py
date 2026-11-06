@@ -4,7 +4,9 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan
+from doctrine._model.core import (
+    Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan,
+)
 from doctrine._model.law import IgnoreStmt, PreserveStmt, SupportOnlyStmt
 from doctrine._model.schema import SchemaGate
 

@@ -300,8 +300,8 @@ Agent children must also account for `role` and each inherited typed field.
 A role can be kept or replaced, but never dropped. See examples 167 and 168.
 
 `drop key: "Reason"` records an explicit removal. `inherit *` keeps all parent
-items not named elsewhere, in parent order. Overrides stay in their parent
-positions under the wildcard. Explicit inherits move an item to their line's
+items not named elsewhere, in parent order. Each child replacement takes
+its parent position under the wildcard. This includes plain typed fields. Explicit inherits move an item to their line's
 position. Dotted patches reach keyed sections, slots, and paragraphs without
 replacing the outer item. Paths do not walk anonymous items. Examples 169 to
 171 prove the patch rules.

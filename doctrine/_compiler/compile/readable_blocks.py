@@ -94,7 +94,9 @@ class CompileReadableBlocksMixin:
             title = block.title or _humanize_key(block.key)
         block_owner_label = f"{owner_label}.{block.key}"
         if block.kind == "paragraph":
-            return compile_paragraph(block, section_body_compiler(block.payload, block_owner_label), when_text)
+            return compile_paragraph(
+                block, section_body_compiler(block.payload, block_owner_label), when_text,
+            )
         if block.kind == "section":
             payload = self._require_tuple_payload(
                 block.payload,

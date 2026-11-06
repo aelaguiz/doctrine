@@ -32,7 +32,10 @@ class ReceiptDeclOverride:
 
 
 ReceiptDeclItem: _TypeAlias = (
-    ReceiptDeclField | ReceiptDeclOverride | InheritItem | InheritAll | DropItem | ReceiptDeclRouteField
+    ReceiptDeclField | ReceiptDeclOverride | InheritItem
+    | InheritAll
+    | DropItem
+    | ReceiptDeclRouteField
 )
 
 

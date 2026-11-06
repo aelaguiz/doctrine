@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VERDICT_TEXT
 from doctrine._compiler.indexing import unit_declarations
+from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
 from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.naming import (
     _dotted_ref_name,
@@ -1016,11 +1017,25 @@ class ResolveReviewsMixin:
             fields_accounted = parent_review.fields is None
             parent_items_by_key = {item.key: item for item in parent_review.items}
 
+        parent_keys = list(parent_items_by_key)
+        if parent_review is not None and parent_review.fields is not None:
+            parent_keys.insert(0, "fields")
+        patches = expand_patch_items(
+            review_body.items, parent_keys=parent_keys, kind="review",
+            owner_label=owner_label, unit=unit,
+        )
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
+        if "fields" in patches.dropped_keys:
+            fields = None
+            fields_accounted = True
+
         resolved_items: list[model.ReviewSection | model.ReviewOutcomeSection] = []
         emitted_items: dict[str, model.ReviewSection | model.ReviewOutcomeSection | model.InheritItem | model.ReviewOverrideSection | model.ReviewOverrideOutcomeSection] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
-        for item in review_body.items:
+        for item in patches.items:
             if isinstance(item, model.ReviewSubjectConfig):
                 subject = item
                 continue

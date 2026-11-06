@@ -4,7 +4,9 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TYPE_CHECKING, TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan
+from doctrine._model.core import (
+    Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan,
+)
 
 if TYPE_CHECKING:
     from doctrine._compiler.resolve.field_types import FieldTypeRef
@@ -191,7 +193,14 @@ class ReadableOverrideBlock:
 
 DocumentBlock = ReadableBlock
 DocumentOverrideBlock = ReadableOverrideBlock
-DocumentItem: _TypeAlias = ProseLine | ReadableBlock | InheritItem | InheritAll | DropItem | ReadableOverrideBlock
+DocumentItem: _TypeAlias = (
+    ProseLine
+    | ReadableBlock
+    | InheritItem
+    | InheritAll
+    | DropItem
+    | ReadableOverrideBlock
+)
 
 
 @_dataclass(slots=True, frozen=True)

@@ -500,6 +500,9 @@ class SchemaDocumentTransformerMixin:
     def schema_block_key_groups(self, _items):
         return "groups"
 
+    def schema_block_key_preamble(self, _items):
+        return "preamble"
+
     @v_args(meta=True, inline=True)
     def document_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None

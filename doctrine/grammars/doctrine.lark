@@ -453,7 +453,7 @@ schema_artifact_body: _INDENT schema_artifact_ref* _DEDENT
 schema_group_body: _INDENT schema_group_member* _DEDENT
 schema_artifact_ref: "ref" ":" name_ref _NL?
 schema_group_member: CNAME _NL?
-schema_inherit: "inherit" CNAME _NL? -> schema_inherit
+schema_inherit: "inherit" schema_block_key _NL? -> schema_inherit
               | "inherit" "{" schema_grouped_inherit_keys "}" _NL? -> schema_inherit_group
 schema_override_sections: "override" "sections" ":" _NL _INDENT schema_section_item+ _DEDENT
 schema_override_gates: "override" "gates" ":" _NL _INDENT schema_gate_item+ _DEDENT
@@ -463,6 +463,7 @@ schema_block_key: "sections" -> schema_block_key_sections
                 | "gates" -> schema_block_key_gates
                 | "artifacts" -> schema_block_key_artifacts
                 | "groups" -> schema_block_key_groups
+                | "preamble" -> schema_block_key_preamble
 
 table_decl_body: table_decl_body_line+
 ?table_decl_body_line: readable_row_schema_block

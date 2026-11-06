@@ -16,7 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Children must account for head prose, roles, and typed agent fields.
   Use `inherit preamble`, `inherit role`, or `inherit inputs` to keep them.
   `drop key: "Reason"` removes an inherited item. `inherit *` keeps the rest
-  in parent order. Dotted patches reach sections, slots, and paragraphs.
+  in parent order, with child replacements in their parent positions. Dotted
+  patches reach sections, slots, and paragraphs. Inherited roles keep refs
+  in their parent module. Several `decision:` fields form one inherited item.
 - A lone `.prompt` module inside a prompt root is a one-file flow when no
   flow entrypoint sits above it. `E206` is retired; roles keep their authored
   position. New errors are `E134` and `E610` to `E613`.

@@ -44,7 +44,9 @@ def resolve_flow_entrypoint(source_path: Path, *, prompt_root: Path | None = Non
             entrypoint_path = candidate / entrypoint_name
             if entrypoint_path.is_file():
                 return entrypoint_path
-    if resolved_prompt_root is not None and resolved.is_relative_to(resolved_prompt_root) and resolved.suffix == ".prompt":
+    if (resolved_prompt_root is not None
+        and resolved.is_relative_to(resolved_prompt_root)
+        and resolved.suffix == ".prompt"):
         return resolved
     raise compile_error(
         code="E292",

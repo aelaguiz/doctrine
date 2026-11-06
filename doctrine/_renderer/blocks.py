@@ -436,7 +436,9 @@ def _render_table_block(
     if block.table.notes:
         if lines and lines[-1] != "":
             lines.append("")
-        lines.append("\n\n".join(_render_prose_line(note, profile=profile) for note in block.table.notes))
+        lines.append(
+            "\n\n".join(_render_prose_line(note, profile=profile) for note in block.table.notes)
+        )
 
     return "\n".join(lines).rstrip()
 

@@ -4,7 +4,9 @@ import json
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import expand_patch_items, prepare_body_patches, apply_path_patches
+from doctrine._compiler.resolve.patches import (
+    expand_patch_items, prepare_body_patches, apply_path_patches,
+)
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -416,7 +418,8 @@ class ResolveOutputsMixin:
     ) -> model.OutputShapeDecl:
         patches = expand_patch_items(
             output_shape_decl.items, parent_keys=() if parent_output_shape is None else
-            tuple(self._output_item_key(item) for item in parent_output_shape.items if self._output_item_key(item) is not None),
+            tuple(self._output_item_key(item) for item in parent_output_shape.items
+                  if self._output_item_key(item) is not None),
             kind="output shape", owner_label=owner_label, unit=unit,
         )
         output_shape_decl = replace(output_shape_decl, items=patches.items)
@@ -723,10 +726,7 @@ class ResolveOutputsMixin:
             if self._output_item_key(item) is not None
         }
         parent_items_by_key = apply_path_patches(
-            self, {**parent_items_by_key, **{
-                key: self._output_decl_attachment_value(inherited_parent_output, key)
-                for key in attachment_keys
-            }}, patches.path_overrides, owner_label=owner_label, unit=unit,
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
         )
         resolved_items: list[model.OutputRecordItem] = []
         emitted_items: dict[str, object] = {}

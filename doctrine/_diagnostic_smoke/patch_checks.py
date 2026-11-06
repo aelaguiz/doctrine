@@ -6,11 +6,34 @@ from doctrine._diagnostic_smoke.fixtures import SmokeFailure, _expect, _write_pr
 
 
 PATCH_FAILURES = {
-    "E134": 'agent A:\n    role: "A."\n    work: "Work"\n        table calls_table:\n            "Text."\n',
-    "E610": 'abstract agent Base:\n    role: "A."\nagent A[Base]:\n    inherit role\n    drop missing: "Gone."\n',
-    "E611": 'abstract agent Base:\n    role: "A."\n    work: "Work"\n        paragraph lead:\n            "Text."\nagent A[Base]:\n    inherit role\n    drop work.lead.child: "Gone."\n',
-    "E612": 'abstract agent Base:\n    role: "A."\nagent A[Base]:\n    drop role: "Gone."\n',
-    "E613": 'abstract agent Base:\n    role: "A."\nagent A[Base]:\n    inherit *\n    inherit *\n',
+    "E134": (
+        "agent A:\n"
+        '    role: "A."\n'
+        '    work: "Work"\n'
+        "        table calls_table:\n"
+        '            "Text."\n'
+    ),
+    "E610": (
+        "abstract agent Base:\n"
+        '    role: "A."\n'
+        "agent A[Base]:\n"
+        "    inherit role\n"
+        '    drop missing: "Gone."\n'
+    ),
+    "E611": (
+        "abstract agent Base:\n"
+        '    role: "A."\n'
+        '    work: "Work"\n'
+        "        paragraph lead:\n"
+        '            "Text."\n'
+        "agent A[Base]:\n"
+        "    inherit role\n"
+        '    drop work.lead.child: "Gone."\n'
+    ),
+    "E612": ('abstract agent Base:\n    role: "A."\nagent A[Base]:\n    drop role: "Gone."\n'),
+    "E613": (
+        'abstract agent Base:\n    role: "A."\nagent A[Base]:\n    inherit *\n    inherit *\n'
+    ),
 }
 
 

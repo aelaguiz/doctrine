@@ -4,7 +4,9 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SectionBodyRef, SourceSpan
+from doctrine._model.core import (
+    Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SectionBodyRef, SourceSpan,
+)
 from doctrine._model.law import LawPathSet
 
 
@@ -71,7 +73,13 @@ class AnalysisOverrideSection:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
-AnalysisItem: _TypeAlias = AnalysisSection | InheritItem | InheritAll | DropItem | AnalysisOverrideSection
+AnalysisItem: _TypeAlias = (
+    AnalysisSection
+    | InheritItem
+    | InheritAll
+    | DropItem
+    | AnalysisOverrideSection
+)
 
 
 @_dataclass(slots=True, frozen=True)
