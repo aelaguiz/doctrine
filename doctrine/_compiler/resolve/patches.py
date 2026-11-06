@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace, fields as dataclass_fields, is_datac
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _agent_typed_field_key
+from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem
 
 
@@ -214,42 +215,12 @@ def prepare_body_patches(body, parent, *, kind, owner_label, unit, source_span):
 
 
 def expand_agent_patches(context, agent, *, unit):
-    if isinstance(agent, model.Team):
-        def error(detail, item):
-            return compile_error(
-                code="E606", summary="Invalid team", detail=detail,
-                path=unit.prompt_file.source_path, source_span=item.source_span,
-            )
-
-        if agent.abstract and agent.home is not None:
-            raise error(f"Abstract team `{agent.name}` can't have `home:`.", agent)
-        if not agent.abstract and agent.home is None:
-            raise error(f"Team `{agent.name}` needs `home:`.", agent)
-        if agent.home is not None and (agent.home.startswith("/") or ".." in agent.home.split("/") or agent.home.endswith("/")):
-            raise error(f'`home: "{agent.home}"` must be a relative path with no `..` and no trailing `/`.', agent)
-        keys = set()
-        for field in agent.fields:
-            key = patch_item_key(field)
-            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride)) and key in {"inputs", "outputs", "analysis", "decision", "skills", "review", "final_output", "selectors"}:
-                raise error(f"Team `{agent.name}` can't hold `{key}`. A team takes `role`, `values`, `budget`, slots, and members.", field)
-            if key is not None:
-                if key in keys:
-                    raise error(f"Team `{agent.name}` uses key `{key}` twice.", field)
-                keys.add(key)
-    from doctrine._compiler.late_binding import FACT_KEYS
-    for field in agent.fields:
-        if isinstance(field, model.ValuesField):
-            for key, text, span in field.items:
-                if key in FACT_KEYS:
-                    raise compile_error(code="E604", summary="Value sets a fact",
-                        detail=f"`values:` can't set `{key}`. The compiler supplies it.",
-                        path=unit.prompt_file.source_path, source_span=span)
+    validate_team(agent, unit=unit)
+    validate_values(agent, unit=unit)
     parent_fields = {}
     keys = []
     if agent.parent_ref is not None:
         parent_unit, parent = context._resolve_parent_agent_decl(agent, unit=unit)
-        if isinstance(parent, model.Member):
-            parent_unit = parent.scope_unit or parent_unit
         context._resolve_agent_slots(parent, unit=parent_unit)
         parent, _ = context._expand_agent_patches(parent, unit=parent_unit)
 
@@ -280,17 +251,13 @@ def expand_agent_patches(context, agent, *, unit):
                 ),
             ):
                 continue
-            if isinstance(field, model.ValuesField):
-                continue
             key = patch_item_key(field)
-            if isinstance(field, model.Member):
-                field = replace(field, scope_unit=field.scope_unit or parent_unit)
             parent_fields.setdefault(key, []).append(rebind(field))
         keys = list(
             dict.fromkeys(
                 patch_item_key(field)
                 for field in parent.fields
-                if not isinstance(field, (model.AuthoredSlotAbstract, model.ValuesField))
+                if not isinstance(field, model.AuthoredSlotAbstract)
             )
         )
     patch_fields = tuple(field for field in agent.fields if not isinstance(field, model.ValuesField))
@@ -343,33 +310,7 @@ def expand_agent_patches(context, agent, *, unit):
             path=unit.prompt_file.source_path,
             source_span=agent.source_span,
         )
-    if isinstance(agent, (model.Member, model.Team)):
-        roles = [field for field in fields if isinstance(field, (model.RoleScalar, model.RoleBlock))]
-        fields = roles + [field for field in fields if not isinstance(field, (model.RoleScalar, model.RoleBlock))]
-    if isinstance(agent, model.Team):
-        inherited_members = [key for key in keys if isinstance(parent_fields.get(key, [None])[0], model.Member)]
-        own_members = {field.key: field for field in fields if isinstance(field, model.Member)}
-        for field in agent.fields:
-            if isinstance(field, model.Member) and field.override and field.key not in keys:
-                raise compile_error(
-                    code="E001", summary="Cannot override undefined inherited entry",
-                    detail=f"Cannot override undefined authored slot in agent {agent.name}: {field.key}",
-                    path=unit.prompt_file.source_path, source_span=field.source_span,
-                )
-            collision = isinstance(field, model.Member) and field.key in keys and (
-                not field.override or field.key not in inherited_members
-            )
-            collision |= isinstance(field, (
-                model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride,
-            )) and field.key in inherited_members
-            if collision:
-                raise compile_error(
-                    code="E606", summary="Invalid team",
-                    detail=f"Team `{agent.name}` uses key `{field.key}` twice.",
-                    path=unit.prompt_file.source_path, source_span=field.source_span,
-                )
-        order = [key for key in inherited_members if key in own_members] + [key for key in own_members if key not in inherited_members]
-        fields = [field for field in fields if not isinstance(field, model.Member)] + [own_members[key] for key in order]
+    fields = order_team_fields(agent, fields, keys=keys, parent_fields=parent_fields, unit=unit)
     return replace(agent, fields=tuple(fields)), expansion
 
 

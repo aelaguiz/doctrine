@@ -9,6 +9,13 @@ class AuthoredProse(str):
     pass
 
 
+class MarkdownProse(AuthoredProse):
+    def __new__(cls, text, source_path):
+        value = super().__new__(cls, text)
+        value.source_path = source_path
+        return value
+
+
 @_dataclass(slots=True, frozen=True)
 class EmphasizedLine:
     kind: str

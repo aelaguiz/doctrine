@@ -43,6 +43,7 @@ from doctrine._model.analysis import (
 from doctrine._model.core import (
     AddressableRef,
     AuthoredProse,
+    MarkdownProse,
     EmphasizedLine,
     Expr,
     ExprBinary,

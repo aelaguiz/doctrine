@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
@@ -339,7 +340,6 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             ), when_text)
         if block.kind == "roster":
-            from doctrine._compiler.teams import compile_roster
             return compile_roster(self, block, unit=unit)
         if block.kind == "section":
             return CompiledSection(

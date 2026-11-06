@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.teams import team_members
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_RENDER_PROFILE_NAMES,
@@ -49,7 +50,6 @@ class ResolveRefsMixin:
     ) -> tuple[IndexedUnit, object] | None:
         flow = self.session.flow_for_unit(unit)
         if registry_name == "agents_by_name" and "." in declaration_name:
-            from doctrine._compiler.teams import team_members
             team_name, key = declaration_name.rsplit(".", 1)
             team = flow.teams_by_name.get(team_name)
             if team is not None:
@@ -806,7 +806,7 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.Agent]:
-        return self._resolve_parent_decl(
+        parent_unit, parent = self._resolve_parent_decl(
             unit=unit,
             child_name=agent.name,
             child_label="agent",
@@ -815,6 +815,9 @@ class ResolveRefsMixin:
             resolve_parent_ref=(lambda ref, *, unit: self._resolve_decl_ref(ref, unit=unit,
                 registry_name="teams_by_name", missing_label="team declaration")) if isinstance(agent, model.Team) else self._resolve_agent_ref,
         )
+        if isinstance(parent, model.Member):
+            parent_unit = parent.scope_unit or parent_unit
+        return parent_unit, parent
 
     def _resolve_parent_decl(
         self,

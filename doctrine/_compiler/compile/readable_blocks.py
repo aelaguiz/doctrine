@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.compile.readables import compile_paragraph
 from dataclasses import replace
 
@@ -71,7 +72,6 @@ class CompileReadableBlocksMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
         if block.kind == "roster":
-            from doctrine._compiler.teams import compile_roster
             return compile_roster(self, block, unit=unit)
         if block.when_expr is not None:
             self._validate_readable_guard_expr(

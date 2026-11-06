@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from doctrine import model
+from doctrine._compiler.late_binding import bind_home, reject_late_roots
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (
@@ -184,9 +185,6 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         flow = self.session.flow_by_key(prompt_root, flow_root)
         if flow is None:
             return None
-        if agent_name in flow.teams_by_name:
-            team = flow.teams_by_name[agent_name]
-            return flow.declaration_owner_units_by_id[id(team)], team
         return self._flow_decl_match(agent_name, unit=flow.entrypoint_unit, registry_name="agents_by_name")
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
@@ -235,7 +233,6 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        from doctrine._compiler.late_binding import bind_home
         return bind_home(self, self._compile_agent_decl(agent,
             unit=agent.scope_unit or unit if isinstance(agent, model.Member) else unit), agent, unit=unit)
 
@@ -268,7 +265,6 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        from doctrine._compiler.late_binding import reject_late_roots
         compiled = self._compile_skill_package_decl(declaration, unit=owner_unit)
         reject_late_roots(compiled, unit=owner_unit, why="a skill package has no home")
         return compiled

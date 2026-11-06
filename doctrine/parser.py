@@ -49,10 +49,6 @@ class ToAst(
     ReadableTransformerMixin,
     Transformer,
 ):
-    def __init__(self):
-        super().__init__()
-        self.string_sites = {}
-
     def CNAME(self, token):
         return str(token)
 
@@ -60,11 +56,10 @@ class ToAst(
         return str(token)
 
     def ESCAPED_STRING(self, token):
-        value = ast.literal_eval(str(token))
-        self.string_sites[id(value)] = (value, str(token), model.SourceSpan(token.line, token.column))
-        return value
+        return ast.literal_eval(str(token))
 
-    MULTILINE_STRING = ESCAPED_STRING
+    def MULTILINE_STRING(self, token):
+        return ast.literal_eval(str(token))
 
     def SIGNED_NUMBER(self, token):
         text = str(token)
@@ -91,7 +86,6 @@ class ToAst(
         return model.PromptFile(
             declarations=tuple(declarations),
             exported_names=tuple(exported_names),
-            string_sites=self.string_sites,
         )
 
     @v_args(inline=True)

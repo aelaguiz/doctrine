@@ -253,10 +253,11 @@ team T: "Team"
             self.assertEqual(caught.exception.code, 'E609')
             self.assertEqual(caught.exception.diagnostic.detail, detail)
 
-    def test_missing_override_member_fails(self):
+    def test_override_member_needs_a_parent_member(self):
         with self.assertRaises(CompileError) as caught:
-            self.session('team T: "Team"\n    home: "t"\n    override member absent: "Absent"\n        role: "Role."\n').compile_agent('T')
+            self.session('abstract team Base:\n    member qa: "QA"\n        role: "Test."\nteam T[Base]: "Team"\n    home: "t"\n    override member absent: "Absent"\n        role: "Role."\n').compile_agent('T')
         self.assertEqual(caught.exception.code, 'E001')
+        self.assertEqual(caught.exception.diagnostic.detail, 'Cannot override undefined authored slot in agent T: absent')
 
     def test_grouped_inherit_in_member(self):
         session = self.session('''abstract agent Role:

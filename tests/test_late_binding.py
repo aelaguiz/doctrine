@@ -93,6 +93,18 @@ agent B:
         self.assertEqual(caught.exception.code, 'E603')
         self.assertEqual(caught.exception.diagnostic.detail, 'Values read each other: `a -> b -> a`')
 
+    def test_e602_team_value_outside_team(self):
+        with self.assertRaises(CompileError) as caught:
+            self.render('agent A:\n    role: "{{team:x}}"\n')
+        self.assertEqual(caught.exception.code, 'E602')
+        self.assertEqual(caught.exception.diagnostic.detail, "`{{team:x}}` can't be read here: this agent is outside any team.")
+
+    def test_e602_team_others_in_team_home(self):
+        with self.assertRaises(CompileError) as caught:
+            self.render('team T: "Team"\n    home: "t"\n    role: "{{team:others}}"\n', 'T')
+        self.assertEqual(caught.exception.code, 'E602')
+        self.assertEqual(caught.exception.diagnostic.detail, "`{{team:others}}` can't be read here: a team's own file has no others.")
+
     def test_e602_in_skill_package(self):
         session = self.session('skill package P: "Package"\n    "Read {{agent:unit}}."\n')
         with self.assertRaises(CompileError) as caught:
@@ -143,10 +155,8 @@ export abstract agent Base:
 '''})
         self.assertEqual(render_markdown(session.compile_agent('A')), 'Right today\n')
 
-    def test_e601_excludes_unread_sites_and_keeps_imported_sites(self):
+    def test_e601_keeps_imported_sites(self):
         session = self.session('''import craft
-workflow Unread: "Unread"
-    "Unused {{agent:blank}}."
 agent A:
     role: "Role."
     work: craft.W

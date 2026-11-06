@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import doctrine._model.declarations as model
+from doctrine._compiler.markdown_reader import read_markdown
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
 from doctrine._compiler.declaration_validation import (
     validate_enum_decl,
@@ -738,7 +739,6 @@ def index_unit(
 
     for declaration in prompt_file.declarations:
         if isinstance(declaration, (model.Agent, model.WorkflowDecl)) and declaration.markdown_path:
-            from doctrine._compiler.markdown_reader import read_markdown
             declaration = read_markdown(declaration, source_path=prompt_file.source_path,
                 project_path=session.project_config.path, prompt_root=prompt_root)
         if isinstance(declaration, model.Team):

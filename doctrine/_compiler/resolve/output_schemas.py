@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from doctrine import model
+from doctrine._compiler.late_binding import reject_late_roots
 from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.naming import _dotted_ref_name
@@ -156,12 +157,12 @@ class ResolveOutputSchemasMixin:
         *,
         unit: IndexedUnit,
     ) -> model.OutputSchemaDecl:
-        from doctrine._compiler.late_binding import reject_late_roots
-        reject_late_roots(output_schema_decl, unit=unit, why="output schema text is machine text")
         output_schema_key = (unit.module_parts, output_schema_decl.name)
         cached = self._resolved_output_schema_cache.get(output_schema_key)
         if cached is not None:
             return cached
+
+        reject_late_roots(output_schema_decl, unit=unit, why="output schema text is machine text")
 
         if output_schema_key in self._output_schema_resolution_stack:
             cycle = " -> ".join(

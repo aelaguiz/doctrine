@@ -4,6 +4,7 @@ import fnmatch
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.teams import team_members
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 
@@ -35,7 +36,6 @@ class ValidateRulesMixin:
         self._validate_rule_scope_targets(rule, flow=flow, rule_unit=rule_unit)
         self._validate_rule_assertion_targets(rule, flow=flow, rule_unit=rule_unit)
 
-        from doctrine._compiler.teams import team_members
         agents = [(flow.declaration_owner_units_by_id[id(agent)], agent) for agent in flow.agents_by_name.values()]
         for team in flow.teams_by_name.values():
             if not team.abstract:

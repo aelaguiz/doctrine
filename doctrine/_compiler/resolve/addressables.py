@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 from doctrine import model
-from doctrine._compiler.constants import _INTERPOLATION_EXPR_RE
+from doctrine._compiler.constants import LATE_ROOT, _INTERPOLATION_EXPR_RE
 from doctrine._compiler.naming import (
     _display_addressable_ref,
     _dotted_ref_name,
@@ -130,7 +130,6 @@ class ResolveAddressablesMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
-        from doctrine._compiler.late_binding import LATE_ROOT
         if LATE_ROOT.fullmatch("{{" + expression + "}}"):
             return "{{" + expression + "}}"
         ref = _parse_interpolated_addressable_ref(expression)

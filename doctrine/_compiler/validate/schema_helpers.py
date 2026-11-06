@@ -127,7 +127,7 @@ class ValidateSchemaHelpersMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
-        if hasattr(value, "markdown_path"):
+        if isinstance(value, model.MarkdownProse):
             return value
         if "{{" not in value and "}}" not in value:
             return value
@@ -169,11 +169,7 @@ class ValidateSchemaHelpersMixin:
                 source_span=None,
             )
         parts.append(tail)
-        result = "".join(parts)
-        if id(value) in unit.prompt_file.string_sites:
-            _, raw, span = unit.prompt_file.string_sites[id(value)]
-            unit.prompt_file.string_sites[id(result)] = (result, raw, span)
-        return result
+        return "".join(parts)
 
     def _interpolate_authored_prose_line(
         self,
@@ -188,7 +184,7 @@ class ValidateSchemaHelpersMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
-            if hasattr(value, "markdown_path"):
+            if isinstance(value, model.MarkdownProse):
                 return value
             text = self._interpolate_authored_prose_string(
                 value,
@@ -209,11 +205,7 @@ class ValidateSchemaHelpersMixin:
                     source_span=None,
                     hints=('Put the whole fence in one `"""` string, or use a `code` block.',),
                 )
-            result = model.AuthoredProse(text)
-            if id(text) in unit.prompt_file.string_sites:
-                _, raw, span = unit.prompt_file.string_sites[id(text)]
-                unit.prompt_file.string_sites[id(result)] = (result, raw, span)
-            return result
+            return model.AuthoredProse(text)
         return model.EmphasizedLine(
             kind=value.kind,
             text=self._interpolate_authored_prose_string(

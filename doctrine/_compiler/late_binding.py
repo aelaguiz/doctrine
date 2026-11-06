@@ -5,18 +5,15 @@ from dataclasses import fields, is_dataclass, replace
 from pathlib import PurePosixPath
 
 from doctrine import model
+from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members
 from doctrine._compiler.types import CompiledCodeBlock
 
 
-LATE_ROOT = re.compile(r"\{\{\s*(agent|team):([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
-FACT_KEYS = frozenset({"key", "title", "home", "folder", "members", "others"})
-
-
 def map_text(value, substitute):
     if isinstance(value, str):
-        return value if hasattr(value, "markdown_path") else substitute(value)
+        return value if isinstance(value, model.MarkdownProse) else substitute(value)
     if isinstance(value, model.NameRef):
         return value
     if isinstance(value, CompiledCodeBlock):
@@ -45,35 +42,25 @@ def reject_late_roots(value, *, unit, why):
     map_text(value, reject)
 
 
+def value_reading_sites(context, root, key):
+    token = re.compile(r"\{\{\s*" + root + ":" + key + r"\s*\}\}")
+    readings = []
+    for flow in context.session._flow_cache.values():
+        for unit in flow.units_by_path.values():
+            path = unit.prompt_file.source_path
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if token.search(line) and (path, number) not in readings:
+                    readings.append((path, number))
+    return readings
+
+
 def bind_home(context, compiled, agent, *, unit):
     team_match = find_home_team(context, agent, unit=unit)
     team_unit, team = team_match if team_match else (None, None)
-    missing = {}
+    missing = []
     stack = []
-    sources = {
-        source.prompt_file.source_path: source
-        for flow in context.session._flow_cache.values()
-        for source in flow.units_by_path.values()
-    }
-
-    def sites(text, root, key):
-        token = re.compile(r"\{\{\s*" + root + ":" + key + r"\s*\}\}")
-        readings = []
-        for path, source in sources.items():
-            records = source.prompt_file.string_sites
-            if id(text) in records and token.search(records[id(text)][1]):
-                components = [records[id(text)]]
-            else:
-                components = [record for record in records.values() if record[0] and record[0] in text]
-            for _, raw, span in components:
-                for match in token.finditer(raw):
-                    site = (path, span.line + raw[:match.start()].count("\n"))
-                    if site not in readings:
-                        readings.append(site)
-        return readings
-
-    def no_owner(text, root, key, why):
-        readings = sites(text, root, key)
+    def no_owner(root, key, why):
+        readings = value_reading_sites(context, root, key)
         raise compile_error(
             code="E602", summary="Value has no owner here",
             detail=f"`{{{{{root}:{key}}}}}` can't be read here: {why}.",
@@ -116,9 +103,9 @@ def bind_home(context, compiled, agent, *, unit):
     agent_values.extend(team_values)
     agent_values.extend(parents(agent, agent.scope_unit or unit if isinstance(agent, model.Member) else unit))
 
-    def read(root, key, text):
+    def read(root, key):
         if root == "team" and team is None:
-            no_owner(text, root, key, "this agent is outside any team")
+            no_owner(root, key, "this agent is outside any team")
         owner = agent if root == "agent" else team
         if key in {"key", "title"}:
             if key == "key":
@@ -126,14 +113,14 @@ def bind_home(context, compiled, agent, *, unit):
             return substitute(context._display_readable_decl(owner))
         if key in {"home", "folder"}:
             if team is None:
-                no_owner(text, root, key, "this agent is outside any team")
+                no_owner(root, key, "this agent is outside any team")
             home = team.home
             if root == "agent" and isinstance(agent, model.Member):
                 home = str(PurePosixPath(home) / agent.key.replace("_", "-"))
             return home if key == "home" else home.rsplit("/", 1)[-1]
         if root == "team" and key in {"members", "others"}:
             if key == "others" and isinstance(agent, model.Team):
-                no_owner(text, root, key, "a team's own file has no others")
+                no_owner(root, key, "a team's own file has no others")
             names = [
                 bind_home(context, member.title, member, unit=team_unit)
                 for member in team_members(context, team, unit=team_unit)
@@ -163,12 +150,12 @@ def bind_home(context, compiled, agent, *, unit):
                 result = substitute(text)
                 stack.pop()
                 return result
-        readings = missing.setdefault(identity, [])
-        readings.extend(site for site in sites(text, root, key) if site not in readings)
+        if identity not in missing:
+            missing.append(identity)
         return ""
 
     def substitute(text):
-        return type(text)(LATE_ROOT.sub(lambda match: read(match[1], match[2], text), text))
+        return type(text)(LATE_ROOT.sub(lambda match: read(match[1], match[2]), text))
 
     result = map_text(compiled, substitute)
     if missing:
@@ -176,8 +163,9 @@ def bind_home(context, compiled, agent, *, unit):
         if team is not None:
             home = str(PurePosixPath(team.home) / agent.key.replace("_", "-")) if isinstance(agent, model.Member) else team.home
         lines = [f"Home `{home}` reads values nothing fills:"]
-        for (root, key), readings in missing.items():
-            lines.extend(f"- `{root}:{key}` at {path}:{line}" for path, line in readings)
+        for root, key in missing:
+            lines.extend(f"- `{root}:{key}` at {path}:{line}"
+                         for path, line in value_reading_sites(context, root, key))
         raise compile_error(code="E601", summary="Unfilled value", detail="\n".join(lines),
             path=unit.prompt_file.source_path, source_span=agent.source_span)
     return result

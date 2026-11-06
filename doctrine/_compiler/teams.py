@@ -4,7 +4,9 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
-from doctrine.diagnostics import CompileError
+
+
+FACT_KEYS = frozenset({"key", "title", "home", "folder", "members", "others"})
 
 
 def team_members(context, team, *, unit):
@@ -27,73 +29,69 @@ def find_home_team(context, agent, *, unit):
     return None
 
 
-def compile_roster(context, block, *, unit):
-    from doctrine._compiler.late_binding import LATE_ROOT, bind_home
-    from doctrine._compiler.types import (
-        CompiledTableBlock, CompiledTableColumn, CompiledTableData,
-        CompiledTableRow, CompiledTableCell,
-    )
-
-    def error(detail, item):
-        return compile_error(
-            code="E609", summary="Invalid roster", detail=detail,
-            path=unit.prompt_file.source_path, source_span=item.source_span,
-        )
-
-    active = context._active_skill_bind_agent_context
-    match = find_home_team(context, active.agent, unit=active.unit) if active is not None else None
-    if match is None:
-        raise error(f"`roster {block.key}` needs a team, and this home has none.", block)
-    owner, team = match
-    columns = block.payload.columns
-    for column in columns:
-        if not any(match[1] == "agent" for match in LATE_ROOT.finditer(column.body[0])):
-            raise error(f"Column `{column.key}` has no `{{{{agent:...}}}}` in its cell.", column)
-    rows = []
-    for member in team_members(context, team, unit=owner):
-        try:
-            cells = tuple(
-                CompiledTableCell(key=column.key, text=bind_home(
-                    context,
-                    context._interpolate_authored_prose_string(
-                        column.body[0], unit=unit,
-                        owner_label=f"roster {block.key}", surface_label="roster cell",
-                    ),
-                    member, unit=owner,
-                ))
-                for column in columns
+def validate_team(agent, *, unit):
+    if isinstance(agent, model.Team):
+        def error(detail, item):
+            return compile_error(
+                code="E606", summary="Invalid team", detail=detail,
+                path=unit.prompt_file.source_path, source_span=item.source_span,
             )
-        except CompileError as exc:
-            if exc.code != "E601":
-                raise
-            continue
-        rows.append(CompiledTableRow(key=member.key, cells=cells))
-    for row in block.payload.rows:
-        by_key = {cell.key: cell for cell in row.cells}
-        for cell in row.cells:
-            if cell.key not in {column.key for column in columns}:
-                raise error(f"`rows:` names unknown column `{cell.key}`.", cell)
-        for column in columns:
-            if column.key not in by_key:
-                raise error(f"Row `{row.key}` leaves column `{column.key}` empty.", row)
-        cells = tuple(
-            CompiledTableCell(
-                key=cell.key,
-                text=None if cell.text is None else context._interpolate_authored_prose_string(
-                    cell.text, unit=unit,
-                    owner_label=f"roster {block.key}", surface_label="roster cell",
-                ),
-                body=None if cell.body is None else context._compile_section_body(
-                    context._resolve_section_body_items(
-                        cell.body, unit=unit, owner_label=f"roster {block.key}",
-                    ),
-                    unit=unit, owner_label=f"roster {block.key}",
-                ),
+
+        if agent.abstract and agent.home is not None:
+            raise error(f"Abstract team `{agent.name}` can't have `home:`.", agent)
+        if not agent.abstract and agent.home is None:
+            raise error(f"Team `{agent.name}` needs `home:`.", agent)
+        if agent.home is not None and (agent.home.startswith("/") or ".." in agent.home.split("/") or agent.home.endswith("/")):
+            raise error(f'`home: "{agent.home}"` must be a relative path with no `..` and no trailing `/`.', agent)
+        keys = set()
+        for field in agent.fields:
+            key = "role" if isinstance(field, (model.RoleScalar, model.RoleBlock)) else getattr(field, "key", None)
+            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride)) and key in {"inputs", "outputs", "analysis", "decision", "skills", "review", "final_output", "selectors"}:
+                raise error(f"Team `{agent.name}` can't hold `{key}`. A team takes `role`, `values`, `budget`, slots, and members.", field)
+            if key is not None:
+                if key in keys:
+                    raise error(f"Team `{agent.name}` uses key `{key}` twice.", field)
+                keys.add(key)
+
+
+def validate_values(agent, *, unit):
+    for field in agent.fields:
+        if isinstance(field, model.ValuesField):
+            for key, text, span in field.items:
+                if key in FACT_KEYS:
+                    raise compile_error(code="E604", summary="Value sets a fact",
+                        detail=f"`values:` can't set `{key}`. The compiler supplies it.",
+                        path=unit.prompt_file.source_path, source_span=span)
+
+
+def order_team_fields(agent, fields, *, keys, parent_fields, unit):
+    if isinstance(agent, (model.Member, model.Team)):
+        roles = [field for field in fields if isinstance(field, (model.RoleScalar, model.RoleBlock))]
+        fields = roles + [field for field in fields if not isinstance(field, (model.RoleScalar, model.RoleBlock))]
+    if isinstance(agent, model.Team):
+        inherited_members = [key for key in keys if isinstance(parent_fields.get(key, [None])[0], model.Member)]
+        own_members = {field.key: field for field in fields if isinstance(field, model.Member)}
+        for field in agent.fields:
+            if isinstance(field, model.Member) and field.override and field.key not in keys:
+                raise compile_error(
+                    code="E001", summary="Cannot override undefined inherited entry",
+                    detail=f"Cannot override undefined authored slot in agent {agent.name}: {field.key}",
+                    path=unit.prompt_file.source_path, source_span=field.source_span,
+                )
+            collision = isinstance(field, model.Member) and field.key in keys and (
+                not field.override or field.key not in inherited_members
             )
-            for cell in row.cells
-        )
-        rows.append(CompiledTableRow(key=row.key, cells=cells))
-    return CompiledTableBlock(title=block.title, table=CompiledTableData(
-        columns=tuple(CompiledTableColumn(key=column.key, title=column.title, body=()) for column in columns),
-        rows=tuple(rows),
-    ))
+            collision |= isinstance(field, (
+                model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride,
+            )) and field.key in inherited_members
+            if collision:
+                raise compile_error(
+                    code="E606", summary="Invalid team",
+                    detail=f"Team `{agent.name}` uses key `{field.key}` twice.",
+                    path=unit.prompt_file.source_path, source_span=field.source_span,
+                )
+        order = [key for key in inherited_members if key in own_members] + [key for key in own_members if key not in inherited_members]
+        fields = [field for field in fields if not isinstance(field, model.Member)] + [
+            replace(own_members[key], scope_unit=own_members[key].scope_unit or unit) for key in order
+        ]
+    return fields

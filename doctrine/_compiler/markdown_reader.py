@@ -22,12 +22,10 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
             "E652", "Missing Markdown source",
             f"`{declaration.name}` reads `{declaration.markdown_path}`, which does not exist.",
         )
-    lines = path.read_text().splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
 
     def literal(text):
-        value = model.AuthoredProse(text)
-        value.markdown_path = path
-        return value
+        return model.MarkdownProse(text, path)
 
     title = declaration.name
     if lines and lines[0].startswith("# "):
