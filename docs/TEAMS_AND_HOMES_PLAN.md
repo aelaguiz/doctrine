@@ -389,7 +389,7 @@ An agent outside any team has no `home` or `folder`, and reading one is `E602`.
 
 | Code | When | Must say |
 | --- | --- | --- |
-| `E601` | A home reads a blank nothing fills | The home, every missing key, and each reading site as file and line |
+| `E601` | A home reads a blank nothing fills | The home, every missing key, and each source line that reads that key, as file and line |
 | `E602` | A late root has no owner here | The root, the surface, and why |
 | `E603` | Values read each other in a cycle | The full cycle: `a -> b -> a` |
 | `E604` | `values:` sets a fact key | The key |
@@ -436,6 +436,9 @@ Rules:
   not be absolute, hold `..`, or end in `/`. Breaking this is `E606`.
 - The tree comes from the paths. Team A is above team B when A's home is a path prefix
   of B's. No declaration names its parent level.
+- A target's tree is the concrete teams in its entrypoint's flow, which is every `.prompt`
+  file under the prompt root that no nearer entrypoint claims. A team in another flow can be
+  a parent, but not a level of this tree.
 - Typed agent fields are not legal on a team. Only `role`, `values`, `budget`, slots, and
   members are. Anything else is `E606`.
 - A team and its slots use the same key space as its members. A duplicate is `E606`.
