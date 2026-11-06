@@ -74,7 +74,6 @@ class ValidateAgentsMixin:
         *,
         unit: IndexedUnit,
     ) -> frozenset[tuple[OutputDeclKey, ReviewSemanticContext]]:
-        agent, _ = self._expand_agent_patches(agent, unit=unit)
         output_contexts: dict[OutputDeclKey, ReviewSemanticContext] = {}
         for field in agent.fields:
             if not isinstance(field, model.ReviewField):
@@ -235,7 +234,6 @@ class ValidateAgentsMixin:
         resolved_slots: dict[str, ResolvedWorkflowBody],
         agent_contract: AgentContract,
     ) -> tuple[tuple[str, RouteSemanticContext, model.SourceSpan | None], ...]:
-        agent, _ = self._expand_agent_patches(agent, unit=unit)
         sources: list[tuple[str, RouteSemanticContext, model.SourceSpan | None]] = []
         review_field = next(
             (field for field in agent.fields if isinstance(field, model.ReviewField)),
@@ -390,7 +388,6 @@ class ValidateAgentsMixin:
         resolved_slots: dict[str, ResolvedWorkflowBody],
         agent_contract: AgentContract,
     ) -> frozenset[tuple[OutputDeclKey, RouteSemanticContext]]:
-        agent, _ = self._expand_agent_patches(agent, unit=unit)
         emitted_output_keys = tuple(agent_contract.outputs.keys())
         if not emitted_output_keys:
             return frozenset()

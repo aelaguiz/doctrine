@@ -90,6 +90,9 @@ class ResolveSectionBodiesMixin:
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
+            if isinstance(item, model.ReadableBlock) and not item.anonymous:
+                resolved.append(item)
+                continue
             if not isinstance(item, model.LocalSection):
                 continue
             resolved.append(

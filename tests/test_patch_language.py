@@ -935,12 +935,85 @@ skill package Package: "Package"
                     with self.assertRaises(ParseError):
                         parse_text(f"{declaration}\n    override craft.a: {replacement}\n")
 
+    def test_route_cannot_replace_a_parent_key(self):
+        for parent_item in (
+            "next_route: string",
+            'route next_route: "Next Route"\n        done: "Done." -> terminal',
+        ):
+            with self.subTest(parent_item=parent_item), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "prompts/SKILL.prompt"
+                path.parent.mkdir()
+                path.write_text('''receipt Base: "Base"
+    value: string
+    PARENT_ITEM
+receipt Patched[Base]: "Patched"
+    inherit value
+    route next_route: "Replacement"
+        done: "Done." -> terminal
+skill package Package: "Package"
+    metadata:
+        name: "package"
+        description: "Work."
+    host_contract:
+        receipt result: Patched
+    "Read the result."
+'''.replace("PARENT_ITEM", parent_item))
+                with self.assertRaises(CompileError) as caught:
+                    CompilationSession(parse_file(path)).compile_skill_package("Package")
+                self.assertEqual(caught.exception.code, "E544")
+                self.assertIn("missing inherited fields: next_route", str(caught.exception))
+
+    def test_inherited_selectors_cross_modules(self):
+        result = self._render('''from parent import Base
+enum Mode: "Local Mode"
+    writer: "Writer"
+    critic: "Critic"
+agent Child[Base]:
+    inherit *
+''', extra_files={"parent/AGENTS.prompt": '''enum Mode: "Parent Mode"
+    writer: "Writer"
+    critic: "Critic"
+output schema ResultSchema: "Result Schema"
+    field text: "Text"
+        type: string
+    example:
+        text: "A draft."
+output shape ResultShape: "Result Shape"
+    kind: JsonObject
+    schema: ResultSchema
+    selector:
+        mode role = selectors.role as Mode
+    notes: "Notes"
+        case Mode.writer:
+            "Write the selected draft."
+        case Mode.critic:
+            "Critique the selected draft."
+output Result: "Result"
+    target: TurnResponse
+    shape: ResultShape
+    requirement: Required
+export abstract agent Base:
+    role: "Write a draft."
+    selectors:
+        role: Mode.writer
+    outputs: "Outputs"
+        Result
+    final_output: Result
+'''})
+        self.assertIn("Write the selected draft.", result)
+        self.assertNotIn("Critique the selected draft.", result)
+
     def test_paragraph_title_ref_inside_a_section(self):
-        self.assertIn("Read the lead.", self._render("""workflow W: "W"
+        result = self._render("""workflow W: "W"
     a: "A"
         paragraph p: "the lead"
             "Body."
+        "Explicit: {{W:a.p.title}}."
+        "Self: {{self:a.p.title}}."
 agent Child:
     role: "Read {{W:a.p.title}}."
     work: W
-"""))
+""")
+        self.assertIn("Read the lead.", result)
+        self.assertIn("Explicit: the lead.", result)
+        self.assertIn("Self: the lead.", result)

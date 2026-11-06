@@ -1417,7 +1417,9 @@ class ResolveOutputsMixin:
         if len(ref.module_parts) != 1:
             return ref
         enum_name = ref.module_parts[0]
-        enum_ref = model.NameRef(module_parts=(), declaration_name=enum_name)
+        enum_ref = model.NameRef(
+            module_parts=(), declaration_name=enum_name, scope_unit=ref.scope_unit,
+        )
         if not self._inherited_output_ref_has_parent_decl(
             enum_ref, parent_unit=parent_unit
         ):
@@ -1426,6 +1428,7 @@ class ResolveOutputsMixin:
             module_parts=(*parent_unit.module_parts, enum_name),
             declaration_name=ref.declaration_name,
             rebound_imported=rebound_imported,
+            scope_unit=ref.scope_unit,
         )
 
     def _rebind_inherited_output_scalar_value(
@@ -1470,6 +1473,7 @@ class ResolveOutputsMixin:
             module_parts=parent_unit.module_parts,
             declaration_name=ref.declaration_name,
             rebound_imported=rebound_imported,
+            scope_unit=ref.scope_unit,
         )
 
     def _rebind_inherited_output_expr(

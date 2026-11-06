@@ -853,6 +853,7 @@ class ResolveOutputSchemasMixin:
             module_parts=parent_unit.module_parts,
             declaration_name=ref.declaration_name,
             source_span=ref.source_span,
+            scope_unit=ref.scope_unit,
         )
 
     def _output_schema_ref_targets_local_def(

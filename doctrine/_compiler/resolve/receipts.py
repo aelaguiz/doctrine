@@ -181,7 +181,6 @@ class ResolveReceiptsMixin:
 
         for item in patches.items:
             if isinstance(item, model.ReceiptDeclRouteField):
-                accounted_parent_keys.add(item.key)
                 continue
             if isinstance(item, model.InheritItem):
                 parent_field = parent_fields_by_key.get(item.key)

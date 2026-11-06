@@ -112,6 +112,7 @@ class ResolveAddressablesMixin:
                 module_parts=current_root.module_parts,
                 declaration_name=current_root.declaration_name,
                 source_span=ref.source_span,
+                scope_unit=current_root.scope_unit,
             ),
             path=ref.path,
             source_span=ref.source_span,

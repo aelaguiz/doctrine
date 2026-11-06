@@ -642,7 +642,6 @@ class FlowMixin:
         agent_nodes: dict[FlowAgentKey, FlowAgentNode],
         edges: dict[tuple[object, ...], FlowEdge],
     ) -> None:
-        agent, _ = self._expand_agent_patches(agent, unit=agent_unit)
         review_field = next(
             (field for field in agent.fields if isinstance(field, model.ReviewField)),
             None,
