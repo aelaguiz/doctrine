@@ -21,7 +21,6 @@ every command on every change."""
 | `make verify-skill-install` | After a change to a first-party skill. Runs the pinned `skills` CLI smoke tests for the public install surface. |
 | `uv run --locked python -m unittest tests.test_release_flow` | After release-flow or release-policy changes. |
 | `uv run --locked python -m doctrine.verify_corpus --manifest examples/<dir>/cases.toml` | Fast path for one manifest-backed example. |
-| `cd editors/vscode && make` | After any change under `editors/vscode/`. |
 | `uv run --locked python -m doctrine.validate_output_schema --schema <path>` | After editing an `output schema` that produces an emitted `schemas/*.schema.json` file. |
 """
 

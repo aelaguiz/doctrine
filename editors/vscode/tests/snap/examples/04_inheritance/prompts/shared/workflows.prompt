@@ -1,8 +1,0 @@
-workflow BaseGreeting: "Shared Instructions"
-    "Use the shared greeting below."
-
-    greeting: "Greeting"
-        "Say hello."
-
-    object: "Object"
-        "Say world."

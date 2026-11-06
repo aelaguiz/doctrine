@@ -72,8 +72,6 @@ for repo setup and proof commands.
   `dag allow_cycle`
 - [../CHANGELOG.md](../CHANGELOG.md): public release history and correction
   record
-- [../editors/vscode/README.md](../editors/vscode/README.md): repo-local editor
-  support for `.prompt` files
 
 ## Historical Context
 

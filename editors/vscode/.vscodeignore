@@ -1,9 +1,0 @@
-.vscode/**
-Makefile
-node_modules/**
-!node_modules/@iarna/**
-!node_modules/@iarna/toml/**
-scripts/**
-tests/**
-package-lock.json
-*.vsix
