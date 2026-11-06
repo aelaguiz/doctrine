@@ -10,6 +10,18 @@ from tests.ws3_support import HomeProject
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_exit_codes_for_build_check_and_load(self):
+        for command in (("build",), ("check",), ("load", "GrowthPod.qa", "--full")):
+            with self.subTest(command=command):
+                root = self.project()
+                self.assertEqual(self.cli(root, *command)[0], 0)
+                self.assertEqual(self.cli(root, *command, "--target", "absent")[0], 2)
+                source = root / "prompts/AGENTS.prompt"
+                source.write_text(source.read_text().replace("QA text.", "{{agent:missing}}"))
+                code, _, error = self.cli(root, *command)
+                self.assertEqual(code, 1)
+                self.assertIn("E601", error)
+
     def git_project(self, root):
         for args in (("init", "-q"), ("config", "user.name", "Fixture"), ("config", "user.email", "fixture@example.com"), ("add", "."), ("commit", "-qm", "Fixture [skip ci]")):
             subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)

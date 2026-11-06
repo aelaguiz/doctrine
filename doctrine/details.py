@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledCodeBlock
+from doctrine._compiler.types import CompiledSection, CompiledCodeBlock, CompiledGuardBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -24,9 +24,9 @@ def reject_details(value, surface):
 def split_details(compiled, home):
     companions, pointers = {}, []
     def visit(item, headings):
-        if not isinstance(item, CompiledSection):
+        if not isinstance(item, (CompiledSection, CompiledGuardBlock)):
             return item
-        if item.kind == "details":
+        if isinstance(item, CompiledSection) and item.kind == "details":
             origin = item.origin
             path = origin[3] or str(PurePosixPath(home) / "DETAILS.md")
             if origin[3]:
@@ -35,7 +35,7 @@ def split_details(compiled, home):
             if path not in pointers:
                 pointers.append(path)
             return None
-        nested = (*headings, item.title) if item.title and item.kind != "paragraph" else headings
+        nested = (*headings, item.title) if item.title and (isinstance(item, CompiledGuardBlock) or item.kind != "paragraph") else headings
         return replace(item, body=tuple(result for child in item.body if (result := visit(child, nested)) is not None))
     compiled = replace(compiled, fields=tuple(visit(field, ()) for field in compiled.fields))
     return compiled, companions, pointers

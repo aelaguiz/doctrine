@@ -10,7 +10,7 @@ from doctrine.parser import parse_file
 from doctrine._diagnostic_smoke.fixtures import _expect
 
 
-HOME_FAILURES = {
+HOME_DIAGNOSTICS = {
     "E607": ('team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Test."\nteam Other: "Other"\n    home: "t/qa"\n    role: "Other."\n', ''),
     "E621": ('abstract agent R:\n    role: "Test."\n    work: "Work"\n        details:\n            "{{agent:title}}"\nteam T: "Team"\n    home: "t"\n    member qa[R]: "QA"\n', ''),
     "E630": ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 1\n', ''),
@@ -20,11 +20,13 @@ HOME_FAILURES = {
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
     "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
+    "W306": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.runtimes.codex]\nlimit = 100\n'),
+    "W307": ('team T: "Team"\n    home: "."\n    role: "Shared."\n    member qa: "QA"\n        role: "Test."\n', ''),
 }
 
 
 def run_home_checks():
-    for code, (source, settings) in HOME_FAILURES.items():
+    for code, (source, settings) in HOME_DIAGNOSTICS.items():
         with TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "prompts").mkdir()
@@ -40,10 +42,14 @@ def run_home_checks():
             elif code == "E641":
                 args = ["build", "--rev", "not-a-revision"]
                 args += ["--pyproject", str(Path(__file__).resolve().parents[2] / "pyproject.toml")]
+            elif code == "W306":
+                args = ["build"]
+            elif code == "W307":
+                args = ["build", "T.qa"]
             error = StringIO()
             with chdir(root), redirect_stderr(error), redirect_stdout(StringIO()):
                 result = main(args)
-            _expect(result == 1 and code in error.getvalue(), f"expected {code}, got {result}: {error.getvalue()}")
+            _expect(result == (0 if code.startswith("W") else 1) and code in error.getvalue(), f"expected {code}, got {result}: {error.getvalue()}")
     with TemporaryDirectory() as directory:
         path = Path(directory) / "prompts/SKILL.prompt"
         path.parent.mkdir()

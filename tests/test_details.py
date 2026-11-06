@@ -11,6 +11,25 @@ from tests.ws3_support import HomeProject
 
 
 class DetailsTests(HomeProject, unittest.TestCase):
+    def test_details_inside_guard_move_to_companion(self):
+        root = self.project('''enum State: "State"
+    ready: "Ready"
+team T: "Team"
+    home: "t"
+    work: "Work"
+        guard follow_up when State.ready == State.ready
+            "Brief."
+            details:
+                "Long case."
+''')
+        code, _, error = self.cli(root, 'build', '.')
+        self.assertEqual(code, 0, error)
+        home = (root / 't/AGENTS.md').read_text()
+        self.assertNotIn('Long case.', home)
+        self.assertIn('Brief.', home)
+        companion = (root / 't/DETAILS.md').read_text()
+        self.assertIn('## Work\n\n### Follow Up\n\nLong case.', companion)
+
     def test_owner_table(self):
         cases = (
             ('team T: "Team"\n    home: "t"\n    work: "Work"\n        details:\n            "Long case."\n', 't/DETAILS.md'),
