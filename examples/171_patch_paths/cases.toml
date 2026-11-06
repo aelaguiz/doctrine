@@ -34,7 +34,25 @@ expected_lines = [
   "",
   "**Test plans.** Grow them with the design.",
   "",
-  "**Sending it back.** Say what failed.",
+  "**Sending it back.** A failure goes to whoever built the change.",
+]
+
+[[cases]]
+name = "a path steps through a keyed section block"
+status = "active"
+kind = "render_contract"
+agent = "PodRunner"
+assertion = "exact_lines"
+expected_lines = [
+  "Pod Runner.",
+  "",
+  "## Pod Deep",
+  "",
+  "### How",
+  "",
+  "#### Checks",
+  "",
+  "**Smoke.** Run it.",
 ]
 
 [[cases]]
@@ -66,3 +84,23 @@ agent = "PodQa"
 exception_type = "CompileError"
 error_code = "E612"
 location_line = 10
+
+[[cases]]
+name = "a path under a dropped item fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_path_under_drop/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 8
+
+[[cases]]
+name = "a path to a missing nested key fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing_nested_key/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E610"
+location_line = 7

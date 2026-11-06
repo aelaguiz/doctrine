@@ -128,7 +128,12 @@ uses for sections, and `_render_metadata_line` callers follow it for every kind.
 - `E132` fires only when the token before the failure is `->`.
 - New `E134` "Missing block title" fires when a named readable block has no title at the
   end of its head line, such as `table calls_table:` with nothing after the colon. Its
-  hints read: ``Write `table calls_table: "Title"`.`` then ``Write `table calls_table: TableRef` to use a declared table.`` then ``Write `table:` for a block with no heading.`` The block kind and key in the hint come from the source.
+  kinds are the ones whose grammar requires that title: `table`, `definitions`, `callout`,
+  `properties`, `section`, `code`, `markdown`, `html`, `footnotes`, and `image`. Its hints
+  read ``Write `table calls_table: "Title"`.``, then for `table` only
+  ``Write `table calls_table: TableRef` to use a declared table.``, then for a kind with a
+  bare form ``Write `table:` for a block with no heading.`` The block kind and key in the
+  hint come from the source. It lives beside the other parse classifications.
 
 ### 4.4 Lone Module Files
 
@@ -200,13 +205,22 @@ account is `E003`, listing `preamble` like any other key.
 
 **`role`.** On an agent, `role` is an inherited item. A child writes `role: ...` to
 replace it, as today, or `inherit role` to keep it. `drop role` is `E612`. A concrete
-agent that ends with no role still gets `E205`.
+agent that ends with no role still gets `E205`. An inherited role keeps the meaning it had
+where it was written: its `{{Ref}}`s resolve in the parent's module, as a slot's do.
 
 **Typed fields.** `inputs`, `outputs`, `analysis`, `decision`, `skills`, `review`,
 `final_output`, and `selectors` on a parent are inherited items. A child writes the field
 to replace it, as today, or `inherit inputs`, or `drop inputs: "why"`. Omitting one is
 `E003`. Today they vanish with no error. `inputs[Parent]:` and `outputs[Parent]:` patch
 fields count as an account of `inputs` and `outputs`.
+
+An agent may have several `decision:` fields. Together they are one item, `decision`.
+`inherit decision` keeps them all, in order, at that spot. `drop decision` removes them all.
+Writing `decision:` in the child replaces them all.
+
+An inherited typed field's declaration refs resolve in the parent's module. Prose inside an
+inline `inputs:`, `outputs:`, or `skills:` body resolves where it lands, which is what shipped
+`output` inheritance does.
 
 `_RESERVED_AGENT_FIELD_KEYS` stops rejecting `inherit role` and `inherit <typed field>`.
 
@@ -215,7 +229,7 @@ fields count as an account of `inputs` and `outputs`.
 Every body with an `inherit` form gains the same two forms. That is `agent`, `workflow`,
 `document`, `analysis`, `schema`, `review`, `review_family`, `abstract review`, `skills`,
 `inputs`, `outputs`, `output`, `output shape`, `output schema`, and `receipt`. WS2 adds
-`team`.
+`team`. `schema` body keys are `sections`, `gates`, `artifacts`, `groups`, and `preamble`.
 
 ```lark
 inherit_all: "inherit" "*" _NL?
@@ -243,15 +257,16 @@ it is `E612`. Patches on different items under one parent are fine: `override a.
 `drop a.c` live together. `a` renders where the first patch naming it stands, or in its
 parent position under `inherit *`.
 
-**`drop key: "reason"`** accounts for an inherited item and removes it. The reason is
-required and non-empty. It renders nowhere in a home. The home map keeps it (section 7).
+**`drop key: "reason"`** accounts for an inherited item and removes it. The grammar requires
+the reason. It renders nowhere in a home. The home map keeps it (section 7).
 
 **`inherit *`** accounts for every inherited item the child does not otherwise name.
 
 - It may appear once in a body. A second one is `E613`.
 - The body is ordered in three parts. First, items written before `inherit *`. Then the
-  parent's items in the parent's order, with each overridden item in its parent position
-  and each dropped item gone. Last, items written after `inherit *`.
+  parent's items in the parent's order, with each dropped item gone. A child item with a
+  parent's key takes that parent position wherever it is written, whether it is an
+  `override` or a typed field written plainly. Last, items written after `inherit *`.
 - An item named by `inherit key` elsewhere in the body moves to that spot, which is the
   one way to reorder.
 - Grouped `inherit {a, b}` is unchanged.
@@ -261,11 +276,17 @@ Errors:
 | Code | When |
 | --- | --- |
 | `E610` | `drop` or a dotted `override` names a key the parent does not have |
-| `E611` | A dotted path steps through an anonymous item or a scalar, or a dotted `override` targets anything but a section, slot, or `paragraph`, or gives a `paragraph` a body it can't hold |
-| `E612` | Two patches name one item, `inherit a` sits beside a patch under `a`, a path sits under a dropped or overridden item, or `drop role`. The error sits on the later item |
+| `E611` | A dotted path steps through an item with no keyed children, or a dotted `override` targets anything but a section, slot, or `paragraph`, or gives a `paragraph` a body it can't hold |
+| `E612` | A `drop` or dotted `override` names an item the body already names, `inherit a` sits beside a patch under `a`, a path sits under a dropped or overridden item, or `drop role`. The error sits on the later item |
 | `E613` | `inherit *` appears twice in one body |
 
-Dropping an `abstract` slot is `E610`: an abstract slot is a requirement, not an item.
+An abstract slot is a requirement, not an item, so it is not among the parent's keys.
+Dropping one is plain `E610`, and `inherit *` doesn't account for it.
+
+**Shipped errors stay.** `E610` to `E613` are about the new forms. Each kind keeps the errors
+it already ships for its own forms. Two old-form items on one key keep their shipped
+duplicate error, such as `E255`, or `E491` on a review. A missing account stays `E003`, or
+`E490` on a review body, or `E544` on a receipt.
 
 **Implementation shape (binding).** One helper expands patch forms before each resolver
 runs, so all 15 kinds share one behavior:
@@ -277,8 +298,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
 It returns the child's items with `inherit *` replaced by explicit inherits, plus the
 set of dropped keys, plus a map from dotted paths to replacement items. Each resolver's
 existing loop treats a dropped key as accounted and skips it. Dotted overrides are
-applied to the parent's resolved item before that loop runs. `E003` stays the one
-"missing inherited entry" error.
+applied to the parent's resolved item before that loop runs.
 
 ### 4.9 Docs Steer Prose Authors
 
@@ -1459,20 +1479,27 @@ cases prove team files and members.
 Corpus cases prove behavior. Unit tests prove what a corpus case can't reach. Each test
 file below is new. Every named test is required.
 
-**`tests/test_patch_language.py`**: `expand_patch_items` on each of the 15 kinds, one test
-per kind: `drop` removes an item; `inherit *` keeps parent order; a dropped key counts as
-accounted; `E610`, `E612`, `E613` raise from every kind. `test_wildcard_keeps_override_in_parent_position`,
+**`tests/test_patch_language.py`**: one test for each of the 15 kinds, each compiling a real
+parent and child of that kind through the compiler, because a test that only calls the helper
+passes for a kind no resolver connects: `drop` removes an item; `inherit *` keeps parent order;
+a dropped key counts as accounted; `E610`, `E612`, `E613` raise from every kind. Also: `test_wildcard_keeps_override_in_parent_position`,
 `test_explicit_inherit_moves_item_past_wildcard`, `test_drop_requires_reason_parse_error`,
 `test_disjoint_dotted_patches_are_legal`, `test_inherit_beside_dotted_patch_is_e612`,
-`test_dotted_override_on_table_is_e611`, `test_paragraph_override_rejects_section_body`.
+`test_dotted_override_on_table_is_e611`, `test_paragraph_override_rejects_section_body`,
+`test_several_decisions_are_one_item` (keep, drop, replace, order),
+`test_inherited_role_refs_resolve_in_parent_module` (a same-named local declaration must not
+win), `test_inherit_preamble_needs_a_parent_preamble`, `test_schema_unknown_inherit_fails`,
+`test_drop_abstract_slot_is_e610`, `test_old_forms_keep_shipped_duplicate_errors`.
 
 **`tests/test_prose_render.py`**: `test_adjacent_strings_get_blank_line_in_each_surface`
-over workflow root, section, document, record body, role block;
+over workflow root, section, document, record body, role block, callout;
+`test_paragraph_renders_in_document`;
 `test_multiline_string_keeps_inner_newlines`; `test_section_metadata_only_with_requirement`;
 `test_paragraph_title_runs_in`; `test_untitled_paragraph_has_no_heading`.
 
 **`tests/test_parse_diagnostics.py`** (extend): `test_e132_only_after_arrow`,
-`test_e134_named_block_without_title` for `table`, `definitions`, `callout`.
+`test_e134_named_block_without_title` for `table`, `definitions`, `callout`, with the
+hints each kind gets.
 
 **`tests/test_late_binding.py`**: `test_value_reaches_parent_workflow_text`,
 `test_value_in_title`, `test_value_in_markdown_block`, `test_code_block_stays_literal`,
@@ -1569,7 +1596,7 @@ about a 7th grade reading level applies to all of it.
 
 | WS | Live docs | Skills | Editor |
 | --- | --- | --- | --- |
-| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` | Keywords `drop`, `paragraph`; `*` after `inherit` |
+| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` | Keywords `drop`, `paragraph`; `*` after `inherit`; and the 46 shipped keywords the alignment check already reports missing, so `make` passes for every later workstream |
 | 2 | `LANGUAGE_REFERENCE` (values, teams, roster, `from`, interpolation), `LANGUAGE_DESIGN_NOTES` (late binding, teams are folders), `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `agents_and_workflows`, new `teams_and_homes` | Keywords `team`, `member`, `values`, `roster`, `from`, `home`; `{{agent:` and `{{team:` scopes |
 | 3 | `EMIT_GUIDE` (home tree, runtimes, `DETAILS.md`, CLI), `LANGUAGE_REFERENCE` (`details`, `budget`), `WARNINGS`, `COMPILER_ERRORS`, `WHY_DOCTRINE`, `README` quick start | `emit_targets`, `verify_and_ship`, `teams_and_homes` | Keywords `details`, `budget` |
 | 4 | `LANGUAGE_REFERENCE` (Project Rules), `WARNINGS` (Project Warnings; remove the candidates now shipped), `AGENT_LINTER`, `COMPILER_ERRORS` | `rules`; linter `audit_method`, `finding_catalog`, `report_contract` | Rule keywords |
@@ -1649,9 +1676,12 @@ meets that case, how often, and what the plain version costs them when they do.
 **Gate for each workstream:**
 
 1. The workstream's example manifests and new unit tests pass.
-2. `make verify-diagnostics`, `make verify-skill-examples`, and `make tests` pass, and the
-   corpus passes for every example up to this workstream's last. `make verify-examples` runs
-   whole once WS8 is in. Each runs once, when the workstream is ready.
+2. `make verify-diagnostics`, `make tests`, and `make skills` pass, the corpus passes for
+   every example up to this workstream's last, and `python -m doctrine.verify_skill_examples
+   --root skills/.curated/doctrine-learn --root skills/.curated/agent-linter` passes, because
+   `make verify-skill-examples` reads no prompt fences from its default roots.
+   `make verify-examples` runs whole once WS8 is in. Each runs once, when the workstream is
+   ready.
 3. `cd editors/vscode && make` passes when the editor surface changed.
 4. The designer's overbuild audit is clean, with every cut sent back and verified.
 5. The designer reads the whole diff against this spec, line by line.
@@ -1675,7 +1705,7 @@ site beyond what this table names. Where a row lists several details, each is on
 
 | Code | Summary | Detail |
 | --- | --- | --- |
-| `E134` | `Missing block title` | `` `<kind> <key>` needs a title. `` Hints: section 4.3 |
+| `E134` | `Missing block title` | The shipped parse detail. Hints: section 4.3 |
 | `E601` | `Unfilled value` | `` Home `<home>` reads values nothing fills: `` then one line per blank, `` - `<root>:<key>` at <file>:<line> `` |
 | `E602` | `Value has no owner here` | `` `{{<root>:<key>}}` can't be read here: <why>. `` `<why>` is one of: `a skill package has no home`; `an emitted document has no home`; `output schema text is machine text`; `this agent is outside any team`; `a team's own file has no others` |
 | `E603` | `Value cycle` | `` Values read each other: `a -> b -> a` `` |
@@ -1683,7 +1713,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
 | `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
 | `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |
-| `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. ``; `` `<owner>` drops `<path>`, but an abstract slot is a requirement, not an item. `` |
+| `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. `` |
 | `E611` | `Invalid patch path` | `` `<owner>`: `<path>` steps through `<step>`, which has no keyed items. ``; `` `<owner>`: `override <path>` targets a `<kind>`. Override the section that holds it. ``; `` `<owner>`: `override <path>` gives a paragraph a body it can't hold. A paragraph takes prose and `details`. `` |
 | `E612` | `Conflicting patches` | `` `<owner>` patches `<path>` twice. ``; `` `<owner>` writes `inherit <key>` beside a patch under `<key>`. The patch already accounts for it. ``; `` `<owner>` patches `<path>` under `<parent>`, which it already dropped or overrode. ``; `` `<owner>` can't drop `role`. Write `role:` to replace it, or `inherit role` to keep it. `` |
 | `E613` | `Duplicate inherit *` | `` `<owner>` writes `inherit *` more than once. `` |

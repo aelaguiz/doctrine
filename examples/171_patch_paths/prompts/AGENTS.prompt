@@ -24,8 +24,28 @@ agent PodQa[Specialist]: "Pod QA"
 
 workflow PodCraft[Craft]: "Pod Craft"
     drop how_you_think.daily: "Workflows patch by path too."
+    override how_you_think.sending_back: "Sending it back."
+        "A failure goes to whoever built the change."
 
 
 agent PodWriter: "Pod Writer"
     role: "Pod Writer."
     craft: PodCraft
+
+
+workflow Deep: "Deep"
+    how: "How"
+        section checks: "Checks"
+            paragraph smoke: "Smoke."
+                "Run it."
+            paragraph full: "Full."
+                "Run it all."
+
+
+workflow PodDeep[Deep]: "Pod Deep"
+    drop how.checks.full: "A path steps through a keyed section block."
+
+
+agent PodRunner: "Pod Runner"
+    role: "Pod Runner."
+    craft: PodDeep
