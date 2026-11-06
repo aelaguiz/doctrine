@@ -9,7 +9,6 @@ Summarize the repo state and end with the declared final output.
 ### Repo Status Final Response
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |

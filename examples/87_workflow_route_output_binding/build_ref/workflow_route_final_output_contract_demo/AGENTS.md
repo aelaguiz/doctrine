@@ -17,7 +17,6 @@ Hand off to ReviewLead.
 ### Workflow Route Binding Comment
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
@@ -26,7 +25,6 @@ Hand off to ReviewLead.
 | Format | Natural-language markdown |
 | Shape | Comment |
 | Requirement | Required |
-
 - Next Owner: Review Lead
 
 - Next Owner Key: ReviewLead

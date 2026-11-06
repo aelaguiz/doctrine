@@ -7,14 +7,6 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 
-_AGENT_SLOT_FIELD_TYPES = (
-    model.AuthoredSlotField,
-    model.AuthoredSlotAbstract,
-    model.AuthoredSlotInherit,
-    model.AuthoredSlotOverride,
-)
-
-
 class ValidateRulesMixin:
     """Evaluates top-level `rule` declarations against the current flow."""
 
@@ -174,27 +166,10 @@ class ValidateRulesMixin:
         agent_unit: IndexedUnit,
         slot_key: str,
     ) -> bool:
-        current_agent: model.Agent | None = agent
-        current_unit = agent_unit
-        visited: set[tuple[tuple[str, ...], str]] = set()
-        while current_agent is not None:
-            for field in current_agent.fields:
-                if isinstance(field, _AGENT_SLOT_FIELD_TYPES) and field.key == slot_key:
-                    return True
-            if current_agent.parent_ref is None:
-                return False
-            key = (current_unit.module_parts, current_agent.name)
-            if key in visited:
-                return False
-            visited.add(key)
-            try:
-                current_unit, current_agent = self._resolve_parent_agent_decl(
-                    current_agent,
-                    unit=current_unit,
-                )
-            except CompileError:
-                return False
-        return False
+        return any(
+            slot.key == slot_key
+            for slot in self._resolve_agent_slots(agent, unit=agent_unit)
+        )
 
     def _evaluate_rule_assertion(
         self,

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from doctrine import model
+from doctrine.skill_source_receipts import DOCTRINE_LANGUAGE_VERSION
 from doctrine.emit_common import (
     REPO_ROOT,
     EmitTarget,
@@ -20,7 +21,6 @@ from doctrine.emit_common import (
 
 SOURCE_RECEIPT_FILE_NAME = "SKILL_GRAPH.source.json"
 SOURCE_RECEIPT_VERSION = 1
-DOCTRINE_LANGUAGE_VERSION = "5.7"
 
 
 @dataclass(slots=True, frozen=True)

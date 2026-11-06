@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import textwrap
 import unittest
@@ -10,6 +11,8 @@ from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine.diagnostics import CompileError, ParseError
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
 from doctrine.parser import parse_file, parse_text
 from doctrine.renderer import render_markdown, render_readable_block
 from doctrine._compiler.resolve.patches import expand_patch_items
@@ -579,7 +582,9 @@ DECLARATION
 agent Child:
     role: "Role."
     work: Work
-""".replace("DECLARATION", declaration)
+""".replace("DECLARATION", declaration).replace(
+                        "    inherit *\n", "    inherit a\n" if "[Base]" in declaration else ""
+                    )
                 )
             self.assertEqual(caught.exception.code, code)
             self.assertIn("preamble", str(caught.exception))
@@ -671,3 +676,271 @@ agent Child:
             self.assertLess(
                 caught.exception.diagnostic.related[0].location.line, caught.exception.location.line
             )
+
+    def test_second_override_under_wildcard_keeps_shipped_error(self):
+        for source, code in (
+            ("""abstract agent Base:
+    role: "Role."
+    a: "A"
+        "Original."
+agent Child[Base]:
+    override a: "First"
+        "First."
+    inherit *
+    override a: "Second"
+        "Second."
+""", "E299"),
+            ("""workflow Base: "Base"
+    a: "A"
+        "Original."
+workflow Patched[Base]: "Patched"
+    override a: "First"
+        "First."
+    inherit *
+    override a: "Second"
+        "Second."
+agent Child:
+    role: "Role."
+    work: Patched
+""", "E261"),
+            ("""output Base: "Base"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+    a: "A"
+        "Original."
+output Patched[Base]: "Patched"
+    override a: "First"
+        "First."
+    inherit *
+    override a: "Second"
+        "Second."
+agent Child:
+    role: "Role."
+    outputs: "Outputs"
+        Patched
+""", "E255"),
+            ("""review Base: "Base"
+    a: "A"
+        reject "Original." when Draft.missing
+review Patched[Base]: "Patched"
+    override a: "First"
+        reject "First." when Draft.missing
+    inherit *
+    override a: "Second"
+        reject "Second." when Draft.missing
+agent Child:
+    role: "Role."
+    review: Patched
+""", "E491"),
+        ):
+            with self.subTest(code=code), self.assertRaises(CompileError) as caught:
+                self._render(source)
+            self.assertEqual(caught.exception.code, code)
+            diagnostic = caught.exception.diagnostic
+            self.assertEqual(diagnostic.related[0].location.line, source.splitlines().index(
+                '    override a: "First"'
+            ) + 1)
+            self.assertEqual(diagnostic.location.line, source.splitlines().index(
+                '    override a: "Second"'
+            ) + 1)
+
+    def test_inherit_star_with_nothing_is_e610(self):
+        for source, owner in (
+            ('agent Child:\n    role: "Role."\n    inherit *\n', "Child"),
+            ('workflow W: "W"\n    inherit *\nagent Child:\n    role: "Role."\n    work: W\n', "W"),
+            ("""abstract agent Base:
+    role: "Role."
+    a: "A"
+        "Original."
+agent Child[Base]:
+    inherit role
+    override a: "A"
+        inherit *
+""", "agent Child slot a"),
+        ):
+            with self.subTest(owner=owner), self.assertRaises(CompileError) as caught:
+                self._render(source)
+            self.assertEqual(caught.exception.code, "E610")
+            self.assertEqual(caught.exception.diagnostic.detail,
+                             f"`{owner}` writes `inherit *`, but it has nothing to inherit.")
+
+    def test_dropped_slot_fails_requires_declare(self):
+        with self.assertRaises(CompileError) as caught:
+            self._render("""rule HasWork: "Has Work"
+    scope:
+        agent_tag: Child
+    assertions:
+        requires declare work
+    message: "Keep the work slot."
+abstract agent Base:
+    role: "Role."
+    work: "Work"
+        "Work."
+agent Child[Base]:
+    inherit role
+    drop work: "Unused."
+""")
+        self.assertEqual(caught.exception.code, "RULE005")
+
+    def test_inherited_field_keeps_parent_imports(self):
+        declaration = (
+            'input Doc: "Parent Input"\n    source: Prompt\n'
+            '    shape: MarkdownDocument\n    requirement: Required\n'
+        )
+        for imports, reference, files in (
+            ("import shared as common\n", "common.Doc", {
+                "shared/AGENTS.prompt": "export " + declaration,
+            }),
+            ("from shared import Doc as Selected\n", "Selected", {
+                "shared/AGENTS.prompt": "export " + declaration,
+            }),
+            (declaration, "Doc", {}),
+        ):
+            with self.subTest(reference=reference):
+                result = self._render("""from parent import Base
+import other as common
+agent Child[Base]:
+    inherit *
+""", extra_files={
+                    **files,
+                    "parent/AGENTS.prompt": (
+                        imports + 'export abstract agent Base:\n    role: "Role."\n'
+                        '    inputs: "Inputs"\n        ' + reference + "\n"
+                    ),
+                    "other/AGENTS.prompt": "export " + declaration.replace("Parent", "Wrong"),
+                })
+                self.assertIn("Parent Input", result)
+                self.assertNotIn("Wrong Input", result)
+
+    def test_inherited_final_output_reaches_previous_turn(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prompts = root / "prompts"
+            (prompts / "rally").mkdir(parents=True)
+            (prompts / "rally" / "base_agent.prompt").write_text(
+                """input source RallyPreviousTurnOutput: "Previous Turn"
+    optional: "Optional Source Keys"
+        output: "Output"
+""")
+            (prompts / "AGENTS.prompt").write_text("""output Result: "Result"
+    target: TurnResponse
+    shape: CommentText
+    requirement: Required
+outputs Results: "Results"
+    reply: "Reply"
+        Result
+input Previous: "Previous"
+    source: RallyPreviousTurnOutput
+        output: Results:reply
+    requirement: Advisory
+abstract agent Base:
+    role: "Send work."
+    outputs: Results
+    final_output: Result
+agent WorkerA[Base]:
+    inherit *
+    workflow: "Work"
+        law:
+            current none
+            active when true
+            route "Continue." -> WorkerB
+agent WorkerB:
+    role: "Read the prior result."
+    inputs: "Inputs"
+        Previous
+    outputs: Results
+    final_output: Result
+""")
+            project = root / "pyproject.toml"
+            project.write_text('''[tool.doctrine.emit]
+[[tool.doctrine.emit.targets]]
+name = "demo"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "build"
+''')
+            emit_target(load_emit_targets(project)["demo"])
+            producer = json.loads((root / "build/worker_a/final_output.contract.json").read_text())
+            self.assertTrue(producer["io"]["outputs"][0]["requires_final_output"])
+            consumer = json.loads((root / "build/worker_b/final_output.contract.json").read_text())
+            previous = consumer["io"]["previous_turn_inputs"][0]
+            self.assertEqual(previous["binding_path"], ["reply"])
+            self.assertEqual(previous["resolved_declaration_key"], "Result")
+
+    def test_flow_keeps_inherited_role(self):
+        for role in ('role: "Inherited role."', 'role: "Role"\n        "Inherited role."'):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "prompts/AGENTS.prompt"
+                path.parent.mkdir()
+                path.write_text("""abstract agent Base:
+    ROLE
+agent Child[Base]:
+    inherit *
+agent Sender:
+    role: "Send work."
+    workflow: "Work"
+        law:
+            current none
+            active when true
+            route "Continue." -> Child
+""".replace("ROLE", role))
+                graph = CompilationSession(parse_file(path)).extract_target_flow_graph(
+                    ("Sender", "Child")
+                )
+                child = next(node for node in graph.agents if node.name == "Child")
+                self.assertIn("Inherited role.", "\n".join(child.detail_lines))
+
+    def test_receipt_routes_are_inherited_items(self):
+        source = """receipt Base: "Base"
+    value: string
+    route next_route: "Next Route"
+        done: "Done." -> terminal
+receipt Patched[Base]: "Patched"
+    PATCH
+skill package Package: "Package"
+    metadata:
+        name: "package"
+        description: "Work."
+    host_contract:
+        receipt result: Patched
+    "Read the result."
+"""
+        for patch, route_keys in (
+            ("inherit value\n    inherit next_route", ("next_route",)),
+            ("inherit *", ("next_route",)),
+            ('drop next_route: "Unused."\n    inherit *', ()),
+            ("inherit value", None),
+        ):
+            with self.subTest(patch=patch), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "prompts/SKILL.prompt"
+                path.parent.mkdir()
+                path.write_text(source.replace("PATCH", patch))
+                session = CompilationSession(parse_file(path))
+                if route_keys is None:
+                    with self.assertRaises(CompileError) as caught:
+                        session.compile_skill_package("Package")
+                    self.assertEqual(caught.exception.code, "E544")
+                    self.assertIn("next_route", str(caught.exception))
+                else:
+                    receipt = (
+                        session.compile_skill_package("Package").contract.host_contract[0].receipt
+                    )
+                    self.assertEqual(tuple(route.key for route in receipt.routes), route_keys)
+                    self.assertEqual(tuple(field.key for field in receipt.fields), ("value",))
+
+    def test_dotted_override_needs_a_body(self):
+        for declaration in ("agent Child:", 'workflow Child: "Child"'):
+            for replacement in ("Other", '"Title"'):
+                with self.subTest(declaration=declaration, replacement=replacement):
+                    with self.assertRaises(ParseError):
+                        parse_text(f"{declaration}\n    override craft.a: {replacement}\n")
+
+    def test_paragraph_title_ref_inside_a_section(self):
+        self.assertIn("Read the lead.", self._render("""workflow W: "W"
+    a: "A"
+        paragraph p: "the lead"
+            "Body."
+agent Child:
+    role: "Read {{W:a.p.title}}."
+    work: W
+"""))

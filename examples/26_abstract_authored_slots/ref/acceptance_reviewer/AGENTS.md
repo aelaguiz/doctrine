@@ -19,13 +19,11 @@ Then read Workflow Core and Routing.
 ### Review Scope
 
 Check the current source of truth before you accept the work.
-
 Do not invent new scope on a review turn.
 
 ### Handoff Rule
 
 When you accept the work, route it to ProjectLead.
-
 When the work is not ready, route it back to SectionAuthor.
 
 ## Routing

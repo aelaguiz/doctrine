@@ -3,7 +3,6 @@ Keep review current truth and carried state aligned through named bindings.
 ## Bound Carrier Review
 
 Review subject: Draft Spec.
-
 Shared review contract: Bound Carrier Review Contract.
 
 ### Contract Checks
@@ -62,19 +61,12 @@ Use the host facts that say whether the draft still needs changes.
 - Requirement: Required
 
 - Verdict: Say whether the review accepted the draft or asked for changes.
-
 - Reviewed Artifact: Name the reviewed artifact this review judged.
-
 - Analysis Performed: Sum up the review work that led to the verdict.
-
 - Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
-
 - Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
-
 - Current Artifact: Name the artifact that remains current after this review outcome.
-
 - Active Mode: Show this only when present(active_mode). Name the active review mode for the current artifact.
-
 - Trigger Reason: Show this only when present(trigger_reason). Name the trigger reason for the live artifact and mode.
 
 ##### Failure Detail

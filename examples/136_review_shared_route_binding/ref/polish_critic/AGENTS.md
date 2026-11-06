@@ -3,7 +3,6 @@ Review polish drafts with the shared review carrier.
 ## Polish Critic Review
 
 Review subject: Polish Draft.
-
 Shared review contract: Polish Contract.
 
 ### Contract Checks
@@ -34,7 +33,6 @@ Polish changes route back to the polish producer.
 ### Shared Review Carrier
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -59,19 +57,12 @@ Polish changes route back to the polish producer.
 #### Example
 
 ```json
-
 {
-
   "verdict": "changes_requested",
-
   "reviewed_artifact": "Outline Draft",
-
   "current_artifact": "Outline Draft",
-
   "next_owner": "OutlineProducer"
-
 }
-
 ```
 
 - Kind: Json Object

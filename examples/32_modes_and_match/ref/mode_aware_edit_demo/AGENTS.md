@@ -7,21 +7,15 @@ Edit in exactly one typed mode and carry that mode through the handoff.
 Use this pass only when edit is owed now.
 
 Choose one mode for this turn:
-
 - manifest-title
-
 - section-summary
 
 When the mode is manifest-title:
-
 - The current artifact is Approved Plan.
-
 - Make sure CurrentHandoff.preserve_basis == ApprovedPlan.
 
 When the mode is section-summary:
-
 - The current artifact is Approved Structure.
-
 - Make sure CurrentHandoff.preserve_basis == ApprovedStructure.
 
 ## Inputs
@@ -57,7 +51,6 @@ Use the host-provided handoff facts that say whether edit work is owed, which mo
 - Requirement: Required
 
 - Current Artifact: Name the one artifact that is current now.
-
 - Active Mode: Name the active mode for this pass.
 
 #### Trust Surface

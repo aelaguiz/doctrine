@@ -107,19 +107,12 @@ class ToAst(
         return _with_source_span(model.DropItem(path=path, reason=reason), meta)
 
     @v_args(meta=True, inline=True)
-    def workflow_override_path(self, meta, key, path, *parts):
+    def override_path(self, meta, key, path, *parts):
         title = parts[0] if isinstance(parts[0], str) else None
         return _with_source_span(
             model.OverridePath(path=(key, *path), value=model.WorkflowBody(
                 title=title, preamble=(), items=tuple(parts[-1]),
             )), meta,
-        )
-
-    @v_args(meta=True, inline=True)
-    def agent_slot_override_path(self, meta, key, path, value, body=None):
-        return _with_source_span(
-            model.OverridePath(path=(key, *path), value=self._workflow_slot_value(value, body)),
-            meta,
         )
 
     def grouped_inherit_keys(self, items):

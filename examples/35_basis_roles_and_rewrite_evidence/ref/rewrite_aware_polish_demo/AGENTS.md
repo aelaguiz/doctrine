@@ -52,9 +52,7 @@ Use the host-provided handoff facts that say whether this pass is a rewrite.
 - Requirement: Required
 
 - Current Artifact: Name the one artifact that is current now.
-
 - Comparison Basis: Name any comparison-only inputs used in this pass.
-
 - Rewrite Evidence Exclusions: Name any fields whose old values do not count as rewrite evidence.
 
 #### Trust Surface

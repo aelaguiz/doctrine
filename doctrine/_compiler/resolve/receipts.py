@@ -122,7 +122,9 @@ class ResolveReceiptsMixin:
         unit: IndexedUnit,
     ) -> tuple[model.ResolvedReceiptField, ...]:
         owner_label = self._receipt_owner_label(receipt_decl, unit=unit)
-        parent_fields_by_key: dict[str, model.ResolvedReceiptField] = {}
+        parent_fields_by_key: dict[
+            str, model.ResolvedReceiptField | model.ResolvedReceiptRouteField
+        ] = {}
         if receipt_decl.parent_ref is not None:
             parent_unit, parent_decl = self._resolve_parent_receipt_decl(
                 receipt_decl, unit=unit
@@ -131,7 +133,7 @@ class ResolveReceiptsMixin:
                 parent_decl, unit=parent_unit
             )
             parent_fields_by_key = {
-                field.key: field for field in parent_resolved.fields
+                field.key: field for field in (*parent_resolved.fields, *parent_resolved.routes)
             }
         else:
             for item in receipt_decl.items:
@@ -178,6 +180,9 @@ class ResolveReceiptsMixin:
         merged: list[model.ResolvedReceiptField] = []
 
         for item in patches.items:
+            if isinstance(item, model.ReceiptDeclRouteField):
+                accounted_parent_keys.add(item.key)
+                continue
             if isinstance(item, model.InheritItem):
                 parent_field = parent_fields_by_key.get(item.key)
                 if parent_field is None:
@@ -204,7 +209,8 @@ class ResolveReceiptsMixin:
                 )
                 emitted_keys.add(item.key)
                 accounted_parent_keys.add(item.key)
-                merged.append(parent_field)
+                if isinstance(parent_field, model.ResolvedReceiptField):
+                    merged.append(parent_field)
                 continue
             if isinstance(item, model.ReceiptDeclOverride):
                 if item.key not in parent_fields_by_key:
@@ -435,9 +441,24 @@ class ResolveReceiptsMixin:
         unit: IndexedUnit,
     ) -> tuple[model.ResolvedReceiptRouteField, ...]:
         owner_label = self._receipt_owner_label(receipt_decl, unit=unit)
+        parent_items = {}
+        if receipt_decl.parent_ref is not None:
+            parent_unit, parent_decl = self._resolve_parent_receipt_decl(receipt_decl, unit=unit)
+            parent = self._resolve_resolved_receipt(parent_decl, unit=parent_unit)
+            parent_items = {item.key: item for item in (*parent.fields, *parent.routes)}
+        patches = expand_patch_items(
+            receipt_decl.items, parent_keys=parent_items,
+            kind="receipt", owner_label=owner_label, unit=unit,
+        )
         seen_route_keys: set[str] = set()
         routes: list[model.ResolvedReceiptRouteField] = []
-        for item in receipt_decl.items:
+        for item in patches.items:
+            if isinstance(item, model.InheritItem):
+                inherited = parent_items[item.key]
+                if isinstance(inherited, model.ResolvedReceiptRouteField):
+                    routes.append(inherited)
+                    seen_route_keys.add(item.key)
+                continue
             if not isinstance(item, model.ReceiptDeclRouteField):
                 continue
             if item.key in seen_route_keys:

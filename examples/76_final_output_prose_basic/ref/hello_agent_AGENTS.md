@@ -9,7 +9,6 @@ Reply and stop.
 ### Final Reply
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |

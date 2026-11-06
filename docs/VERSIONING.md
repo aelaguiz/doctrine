@@ -12,12 +12,15 @@ The release version for this major language move is 6.0.0.
 1. Account for inherited head prose with `inherit preamble` or
    `drop preamble: "Reason"`. Agent children must also keep, replace, or drop
    each inherited typed field. Keep or replace the inherited role.
-2. Each prose string now renders as one paragraph. If adjacent strings should
+2. Each authored prose string now renders as one paragraph. If adjacent strings should
    stay on one line, put them in one string. Use one triple-quoted string to
    keep inner line breaks.
 3. Readable blocks no longer print a bare kind line such as `_section_`.
    Regenerate saved Markdown and render contracts. Metadata still prints
    when a block carries a requirement or `when`.
+4. New keywords cannot be keys where their forms can start. Rename a `drop`
+   or `paragraph` key in a patchable body, while keeping its rendered title.
+   Later workstreams add `values`, `budget`, `roster`, and `details` to this rule.
 
 ## The Version Lines
 

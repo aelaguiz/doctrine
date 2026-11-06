@@ -21,9 +21,6 @@ Confirm the evidence is cited.
 ### Surface Groups
 
 - Downstream Rebuild
-
   - Outline File
-
   - Review Comment
-
   - Manifest File

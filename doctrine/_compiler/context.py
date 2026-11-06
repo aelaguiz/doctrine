@@ -32,6 +32,7 @@ from doctrine._compiler.resolved_types import (
 from doctrine._compiler.display import DisplayMixin
 from doctrine._compiler.compile import CompileMixin
 from doctrine._compiler.resolve import ResolveMixin
+from doctrine._compiler.resolve.patches import expand_agent_patches
 from doctrine._compiler.flow import FlowMixin
 from doctrine._compiler.validate import ValidateMixin
 
@@ -142,6 +143,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlotState, ...],
         ] = {}
+        self._expanded_agent_cache: dict[tuple[tuple[str, ...], str], tuple] = {}
         self._compiled_skill_package_cache: dict[
             tuple[tuple[str, ...], str],
             CompiledSkillPackage,
@@ -150,6 +152,12 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         # Mutable resolution stacks and caches remain local to one compile task.
         self.root_flow = session.root_flow
         self.root_entrypoint_unit = session.root_flow.entrypoint_unit
+
+    def _expand_agent_patches(self, agent, *, unit):
+        key = (unit.module_parts, agent.name)
+        if key not in self._expanded_agent_cache:
+            self._expanded_agent_cache[key] = expand_agent_patches(self, agent, unit=unit)
+        return self._expanded_agent_cache[key]
 
     def _flow_identity(self, unit: IndexedUnit) -> tuple[Path, Path]:
         flow = self.session.flow_for_unit(unit)

@@ -19,11 +19,8 @@ Keep route truth on the output contract.
 - Requirement: Required
 
 - Kind: Show this only when a routed owner exists. `handoff`
-
 - Next Owner: Show this only when a routed owner exists. ReviewLead
-
 - Kind: Show this only when not (a routed owner exists). `done`
-
 - Summary: Show this only when not (a routed owner exists). `Write one short closeout summary.`
 
 ## Handoff Routing

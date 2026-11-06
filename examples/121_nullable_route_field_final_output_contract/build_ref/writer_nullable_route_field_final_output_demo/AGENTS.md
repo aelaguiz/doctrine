@@ -5,7 +5,6 @@ Either hand off or finish from one routed final output.
 ### Writer Turn Result
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |

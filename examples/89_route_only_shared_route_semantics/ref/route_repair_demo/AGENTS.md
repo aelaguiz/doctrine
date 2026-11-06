@@ -11,11 +11,9 @@ No artifact is current for this pass.
 Stop: No specialist artifact is current for this turn.
 
 Choose one mode for this turn:
-
 - Routing Owner
 
 When the mode is Routing Owner:
-
 - Route to Routing Owner.
 
 ## Inputs

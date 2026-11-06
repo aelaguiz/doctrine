@@ -32,9 +32,7 @@ expected_lines = [
   "- Requirement: Required",
   "",
   "- Next Owner: Review Lead",
-  "",
   "- Next Owner Key: ReviewLead",
-  "",
   "- Route Summary: Hand off to ReviewLead. Next owner: Review Lead.",
 ]
 [[cases]]

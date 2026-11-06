@@ -120,8 +120,7 @@ inheritance: "[" name_ref "]"
 inherit_all: "inherit" "*" _NL?
 drop_item: "drop" patch_path ":" string _NL?
 patch_path: CNAME ("." CNAME)*
-agent_slot_override_path: "override" CNAME "." patch_path ":" slot_value _NL slot_body?
-workflow_override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
+override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an
 // authored workflow slot, which keeps the grammar open without making typed
@@ -143,7 +142,7 @@ workflow_override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT 
             | agent_selectors_field
             | agent_slot_abstract
             | agent_slot_inherit
-            | agent_slot_override_path
+            | override_path
             | agent_slot_override
             | agent_slot_field
 
@@ -691,7 +690,7 @@ workflow_body_line: workflow_string
               | workflow_inherit
               | workflow_override_skills_inline
               | workflow_override_skills_ref
-              | workflow_override_path
+              | override_path
               | workflow_override_section
               | workflow_override_use
 

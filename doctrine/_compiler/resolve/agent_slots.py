@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import expand_agent_patches, apply_path_patches
+from doctrine._compiler.resolve.patches import apply_path_patches
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -127,7 +127,7 @@ class ResolveAgentSlotsMixin:
                 parent_slots = self._resolve_agent_slots(parent_agent, unit=parent_unit)
                 parent_label = f"agent {_dotted_decl_name(parent_unit.module_parts, parent_agent.name)}"
 
-            agent, patches = expand_agent_patches(self, agent, unit=unit)
+            agent, patches = self._expand_agent_patches(agent, unit=unit)
             parent_slots_by_key = apply_path_patches(
                 self, {slot.key: slot for slot in parent_slots}, patches.path_overrides,
                 owner_label=agent.name, unit=unit,

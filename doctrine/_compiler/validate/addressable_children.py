@@ -445,7 +445,7 @@ class ValidateAddressableChildrenMixin:
     ) -> dict[str, AddressableNode]:
         children: dict[str, AddressableNode] = {}
         for item in items:
-            if isinstance(item, ResolvedSectionItem):
+            if isinstance(item, (ResolvedSectionItem, model.ReadableBlock)):
                 children[item.key] = AddressableNode(
                     unit=unit,
                     root_decl=root_decl,

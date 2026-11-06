@@ -69,7 +69,6 @@ expected_lines = [
   "### Routing Rules",
   "",
   "Leave the next owner one Turn Response.",
-  "",
   "If ProjectLead must step in -> ProjectLead",
 ]
 

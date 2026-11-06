@@ -19,6 +19,5 @@ expected_lines = [
   "- Requirement: Required",
   "",
   "- Summary: Summarize the shipped result.",
-  "",
   "- Test: blah blah blah",
 ]

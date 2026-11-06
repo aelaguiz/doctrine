@@ -3,7 +3,6 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import expand_agent_patches
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import (
     _agent_typed_field_key,
@@ -53,7 +52,7 @@ class CompileAgentMixin:
         self._validate_typed_abstract_slot_binding(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
-        agent, _ = expand_agent_patches(self, agent, unit=unit)
+        agent, _ = self._expand_agent_patches(agent, unit=unit)
         agent_key = self._flow_agent_key(unit, agent.name)
         previous_turn_input_specs = tuple(
             spec

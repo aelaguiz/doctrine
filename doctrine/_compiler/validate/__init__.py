@@ -132,7 +132,7 @@ class ValidateMixin(
         ]
         for row in rows:
             lines.append("| " + " | ".join(cell.replace("|", "\\|") for cell in row) + " |")
-        return ("\n".join(lines),)
+        return tuple(lines)
 
     def _build_output_schema_payload_rows(
         self,

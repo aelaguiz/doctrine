@@ -219,6 +219,7 @@ class ResolveRefsMixin:
     def _resolve_visible_imported_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
+        unit = ref.scope_unit or unit
         loaded_imports = unit_loaded_imports(unit)
         target_unit = loaded_imports.visible_imported_units.get(ref.module_parts)
         if target_unit is None and ref.rebound_imported:
@@ -239,6 +240,7 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[_RefLookupTarget, ...]:
+        unit = ref.scope_unit or unit
         if ref.module_parts:
             if ref.module_parts == unit.module_parts:
                 return (_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name),)
@@ -374,6 +376,7 @@ class ResolveRefsMixin:
     def _resolve_render_profile_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> ResolvedRenderProfile:
+        unit = ref.scope_unit or unit
         if not ref.module_parts:
             local_match = lookup_flow_registry_decl(
                 self.session.flow_for_unit(unit),
@@ -828,6 +831,7 @@ class ResolveRefsMixin:
         registry_name: str,
         missing_label: str,
     ):
+        unit = ref.scope_unit or unit
         if not ref.module_parts:
             matches: list[tuple[_RefLookupTarget, object]] = []
             local_match = lookup_flow_registry_decl(

@@ -182,15 +182,17 @@ class ValidateSchemaHelpersMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
-            return self._interpolate_authored_prose_string(
-                value,
-                unit=unit,
-                owner_label=owner_label,
-                surface_label=surface_label,
-                ambiguous_label=ambiguous_label,
-                review_semantics=review_semantics,
-                route_semantics=route_semantics,
-                render_profile=render_profile,
+            return model.AuthoredProse(
+                self._interpolate_authored_prose_string(
+                    value,
+                    unit=unit,
+                    owner_label=owner_label,
+                    surface_label=surface_label,
+                    ambiguous_label=ambiguous_label,
+                    review_semantics=review_semantics,
+                    route_semantics=route_semantics,
+                    render_profile=render_profile,
+                )
             )
         return model.EmphasizedLine(
             kind=value.kind,

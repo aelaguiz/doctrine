@@ -635,6 +635,7 @@ def _resolve_agent_final_output_key(
     if resolved_agent is None:
         return None
     unit, agent = resolved_agent
+    agent, _ = context._expand_agent_patches(agent, unit=unit)
     for field in agent.fields:
         if not isinstance(field, model.FinalOutputField):
             continue

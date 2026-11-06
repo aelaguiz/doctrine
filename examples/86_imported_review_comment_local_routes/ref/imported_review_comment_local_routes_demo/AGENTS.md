@@ -3,7 +3,6 @@ Use an imported comment output that still binds local routed owners.
 ## Draft Review
 
 Review subject: Draft Spec.
-
 Shared review contract: Draft Review Contract.
 
 ### Contract Checks
@@ -40,15 +39,10 @@ Rejected draft goes to DraftAuthor.
 - Requirement: Required
 
 - Verdict: Say whether the review accepted the draft or requested changes.
-
 - Reviewed Artifact: Name the reviewed artifact this review judged.
-
 - Analysis Performed: Summarize the review analysis that led to the verdict.
-
 - Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
-
 - Current Artifact: Name the artifact that remains current after review.
-
 - Next Owner: Name the next owner, including ReviewLead when the draft is accepted and DraftAuthor when the draft is rejected.
 
 #### Failure Detail

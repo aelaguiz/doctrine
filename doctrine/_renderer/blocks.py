@@ -30,7 +30,7 @@ from doctrine._renderer.tables import (
     render_structured_table as _render_structured_table,
 )
 from doctrine.emit_common import render_valid_values_line
-from doctrine.model import EmphasizedLine, ReadableInlineSchemaData
+from doctrine.model import AuthoredProse, EmphasizedLine, ReadableInlineSchemaData
 
 def _render_block(
     block: CompiledReadableBlock,
@@ -130,23 +130,27 @@ def _render_body_lines(
     line_prefix: str = "",
 ) -> list[str]:
     body_lines: list[str] = []
+    previous_was_block = False
     analysis_stage_counter = 1
 
     for item in body:
+        if isinstance(item, (AuthoredProse, EmphasizedLine)):
+            rendered = _render_prose_line(item, profile=profile)
+            if body_lines and body_lines[-1] != "":
+                body_lines.append("")
+            body_lines.append(f"{line_prefix}{rendered}" if line_prefix else rendered)
+            previous_was_block = True
+            continue
         if isinstance(item, str):
             if not item:
                 if body_lines and body_lines[-1] != "":
                     body_lines.append("")
+                previous_was_block = False
                 continue
-            if body_lines and body_lines[-1] != "":
+            if previous_was_block and body_lines and body_lines[-1] != "":
                 body_lines.append("")
             body_lines.append(f"{line_prefix}{item}" if line_prefix else item)
-            continue
-        if isinstance(item, EmphasizedLine):
-            rendered = f"**{item.kind.upper()}**: {item.text}"
-            if body_lines and body_lines[-1] != "":
-                body_lines.append("")
-            body_lines.append(f"{line_prefix}{rendered}" if line_prefix else rendered)
+            previous_was_block = False
             continue
         if (
             isinstance(item, CompiledSection)
@@ -164,6 +168,7 @@ def _render_body_lines(
             if line_prefix:
                 stage_lines = [f"{line_prefix}{line}" if line else line for line in stage_lines]
             body_lines.extend(stage_lines)
+            previous_was_block = True
             continue
 
         if body_lines and body_lines[-1] != "":
@@ -172,6 +177,7 @@ def _render_body_lines(
         if line_prefix:
             nested = [f"{line_prefix}{line}" if line else line for line in nested]
         body_lines.extend(nested)
+        previous_was_block = True
 
     while body_lines and body_lines[-1] == "":
         body_lines.pop()

@@ -3,7 +3,6 @@ Keep review final outputs aligned without adding a second message surface.
 ## Draft Review
 
 Review subject: Draft Spec.
-
 Shared review contract: Draft Review Contract.
 
 ### Contract Checks
@@ -36,7 +35,6 @@ Rejected draft goes to DraftAuthor.
 ### Draft Review Comment
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |

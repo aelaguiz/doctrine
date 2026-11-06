@@ -88,3 +88,31 @@ agent A:
         I
 """)
         self.assertIn("**Read this.** First.\n\nSecond.", result)
+
+    def test_generated_lines_keep_their_layout(self):
+        path = Path(__file__).resolve().parents[1] / (
+            "examples/104_review_final_output_output_schema_blocked_control_ready/"
+            "prompts/AGENTS.prompt"
+        )
+        rendered = render_markdown(
+            CompilationSession(parse_file(path)).compile_agent("AcceptanceReviewBlockedJsonDemo")
+        )
+        self.assertIn('''```json
+{
+  "verdict": "changes_requested",
+  "reviewed_artifact": "Draft Plan",
+  "current_artifact": null,
+  "next_owner": null,
+  "blocked_gate": "The review basis is missing."
+}
+```''', rendered)
+        self.assertIn(
+            "> **Final answer contract**\n"
+            "> End the turn with one final assistant message that follows this schema.",
+            rendered,
+        )
+        self.assertIn(
+            "- Source: File\n- Path: `unit_root/DRAFT_PLAN.md`\n"
+            "- Shape: Markdown Document\n- Requirement: Required",
+            rendered,
+        )

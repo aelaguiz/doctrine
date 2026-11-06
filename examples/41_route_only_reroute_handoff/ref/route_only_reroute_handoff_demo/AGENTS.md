@@ -31,9 +31,6 @@ Use the host route facts. They say whether the current specialist output is miss
 - Requirement: Required
 
 - Current Route: Say this is a route-only reroute turn. No specialist artifact is current, and the issue goes back to RoutingOwner.
-
 - Next Owner: Say plainly that RoutingOwner now owns the rerouted turn.
-
 - Next Step: Name the next reroute follow-up step from the route facts.
-
 - Standalone Read: This comment should stand on its own. The next owner should know that this route-only turn rerouted because no specialist artifact is current, who owns next, and what reroute step comes next.

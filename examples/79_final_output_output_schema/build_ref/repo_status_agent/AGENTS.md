@@ -9,7 +9,6 @@ Summarize the repo state and end with the declared final output.
 ### Repo Status Final Response
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -33,17 +32,11 @@ Summarize the repo state and end with the declared final output.
 #### Example
 
 ```json
-
 {
-
   "summary": "Branch is clean and checks passed.",
-
   "status": "ok",
-
   "next_step": null
-
 }
-
 ```
 
 - Kind: Json Object

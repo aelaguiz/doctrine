@@ -7,9 +7,7 @@ The current artifact is Section Metadata.
 Accepted Peer Set is support only for comparison.
 
 If unclear(CurrentHandoff.preserve_basis):
-
 - Stop: Preserve basis is unclear.
-
 - Route the same issue back to RoutingOwner.
 
 ## Inputs
@@ -47,7 +45,6 @@ Use the host-provided handoff facts that say whether the preserve basis remains 
 - Requirement: Required
 
 - Current Artifact: Name the one artifact that is current now.
-
 - Comparison Basis: Name any comparison-only artifacts used in this pass.
 
 #### Trust Surface

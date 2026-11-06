@@ -2682,6 +2682,9 @@ class ResolveOutputsMixin:
                     source_span=source_span,
                 )
             predecessor_unit, predecessor_agent = resolved_predecessor
+            predecessor_agent, _ = self._expand_agent_patches(
+                predecessor_agent, unit=predecessor_unit
+            )
             predecessor_contract = self._resolve_agent_contract(predecessor_agent, unit=predecessor_unit)
             predecessor_final_output_key: OutputDeclKey | None = None
             for field in predecessor_agent.fields:

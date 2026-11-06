@@ -66,11 +66,8 @@ expected_lines = [
   "### Surface Groups",
   "",
   "- Downstream Rebuild",
-  "",
   "  - Outline File",
-  "",
   "  - Review Comment",
-  "",
   "  - Manifest File",
 ]
 

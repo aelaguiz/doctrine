@@ -3,7 +3,6 @@ Use review semantics and route semantics on the same emitted review comment.
 ## Draft Review
 
 Review subject: Draft Spec.
-
 Shared review contract: Draft Review Contract.
 
 ### Contract Checks
@@ -40,15 +39,10 @@ Rejected draft goes to DraftAuthor.
 - Requirement: Required
 
 - Verdict: Say whether the review accepted the draft or asked for changes.
-
 - Reviewed Artifact: Name the reviewed artifact.
-
 - Analysis Performed: Summarize the review analysis.
-
 - Output Contents That Matter: Summarize what the next owner should read first.
-
 - Current Artifact: Name the artifact that remains current after review.
-
 - Next Owner: Name ReviewLead when accepted and DraftAuthor when rejected.
 
 #### Failure Detail
@@ -60,7 +54,6 @@ Show this only when verdict is changes requested.
 Name the failing review gates in authored order.
 
 - Accepted Route: Show this only when verdict is accepted and a routed owner exists. Accepted draft goes to ReviewLead. Next owner: Review Lead.
-
 - Retry Route: Show this only when verdict is changes requested and a routed owner exists. Draft Author
 
 #### Trust Surface

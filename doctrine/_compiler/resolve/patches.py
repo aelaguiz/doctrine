@@ -71,6 +71,13 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                     f"`{owner_label}` writes `inherit *` more than once.",
                     item,
                 )
+            if not parent_keys:
+                raise error(
+                    "E610",
+                    "Missing patch target",
+                    f"`{owner_label}` writes `inherit *`, but it has nothing to inherit.",
+                    item,
+                )
             wildcard = item
             continue
         path = (
@@ -139,7 +146,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
     replacements = {}
     for item in items:
         key = patch_item_key(item)
-        if key in parent_keys and key not in written_keys:
+        if key in parent_keys and key not in written_keys and key not in replacements:
             replacements[key] = item
     result = []
     emitted_dotted = set()
@@ -161,7 +168,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                 emitted_dotted.add(key)
             continue
         key = patch_item_key(item)
-        if wildcard is not None and key in replacements:
+        if wildcard is not None and replacements.get(key) is item:
             continue
         result.append(item)
     return PatchExpansion(tuple(result), dropped, paths)
@@ -212,15 +219,11 @@ def expand_agent_patches(context, agent, *, unit):
     if agent.parent_ref is not None:
         parent_unit, parent = context._resolve_parent_agent_decl(agent, unit=unit)
         context._resolve_agent_slots(parent, unit=parent_unit)
-        parent, _ = expand_agent_patches(context, parent, unit=parent_unit)
+        parent, _ = context._expand_agent_patches(parent, unit=parent_unit)
 
         def rebind(value):
             if isinstance(value, model.NameRef):
-                return context._rebind_inherited_output_name_ref(
-                    value,
-                    parent_unit=parent_unit,
-                    rebound_imported=True,
-                )
+                return replace(value, scope_unit=value.scope_unit or parent_unit)
             if isinstance(value, tuple):
                 return tuple(rebind(item) for item in value)
             if is_dataclass(value):

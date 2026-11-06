@@ -3,7 +3,6 @@ Emit the review comment and end with a route-aware JSON control result.
 ## Acceptance Review
 
 Review subject: Draft Plan.
-
 Shared review contract: Plan Review Contract.
 
 ### Contract Checks
@@ -40,15 +39,10 @@ Rejected plan goes to PlanAuthor.
 - Requirement: Required
 
 - Verdict: State whether the plan passed review.
-
 - Reviewed Artifact: Name the reviewed artifact.
-
 - Analysis Performed: Summarize the review analysis.
-
 - Output Contents That Matter: Summarize what the next owner should read first.
-
 - Current Artifact: Name the artifact that remains current after review.
-
 - Next Owner: Name ReviewLead when accepted and PlanAuthor when rejected.
 
 #### Failure Detail
@@ -70,7 +64,6 @@ List exact failing gates, including Outline Complete when it fails.
 ### Acceptance Control Final Response
 
 > **Final answer contract**
-
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -94,23 +87,15 @@ List exact failing gates, including Outline Complete when it fails.
 #### Example
 
 ```json
-
 {
-
   "route": "follow_up",
-
   "current_artifact": "Draft Plan",
-
   "next_owner": "ReviewLead"
-
 }
-
 ```
 
 This final response is separate from the review carrier: AcceptanceReviewComment.
-
 Read the review carrier for the full review outcome.
-
 - Kind: Json Object
 
 #### Accepted Route

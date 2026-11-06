@@ -5,6 +5,10 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 
+class AuthoredProse(str):
+    pass
+
+
 @_dataclass(slots=True, frozen=True)
 class EmphasizedLine:
     kind: str
@@ -59,6 +63,7 @@ class NameRef:
     # used `from X import Y as Z` instead of `import X`). The resolver then
     # falls back to `imported_units` for these refs only.
     rebound_imported: bool = _field(default=False, compare=False)
+    scope_unit: object | None = _field(default=None, compare=False, repr=False)
 
 
 @_dataclass(slots=True, frozen=True)
