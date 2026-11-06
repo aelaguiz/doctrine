@@ -290,7 +290,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 shape: ChildJson
                 requirement: Required
 
-                details: "Details"
+                detail_body: "Details"
                     "Schema title: {{ChildJson:schema.title}}"
                     "Kind title: {{ChildJson:kind.title}}"
                     "Notes title: {{ChildJson:field_notes.title}}"
@@ -323,7 +323,7 @@ class OutputSchemaSurfaceTests(unittest.TestCase):
                 shape: ChildJson
                 requirement: Required
 
-                details: "Details"
+                detail_body: "Details"
                     "Schema title: {{ChildJson:schema.title}}"
                     "Notes title: {{ChildJson:field_notes.title}}"
 
