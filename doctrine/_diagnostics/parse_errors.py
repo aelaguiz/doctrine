@@ -78,6 +78,7 @@ def _extract_toml_decode_position(
 
 def _classify_unexpected_token(
     exc: UnexpectedToken,
+    source: str,
 ) -> tuple[str, str, tuple[str, ...]]:
     previous = exc.token_history[-1] if exc.token_history else None
     expected = set(exc.expected or ())
@@ -88,7 +89,9 @@ def _classify_unexpected_token(
             "Missing route label",
             ("Add a quoted route label before `->`.",),
         )
-    if "CNAME" in expected and exc.token.type == "_NL":
+    if (previous is not None and previous.value == "->") or (
+        "CNAME" in expected and source[:exc.pos_in_stream].rstrip().endswith("->")
+    ):
         return (
             "E132",
             "Missing route target",

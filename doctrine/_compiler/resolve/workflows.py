@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
     workflow_related_site,
@@ -226,6 +227,10 @@ class ResolveWorkflowsMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
+        workflow_body, patches = prepare_body_patches(
+            workflow_body, parent_workflow, kind="workflow", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -253,10 +258,13 @@ class ResolveWorkflowsMixin:
                 ),
             )
 
-        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        parent_items_by_key = apply_path_patches(
+            self, {item.key: item for item in parent_workflow.items}, patches.path_overrides,
+            owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedWorkflowItem] = []
         emitted_items: dict[str, model.WorkflowItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in workflow_body.items:
             key = item.key
@@ -694,6 +702,10 @@ class ResolveWorkflowsMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
+        workflow_body, patches = prepare_body_patches(
+            workflow_body, parent_workflow, kind="workflow", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         if parent_workflow is None:
             return ResolvedWorkflowBody(
                 title=workflow_body.title,
@@ -711,10 +723,13 @@ class ResolveWorkflowsMixin:
                 ),
             )
 
-        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        parent_items_by_key = apply_path_patches(
+            self, {item.key: item for item in parent_workflow.items}, patches.path_overrides,
+            owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedWorkflowItem] = []
         emitted_items: dict[str, model.WorkflowItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in workflow_body.items:
             key = item.key

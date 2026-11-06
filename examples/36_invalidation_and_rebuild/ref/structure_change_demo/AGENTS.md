@@ -40,6 +40,7 @@ Use the host-provided handoff facts that say whether structure changed, whether 
 - Requirement: Required
 
 - Current Artifact: Name the one artifact that is current now.
+
 - Invalidations: Name any artifacts that are no longer current.
 
 #### Trust Surface

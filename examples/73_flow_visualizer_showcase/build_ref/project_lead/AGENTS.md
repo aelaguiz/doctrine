@@ -42,7 +42,9 @@ Start research with ResearchSpecialist. -> Research Specialist
 - Requirement: Required
 
 - Current Artifact: Name the artifact that is current after this turn.
+
 - Use Now: Name the file or comment the next owner should read first.
+
 - Next Owner: Name the honest next owner.
 
 #### Trust Surface

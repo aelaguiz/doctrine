@@ -12,6 +12,26 @@ ladder.
 This guide is not a second syntax reference.
 It is a porting guide.
 
+## Writing A Mostly Prose Home
+
+Use triple-quoted strings for prose. They take ordinary quotes and keep line
+breaks as written. Two separate strings become two paragraphs. One-line strings
+fit short rules.
+
+Use `paragraph` when a lead-in needs a key. The title runs into the first string,
+so write its final punctuation. Leave out the title for plain prose that still
+needs an address. See examples 165 and 166.
+
+```prompt
+workflow WorkingHabits: "Working habits"
+    paragraph test_plan: "A test plan that grows with the design."
+        """You test a change best having followed it from the start.
+Write the plan while the design settles, and ask "what could fail?"."""
+```
+
+When a child no longer needs inherited text, write `drop key: "Reason"`.
+Removing an `inherit` line leaves an item unaccounted for and fails the build.
+
 ## What To Preserve When You Port
 
 Doctrine works best when you preserve five things:

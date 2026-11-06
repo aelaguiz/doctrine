@@ -9,7 +9,9 @@ Use the attached comparison analysis before you finalize the release plan.
 ### Stages
 
 Derive Release plan from Current Plan and Prior Plan.
+
 Compare Coverage against Current Plan and Prior Plan. Use Same Route and Similar Burden as the comparison basis.
+
 Defend Recommendation using Current Plan and Prior Plan.
 
 ## Inputs

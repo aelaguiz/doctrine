@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from dataclasses import replace
 
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
@@ -140,6 +141,10 @@ class ResolveAnalysisMixin:
         parent_analysis: ResolvedAnalysisBody | None = None,
         parent_label: str | None = None,
     ) -> ResolvedAnalysisBody:
+        analysis_body, patches = prepare_body_patches(
+            analysis_body, parent_analysis, kind="analysis", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -163,9 +168,12 @@ class ResolveAnalysisMixin:
             )
 
         parent_items_by_key = {item.key: item for item in parent_analysis.items}
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedAnalysisSection] = []
         emitted_keys: dict[str, model.AnalysisItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in analysis_body.items:
             key = item.key

@@ -182,6 +182,7 @@ workflow BaseMetadataPolish: "Metadata Polish"
 
 # Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Metadata Polish"
+    inherit preamble
     # This block holds the machine-checked rules for the turn.
     law:
         # This line explicitly carries a named law section forward from the parent workflow.
@@ -230,6 +231,7 @@ workflow RewriteAwareMetadataPolish[BaseMetadataPolish]: "Metadata Polish"
 
 # Declare a reusable workflow. The title is human-facing, and the indented body holds prose plus checked law.
 workflow ManifestTitleMetadataPolish[BaseMetadataPolish]: "Metadata Polish"
+    inherit preamble
     # This block holds the machine-checked rules for the turn.
     law:
         # This line explicitly carries a named law section forward from the parent workflow.

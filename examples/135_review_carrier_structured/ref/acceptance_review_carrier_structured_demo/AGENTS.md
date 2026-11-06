@@ -3,6 +3,7 @@ End acceptance review with one JSON review carrier validated as the final respon
 ## Acceptance Review
 
 Review subject: Draft Plan.
+
 Shared review contract: Plan Review Contract.
 
 ### Contract Checks
@@ -33,6 +34,7 @@ Current artifact: Draft Plan.
 ### Acceptance Review Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -57,12 +59,19 @@ Current artifact: Draft Plan.
 #### Example
 
 ```json
+
 {
+
   "verdict": "accept",
+
   "reviewed_artifact": "Draft Plan",
+
   "current_artifact": "Draft Plan",
+
   "next_owner": "ReviewLead"
+
 }
+
 ```
 
 - Kind: Json Object

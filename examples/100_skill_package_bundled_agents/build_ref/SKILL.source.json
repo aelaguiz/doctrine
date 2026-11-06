@@ -44,12 +44,12 @@
     {
       "path": "agents/cold_reviewer.md",
       "kind": "file",
-      "sha256": "58153a53b615a21b8f56f0360c06fc2f841bd8a081d04a13e2cc418a2e4b1853"
+      "sha256": "d738f62dd69ff79204d55a6eda2e683f1c5b28954eb760b30d4244a04cab1695"
     },
     {
       "path": "agents/escalation_router.md",
       "kind": "file",
-      "sha256": "1e7de1f7c5755a6d7a4969a56b726608ab0f64d609f3036bc01176a47d81ed64"
+      "sha256": "08c1cc489e5a547e9b4d5f17ee7faa1d77f7714b41586d8948808a2ba2f46e24"
     },
     {
       "path": "agents/openai.yaml",
@@ -58,5 +58,5 @@
     }
   ],
   "source_tree_sha256": "93d028a78017f5167e2b82f1ed788de32673a6866a2234c6181662a86bafc7b3",
-  "output_tree_sha256": "f37275d8aa16020f54114c8c447856ecb344973c779103e63b46670e9bb559b5"
+  "output_tree_sha256": "e72ac9aa4502368a45fcb4954377d022a0196d698a7841ed94c51a75f2ae481d"
 }

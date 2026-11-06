@@ -3,6 +3,7 @@ End acceptance review with one schema-backed review message.
 ## Acceptance Review
 
 Review subject: Draft Plan.
+
 Shared review contract: Plan Review Contract.
 
 ### Contract Checks
@@ -39,6 +40,7 @@ Rejected plan goes to PlanAuthor.
 ### Acceptance Review Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -63,12 +65,19 @@ Rejected plan goes to PlanAuthor.
 #### Example
 
 ```json
+
 {
+
   "verdict": "accepted",
+
   "reviewed_artifact": "Draft Plan",
+
   "current_artifact": "Draft Plan",
+
   "next_owner": "ReviewLead"
+
 }
+
 ```
 
 - Kind: Json Object
@@ -76,6 +85,7 @@ Rejected plan goes to PlanAuthor.
 #### Field Notes
 
 Use the schema fields exactly once.
+
 Keep `next_owner` aligned with the routed outcome.
 
 #### Verdict

@@ -169,6 +169,9 @@
       "include": "#use"
     },
     {
+      "include": "#drop"
+    },
+    {
       "include": "#inherit"
     },
     {
@@ -1365,7 +1368,7 @@
       }
     },
     "inherit": {
-      "match": "^(\\s*)(inherit)(\\s+)(?:([A-Za-z_][A-Za-z0-9_]*)(\\s*)|(\\{)(\\s*[^}]+\\s*)(\\}))\\s*$",
+      "match": "^(\\s*)(inherit)(\\s+)(?:([A-Za-z_][A-Za-z0-9_]*|\\*)(\\s*)|(\\{)(\\s*[^}]+\\s*)(\\}))\\s*$",
       "captures": {
         "2": {
           "name": "keyword.control.doctrine"
@@ -1385,7 +1388,7 @@
       }
     },
     "override": {
-      "match": "^(\\s*)(override)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)(\\s*)(?:(\"(?:\\\\.|[^\"\\\\])*\")|([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
+      "match": "^(\\s*)(override)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\s*)(:)(\\s*)(?:(\"(?:\\\\.|[^\"\\\\])*\")|([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*))?\\s*$",
       "captures": {
         "2": {
           "name": "keyword.control.doctrine"
@@ -1405,7 +1408,7 @@
       }
     },
     "readableBlockHeader": {
-      "match": "^(\\s*)((override)(\\s+))?(section|sequence|bullets|checklist|definitions|properties|table|callout|code|markdown|html|footnotes|image|rule|gate)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
+      "match": "^(\\s*)((override)(\\s+))?(section|paragraph|sequence|bullets|checklist|definitions|properties|table|callout|code|markdown|html|footnotes|image|rule|gate)(\\s+)([A-Za-z_][A-Za-z0-9_]*)(\\s*)(:)",
       "captures": {
         "3": {
           "name": "keyword.control.doctrine"
@@ -1804,6 +1807,20 @@
         },
         "4": {
           "name": "variable.other.member.doctrine"
+        }
+      }
+    },
+    "drop": {
+      "match": "^(\\s*)(drop)(\\s+)([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\s*)(:)",
+      "captures": {
+        "2": {
+          "name": "keyword.control.doctrine"
+        },
+        "4": {
+          "name": "entity.name.section.reference.doctrine entity.name.section.doctrine support.type.reference.doctrine"
+        },
+        "6": {
+          "name": "punctuation.separator.key-value.doctrine"
         }
       }
     }

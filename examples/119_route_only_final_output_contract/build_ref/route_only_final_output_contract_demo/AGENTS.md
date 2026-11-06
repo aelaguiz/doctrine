@@ -11,9 +11,11 @@ No artifact is current for this pass.
 Stop: No specialist artifact is current for this turn.
 
 Choose one mode for this turn:
+
 - Routing Owner
 
 When the mode is Routing Owner:
+
 - Route to Routing Owner.
 
 ## Inputs
@@ -31,6 +33,7 @@ Use host route facts for a route-only final response.
 ### Route Only Final Reply
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |

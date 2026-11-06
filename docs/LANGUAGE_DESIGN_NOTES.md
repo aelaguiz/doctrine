@@ -288,6 +288,27 @@ That shipped surface includes:
   `markdown`, `html`, `footnotes`, `image`, and structured nested table cells
 - first-class `skill package` authoring through `SKILL.prompt`
 
+## Prose And Patches In Language 6.0
+
+One string is one paragraph. Use a triple-quoted string when inner line breaks
+matter. Use `paragraph key:` when prose needs an address. A title runs into its
+first string; an untitled paragraph has no heading. Examples 165 and 166 prove
+these forms.
+
+Head prose uses the reserved key `preamble`. A child must keep or drop it.
+Agent children must also account for `role` and each inherited typed field.
+A role can be kept or replaced, but never dropped. See examples 167 and 168.
+
+`drop key: "Reason"` records an explicit removal. `inherit *` keeps all parent
+items not named elsewhere, in parent order. Overrides stay in their parent
+positions under the wildcard. Explicit inherits move an item to their line's
+position. Dotted patches reach keyed sections, slots, and paragraphs without
+replacing the outer item. Paths do not walk anonymous items. Examples 169 to
+171 prove the patch rules.
+
+A lone `.prompt` module inside a prompt root is a one-file flow when no named
+entrypoint sits at or above it. Example 172 proves that boundary.
+
 ## Current Non-Goals
 
 The language intentionally does not ship:

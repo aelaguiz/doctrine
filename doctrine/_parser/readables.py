@@ -51,6 +51,21 @@ class ReadableNodeTransformerMixin:
         return items[0]
 
     @v_args(meta=True, inline=True)
+    def readable_paragraph_block(self, meta, key, *parts):
+        title = parts[0] if isinstance(parts[0], str) else None
+        return _with_source_span(
+            self._readable_block("paragraph", key, title, parts[1:] if title is not None else parts),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def override_readable_paragraph_block(self, meta, key, *parts):
+        return _with_source_span(self._readable_override_block("paragraph", key, parts), meta)
+
+    def paragraph_body(self, items):
+        return tuple(items)
+
+    @v_args(meta=True, inline=True)
     def readable_sequence_block(self, meta, key, *parts):
         title: str | None = None
         readable_parts = parts

@@ -48,7 +48,7 @@ class ResolveDocumentBlocksMixin:
             schema_label="row_schema",
             surface_label=f"{item.kind} row schema",
         )
-        if item.kind == "section":
+        if item.kind in {"section", "paragraph"}:
             return replace(
                 item,
                 payload=self._resolve_document_shared_readable_body(

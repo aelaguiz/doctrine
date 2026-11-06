@@ -44,7 +44,7 @@
     {
       "path": "SKILL.md",
       "kind": "skill_package_root",
-      "sha256": "66cddd6594508c78857f63604757e0c4c85919bf0f3d4acb1fbffb2b49d9cdff"
+      "sha256": "de46b6ba63a88bcd341254305a1c923fe24cb5e9956a483bb432e6fe22bc96ed"
     },
     {
       "path": "agents/openai.yaml",
@@ -63,5 +63,5 @@
     }
   ],
   "source_tree_sha256": "1494b6ad31dccf741c249c1fe20b1214b4d61d3f237f624be99c48641e7a1489",
-  "output_tree_sha256": "3a9c5e8c5266fc35a6907316717337f02a929c50382d2313ce9875a6d31bf088"
+  "output_tree_sha256": "bb7359a14198999cd1c79950ba06afccdaae044488a19d85e5c6ae739fc42959"
 }

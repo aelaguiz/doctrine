@@ -20,6 +20,7 @@ expected_lines = [
   "- Requirement: Required",
   "",
   "Use this ledger to track repeated section issues.",
+  "",
   "Keep the ledger current after each section pass.",
   "",
   "## Your Outputs",

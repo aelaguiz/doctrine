@@ -71,6 +71,7 @@ Stability rules:
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
+| `E134` | Missing block title | A named readable block ends its head line without a title. The error shows the title, declared-table, and bare-block forms. |
 | `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:`, `schema:` plus `structure:`, invalid named-table ownership such as `columns:` on a named table use site, or parser-owned `skill_flow` block-shape failures such as a missing required `why:` line or duplicate edge or repeat body keys. |
 
 ### Compile codes
@@ -82,7 +83,6 @@ Stability rules:
 | `E203` | Duplicate role field | One agent defines `role` more than once. |
 | `E204` | Duplicate typed field | One agent defines the same typed field more than once. |
 | `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field. |
-| `E206` | Unsupported agent field order | The authoring shape is outside the shipped subset, such as violating the bootstrap role/workflow order rule. |
 | `E207` | Cyclic agent inheritance | Agent inheritance forms a cycle. |
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
@@ -329,3 +329,18 @@ evolution of the rule primitive.
 The checked-in error reference under
 [examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](../examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
 shows the canonical formatted shape for one shipped compile error.
+
+### Patch codes
+
+| Code | Summary | Notes |
+| --- | --- | --- |
+| `E610` | Missing patch target | A drop or dotted override names a key the parent lacks, or tries to drop an abstract slot. |
+| `E611` | Invalid patch path | A path steps through an item with no keyed children, or an override targets the wrong block kind or gives a paragraph a nested block. |
+| `E612` | Conflicting patches | Two patches account for one item, a whole-item account conflicts with a deeper patch, or a child drops `role`. |
+| `E613` | Duplicate inherit * | A body writes `inherit *` twice. |
+
+### Retired codes
+
+| Code | Notes |
+| --- | --- |
+| `E206` | Retired in language 6.0. A role keeps its authored position. Slots may come before it. |

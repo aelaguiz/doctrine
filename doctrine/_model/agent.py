@@ -4,7 +4,7 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import NameRef, RoleBlock, RoleScalar, SourceSpan
+from doctrine._model.core import InheritAll, DropItem, OverridePath, NameRef, RoleBlock, RoleScalar, SourceSpan
 from doctrine._model.io import IoFieldValue
 from doctrine._model.review import ReviewFieldsConfig
 from doctrine._model.workflow import SkillsValue, WorkflowSlotValue
@@ -104,6 +104,9 @@ Field: _TypeAlias = (
     | AuthoredSlotField
     | AuthoredSlotAbstract
     | AuthoredSlotInherit
+    | InheritAll
+    | DropItem
+    | OverridePath
     | AuthoredSlotOverride
     | InputsField
     | OutputsField

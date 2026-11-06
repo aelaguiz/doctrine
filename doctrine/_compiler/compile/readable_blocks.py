@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.compile.readables import compile_paragraph
 from dataclasses import replace
 
 from doctrine._compiler.diagnostics import compile_error
@@ -87,11 +88,13 @@ class CompileReadableBlocksMixin:
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None
-        elif block.kind in {"sequence", "bullets", "checklist"}:
+        elif block.kind in {"sequence", "bullets", "checklist", "paragraph"}:
             title = block.title
         else:
             title = block.title or _humanize_key(block.key)
         block_owner_label = f"{owner_label}.{block.key}"
+        if block.kind == "paragraph":
+            return compile_paragraph(block, section_body_compiler(block.payload, block_owner_label), when_text)
         if block.kind == "section":
             payload = self._require_tuple_payload(
                 block.payload,
@@ -105,7 +108,7 @@ class CompileReadableBlocksMixin:
                 body=section_body_compiler(payload, block_owner_label),
                 requirement=block.requirement,
                 when_text=when_text,
-                emit_metadata=True,
+                emit_metadata=block.requirement is not None or block.when_expr is not None,
                 semantic_target=_semantic_render_target_for_block(block.kind, block.key),
         )
         if block.kind in {"sequence", "bullets", "checklist"}:

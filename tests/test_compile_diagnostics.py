@@ -4295,7 +4295,7 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("requires an inherited output", str(error))
 
-    def test_duplicate_output_item_key_reports_related_line(self) -> None:
+    def test_duplicate_output_patch_points_at_later_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = """\
@@ -4328,19 +4328,14 @@ class CompileDiagnosticTests(unittest.TestCase):
                 CompilationSession(prompt).compile_agent("Demo")
 
         error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E255")
+        self.assertEqual(error.diagnostic.code, "E612")
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         self.assertEqual(
             error.diagnostic.location.line,
             rendered.splitlines().index('    override standalone_read: "Standalone Read"') + 1,
         )
-        self.assertEqual(len(error.diagnostic.related), 1)
-        self.assertEqual(
-            error.diagnostic.related[0].location.line,
-            rendered.splitlines().index("    inherit standalone_read") + 1,
-        )
-        self.assertIn("repeats output item key `standalone_read`", str(error))
-        self.assertIn("first `standalone_read` entry", str(error))
+        self.assertEqual(error.diagnostic.related, ())
+        self.assertEqual(error.diagnostic.detail, '`LessonsLeadOutput` patches `standalone_read` twice.')
 
     def test_output_override_kind_mismatch_reports_related_parent_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -5764,30 +5759,18 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("`law:` is not allowed on authored slot `notes`", str(error))
 
-    def test_legacy_role_workflow_order_points_at_role_line(self) -> None:
+    def test_role_keeps_authored_position_after_workflow(self) -> None:
+        from doctrine.renderer import render_markdown
+
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
+            prompt_path = self._write_prompt(Path(temp_dir), '''
                 agent Demo:
                     workflow: "Reply"
-                        "This should fail."
-                    role: "This role arrives too late."
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E206")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index('    role: "This role arrives too late."') + 1,
-        )
-        self.assertIn("Unsupported agent field order", str(error))
-        self.assertIn("Expected `role` followed by `workflow`", str(error))
+                        "Write the reply."
+                    role: "Read this role here."
+            ''')
+            rendered = render_markdown(CompilationSession(parse_file(prompt_path)).compile_agent("Demo"))
+        self.assertEqual(rendered, "## Reply\n\nWrite the reply.\n\nRead this role here.\n")
 
     def test_reserved_authored_slot_key_points_at_slot_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -6598,7 +6581,7 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("contains unkeyed top-level refs", str(error))
 
-    def test_duplicate_inherited_outputs_item_key_reports_related_first_line(self) -> None:
+    def test_duplicate_inherited_outputs_patch_points_at_later_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             source = """\
@@ -6629,7 +6612,7 @@ class CompileDiagnosticTests(unittest.TestCase):
                 CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
 
         error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E299")
+        self.assertEqual(error.diagnostic.code, "E612")
         self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
         override_lines = [
             index + 1
@@ -6640,12 +6623,8 @@ class CompileDiagnosticTests(unittest.TestCase):
             error.diagnostic.location.line,
             override_lines[1],
         )
-        self.assertEqual(len(error.diagnostic.related), 1)
-        self.assertEqual(
-            error.diagnostic.related[0].location.line,
-            override_lines[0],
-        )
-        self.assertIn("Duplicate outputs item key in ChildOutputs: review_comment", str(error))
+        self.assertEqual(error.diagnostic.related, ())
+        self.assertEqual(error.diagnostic.detail, '`ChildOutputs` patches `review_comment` twice.')
 
     def test_undefined_inherited_outputs_entry_points_at_inherit_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -132,7 +132,7 @@ class ValidateMixin(
         ]
         for row in rows:
             lines.append("| " + " | ".join(cell.replace("|", "\\|") for cell in row) + " |")
-        return tuple(lines)
+        return ("\n".join(lines),)
 
     def _build_output_schema_payload_rows(
         self,
@@ -425,29 +425,6 @@ class ValidateMixin(
                 source_span=source_span,
                 hints=exc.hints,
             ) from exc
-
-    def _enforce_legacy_role_workflow_order(self, agent: model.Agent, *, unit: IndexedUnit) -> None:
-        if len(agent.fields) != 2:
-            return
-
-        first, second = agent.fields
-        if isinstance(first, (model.RoleScalar, model.RoleBlock)):
-            return
-        if not isinstance(second, (model.RoleScalar, model.RoleBlock)):
-            return
-        if not isinstance(first, model.AuthoredSlotField) or first.key != "workflow":
-            return
-
-        raise compile_error(
-            code="E206",
-            summary="Unsupported agent field order",
-            detail=(
-                f"Agent `{agent.name}` is outside the shipped subset. "
-                "Expected `role` followed by `workflow`."
-            ),
-            path=unit.prompt_file.source_path,
-            source_span=second.source_span,
-        )
 
     def _ensure_valid_authored_slot_key(
         self,

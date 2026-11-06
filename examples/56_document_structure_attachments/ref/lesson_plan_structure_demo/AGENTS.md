@@ -37,5 +37,7 @@ List the lesson steps in order.
 | Structure | Lesson Plan |
 
 Required Structure:
+
 - Overview: Start with the plan overview.
+
 - Sequence: List the lesson steps in order.

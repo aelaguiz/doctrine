@@ -5,6 +5,7 @@ End with a route-aware final JSON result.
 ### Handoff Route Final Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -27,13 +28,19 @@ End with a route-aware final JSON result.
 #### Example
 
 ```json
+
 {
+
   "next_owner": "ReviewLead",
+
   "summary": "Hand off to ReviewLead."
+
 }
+
 ```
 
 - Kind: Json Object
+
 - Next Owner: ReviewLead
 
 #### Route Summary

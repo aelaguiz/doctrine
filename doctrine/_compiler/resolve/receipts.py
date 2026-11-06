@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
@@ -165,11 +166,18 @@ class ResolveReceiptsMixin:
                         ),
                     )
 
+        patches = expand_patch_items(
+            receipt_decl.items, parent_keys=parent_fields_by_key,
+            kind="receipt", owner_label=owner_label, unit=unit,
+        )
+        parent_fields_by_key = apply_path_patches(
+            self, parent_fields_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         emitted_keys: set[str] = set()
-        accounted_parent_keys: set[str] = set()
+        accounted_parent_keys: set[str] = set(patches.dropped_keys)
         merged: list[model.ResolvedReceiptField] = []
 
-        for item in receipt_decl.items:
+        for item in patches.items:
             if isinstance(item, model.InheritItem):
                 parent_field = parent_fields_by_key.get(item.key)
                 if parent_field is None:

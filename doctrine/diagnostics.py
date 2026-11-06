@@ -314,6 +314,27 @@ class ParseError(DoctrineError):
         location = DiagnosticLocation(path=path, line=line, column=column)
         excerpt, caret_column = _build_excerpt(source, line=line, column=column)
 
+        missing_title = None
+        if isinstance(exc, UnexpectedToken) and exc.token.type == "_NL":
+            import re
+
+            missing_title = re.fullmatch(
+                r"\s*(table|definitions|callout|properties|section|code|markdown|html|footnotes|image|rule)\s+([A-Za-z_][A-Za-z0-9_]*):\s*",
+                source.splitlines()[line - 1],
+            )
+        if missing_title is not None:
+            kind, key = missing_title.groups()
+            return cls.from_parts(
+                code="E134", summary="Missing block title",
+                detail=f"`{kind} {key}` needs a title.",
+                location=location, excerpt=excerpt, caret_column=caret_column,
+                hints=(
+                    f'Write `{kind} {key}: "Title"`.',
+                    f"Write `{kind} {key}: TableRef` to use a declared table.",
+                    f"Write `{kind}:` for a block with no heading.",
+                ),
+            )
+
         if isinstance(exc, UnexpectedCharacters):
             summary = "Unexpected character"
             code = "E102"
@@ -327,7 +348,7 @@ class ParseError(DoctrineError):
             hints = ("Finish the current declaration or block before the file ends.",)
             cause = _format_expected_tokens(getattr(exc, "expected", None))
         elif isinstance(exc, UnexpectedToken):
-            code, summary, hints = _classify_unexpected_token(exc)
+            code, summary, hints = _classify_unexpected_token(exc, source)
             cause = _format_unexpected_token_cause(exc)
         else:
             summary = "Unexpected parser input"

@@ -3,6 +3,7 @@ Keep review verdicts, failing gates, and next-owner routing aligned.
 ## Draft Review
 
 Review subject: Draft Spec.
+
 Shared review contract: Draft Review Contract.
 
 ### Start Review
@@ -45,9 +46,13 @@ Use the current draft spec as the reviewed artifact.
 - Requirement: Required
 
 - Verdict: Say whether the review accepted the draft or asked for changes.
+
 - Reviewed Artifact: Name the reviewed artifact this review judged.
+
 - Analysis Performed: Sum up the review work that led to the verdict.
+
 - Output Contents That Matter: Summarize the parts of the draft the next owner must read first.
+
 - Next Owner: Name the next owner. Use ReviewLead when the draft is accepted and DraftAuthor when it is rejected.
 
 #### Failure Detail

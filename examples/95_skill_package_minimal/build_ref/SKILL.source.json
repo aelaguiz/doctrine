@@ -24,9 +24,9 @@
     {
       "path": "SKILL.md",
       "kind": "skill_package_root",
-      "sha256": "1ad124f89f3478c7b4e12e8109e28561ffb3c5b2fbbb948f4e10310d88f472f1"
+      "sha256": "81d24b62090ec1c69da7c3cc7000f7100b6552a4932c5da01fb03721a8d16d60"
     }
   ],
   "source_tree_sha256": "74dd2af0b1ad5544185b39f448235c78500375d1e323ec304a85ad211a2ea41e",
-  "output_tree_sha256": "6e82210ecdf8e5d9d1f19205f2236713713d847f51a3d5d9b139cd429b0ce18d"
+  "output_tree_sha256": "22a1032b87990992b8103a04ffe77ce045300a0332842c209d07e145e4cb83e1"
 }

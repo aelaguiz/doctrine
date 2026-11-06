@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_schema_diagnostics import (
@@ -215,6 +216,12 @@ class ResolveOutputSchemasMixin:
         parent_output_schema: model.OutputSchemaDecl | None = None,
         parent_label: str | None = None,
     ) -> model.OutputSchemaDecl:
+        patches = expand_patch_items(
+            output_schema_decl.items, parent_keys=() if parent_output_schema is None else
+            tuple(item.key for item in parent_output_schema.items),
+            kind="output schema", owner_label=owner_label, unit=unit,
+        )
+        output_schema_decl = replace(output_schema_decl, items=patches.items)
         if parent_output_schema is None:
             patch_key = self._first_output_schema_patch_key(output_schema_decl)
             if patch_key is not None:
@@ -267,9 +274,12 @@ class ResolveOutputSchemasMixin:
                 ),
             )
         }
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[model.OutputSchemaAuthoredItem] = []
         emitted_items: dict[str, object] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in output_schema_decl.items:
             key = self._output_schema_item_key(item)

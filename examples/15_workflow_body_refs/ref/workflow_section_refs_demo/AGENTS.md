@@ -7,7 +7,9 @@ Keep workflow guidance readable while still pointing directly at the typed contr
 Start with the current routing truth.
 
 - Current Issue Plan
+
 - Latest Named Files Comment
+
 - Track Metadata
 
 If current concepts exist for this section, read them before nearby context.

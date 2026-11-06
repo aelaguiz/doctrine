@@ -36,8 +36,6 @@ expected_lines = [
   "",
   "##### Sample",
   "",
-  "_code · prompt-fragment_",
-  "",
   "```prompt-fragment",
   "",
   "agent HelloWriter:",

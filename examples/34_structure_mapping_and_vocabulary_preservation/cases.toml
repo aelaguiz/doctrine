@@ -206,7 +206,9 @@ expected_lines = [
   "| Structure | Review Plan Document |",
   "",
   "Required Structure:",
+  "",
   "- Scope: State the review scope.",
+  "",
   "- Acceptance: State what acceptance looks like.",
 ]
 [[cases]]

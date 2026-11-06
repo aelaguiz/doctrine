@@ -4,7 +4,7 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import Literal as _Literal, TYPE_CHECKING, TypeAlias as _TypeAlias
 
-from doctrine._model.core import AddressableRef, Expr, InheritItem, NameRef, ProseLine, SourceSpan
+from doctrine._model.core import AddressableRef, Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan
 from doctrine._model.readable import ReadableBlock, ReadableOverrideBlock
 from doctrine._model.receipts import ReceiptHostSlotRef, ResolvedReceiptHostSlotRef
 
@@ -138,7 +138,7 @@ OutputOverrideItem: _TypeAlias = (
     | OutputOverrideGuardedOutputScalar
     | ReadableOverrideBlock
 )
-OutputAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
+OutputAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | InheritAll | DropItem | OutputOverrideItem
 
 
 @_dataclass(slots=True, frozen=True)
@@ -149,7 +149,7 @@ class OverrideIoSection:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
-IoItem: _TypeAlias = IoSection | RecordRef | InheritItem | OverrideIoSection
+IoItem: _TypeAlias = IoSection | RecordRef | InheritItem | InheritAll | DropItem | OverrideIoSection
 
 
 @_dataclass(slots=True, frozen=True)
@@ -253,7 +253,7 @@ class OutputTargetDecl:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
-OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | OutputOverrideItem
+OutputShapeAuthoredItem: _TypeAlias = OutputRecordItem | InheritItem | InheritAll | DropItem | OutputOverrideItem
 
 
 @_dataclass(slots=True, frozen=True)
@@ -418,7 +418,7 @@ OutputSchemaAuthoredItem: _TypeAlias = (
     | OutputSchemaRouteField
     | OutputSchemaDef
     | OutputSchemaExample
-    | InheritItem
+    | InheritItem | InheritAll | DropItem
     | OutputSchemaOverrideField
     | OutputSchemaOverrideRouteField
     | OutputSchemaOverrideDef

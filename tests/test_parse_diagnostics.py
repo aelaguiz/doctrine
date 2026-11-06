@@ -10,6 +10,31 @@ from doctrine.parser import parse_text
 
 
 class ParseDiagnosticsTests(unittest.TestCase):
+    def test_e132_only_after_arrow(self):
+        from doctrine.diagnostics import ParseError
+
+        for source, code in (
+            ('agent A:\n    role: "Role."\n    work: "Work"\n        step: "Step"\n            route "Next" ->\n', "E132"),
+            ('agent A:\n    inherit\n', "E101"),
+        ):
+            with self.subTest(code=code), self.assertRaises(ParseError) as caught:
+                parse_text(source)
+            self.assertEqual(caught.exception.code, code)
+
+    def test_e134_named_block_without_title(self):
+        from doctrine.diagnostics import ParseError
+
+        for kind in ("table", "definitions", "callout"):
+            with self.subTest(kind=kind), self.assertRaises(ParseError) as caught:
+                parse_text(f'agent A:\n    role: "Role."\n    work: "Work"\n        {kind} calls_table:\n            "Text."\n')
+            self.assertEqual(caught.exception.code, "E134")
+            self.assertEqual(caught.exception.diagnostic.detail, f"`{kind} calls_table` needs a title.")
+            self.assertEqual(caught.exception.diagnostic.hints, (
+                f'Write `{kind} calls_table: "Title"`.',
+                f"Write `{kind} calls_table: TableRef` to use a declared table.",
+                f"Write `{kind}:` for a block with no heading.",
+            ))
+
     def _assert_parse_error_points_at_line(
         self,
         *,

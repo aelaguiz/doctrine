@@ -28,7 +28,7 @@ expected_lines = [
   "",
   "#### Read Order",
   "",
-  "_Advisory_",
+  "_Advisory · sequence_",
   "",
   "1. Read the issue.",
   "2. Read the repo status.",

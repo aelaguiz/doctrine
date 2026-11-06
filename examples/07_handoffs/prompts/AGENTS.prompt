@@ -23,6 +23,7 @@ workflow ReadFirst: "Read First"
 workflow ProjectLeadReadFirst[ReadFirst]: "Read First"
     "Start by reading Your Job."
     "Then read Workflow Core."
+    inherit preamble
 
 
 workflow SameIssueWorkflowCoreBase: "Workflow Core"

@@ -3,6 +3,7 @@ You are the revised structured briefing agent.
 ## Revised Briefing
 
 This file is the runtime guide for a structured briefing.
+
 This version keeps preparation and revises delivery through workflow reuse.
 
 ### Preparation
@@ -18,6 +19,8 @@ State the topic in one line.
 Name who the briefing is for.
 
 ### Delivery
+
+Move through the briefing in a fixed sequence.
 
 Move through the briefing in the revised sequence.
 

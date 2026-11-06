@@ -5,6 +5,7 @@ Keep workflow-owned review gates addressable without flattening the workflow.
 ### Review Sequence
 
 - Gates
+
 - Check Build Honesty
 
 Run Check Build Honesty before you route the work.
@@ -20,4 +21,5 @@ Run Check Build Honesty before you route the work.
 | Requirement | Required |
 
 - Gate Family: Gates
+
 - Honest Gate: Check Build Honesty

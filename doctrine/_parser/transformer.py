@@ -456,7 +456,7 @@ class SchemaDocumentTransformerMixin:
                 meta,
                 keys,
                 model.InheritItem,
-                allowed_keys=("sections", "gates", "artifacts", "groups"),
+                allowed_keys=("sections", "gates", "artifacts", "groups", "preamble"),
             )
         ]
 

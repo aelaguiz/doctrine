@@ -5,20 +5,31 @@ Keep narrow ownership explicit and preserve every unowned field.
 Keep narrow ownership explicit and preserve every unowned field.
 
 Choose one mode for this turn:
+
 - name-only
+
 - summary-refresh
 
 When the mode is name-only:
+
 - The current artifact is Section Metadata.
+
 - Only edit `SectionMetadata.name`.
+
 - Keep `SectionMetadata.*` unchanged except `SectionMetadata.name`.
+
 - Keep decisions from `ApprovedPlan`.
 
 When the mode is summary-refresh:
+
 - The current artifact is Section Metadata.
+
 - Only edit `SectionMetadata.name` and `SectionMetadata.description`.
+
 - Keep `SectionMetadata.*` unchanged except `SectionMetadata.name` and `SectionMetadata.description`.
+
 - Keep decisions from `ApprovedStructure`.
+
 - Do not modify {`SectionMetadata.taxonomy`, `SectionMetadata.flags`}.
 
 ## Inputs

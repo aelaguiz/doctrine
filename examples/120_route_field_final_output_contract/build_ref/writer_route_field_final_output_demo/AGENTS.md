@@ -5,6 +5,7 @@ Choose the next owner from the final output itself.
 ### Writer Decision
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |

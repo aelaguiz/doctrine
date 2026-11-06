@@ -379,6 +379,7 @@ class ContractSectionSummary:
 
 @dataclass(slots=True, frozen=True)
 class ContractBodySummary:
+    preamble: tuple[model.ProseLine, ...]
     keyed_items: tuple[ContractSectionSummary, ...]
     unkeyed_artifacts: tuple[ContractArtifact, ...]
     artifacts: tuple[ContractArtifact, ...]

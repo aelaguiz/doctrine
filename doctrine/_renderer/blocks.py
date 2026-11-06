@@ -130,7 +130,6 @@ def _render_body_lines(
     line_prefix: str = "",
 ) -> list[str]:
     body_lines: list[str] = []
-    previous_was_block = False
     analysis_stage_counter = 1
 
     for item in body:
@@ -138,19 +137,16 @@ def _render_body_lines(
             if not item:
                 if body_lines and body_lines[-1] != "":
                     body_lines.append("")
-                previous_was_block = False
                 continue
-            if previous_was_block and body_lines and body_lines[-1] != "":
+            if body_lines and body_lines[-1] != "":
                 body_lines.append("")
             body_lines.append(f"{line_prefix}{item}" if line_prefix else item)
-            previous_was_block = False
             continue
         if isinstance(item, EmphasizedLine):
             rendered = f"**{item.kind.upper()}**: {item.text}"
-            if previous_was_block and body_lines and body_lines[-1] != "":
+            if body_lines and body_lines[-1] != "":
                 body_lines.append("")
             body_lines.append(f"{line_prefix}{rendered}" if line_prefix else rendered)
-            previous_was_block = False
             continue
         if (
             isinstance(item, CompiledSection)
@@ -168,7 +164,6 @@ def _render_body_lines(
             if line_prefix:
                 stage_lines = [f"{line_prefix}{line}" if line else line for line in stage_lines]
             body_lines.extend(stage_lines)
-            previous_was_block = True
             continue
 
         if body_lines and body_lines[-1] != "":
@@ -177,7 +172,6 @@ def _render_body_lines(
         if line_prefix:
             nested = [f"{line_prefix}{line}" if line else line for line in nested]
         body_lines.extend(nested)
-        previous_was_block = True
 
     while body_lines and body_lines[-1] == "":
         body_lines.pop()
@@ -204,7 +198,8 @@ def _render_list_block(
 
     metadata = _render_metadata_line(
         requirement=block.requirement,
-        kind_label=None,
+        kind_label=("sequence" if isinstance(block, CompiledSequenceBlock) else
+                    "bullets" if isinstance(block, CompiledBulletsBlock) else "checklist"),
         when_text=block.when_text,
     )
     lines: list[str] = []
@@ -331,6 +326,12 @@ def _render_code_block(block: CompiledCodeBlock, *, depth: int) -> str:
 
 
 def _render_raw_text_block(block: CompiledRawTextBlock, *, depth: int) -> str:
+    if block.kind == "paragraph":
+        text = f"**{block.title}** {block.text}" if block.title is not None else block.text
+        metadata = _render_metadata_line(
+            requirement=block.requirement, kind_label="paragraph", when_text=block.when_text,
+        )
+        return f"{metadata}\n\n{text}" if metadata is not None else text
     if block.anonymous and block.title is None:
         return "\n".join(block.text.splitlines()).rstrip()
     metadata = _render_metadata_line(
@@ -435,7 +436,7 @@ def _render_table_block(
     if block.table.notes:
         if lines and lines[-1] != "":
             lines.append("")
-        lines.extend(_render_prose_line(note, profile=profile) for note in block.table.notes)
+        lines.append("\n\n".join(_render_prose_line(note, profile=profile) for note in block.table.notes))
 
     return "\n".join(lines).rstrip()
 
@@ -454,9 +455,11 @@ def _render_callout_block(block: CompiledCalloutBlock, *, profile: ResolvedRende
             lines.append(f"> {metadata}")
     else:
         lines.append(f"> **{label}**")
-    for line in block.body:
+    for index, line in enumerate(block.body):
+        if index:
+            lines.append(">")
         text = _render_prose_line(line, profile=profile)
-        lines.append(f"> {text}" if text else ">")
+        lines.extend(f"> {part}" if part else ">" for part in text.split("\n"))
     return "\n".join(lines).rstrip()
 
 
@@ -561,6 +564,8 @@ def _render_metadata_line(
     when_text: str | None,
     extra: str | None = None,
 ) -> str | None:
+    if requirement is None and when_text is None:
+        return None
     parts: list[str] = []
     if requirement is not None:
         parts.append(requirement.capitalize())

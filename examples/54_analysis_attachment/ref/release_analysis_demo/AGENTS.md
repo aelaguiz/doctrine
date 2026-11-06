@@ -9,8 +9,11 @@ Use the attached analysis before you finalize the release plan.
 ### Stages
 
 Prove Release plan from Current Plan.
+
 Classify Risk band using Risk Band.
+
 Compare Coverage against Current Plan.
+
 Defend Recommendation using Current Plan.
 
 ## Inputs

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import expand_agent_patches, apply_path_patches, patch_item_key
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -126,7 +127,22 @@ class ResolveAgentSlotsMixin:
                 parent_slots = self._resolve_agent_slots(parent_agent, unit=parent_unit)
                 parent_label = f"agent {_dotted_decl_name(parent_unit.module_parts, parent_agent.name)}"
 
-            parent_slots_by_key = {slot.key: slot for slot in parent_slots}
+            authored_fields = agent.fields
+            agent, patches = expand_agent_patches(self, agent, unit=unit)
+            parent_slots_by_key = apply_path_patches(
+                self, {**({patch_item_key(field): field for field in parent_agent.fields}
+                          if parent_agent is not None else {}),
+                       **{slot.key: slot for slot in parent_slots}}, patches.path_overrides,
+                owner_label=agent.name, unit=unit,
+            )
+            for slot in parent_slots:
+                if slot.key in patches.dropped_keys and isinstance(slot, ResolvedAbstractAgentSlot):
+                    raise authored_compile_error(
+                        code="E610", summary="Missing patch target",
+                        detail=f"`{agent.name}` drops `{slot.key}`, but an abstract slot is a requirement, not an item.",
+                        unit=unit, source_span=next(field.source_span for field in authored_fields
+                                                   if isinstance(field, model.DropItem) and field.path == (slot.key,)),
+                    )
             resolved_slots: list[ResolvedAgentSlotState] = []
             seen_slot_fields: dict[
                 str,
@@ -135,7 +151,7 @@ class ResolveAgentSlotsMixin:
                 | model.AuthoredSlotInherit
                 | model.AuthoredSlotOverride,
             ] = {}
-            accounted_parent_concrete_keys: set[str] = set()
+            accounted_parent_concrete_keys: set[str] = set(patches.dropped_keys)
 
             for field in agent.fields:
                 if isinstance(field, model.AuthoredSlotField):

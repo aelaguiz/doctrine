@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import expand_agent_patches
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -30,6 +31,7 @@ class ResolveIoContractsMixin:
         return getattr(value, "source_span", None)
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
+        agent, _ = expand_agent_patches(self, agent, unit=unit)
         inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]] = {}
         input_bindings_by_path: dict[tuple[str, ...], ContractBinding] = {}
         outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]] = {}

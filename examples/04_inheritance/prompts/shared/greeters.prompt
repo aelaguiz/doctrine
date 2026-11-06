@@ -17,6 +17,7 @@ abstract agent PoliteGreeter[BaseGreeter]:
     role: "You are the polite greeter."
 
     workflow: "Shared Instructions"
+        inherit preamble
         inherit greeting
         inherit object
 

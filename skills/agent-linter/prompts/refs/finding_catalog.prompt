@@ -9,7 +9,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL100` | Oversized Always-On Context | The role home carries too much always-on text, or new local bulk does not buy clearer loading, stronger reuse, or exact truth. | Move deep reference material into a shared skill, module, or docs index. |
 | `AL110` | Pasted Reference Instead Of Pointer | Long reference text is pasted where a shared pointer should exist. | Replace the pasted block with a pointer to one shared source. |
 | `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. A per-case decision taxonomy (if field X is populated, install rule Y; if Z appears, install rule W) is the canonical shape. | Move the reusable method into a skill. |
-| `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
+| `AL130` | Dead Inherited Section | Inherited text is present but not used. | Write `drop key:` with a reason, or move the pointer to the step that needs it. |
 | `AL140` | Planning-Doc Scaffolding In Agent Body | The role body cites planning docs by path or rule ID, or carries authoring rationale. | Strip the citation and rule IDs; keep only the behavior. |
 | `AL150` | Role Body Carries Markdown Section Tree | The `role:` value is a multiline string holding markdown headings (`##` / `###`) or a numbered section list, instead of typed workflow slots on the agent. The string's internal sections are invisible to the compiler. | Keep `role:` to a one-sentence headline. Move each internal heading into a typed agent slot (`your_job`, `workflow_core`, or any authored slot key) pointed at a `workflow` with titled children. |
 | `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \\| B \\| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
@@ -91,7 +91,7 @@ document FindingCatalog: "Finding Catalog"
         section al130: "`AL130` Dead Inherited Section"
             "What it means: Inherited text is present but not used."
             "Why it matters: Dead inherited text hides the real active path."
-            "Default fix: Drop the inherit or point to the step that needs it."
+            "Default fix: Write `drop key:` with a reason, or point to the step that needs it."
             "Good: `Inherit only the shared EvidenceCheck block that this role still calls.`"
             "Bad: `Inherit the full ReviewerWorkflow` with no remaining reference to it."
 

@@ -347,3 +347,9 @@ outputs SectionDossierOutputs: "Your Outputs"
             "`references/imports-and-refs.md` owns addressable refs and `self:` into document bodies."
 
         "**Load when:** the author is shaping readable prose, structured reference material, tables, readable lists, or a render profile."
+
+    section prose_paragraphs: "Prose Paragraphs"
+        "Each prose string renders as one paragraph. Adjacent strings have a blank line between them. Triple-quoted strings keep their own inner line breaks. List items, table cells, and definitions keep their own layout."
+        "Use paragraph key with an optional title for prose that needs an address. The title runs into the first string. Write its final punctuation. Without a title, the paragraph has no heading. See example 166."
+        "Readable blocks show metadata only when they carry required, advisory, optional, or when. A bare kind line such as _section_ never prints. See example 165."
+        "Document children keep head prose with inherit preamble, or remove it with drop preamble and a reason. Use drop key for an inherited block you no longer need, or inherit * to keep the rest."

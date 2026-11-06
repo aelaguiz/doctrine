@@ -127,3 +127,22 @@ class SectionBodyRef:
 class InheritItem:
     key: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class InheritAll:
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class DropItem:
+    path: tuple[str, ...]
+    reason: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OverridePath:
+    path: tuple[str, ...]
+    value: object
+    source_span: SourceSpan | None = _field(default=None, compare=False)

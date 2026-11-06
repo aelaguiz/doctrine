@@ -3,6 +3,7 @@ End acceptance review with one JSON review result.
 ## Acceptance Review
 
 Review subject: Draft Plan.
+
 Shared review contract: Plan Review Contract.
 
 ### Basis Checks
@@ -37,6 +38,7 @@ When missing(blocked_gate), current artifact: Draft Plan.
 - Requirement: Required
 
 - Basis Missing: `Basis Missing`
+
 - Outline Missing: `Outline Missing`
 
 ## Final Output
@@ -44,6 +46,7 @@ When missing(blocked_gate), current artifact: Draft Plan.
 ### Acceptance Review Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -69,13 +72,21 @@ When missing(blocked_gate), current artifact: Draft Plan.
 #### Example
 
 ```json
+
 {
+
   "verdict": "changes_requested",
+
   "reviewed_artifact": "Draft Plan",
+
   "current_artifact": null,
+
   "next_owner": null,
+
   "blocked_gate": "The review basis is missing."
+
 }
+
 ```
 
 - Kind: Json Object
@@ -83,6 +94,7 @@ When missing(blocked_gate), current artifact: Draft Plan.
 #### Field Notes
 
 Keep `next_owner` aligned with the routed review branch.
+
 Blocked branches should use null for `current_artifact` and `next_owner`.
 
 #### Verdict

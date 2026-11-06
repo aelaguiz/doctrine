@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from dataclasses import replace
 
 from doctrine._compiler.readable_diagnostics import (
@@ -126,6 +127,10 @@ class ResolveDocumentsMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedDocumentBody:
+        document_body, patches = prepare_body_patches(
+            document_body, parent_document, kind="document", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -148,9 +153,12 @@ class ResolveDocumentsMixin:
             )
 
         parent_items_by_key = {item.key: item for item in parent_document.items}
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[model.DocumentBlock] = []
         emitted_items: dict[str, object] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in document_body.items:
             key = item.key

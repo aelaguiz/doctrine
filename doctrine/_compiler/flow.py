@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import expand_agent_patches
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.constants import (
@@ -120,11 +121,12 @@ class FlowMixin:
         edges: dict[tuple[object, ...], FlowEdge] = {}
 
         for unit, agent in root_agents:
+            resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
+            agent_contract = self._resolve_agent_contract(agent, unit=unit)
+            agent, _ = expand_agent_patches(self, agent, unit=unit)
             agent_key = self._flow_agent_key(unit, agent.name)
             self._flow_upsert_agent_node(agent_nodes, agent, unit=unit)
 
-            agent_contract = self._resolve_agent_contract(agent, unit=unit)
-            resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
             resolved_slots = {
                 slot.key: slot.body
                 for slot in resolved_slot_states

@@ -3,6 +3,7 @@ Emit the review comment and end with a small partial JSON result.
 ## Acceptance Review
 
 Review subject: Draft Plan.
+
 Shared review contract: Plan Review Contract.
 
 ### Basis Checks
@@ -37,6 +38,7 @@ When missing(blocked_gate), current artifact: Draft Plan.
 - Requirement: Required
 
 - Basis Missing: `Basis Missing`
+
 - Outline Missing: `Outline Missing`
 
 ## Outputs
@@ -48,10 +50,15 @@ When missing(blocked_gate), current artifact: Draft Plan.
 - Requirement: Required
 
 - Verdict: State whether the plan passed review or asked for changes.
+
 - Reviewed Artifact: Name the reviewed artifact.
+
 - Analysis Performed: Summarize the review analysis.
+
 - Output Contents That Matter: State what the next owner should read first.
+
 - Current Artifact: Show this only when present(current_artifact). Name the artifact that remains current after review.
+
 - Next Owner: Show this only when present(next_owner). Name ReviewLead when the review accepts the plan.
 
 #### Failure Detail
@@ -77,6 +84,7 @@ List exact failing gates in authored order.
 ### Acceptance Control Final Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -99,14 +107,21 @@ List exact failing gates in authored order.
 #### Example
 
 ```json
+
 {
+
   "current_artifact": "Draft Plan",
+
   "next_owner": "ReviewLead"
+
 }
+
 ```
 
 This final response is separate from the review carrier: AcceptanceReviewComment.
+
 Read the review carrier for the full review outcome.
+
 - Kind: Json Object
 
 #### Current Artifact

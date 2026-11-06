@@ -31,5 +31,6 @@ expected_lines = [
   "- Requirement: Required",
   "",
   "- Next Owner: Review Lead",
+  "",
   "- Route Summary: Hand off to ReviewLead. Next owner: Review Lead.",
 ]

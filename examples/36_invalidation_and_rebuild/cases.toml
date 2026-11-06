@@ -51,6 +51,7 @@ expected_lines = [
   "- Requirement: Required",
   "",
   "- Current Artifact: Name the one artifact that is current now.",
+  "",
   "- Invalidations: Name any artifacts that are no longer current.",
   "",
   "#### Trust Surface",

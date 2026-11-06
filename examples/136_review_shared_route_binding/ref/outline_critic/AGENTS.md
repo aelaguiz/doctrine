@@ -3,6 +3,7 @@ Review outline drafts with the shared review carrier.
 ## Outline Critic Review
 
 Review subject: Outline Draft.
+
 Shared review contract: Outline Contract.
 
 ### Contract Checks
@@ -33,6 +34,7 @@ Outline changes route back to the outline producer.
 ### Shared Review Carrier
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this schema.
 
 | Contract | Value |
@@ -57,12 +59,19 @@ Outline changes route back to the outline producer.
 #### Example
 
 ```json
+
 {
+
   "verdict": "changes_requested",
+
   "reviewed_artifact": "Outline Draft",
+
   "current_artifact": "Outline Draft",
+
   "next_owner": "OutlineProducer"
+
 }
+
 ```
 
 - Kind: Json Object

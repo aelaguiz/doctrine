@@ -39,7 +39,7 @@
     {
       "path": "SKILL.md",
       "kind": "skill_package_root",
-      "sha256": "22c8ba10b89ba4151ac872e0d1efd8e532c9ad4eef7219368c590016e0592ffd"
+      "sha256": "4f58963e3d7f6728ca84f06b2f1bf334c8c5af813242f77dc69d6e149721e9a8"
     },
     {
       "path": "references/query-patterns.md",
@@ -58,5 +58,5 @@
     }
   ],
   "source_tree_sha256": "5bc2aeb71876d9ebe482f6dbe62d0cc588df9b9e837c7b470756e7ccc47ecc62",
-  "output_tree_sha256": "1c8374fdf854ec8d6239d5f791ac52fbcdc8b2ea43edaa5bc3129d38a7f45617"
+  "output_tree_sha256": "47e1d745743f129eacc259af864d705b494647d3c8b978db40a42c2f64f0f470"
 }

@@ -7,6 +7,7 @@ Read the nested guarded output items directly from the emitted output contract.
 ### Read Now
 
 - Status Summary
+
 - Rewrite Detail
 
 Read Status Summary before Rewrite Detail when nested conditional detail is in play.

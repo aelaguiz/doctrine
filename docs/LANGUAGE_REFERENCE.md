@@ -188,7 +188,7 @@ final_output:
 
 `role` has two shipped shapes:
 
-- scalar `role: "..."` emits opening prose directly
+- scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
 
 ## Workflows
@@ -253,7 +253,28 @@ Inherited workflows use explicit ordered patching:
   keeping the outer key stable
 
 Children must account for every inherited keyed item exactly once. Doctrine
-does not do implicit merge by omission.
+does not do implicit merge by omission. Head prose has the reserved key `preamble`.
+Keep it with `inherit preamble`, or remove it with `drop preamble: "Reason"`.
+The parent head comes first, then the child's own head prose.
+
+`drop key: "Reason"` removes an inherited item. The reason does not render.
+`inherit *` keeps all parent items the child does not name elsewhere. Write it
+once. Items before it come first. Parent items follow in parent order, with
+overrides in their parent positions and dropped items gone. Items after it
+come last. An explicit `inherit key` moves that item to the line's position.
+
+On agents, `role`, `inputs`, `outputs`, `analysis`, `decision`, `skills`,
+`review`, `final_output`, and `selectors` need an account too. Write a field
+to replace it, or use `inherit <field>`. Typed fields may be dropped. A role
+must be kept or replaced; it cannot be dropped. An `inputs[Parent]:` or
+`outputs[Parent]:` field counts as an account of that field.
+
+Agents and workflows can patch a section, slot, or paragraph at depth:
+`override craft.habits.test_plan: "Test plans."` replaces that item in place.
+`drop craft.habits.daily: "Not used here."` removes one keyed item at depth.
+The patch accounts for `craft`, so do not also write `inherit craft`.
+Override the section around a table or callout; these blocks have their own
+body forms. Paths cannot step through text or anonymous items.
 
 ## Review Families And Control-Plane Declarations
 
@@ -485,6 +506,31 @@ Important rules:
   `ReleaseGuide:release_gates.columns.evidence.title` and
   `ReleaseGuide:release_gates.rows.release_notes`.
 
+### Prose And Paragraphs
+
+Each authored string is one paragraph. Adjacent strings have one blank line
+between them. A triple-quoted string keeps its own inner line breaks. List
+items, table cells, and definitions keep their own layout.
+
+A `paragraph` gives prose a key. Its optional title runs into the first string.
+Write the title's final punctuation yourself:
+
+```prompt
+workflow Habits: "Habits"
+    paragraph test_plan: "Test plans."
+        "Grow the plan with the design."
+        "Keep each check tied to a real change."
+```
+
+This renders as `**Test plans.** Grow the plan with the design.`, then a blank
+line and the next string. With no title, it renders plain prose with no heading.
+Use `override paragraph test_plan:` to replace it in a child.
+`Habits:test_plan.title` reads its title.
+
+Readable blocks print metadata only for `required`, `advisory`, `optional`,
+or `when`. The line names the block kind, such as `_Required · section_`.
+A bare kind line such as `_section_` never prints.
+
 ### Documents
 
 `document` declares a reusable markdown structure for markdown-bearing inputs
@@ -506,10 +552,11 @@ Important rules:
 
 - `document` supports readable block kinds such as `section`, `sequence`,
   `bullets`, `checklist`, `definitions`, `properties`, `table`, `guard`,
-  `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, and `rule`.
+  `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, `paragraph`, and `rule`.
 - Block headers may carry `required`, `advisory`, or `optional`, plus
   descriptive `when <expr>` metadata.
-- Every non-rule readable block kind has a bare form and a named form.
+- Most readable block kinds have a bare form and a named form. `paragraph`
+  always keeps its key, even when it has no title.
   The bare form drops the CNAME key and any heading string (for example,
   `definitions:`, `callout:`, `table:`, `footnotes:`, `image:`, `code:`,
   `markdown:`, `html:`). The renderer skips the H3 heading and the

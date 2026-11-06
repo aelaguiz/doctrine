@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import (
@@ -189,6 +190,10 @@ class ResolveSkillsMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedSkillsBody:
+        skills_body, patches = prepare_body_patches(
+            skills_body, parent_skills, kind="skills", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -211,9 +216,12 @@ class ResolveSkillsMixin:
             )
 
         parent_items_by_key = {item.key: item for item in parent_skills.items}
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedSkillsItem] = []
         emitted_keys: dict[str, model.SkillsItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in skills_body.items:
             key = item.key

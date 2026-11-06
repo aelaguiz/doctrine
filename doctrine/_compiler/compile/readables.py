@@ -39,6 +39,17 @@ from doctrine._compiler.resolved_types import (
 )
 
 
+def compile_paragraph(block, body, when_text):
+    return CompiledRawTextBlock(
+        kind="paragraph", title=block.title,
+        text="\n\n".join(
+            f"**{line.kind.upper()}**: {line.text}" if isinstance(line, model.EmphasizedLine) else line
+            for line in body
+        ),
+        requirement=block.requirement, when_text=when_text,
+    )
+
+
 class CompileReadablesMixin:
     """Readable declaration compile helpers for CompilationContext."""
 
@@ -317,10 +328,15 @@ class CompileReadablesMixin:
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None
-        elif block.kind in {"sequence", "bullets", "checklist"}:
+        elif block.kind in {"sequence", "bullets", "checklist", "paragraph"}:
             title = block.title
         else:
             title = block.title or _humanize_key(block.key)
+        if block.kind == "paragraph":
+            return compile_paragraph(block, self._compile_document_section_payload(
+                block.payload, unit=unit, owner_label=f"paragraph {block.key}",
+                source_span=block.source_span,
+            ), when_text)
         if block.kind == "section":
             return CompiledSection(
                 title=title or _humanize_key(block.key),

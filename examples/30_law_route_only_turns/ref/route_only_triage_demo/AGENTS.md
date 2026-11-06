@@ -7,13 +7,19 @@ Handle turns that can only stop and reroute.
 Use this pass only when current handoff is missing or current handoff is unclear.
 
 If current handoff is missing:
+
 - No artifact is current for this pass.
+
 - Stop: Current handoff is missing.
+
 - Route the same issue back to RoutingOwner.
 
 If current handoff is unclear:
+
 - No artifact is current for this pass.
+
 - Stop: Current handoff is unclear.
+
 - Route the same issue back to RoutingOwner.
 
 ## Inputs

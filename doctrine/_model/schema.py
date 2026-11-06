@@ -4,7 +4,7 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import InheritItem, NameRef, ProseLine, SourceSpan
+from doctrine._model.core import InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan
 
 
 @_dataclass(slots=True, frozen=True)
@@ -92,7 +92,7 @@ SchemaItem: _TypeAlias = (
     | SchemaGatesBlock
     | SchemaArtifactsBlock
     | SchemaGroupsBlock
-    | InheritItem
+    | InheritItem | InheritAll | DropItem
     | SchemaOverrideSectionsBlock
     | SchemaOverrideGatesBlock
     | SchemaOverrideArtifactsBlock

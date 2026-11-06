@@ -26,6 +26,7 @@ RELEASE_NOTES.md should stand on its own and say what shipped.
 ### Release Summary Response
 
 > **Final answer contract**
+
 > End the turn with one final assistant message that follows this contract.
 
 | Contract | Value |
@@ -38,6 +39,7 @@ RELEASE_NOTES.md should stand on its own and say what shipped.
 #### Expected Structure
 
 Lead with the shipped outcome.
+
 End with the next owner or step when one matters.
 
 #### Read on Its Own

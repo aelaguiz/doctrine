@@ -106,7 +106,7 @@ class IndexedFlow:
     flow_root: Path
     flow_parts: tuple[str, ...]
     entrypoint_path: Path
-    boundary_kind: FlowBoundaryKind
+    boundary_kind: FlowBoundaryKind | None
     member_paths: tuple[Path, ...]
     entrypoint_unit: IndexedUnit
     units_by_path: dict[Path, IndexedUnit]
@@ -176,7 +176,7 @@ def _flow_module_source_kind(
 def _flow_package_root(
     *,
     flow_root: Path,
-    boundary_kind: FlowBoundaryKind,
+    boundary_kind: FlowBoundaryKind | None,
     entrypoint_module_source_kind: ModuleSourceKind,
 ) -> Path | None:
     if boundary_kind == "skill_flow" or entrypoint_module_source_kind == "runtime_package":
@@ -384,9 +384,8 @@ def build_indexed_flow(
 ) -> IndexedFlow:
     resolved_entrypoint = entrypoint_path.resolve()
     boundary_kind = flow_boundary_kind_for_path(resolved_entrypoint)
-    assert boundary_kind is not None
     resolved_prompt_root = prompt_root.resolve()
-    flow_root = resolved_entrypoint.parent.resolve()
+    flow_root = resolved_entrypoint.parent if boundary_kind is not None else resolved_entrypoint
     flow_parts = flow_root.relative_to(resolved_prompt_root).parts
     package_root = _flow_package_root(
         flow_root=flow_root,
@@ -1328,7 +1327,7 @@ def load_flow(
 ) -> IndexedFlow:
     resolved_prompt_root = prompt_root.resolve()
     entrypoint_path = resolve_flow_entrypoint(source_path, prompt_root=resolved_prompt_root)
-    flow_root = entrypoint_path.parent.resolve()
+    flow_root = entrypoint_path.parent if flow_boundary_kind_for_path(entrypoint_path) is not None else entrypoint_path
     flow_key = _flow_load_key(resolved_prompt_root, flow_root)
     cached = session._flow_cache.get(flow_key)
     if cached is not None:

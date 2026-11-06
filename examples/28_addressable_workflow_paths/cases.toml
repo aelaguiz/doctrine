@@ -16,6 +16,7 @@ expected_lines = [
   "### Review Sequence",
   "",
   "- Gates",
+  "",
   "- Check Build Honesty",
   "",
   "Run Check Build Honesty before you route the work.",
@@ -31,6 +32,7 @@ expected_lines = [
   "| Requirement | Required |",
   "",
   "- Gate Family: Gates",
+  "",
   "- Honest Gate: Check Build Honesty",
 ]
 
@@ -93,8 +95,11 @@ expected_lines = [
   "### Review Sequence",
   "",
   "- Review Rules",
+  "",
   "- Shared Skills",
+  "",
   "- Check Build Honesty",
+  "",
   "- Grounding Skill",
   "",
   "Run Check Build Honesty with Grounding Skill.",

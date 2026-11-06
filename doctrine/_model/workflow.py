@@ -8,6 +8,9 @@ from doctrine._model.core import (
     AddressableRef,
     Expr,
     InheritItem,
+    InheritAll,
+    DropItem,
+    OverridePath,
     NameRef,
     ProseLine,
     RouteLine,
@@ -100,7 +103,7 @@ class OverrideSkillsSection:
 
 
 SkillsItem: _TypeAlias = (
-    SkillsSection | SkillEntry | InheritItem | OverrideSkillsSection | OverrideSkillEntry
+    SkillsSection | SkillEntry | InheritItem | InheritAll | DropItem | OverrideSkillsSection | OverrideSkillEntry
 )
 
 
@@ -132,8 +135,9 @@ WorkflowItem: _TypeAlias = (
     LocalSection
     | ReadableBlock
     | WorkflowUse
-    | InheritItem
+    | InheritItem | InheritAll | DropItem
     | ReadableOverrideBlock
+    | OverridePath
     | OverrideSection
     | OverrideUse
     | WorkflowSkillsItem

@@ -29,6 +29,9 @@ Use the host route facts. They say whether the current specialist output is miss
 - Requirement: Required
 
 - Current Route: Say this is a route-only local turn. No specialist artifact is current, so ownership stays local until rerouting makes sense.
+
 - Next Owner: Say plainly that ownership stays local because rerouting is not justified on this turn.
+
 - Next Step: Name the next local repair step from the route facts.
+
 - Standalone Read: This comment should stand on its own. The next owner should know that this route-only turn stayed local because no specialist artifact is current, who owns next, and what local repair step comes next.

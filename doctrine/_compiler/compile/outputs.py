@@ -120,6 +120,7 @@ class CompileOutputsMixin:
                         source_span=shape_item.source_span or decl.source_span,
                     )
                 body.append(f"- Structure: {document_decl.title}")
+                body = ["\n".join(body)]
                 body.append("")
                 body.append(
                     CompiledSection(
@@ -131,6 +132,8 @@ class CompileOutputsMixin:
                     )
                 )
 
+            if decl.structure_ref is None or previous_turn_spec is not None:
+                body = ["\n".join(body)]
             if extras:
                 body.append("")
                 body.extend(
@@ -441,7 +444,7 @@ class CompileOutputsMixin:
             elif inline_code_labels:
                 label = f"`{label}`"
             lines.append(f"- {label}")
-        return CompiledSection(title="Trust Surface", body=tuple(lines))
+        return CompiledSection(title="Trust Surface", body=("\n".join(lines),))
 
     def _compile_output_files(
         self,
@@ -767,7 +770,7 @@ class CompileOutputsMixin:
         self,
         rows: tuple[tuple[str, str], ...],
     ) -> tuple[CompiledBodyItem, ...]:
-        return tuple(f"- {label}: {value}" for label, value in rows)
+        return ("\n".join(f"- {label}: {value}" for label, value in rows),)
 
     def _compile_compact_ordinary_output_support_items(
         self,
