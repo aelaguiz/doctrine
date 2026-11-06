@@ -25,11 +25,17 @@ This file is the runtime guide for a simple multi-agent routing pattern.
 ### Same-Issue Workflow
 
 Keep the whole job on one issue from setup through final return.
+
 Keep one owner at a time on that issue.
+
 The normal order is Project Lead -> Research Specialist -> Writing Specialist -> Project Lead.
+
 Route the first owner change to Research Specialist.
+
 After Research Specialist, the next owner is Writing Specialist.
+
 After Writing Specialist, the next owner is Project Lead.
+
 If the route is broken or the work is blocked before specialist work begins, keep or return the work to Project Lead.
 
 ### Next Owner
@@ -40,6 +46,9 @@ If the route is broken or the work is blocked before specialist work begins -> P
 ### Owner Change Comment
 
 Every owner-change comment should say:
+
 - what this turn changed
+
 - the next owner when ownership is changing now
+
 - the exact blocker when the issue is blocked

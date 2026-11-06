@@ -1052,7 +1052,7 @@ class CompileAgentMixin:
             CompiledSection(
                 title="Purpose",
                 body=(
-                    self._interpolate_authored_prose_string(
+                    self._interpolate_authored_prose_line(
                         purpose_item.value,
                         unit=target_unit,
                         owner_label=f"skill {skill_decl.name}",
@@ -1087,7 +1087,7 @@ class CompileAgentMixin:
                 CompiledSection(
                     title="Reason",
                     body=(
-                        self._interpolate_authored_prose_string(
+                        self._interpolate_authored_prose_line(
                             reason.value,
                             unit=entry.metadata_unit,
                             owner_label=f"skill reference {skill_decl.name}",

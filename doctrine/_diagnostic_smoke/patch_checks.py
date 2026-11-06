@@ -13,6 +13,14 @@ PATCH_FAILURES = {
         "        table calls_table:\n"
         '            "Text."\n'
     ),
+    "E605": (
+        "agent A:\n"
+        '    role: "A."\n'
+        '    work: "Work"\n'
+        '        "```bash"\n'
+        '        "make all"\n'
+        '        "```"\n'
+    ),
     "E610": (
         "abstract agent Base:\n"
         '    role: "A."\n'

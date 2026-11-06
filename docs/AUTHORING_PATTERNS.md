@@ -18,6 +18,8 @@ Use triple-quoted strings for prose. They take ordinary quotes and keep line
 breaks as written. Two separate strings become two paragraphs. One-line strings
 fit short rules.
 
+Put a whole code fence in one `"""` string or a `code` block.
+
 Use `paragraph` when a lead-in needs a key. The title runs into the first string,
 so write its final punctuation. Leave out the title for plain prose that still
 needs an address. See examples 165 and 166.

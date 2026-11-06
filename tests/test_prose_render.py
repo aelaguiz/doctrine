@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession
+from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
 
@@ -41,6 +42,65 @@ Second."""
         "Third."
 '''),
         )
+
+    def test_e605_fence_split_across_strings(self):
+        for source, owner in (
+            (
+                'agent A:\n    role: "Role."\n    work: "Work"\n'
+                '        "```bash"\n        "make all"\n        "```"\n',
+                "agent A slot work",
+            ),
+            (
+                'agent A:\n    role: "Role."\n    work: "Work"\n'
+                '        check: "Check"\n'
+                '            "  ```bash"\n            "make all"\n            "```"\n',
+                "agent A slot work.check",
+            ),
+            (
+                'skill S: "Skill"\n    purpose: "```bash"\n'
+                'agent A:\n    role: "Role."\n    skills: "Skills"\n        skill s: S\n',
+                "skill S",
+            ),
+            (
+                'skill S: "Skill"\n    purpose: "Purpose."\n'
+                'agent A:\n    role: "Role."\n    skills: "Skills"\n'
+                '        skill s: S\n            reason: "```bash"\n',
+                "skill reference S",
+            ),
+        ):
+            with self.subTest(owner=owner):
+                with self.assertRaises(CompileError) as caught:
+                    self._render(source)
+                diagnostic = caught.exception.diagnostic
+                self.assertEqual(diagnostic.code, "E605")
+                self.assertEqual(diagnostic.summary, "Code fence split across strings")
+                self.assertEqual(
+                    diagnostic.detail,
+                    f"A string in {owner} opens a code fence it doesn't close.",
+                )
+                self.assertEqual(
+                    diagnostic.hints,
+                    ('Put the whole fence in one `"""` string, or use a `code` block.',),
+                )
+
+    def test_fence_whole_in_one_string_compiles(self):
+        result = self._render('''agent A:
+    role: "Role."
+    work: "Work"
+        """```bash
+make all
+```"""
+''')
+        self.assertIn("```bash\nmake all\n```", result)
+
+    def test_list_strings_become_a_loose_list(self):
+        result = self._render('''agent A:
+    role: "Role."
+    work: "Work"
+        "- First"
+        "- Second"
+''')
+        self.assertIn("- First\n\n- Second", result)
 
     def test_section_metadata_only_with_requirement(self):
         source = """agent A:

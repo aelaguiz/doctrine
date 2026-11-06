@@ -182,18 +182,26 @@ class ValidateSchemaHelpersMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
-            return model.AuthoredProse(
-                self._interpolate_authored_prose_string(
-                    value,
-                    unit=unit,
-                    owner_label=owner_label,
-                    surface_label=surface_label,
-                    ambiguous_label=ambiguous_label,
-                    review_semantics=review_semantics,
-                    route_semantics=route_semantics,
-                    render_profile=render_profile,
-                )
+            text = self._interpolate_authored_prose_string(
+                value,
+                unit=unit,
+                owner_label=owner_label,
+                surface_label=surface_label,
+                ambiguous_label=ambiguous_label,
+                review_semantics=review_semantics,
+                route_semantics=route_semantics,
+                render_profile=render_profile,
             )
+            if sum(line.strip().startswith("```") for line in text.splitlines()) % 2:
+                raise authored_compile_error(
+                    code="E605",
+                    summary="Code fence split across strings",
+                    detail=f"A string in {owner_label} opens a code fence it doesn't close.",
+                    unit=unit,
+                    source_span=None,
+                    hints=('Put the whole fence in one `"""` string, or use a `code` block.',),
+                )
+            return model.AuthoredProse(text)
         return model.EmphasizedLine(
             kind=value.kind,
             text=self._interpolate_authored_prose_string(

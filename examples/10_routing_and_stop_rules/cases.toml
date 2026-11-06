@@ -64,7 +64,9 @@ expected_lines = [
   "#### Example",
   "",
   "- verdict: changes requested",
+  "",
   "- next owner: SectionAuthor",
+  "",
   "- reason: the dossier does not make the scope boundary explicit yet",
   "",
   "## Routing",
@@ -87,5 +89,6 @@ expected_lines = [
   "### Hard Stop Rule",
   "",
   "If the required dossier file is missing, stop and escalate.",
+  "",
   "Do not guess from stale notes or old packet copies.",
 ]

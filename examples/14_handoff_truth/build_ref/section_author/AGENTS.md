@@ -96,8 +96,11 @@ A downstream reader should be able to read this comment alone and understand wha
 #### Example
 
 - changed: rewrote the dossier scope and added the validation record
+
 - use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md
+
 - review files: no current review files apply yet
+
 - next owner: AcceptanceCritic
 
 ## Handoff Routing
@@ -119,4 +122,5 @@ Stop when the handoff comment names the exact files to use now and the next owne
 ### Hard Stop Rule
 
 If the current brief is missing, stop and escalate.
+
 Do not point the next owner at stale notes, old copies, or a folder name instead of exact files.

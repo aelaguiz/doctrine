@@ -24,18 +24,7 @@ class ResolveSectionBodiesMixin:
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
-            if isinstance(item, str):
-                resolved.append(
-                    self._interpolate_authored_prose_string(
-                        item,
-                        unit=unit,
-                        owner_label=owner_label,
-                        surface_label="workflow strings",
-                        ambiguous_label="workflow string interpolation ref",
-                    )
-                )
-                continue
-            if isinstance(item, model.EmphasizedLine):
+            if isinstance(item, (str, model.EmphasizedLine)):
                 resolved.append(
                     self._interpolate_authored_prose_line(
                         item,

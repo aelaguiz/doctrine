@@ -16,6 +16,7 @@ expected_lines = [
   "### Owner Names In Prose",
   "",
   "If the route is unclear, return the same issue to ProjectLead.",
+  "",
   "If the work is ready for review, hand it to AcceptanceCritic.",
   "",
   "### Owner Names As Block Mentions",

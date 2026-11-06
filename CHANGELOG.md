@@ -10,8 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Prose and patches (6.0.0; language 6.0)
 
-- Each authored prose string renders as its own paragraph. Readable blocks print
-  metadata only when they carry a requirement or `when`.
+- Each authored prose string renders as its own paragraph, including list items.
+  Put a whole code fence in one triple-quoted string or a `code` block; a fence
+  split across strings fails with `E605`. Readable blocks print metadata only
+  when they carry a requirement or `when`.
 - `paragraph key:` gives prose an address and an optional run-in title.
 - Children must account for head prose, roles, and typed agent fields.
   Use `inherit preamble`, `inherit role`, or `inherit inputs` to keep them.
@@ -22,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `decision:` fields form one inherited item.
 - A lone `.prompt` module inside a prompt root is a one-file flow when no
   flow entrypoint sits above it. `E206` is retired; roles keep their authored
-  position. New errors are `E134` and `E610` to `E613`.
+  position. New errors are `E134`, `E605`, and `E610` to `E613`.
 - Rename `drop` and `paragraph` keys where their new forms can start.
 - See `docs/VERSIONING.md` for the four breaking changes and upgrade steps.
 
