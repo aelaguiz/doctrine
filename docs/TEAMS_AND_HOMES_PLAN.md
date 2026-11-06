@@ -97,7 +97,8 @@ This plan is language version **6.0**. It breaks four things on purpose. The fir
 each turn a silent loss into a loud error or a corrected render:
 
 1. Children must account for inherited head prose, `role`, and typed agent fields.
-2. Every authored prose string renders as its own paragraph.
+2. Every authored prose string renders as its own paragraph, and a code fence must sit whole
+   inside one string.
 3. A readable block no longer prints a bare kind line such as `_section_`.
 4. New keywords can't be keys where their form can start: `drop` and `paragraph` in every
    patchable body, and later `values`, `budget`, `roster`, and `details`. A key that used one
@@ -124,6 +125,14 @@ ships with today. So the compile step marks authored strings at the one place th
 `_interpolate_authored_prose_line`, with a `str` subclass, and `_render_body_lines` puts a
 blank line around a marked string and around an `EmphasizedLine`. Everything else takes the
 shipped path, so a generator needs no change.
+
+There is no exception for what a string holds. Separate strings that each hold a list item
+become a loose list, which still reads as a list. An author who wants it tight writes
+`bullets`, or one `"""` string.
+
+A code fence can't go that way, because a blank line between fenced lines changes the code. A
+string that opens a fence it doesn't close is `E605`: an odd number of its lines start with
+three backticks once trimmed. So a fence sits whole in one `"""` string, or in a `code` block.
 
 ### 4.2 Block Metadata
 
@@ -1417,7 +1426,7 @@ report, not an edit. Numbers continue the corpus.
 
 | # | Example | Teaches | WS |
 | --- | --- | --- | --- |
-| 165 | `every_string_a_paragraph` | One string, one paragraph; no `_section_` | 1 |
+| 165 | `every_string_a_paragraph` | One string, one paragraph; no `_section_`; `E134`, `E605` | 1 |
 | 166 | `paragraph_blocks` | `paragraph`, titled and untitled | 1 |
 | 167 | `inherited_head_prose` | `inherit preamble`, `drop preamble`, `E003` | 1 |
 | 168 | `role_and_typed_field_accounting` | `inherit role`, `inherit inputs`, `E003` | 1 |
@@ -1514,7 +1523,8 @@ alias the child reuses for another module, a `from` import, a private declaratio
 **`tests/test_prose_render.py`**: `test_adjacent_strings_get_blank_line_in_each_surface`
 over workflow root, section, document, record body, role block, callout;
 `test_paragraph_renders_in_document`; `test_generated_lines_keep_their_layout` (a JSON example
-fence, a final-answer quote, and a generated list);
+fence, a final-answer quote, and a generated list); `test_e605_fence_split_across_strings`;
+`test_fence_whole_in_one_string_compiles`; `test_list_strings_become_a_loose_list`;
 `test_multiline_string_keeps_inner_newlines`; `test_section_metadata_only_with_requirement`;
 `test_paragraph_title_runs_in`; `test_untitled_paragraph_has_no_heading`.
 
@@ -1684,9 +1694,9 @@ all of this personally:
    presumed unneeded until shown otherwise.
 4. Reads every changed line against the rule, using the `overbuild-audit` families.
 5. Compares every changed existing example file with its base, line by line, including blank
-   lines. A blank line may change only between two authored strings, never inside a code
-   fence, table, list, or block quote. Anything else is a regression, however the worker
-   filed it. A comparison that ignores blank lines missed a real break here.
+   lines. A blank line may change only between two authored strings, and generated lines
+   stay byte for byte. Anything else is a regression, however the worker filed it. A
+   comparison that ignores blank lines missed a real break here.
 
 **Send back.** Every cut goes back to the worker that wrote it, in the same thread, as a list
 of removals with file and line. A send-back only removes. It never asks for a new guard, test,
@@ -1735,6 +1745,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E602` | `Value has no owner here` | `` `{{<root>:<key>}}` can't be read here: <why>. `` `<why>` is one of: `a skill package has no home`; `an emitted document has no home`; `output schema text is machine text`; `this agent is outside any team`; `a team's own file has no others` |
 | `E603` | `Value cycle` | `` Values read each other: `a -> b -> a` `` |
 | `E604` | `Value sets a fact` | `` `values:` can't set `<key>`. The compiler supplies it. `` |
+| `E605` | `Code fence split across strings` | `` A string in <owner> opens a code fence it doesn't close. `` Hint: ``Put the whole fence in one `"""` string, or use a `code` block.`` |
 | `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
 | `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
 | `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |

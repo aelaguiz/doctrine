@@ -1,0 +1,6 @@
+agent Fenced: "Fenced"
+    role: "Run it."
+    steps: "Steps"
+        "```bash"
+        "make all"
+        "```"

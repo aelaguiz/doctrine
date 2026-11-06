@@ -64,3 +64,12 @@ message_contains = [
   "Missing block title",
   "Write `table calls_table: \"Title\"`.",
 ]
+
+[[cases]]
+name = "a code fence split across strings fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_split_fence/AGENTS.prompt"
+agent = "Fenced"
+exception_type = "CompileError"
+error_code = "E605"
