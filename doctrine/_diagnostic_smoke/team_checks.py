@@ -13,6 +13,7 @@ TEAM_FAILURES = {
     "E603": ('agent A:\n    role: "{{agent:a}}"\n    values:\n        a: "{{agent:b}}"\n        b: "{{agent:a}}"\n', {}),
     "E604": ('agent A:\n    role: "A."\n    values:\n        key: "forbidden"\n', {}),
     "E606": ('team A: "Team"\n    role: "A."\n', {}),
+    "E608": ('agent A:\n    role: "A."\n    values:\n        unit: "first"\n        unit: "second"\n', {}),
     "E609": ('agent A:\n    role: "A."\n    work: "Work"\n        roster r: "Roster"\n            who: "Who" = "{{agent:title}}"\n', {}),
     "E652": ('abstract agent B from "absent.md"\nagent A[B]:\n    inherit *\n', {}),
     "E653": ('abstract agent B from "role.md"\nagent A[B]:\n    inherit *\n', {"role.md": "Role.\n## Same\nOne.\n## Same\nTwo.\n"}),

@@ -20,8 +20,6 @@ def map_text(value, substitute):
         return replace(value, title=map_text(value.title, substitute))
     if isinstance(value, tuple):
         return tuple(map_text(item, substitute) for item in value)
-    if isinstance(value, dict):
-        return {key: map_text(item, substitute) for key, item in value.items()}
     if is_dataclass(value):
         return replace(value, **{
             field.name: map_text(getattr(value, field.name), substitute)
@@ -60,12 +58,11 @@ def bind_home(context, compiled, agent, *, unit):
     missing = []
     stack = []
     def no_owner(root, key, why):
-        readings = value_reading_sites(context, root, key)
         raise compile_error(
             code="E602", summary="Value has no owner here",
             detail=f"`{{{{{root}:{key}}}}}` can't be read here: {why}.",
-            path=readings[0][0] if readings else unit.prompt_file.source_path,
-            source_span=model.SourceSpan(readings[0][1], 1) if readings else agent.source_span)
+            path=(agent.scope_unit or unit).prompt_file.source_path if isinstance(agent, model.Member) else unit.prompt_file.source_path,
+            source_span=agent.source_span)
 
     def values(decl, owner):
         if isinstance(decl, model.Member):
@@ -126,10 +123,11 @@ def bind_home(context, compiled, agent, *, unit):
                 for member in team_members(context, team, unit=team_unit)
                 if key == "members" or member.name != agent.name
             ]
-            return ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else "".join(names)
+            if names:
+                return ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else names[0]
         identity = (root, key)
         if identity in stack:
-            cycle = " -> ".join(item[1] for item in [*stack, identity])
+            cycle = " -> ".join(item[1] for item in [*stack[stack.index(identity):], identity])
             readings = [
                 (source.prompt_file.source_path, span.line)
                 for environment in (agent_values if root == "agent" else team_values)

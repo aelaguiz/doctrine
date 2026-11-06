@@ -28,24 +28,24 @@ def compile_roster(context, block, *, unit):
         if not any(match[1] == "agent" for match in LATE_ROOT.finditer(column.body[0])):
             raise error(f"Column `{column.key}` has no `{{{{agent:...}}}}` in its cell.", column)
     rows = []
+    skipped = None
     for member in team_members(context, team, unit=owner):
         try:
-            cells = tuple(
-                CompiledTableCell(key=column.key, text=bind_home(
-                    context,
-                    context._interpolate_authored_prose_string(
-                        column.body[0], unit=unit,
-                        owner_label=f"roster {block.key}", surface_label="roster cell",
-                    ),
-                    member, unit=owner,
+            cells = bind_home(context, tuple(
+                CompiledTableCell(key=column.key, text=context._interpolate_authored_prose_string(
+                    column.body[0], unit=unit,
+                    owner_label=f"roster {block.key}", surface_label="roster cell",
                 ))
                 for column in columns
-            )
+            ), member, unit=owner)
         except CompileError as exc:
-            if exc.code != "E601":
+            if exc.code != "E601" or "\n- `team:" in exc.diagnostic.detail:
                 raise
+            skipped = exc
             continue
         rows.append(CompiledTableRow(key=member.key, cells=cells))
+    if not rows and skipped is not None:
+        raise skipped
     for row in block.payload.rows:
         by_key = {cell.key: cell for cell in row.cells}
         for cell in row.cells:

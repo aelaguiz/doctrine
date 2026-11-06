@@ -17,9 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   implied `inherit *`. Team doctrine stays in the team's own file.
 - `roster` builds tables from direct members, then adds static rows.
 - Markdown-backed abstract agents and workflows read keyed headings from
-  `from "path.md"`. They support checked refs and the shared patch language.
-- New errors are `E601` to `E604`, `E606`, `E609`, and `E652` to `E654`.
-  Rename `values` and `roster` keys where their new forms can start.
+  `from "path.md"`. Both support the shared patch language. Workflow keys
+  support checked title refs. Reserved agent heading keys get a final `_`,
+  so `## Skills` uses `skills_` and keeps its heading.
+- New errors are `E601` to `E604`, `E606`, `E608`, `E609`, and `E652` to `E654`.
+  Rename `member` and `home` agent slots, and `values` and `roster` keys
+  where their new forms can start.
 
 ### Prose and patches (6.0.0; language 6.0)
 

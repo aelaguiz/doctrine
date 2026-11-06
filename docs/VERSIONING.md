@@ -21,8 +21,9 @@ The release version for this major language move is 6.0.0.
    when a block carries a requirement or `when`.
 4. New keywords cannot be keys where their forms can start. Rename a `drop`
    or `paragraph` key in a patchable body, while keeping its rendered title.
-   `values` in agent bodies and `roster` in readable bodies are also reserved
-   where their forms can start. Later workstreams add `budget` and `details`.
+   `member` and `home` as agent slots, `values` in agent bodies, and `roster`
+   in readable bodies are also reserved where their forms can start. Later
+   workstreams add `budget` and `details`.
 
 ## The Version Lines
 

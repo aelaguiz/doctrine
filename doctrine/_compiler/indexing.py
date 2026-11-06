@@ -446,6 +446,16 @@ def build_indexed_flow(
             entrypoint_unit = indexed_unit
         declarations = unit_declarations(indexed_unit)
 
+        for registry_name, unit_registry in (
+            ("agents_by_name", declarations.teams_by_name),
+            ("teams_by_name", declarations.agents_by_name),
+        ):
+            _register_flow_registry(
+                dict(flow_registries[registry_name]), unit_registry,
+                owner_unit=indexed_unit,
+                declaration_owner_units_by_id=declaration_owner_units_by_id,
+                flow_parts=flow_parts, source_path=member_path,
+            )
         for kind in DECLARATION_KINDS:
             _register_flow_registry(
                 flow_registries[kind.registry_attr],
@@ -742,7 +752,7 @@ def index_unit(
             declaration = read_markdown(declaration, source_path=prompt_file.source_path,
                 project_path=session.project_config.path, prompt_root=prompt_root)
         if isinstance(declaration, model.Team):
-            _register_decl(teams_by_name, declaration, declaration.name, module_parts,
+            _register_decl({**agents_by_name, **teams_by_name}, declaration, declaration.name, module_parts,
                            source_path=prompt_file.source_path)
             teams_by_name[declaration.name] = declaration
             continue
@@ -997,7 +1007,7 @@ def index_unit(
             continue
         if isinstance(declaration, model.Agent):
             _register_decl(
-                agents_by_name,
+                {**teams_by_name, **agents_by_name},
                 declaration,
                 declaration.name,
                 module_parts,

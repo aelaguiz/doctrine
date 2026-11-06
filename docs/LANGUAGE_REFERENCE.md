@@ -269,7 +269,9 @@ role. Its render may be empty.
 `roster` makes a Markdown table from the team's direct members. Each column
 has the form `key: "Header" = "{{agent:value}}"`. Inside a cell, `agent`
 means that row's member. Every cell template must read at least one agent
-value. A member gets no row when any cell reads a value it lacks.
+value. A member gets no row when a cell reads an agent value it lacks.
+A missing team value fails with `E601`. So does a roster that skips every
+member, even when it has static rows.
 
 An optional `rows:` block adds static rows after the member rows. It uses
 the same keyed cells as `table`. Each row must fill every column and cannot
@@ -295,10 +297,13 @@ not count.
 
 A section key is its heading in lower case. Each run of other characters
 becomes `_`, with the ends trimmed. Two sibling headings with one key are
-`E653`, which names both lines. Text stays verbatim, including `{{`.
+`E653`, which names both lines. On an abstract agent, a reserved agent
+field key gets a final `_`. For example, `## Skills` uses `skills_` and
+still renders as `## Skills`. Text stays verbatim, including `{{`.
 A runtime import line starting with `@` is `E654`. Declare that file too
-and compose it. These keys support `drop`, `override`, dotted patches,
-and checked title refs. See [example 179](../examples/179_markdown_backed_declarations).
+and compose it. These keys support `drop`, `override`, and dotted patches.
+A Markdown workflow also supports `{{Decl:key.title}}` on its keys.
+See [example 179](../examples/179_markdown_backed_declarations).
 
 ## Workflows
 

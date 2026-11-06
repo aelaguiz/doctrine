@@ -215,7 +215,7 @@ def prepare_body_patches(body, parent, *, kind, owner_label, unit, source_span):
 
 
 def expand_agent_patches(context, agent, *, unit):
-    validate_team(agent, unit=unit)
+    agent = validate_team(agent, unit=unit)
     validate_values(agent, unit=unit)
     parent_fields = {}
     keys = []

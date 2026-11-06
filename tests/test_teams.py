@@ -4,6 +4,7 @@ import unittest
 
 from tests import test_late_binding
 from doctrine.diagnostics import CompileError
+from doctrine.flow_renderer import render_flow_d2
 from doctrine.renderer import render_markdown
 
 
@@ -270,3 +271,60 @@ team T: "Team"
         inherit {role, work}
 ''')
         self.assertEqual(render_markdown(session.compile_agent('T.qa')), 'Role.\n\n## Work\n\nWork.\n')
+
+    def test_roster_team_typo_is_e601(self):
+        for first, second in (
+            ('{{agent:title}} {{team:typo}}', '{{agent:title}}'),
+            ('{{agent:absent}}', '{{agent:title}} {{team:typo}}'),
+        ):
+            source = self.roster_source().replace('{{agent:calls}}', first).replace('= "{{agent:title}}"', '= "' + second + '"')
+            with self.subTest(first=first, second=second), self.assertRaises(CompileError) as caught:
+                self.session(source).compile_agent('T')
+            self.assertEqual(caught.exception.code, 'E601')
+            self.assertIn('- `team:typo` at ', caught.exception.diagnostic.detail)
+
+    def test_roster_skipping_every_member_is_e601(self):
+        source = self.roster_source().replace('{{agent:calls}}', '{{agent:typo}}')
+        with self.assertRaises(CompileError) as caught:
+            self.session(source).compile_agent('T')
+        self.assertEqual(caught.exception.code, 'E601')
+        self.assertIn('- `agent:typo` at ', caught.exception.diagnostic.detail)
+
+    def test_flow_graph_routes_to_a_member(self):
+        team = 'team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Test."\n'
+        for location in ('local', 'sibling', 'imported'):
+            target = 'pod.T.qa' if location == 'imported' else 'T.qa'
+            for route in ('workflow', 'route_field'):
+                source = 'agent A:\n    role: "Route."\n'
+                if route == 'workflow':
+                    source += '    work: "Work"\n        send: "Send"\n            route "Send" -> ' + target + '\n'
+                else:
+                    source = 'output schema S: "Schema"\n    route field next: "Next"\n        send: "Send" -> ' + target + '\n    example:\n        next: "send"\noutput shape Shape: "Shape"\n    kind: JsonObject\n    schema: S\noutput O: "Output"\n    target: TurnResponse\n    shape: Shape\n    requirement: Required\n' + source + '    outputs: "Outputs"\n        O\n    final_output:\n        output: O\n        route: next\n'
+                files = {}
+                if location == 'local':
+                    source = team + source
+                elif location == 'sibling':
+                    files['prompts/pod.prompt'] = team
+                else:
+                    source = 'import pod\n' + source
+                    files['prompts/pod/AGENTS.prompt'] = 'export ' + team
+                with self.subTest(location=location, route=route):
+                    graph = self.session(source, files).extract_target_flow_graph(('A',))
+                    self.assertIn('T.qa', [agent.name for agent in graph.agents])
+                    self.assertTrue(any(edge.target_name == 'T.qa' and edge.kind == 'authored_route' for edge in graph.edges))
+                    self.assertIn('QA', render_flow_d2(graph))
+
+    def test_team_and_agent_cannot_share_a_name(self):
+        team = 'team Same: "Team"\n    home: "t"\n'
+        agent = 'agent Same:\n    role: "Role."\n'
+        for first, second in ((team, agent), (agent, team)):
+            for sibling in (False, True):
+                with self.subTest(first=first, sibling=sibling), self.assertRaises(CompileError) as caught:
+                    self.session(first if sibling else first + second, {'prompts/sibling.prompt': second} if sibling else {})
+                self.assertEqual(caught.exception.code, 'E316' if sibling else 'E288')
+
+    def test_second_home_is_e606(self):
+        with self.assertRaises(CompileError) as caught:
+            self.session('team T: "Team"\n    home: "first"\n    home: "second"\n').compile_agent('T')
+        self.assertEqual(caught.exception.code, 'E606')
+        self.assertEqual(caught.exception.diagnostic.detail, 'Team `T` uses key `home` twice.')

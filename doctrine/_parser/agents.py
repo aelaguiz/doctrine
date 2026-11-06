@@ -58,7 +58,7 @@ class AgentTransformerMixin:
         body = items[-1]
         return model.Team(
             name=head.name, title=head.title, abstract=abstract, parent_ref=head.parent_ref,
-            fields=_flatten_grouped_items([item for item in body if not isinstance(item, tuple)]),
+            fields=_flatten_grouped_items(body),
             home=next((item[1] for item in body if isinstance(item, tuple)), None),
             source_span=source_span,
         )

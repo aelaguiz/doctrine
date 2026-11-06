@@ -87,11 +87,36 @@ agent B:
         path = session.root_flow.entrypoint_path
         self.assertEqual(diagnostic.detail, f'Home `A` reads values nothing fills:\n- `agent:first` at {path}:2\n- `agent:first` at {path}:4\n- `agent:second` at {path}:2')
 
+    def test_e601_empty_others(self):
+        for source, target, key in (
+            ('team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Ask {{team:others}} first."\n', 'T.qa', 'others'),
+            ('team T: "Team"\n    home: "t"\n    role: "Ask {{team:members}} first."\n', 'T', 'members'),
+        ):
+            with self.subTest(key=key), self.assertRaises(CompileError) as caught:
+                self.render(source, target)
+            self.assertEqual(caught.exception.code, 'E601')
+            self.assertIn(f'- `team:{key}` at ', caught.exception.diagnostic.detail)
+
     def test_e603_prints_cycle(self):
-        with self.assertRaises(CompileError) as caught:
-            self.render('agent A:\n    role: "{{agent:a}}"\n    values:\n        a: "{{agent:b}}"\n        b: "{{agent:a}}"\n')
-        self.assertEqual(caught.exception.code, 'E603')
-        self.assertEqual(caught.exception.diagnostic.detail, 'Values read each other: `a -> b -> a`')
+        for entry in ('a', 'lead'):
+            with self.subTest(entry=entry), self.assertRaises(CompileError) as caught:
+                self.render('agent A:\n    role: "{{agent:' + entry + '}}"\n    values:\n        lead: "{{agent:a}}"\n        a: "{{agent:b}}"\n        b: "{{agent:a}}"\n')
+            self.assertEqual(caught.exception.code, 'E603')
+            self.assertEqual(caught.exception.diagnostic.detail, 'Values read each other: `a -> b -> a`')
+
+    def test_e608_value_set_twice(self):
+        for head, target, indent in (
+            ('agent A:\n    role: "Role."\n', 'A', '    '),
+            ('team T: "Team"\n    home: "t"\n', 'T', '    '),
+            ('team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Role."\n', 'T.qa', '        '),
+        ):
+            for separator in ('', indent + 'values:\n'):
+                source = head + indent + 'values:\n' + indent + '    unit: "first"\n' + separator + indent + '    unit: "second"\n'
+                with self.subTest(target=target, separator=separator), self.assertRaises(CompileError) as caught:
+                    self.render(source, target)
+                self.assertEqual(caught.exception.code, 'E608')
+                self.assertEqual(caught.exception.diagnostic.summary, 'Value set twice')
+                self.assertEqual(caught.exception.diagnostic.detail, '`values:` sets `unit` twice.')
 
     def test_e602_team_value_outside_team(self):
         with self.assertRaises(CompileError) as caught:

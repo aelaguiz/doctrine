@@ -45,16 +45,19 @@ def validate_team(agent, *, unit):
             raise error(f'`home: "{agent.home}"` must be a relative path with no `..` and no trailing `/`.', agent)
         keys = set()
         for field in agent.fields:
-            key = "role" if isinstance(field, (model.RoleScalar, model.RoleBlock)) else getattr(field, "key", None)
+            key = field[0] if isinstance(field, tuple) else "role" if isinstance(field, (model.RoleScalar, model.RoleBlock)) else getattr(field, "key", None)
             if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride)) and key in {"inputs", "outputs", "analysis", "decision", "skills", "review", "final_output", "selectors"}:
                 raise error(f"Team `{agent.name}` can't hold `{key}`. A team takes `role`, `values`, `budget`, slots, and members.", field)
             if key is not None:
                 if key in keys:
-                    raise error(f"Team `{agent.name}` uses key `{key}` twice.", field)
+                    raise error(f"Team `{agent.name}` uses key `{key}` twice.", agent if isinstance(field, tuple) else field)
                 keys.add(key)
+        agent = replace(agent, fields=tuple(field for field in agent.fields if not isinstance(field, tuple)))
+    return agent
 
 
 def validate_values(agent, *, unit):
+    keys = set()
     for field in agent.fields:
         if isinstance(field, model.ValuesField):
             for key, text, span in field.items:
@@ -62,6 +65,11 @@ def validate_values(agent, *, unit):
                     raise compile_error(code="E604", summary="Value sets a fact",
                         detail=f"`values:` can't set `{key}`. The compiler supplies it.",
                         path=unit.prompt_file.source_path, source_span=span)
+                if key in keys:
+                    raise compile_error(code="E608", summary="Value set twice",
+                        detail=f"`values:` sets `{key}` twice.",
+                        path=unit.prompt_file.source_path, source_span=span)
+                keys.add(key)
 
 
 def order_team_fields(agent, fields, *, keys, parent_fields, unit):

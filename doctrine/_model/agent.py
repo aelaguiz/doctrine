@@ -152,5 +152,5 @@ class Member(Agent):
 
 @_dataclass(slots=True, frozen=True)
 class Team(Agent):
-    fields: tuple[Field | Member, ...]
+    fields: tuple[Field | Member | tuple[str, str], ...]
     home: str | None = None

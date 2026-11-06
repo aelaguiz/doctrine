@@ -47,3 +47,22 @@ class MarkdownReaderTests(unittest.TestCase):
         with self.assertRaises(CompileError) as caught:
             self.markdown('# Craft\nRole.\n## Work\nWork.\n', '    drop gone: "Old heading."\n').compile_agent('A')
         self.assertEqual(caught.exception.code, 'E610')
+
+    def test_fence_rules_follow_commonmark(self):
+        for opening, middle, closing in (
+            ('````md', '```\n## Still code\n```', '````'),
+            ('```md', '```python\n## Still code', '```'),
+            ('~~~md', '```\n## Still code\n~~~python\n## Also code', '~~~~'),
+        ):
+            text = 'Role.\n## Keep\n' + opening + '\n' + middle + '\n' + closing + '\n## Gone\nRemove.\n'
+            with self.subTest(opening=opening, middle=middle):
+                rendered = render_markdown(self.markdown(text, '    drop gone: "Unused."\n').compile_agent('A'))
+                self.assertEqual(rendered, 'Role.\n\n## Keep\n\n' + opening + '\n' + middle + '\n' + closing + '\n')
+        rendered = render_markdown(self.markdown('Role.\n```x``` is inline.\n## Gone\nRemove.\n', '    drop gone: "Unused."\n').compile_agent('A'))
+        self.assertEqual(rendered, 'Role.\n```x``` is inline.\n')
+
+    def test_reserved_heading_gets_final_underscore(self):
+        session = self.markdown('Role.\n## Skills\nUse these skills.\n')
+        self.assertEqual(render_markdown(session.compile_agent('A')), 'Role.\n\n## Skills\n\nUse these skills.\n')
+        dropped = self.markdown('Role.\n## Skills\nUse these skills.\n', '    drop skills_: "Unused."\n')
+        self.assertEqual(render_markdown(dropped.compile_agent('A')), 'Role.\n')
