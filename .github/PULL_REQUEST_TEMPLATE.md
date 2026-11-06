@@ -13,7 +13,6 @@
 - [ ] `make verify-diagnostics`
 - [ ] `make verify-examples`
 - [ ] `make verify-package`
-- [ ] `cd editors/vscode && make`
 - [ ] Not run. Explain below.
 
 ## Docs and examples

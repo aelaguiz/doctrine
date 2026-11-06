@@ -162,6 +162,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `docs/COMPILER_ERRORS.md`, `examples/README.md`, and the shipped
   `doctrine-learn` skill so release truth matches examples `150` through
   `164`.
+- Removed the VS Code extension, which Cursor also used.
 
 ### Verification
 

@@ -1,8 +1,0 @@
-inputs RallyManagedInputs: "Rally Managed Inputs"
-    issue_ledger: "Issue Ledger"
-        "Read the issue ledger."
-
-
-abstract agent RallyManagedBaseAgent:
-    role: "Base role."
-    inputs: RallyManagedInputs
