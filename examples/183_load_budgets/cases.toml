@@ -15,6 +15,39 @@ expected_stdout_lines = [
   "pods/growth/big    claude   1,035  1,000  -35",
   "pods/growth/small  codex    242    800    558",
   "pods/growth/small  claude   342    1,000  658",
+  "pods/growth        codex    123    800    677",
+  "pods/growth        claude   223    1,000  777",
+]
+
+[[cases]]
+name = "one home prints its files and its biggest parts"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load", "pods/growth/small"]
+expected_exit = 0
+setup = [["build", "."]]
+expected_stdout_lines = [
+  "pods/growth/small on claude: 342 of 1,000 characters, 658 left",
+  "",
+  "Files:",
+  "  not-here.md                  100  reserved",
+  "  pods/growth/AGENTS.md        123",
+  "  pods/growth/small/AGENTS.md  119",
+  "",
+  "Biggest parts:",
+  "  GrowthPod: 10",
+  "  GrowthPod.small: 6",
+  "",
+  "pods/growth/small on codex: 242 of 800 bytes, 558 left",
+  "",
+  "Files:",
+  "  pods/growth/AGENTS.md        123",
+  "  pods/growth/small/AGENTS.md  119",
+  "",
+  "Biggest parts:",
+  "  GrowthPod: 10",
+  "  GrowthPod.small: 6",
 ]
 
 [[cases]]

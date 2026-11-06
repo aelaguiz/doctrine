@@ -39,7 +39,7 @@ outputs read as inputs (#102).
 | WS4 Reach | #98, #99, the report half of #101 | All read the home map. |
 | WS5 Provenance | #100, the declaration half of #101 | `person` serves both. |
 | WS6 Messages | #102 | Small, self-contained. |
-| WS7 Tools and closure | all | `doctrine import`, docs, editor, corpus, and downstream checks. |
+| WS7 Tools and closure | all | `doctrine import`, docs, corpus, and downstream checks. |
 | WS8 Doctrine Learn teaches results | new ask | The skill teaches how to get good results, not only the syntax. |
 
 ## 2. What We Copy, And From Whom
@@ -705,10 +705,12 @@ Markdown file it would overwrite or remove. So `E634` leaves the tree as it was.
 | Hash doesn't match its bytes | `E634`: it was edited by hand |
 | No Doctrine header | `E634`: it was written by hand |
 
-`E634` names the file. For an edited file the build would overwrite, it also names each
-top-level section that differs from the fresh build and that section's origin and site, and
-says to move the edit there. `--force` overwrites or removes it. Nothing else does. A hand
-edit is never silently lost.
+`E634` names the file. For an edited home file the build would overwrite, it also names each
+top-level section that differs from the fresh build, matched by title and then by order among
+repeats, with that section's origin and site. A section the fresh build no longer has prints
+`no longer in source`. A companion names only the file and its `source`. It says to move the
+edit there. `--force` overwrites or removes it. Nothing else does. A hand edit is never
+silently lost.
 
 `TEAM.contract.json` and `HOMES.contract.json` are machine files. They carry no header and
 no guard, because no lesson lives in them, and `--check` shows them as `stale`.
@@ -920,7 +922,14 @@ Prints `built <N> homes, <M> files changed` on success, with `home` and `file` s
 **`doctrine check [--strict] [--json] [--rev REV] [--with PATH]`** compiles every home,
 writes nothing, and checks all rules, budgets, and warnings. Warnings print to stderr and
 don't fail unless `--strict`. It prints `ok: <N> homes checked` when it exits 0. A commit
-tool runs this, so the failure lands on the author.
+tool runs this, so the failure lands on the author. With `--json` it prints this instead,
+where `text` is what the plain form prints for that finding:
+
+```json
+{"format_version": 1, "ok": false, "homes": 3,
+ "errors": [{"code": "E630", "text": "..."}],
+ "warnings": [{"code": "W306", "text": "..."}]}
+```
 
 **`doctrine where "<words>" [--home PATH] [--json]`** finds the source of a sentence an
 agent read. It matches against each home's compiled always-on and details text, ignoring
@@ -943,10 +952,36 @@ pods/feature/qa   claude   142,200  150,000  7,800
 ```
 
 Each column is padded to its widest cell plus two spaces, numbers use thousands commas,
-rows sort by headroom, then home, then runtime, and headroom may be negative. With exactly
-one home selected it prints, for each runtime: each file with its size, the
-top five origins, and any `drop` with its reason. `--full` instead prints everything that
-home loads, in order, each file under a `===== <path> (<size>) =====` line.
+rows sort by headroom, then home, then runtime, and headroom may be negative. Every home is a
+row, a team's included, because a session can start in any of them.
+
+With exactly one home selected it prints one block per runtime in the target's order, then
+the drops once:
+
+```text
+pods/growth/qa on claude: 145,400 of 150,000 characters, 4,600 left
+
+Files:
+  ~/.claude/CLAUDE.md       13,600  external
+  AGENTS.md                 92,100
+  pods/growth/qa/AGENTS.md  39,700
+
+Biggest parts:
+  PodQa: 31,300
+  GrowthPod: 14,100
+  And 7 smaller parts: 12,000
+
+Dropped:
+  working_the_queue from PodQa: A pod's QA works the pod's changes, not the labeled queue.
+```
+
+The unit is `characters` for `claude` and `bytes` for `codex`. Past the limit the line ends
+`1,200 over`. File columns follow the table's padding, and a file with no reserve-or-external
+kind has no third cell. An absent external prints `reserved`. `Biggest parts:` follows the
+`E630` rule. Blocks are separated by one blank line, and an empty block is omitted.
+
+`--full` instead prints everything that home loads, in order, each file under a
+`===== <path> (<size>) =====` line.
 
 JSON shape:
 
@@ -1012,6 +1047,13 @@ class HomeMap:
     wildcard_keys: frozenset[tuple[str, ...]]   # paths that arrived through `inherit *`
     deps: frozenset[str]    # every declaration this home's source reaches
 ```
+
+`entries` partition a home's always-on text and its details. `role` is an entry with the path
+`("role",)`. An entry holds its own rendered text and leaves out its keyed children down to
+depth 2, each of which is an entry of its own, and anything deeper rolls up into its depth-2
+ancestor. Its sizes and `text_hash` cover that text, with no surrounding blank lines. So
+origin totals never count a line twice, and the generated header, pointer line, and joining
+blank lines belong to no entry.
 
 `origin` is the declaration whose source wrote the text, not the one that inherited it.
 `deps` comes from a dataclass-reflection walk over the model that collects every name ref,
@@ -1640,21 +1682,21 @@ reviewer samples them. An example changes for no other reason. New required acco
 lines (`inherit preamble`, `inherit inputs`) go into existing example source only where the
 compiler now demands them, and the report lists each one.
 
-## 15. Docs, Skills, And Editor Duty By Workstream
+## 15. Docs And Skills Duty By Workstream
 
 Docs land with the code that makes them true, in the same workstream. Plain language at
 about a 7th grade reading level applies to all of it.
 
-| WS | Live docs | Skills | Editor |
-| --- | --- | --- | --- |
-| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` | Keywords `drop`, `paragraph`; `*` after `inherit`; `preamble`; and the 46 shipped keywords the alignment check already reports missing, so `make` passes for every later workstream |
-| 2 | `LANGUAGE_REFERENCE` (values, teams, roster, `from`, interpolation), `LANGUAGE_DESIGN_NOTES` (late binding, teams are folders), `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `agents_and_workflows`, new `teams_and_homes` | Keywords `team`, `member`, `values`, `roster`, `from`, `home`; `{{agent:` and `{{team:` scopes |
-| 3 | `EMIT_GUIDE` (home tree, runtimes, `DETAILS.md`, CLI), `LANGUAGE_REFERENCE` (`details`, `budget`), `WARNINGS`, `COMPILER_ERRORS`, `WHY_DOCTRINE`, `README` quick start | `emit_targets`, `verify_and_ship`, `teams_and_homes` | Keywords `details`, `budget` |
-| 4 | `LANGUAGE_REFERENCE` (Project Rules), `WARNINGS` (Project Warnings; remove the candidates now shipped), `AGENT_LINTER`, `COMPILER_ERRORS` | `rules`; linter `audit_method`, `finding_catalog`, `report_contract` | Rule keywords |
-| 5 | `LANGUAGE_REFERENCE`, `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `language_overview` | Keywords `person`, `quote` |
-| 6 | `LANGUAGE_REFERENCE` (Outputs), `AGENT_IO_DESIGN_NOTES`, `COMPILER_ERRORS` | `outputs_and_schemas` | `Message` |
-| 7 | `README`, `CHANGELOG`, `VERSIONING`, `docs/README`, `examples/README`, root `AGENTS.md` (corpus range), `CONTRIBUTING` | All skills rebuilt with `make skills` | `cd editors/vscode && make` |
-| 8 | `DOCTRINE_LEARN`, `AUTHORING_PATTERNS` | Section 12 | none |
+| WS | Live docs | Skills |
+| --- | --- | --- |
+| 1 | `LANGUAGE_REFERENCE` (workflows, inheritance, readable blocks), `LANGUAGE_DESIGN_NOTES` (patch language, paragraph), `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `FAIL_LOUD_GAPS` | `agents_and_workflows`, `documents_and_tables`, `imports_and_refs`; linter `finding_catalog` drop guidance for `AL130` |
+| 2 | `LANGUAGE_REFERENCE` (values, teams, roster, `from`, interpolation), `LANGUAGE_DESIGN_NOTES` (late binding, teams are folders), `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `agents_and_workflows`, new `teams_and_homes` |
+| 3 | `EMIT_GUIDE` (home tree, runtimes, `DETAILS.md`, CLI), `LANGUAGE_REFERENCE` (`details`, `budget`), `WARNINGS`, `COMPILER_ERRORS`, `WHY_DOCTRINE`, `README` quick start | `emit_targets`, `verify_and_ship`, `teams_and_homes` |
+| 4 | `LANGUAGE_REFERENCE` (Project Rules), `WARNINGS` (Project Warnings; remove the candidates now shipped), `AGENT_LINTER`, `COMPILER_ERRORS` | `rules`; linter `audit_method`, `finding_catalog`, `report_contract` |
+| 5 | `LANGUAGE_REFERENCE`, `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `language_overview` |
+| 6 | `LANGUAGE_REFERENCE` (Outputs), `AGENT_IO_DESIGN_NOTES`, `COMPILER_ERRORS` | `outputs_and_schemas` |
+| 7 | `README`, `CHANGELOG`, `VERSIONING`, `docs/README`, `examples/README`, root `AGENTS.md` (corpus range), `CONTRIBUTING` | All skills rebuilt with `make skills` |
+| 8 | `DOCTRINE_LEARN`, `AUTHORING_PATTERNS` | Section 12 |
 
 `docs/VERSIONING.md` moves to language 6.0 with an upgrade section listing the three breaks
 and their mechanical fixes. `CHANGELOG.md` gets one entry per workstream under `Unreleased`.
@@ -1737,10 +1779,9 @@ meets that case, how often, and what the plain version costs them when they do.
    `make verify-skill-examples` reads no prompt fences from its default roots.
    `make verify-examples` runs whole once WS8 is in. Each runs once, when the workstream is
    ready.
-3. `cd editors/vscode && make` passes when the editor surface changed.
-4. The designer's overbuild audit is clean, with every cut sent back and verified.
-5. The designer reads the whole diff against this spec, line by line.
-6. Opus 5.5 at high, which built none of it, reviews the diff against this spec and for what
+3. The designer's overbuild audit is clean, with every cut sent back and verified.
+4. The designer reads the whole diff against this spec, line by line.
+5. Opus 5.5 at high, which built none of it, reviews the diff against this spec and for what
    it doesn't need. Its findings are proposals. The designer decides each one, and the cuts
    go back the same way.
 
