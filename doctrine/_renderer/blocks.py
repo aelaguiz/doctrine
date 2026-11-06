@@ -39,6 +39,9 @@ def _render_block(
     profile: ResolvedRenderProfile,
 ) -> str:
     if isinstance(block, CompiledSection):
+        if block.kind == "paragraph":
+            text = "\n".join(_render_body_lines(block.body, depth=depth, profile=profile))
+            return _render_raw_text_block(CompiledRawTextBlock(title=block.title, text=text, kind="paragraph", requirement=block.requirement, when_text=block.when_text), depth=depth)
         active_profile = block.render_profile or profile
         semantic_render = _render_semantic_section(
             block,

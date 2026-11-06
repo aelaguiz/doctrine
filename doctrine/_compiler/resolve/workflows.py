@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from doctrine import model
+from dataclasses import replace
+from doctrine._compiler.home_map import source_origin, child_origin
 from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
@@ -117,6 +119,7 @@ class ResolveWorkflowsMixin:
             ):
                 resolved = self._resolve_workflow_body(
                     workflow_decl.body,
+                    origin=source_origin(self, workflow_decl, unit, (), workflow_decl.source_span),
                     unit=unit,
                     owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
                     owner_source_span=workflow_decl.source_span,
@@ -226,6 +229,7 @@ class ResolveWorkflowsMixin:
         parent_body: model.WorkflowBody | None = None,
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
+        origin: tuple | None = None,
     ) -> ResolvedWorkflowBody:
         workflow_body, patches = prepare_body_patches(
             workflow_body, parent_workflow, kind="workflow", owner_label=owner_label,
@@ -243,10 +247,12 @@ class ResolveWorkflowsMixin:
         )
         if parent_workflow is None:
             return ResolvedWorkflowBody(
+                origin=origin,
                 title=workflow_body.title,
                 preamble=resolved_preamble,
                 items=self._resolve_non_inherited_items(
                     workflow_body.items,
+                    origin=origin,
                     unit=unit,
                     owner_label=owner_label,
                     owner_source_span=owner_source_span,
@@ -289,9 +295,11 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -349,7 +357,7 @@ class ResolveWorkflowsMixin:
                             ),
                         ),
                     )
-                resolved_items.append(item)
+                resolved_items.append(replace(item, origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None)))
                 continue
 
             parent_item = parent_items_by_key.get(key)
@@ -407,9 +415,11 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                         title=item.title if item.title is not None else parent_item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -527,6 +537,7 @@ class ResolveWorkflowsMixin:
             )
 
         return ResolvedWorkflowBody(
+            origin=origin,
             title=workflow_body.title,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
@@ -1010,6 +1021,7 @@ class ResolveWorkflowsMixin:
         unit: IndexedUnit,
         owner_label: str,
         owner_source_span: model.SourceSpan | None,
+        origin: tuple | None = None,
     ) -> tuple[ResolvedWorkflowItem, ...]:
         resolved_items: list[ResolvedWorkflowItem] = []
         seen_items: dict[str, model.WorkflowItem] = {}
@@ -1037,9 +1049,11 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None),
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -1074,7 +1088,7 @@ class ResolveWorkflowsMixin:
                 continue
 
             if isinstance(item, model.ReadableBlock):
-                resolved_items.append(item)
+                resolved_items.append(replace(item, origin=child_origin(origin, key, item.source_span, item.title if isinstance(item, (model.LocalSection, model.OverrideSection)) else None)))
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"

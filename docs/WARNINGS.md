@@ -10,6 +10,17 @@ compile by themselves.
 The [agent-linter skill](AGENT_LINTER.md) is the current home for
 judgment-first authoring review.
 
+## Home Build Warnings
+
+| Code | Meaning |
+| --- | --- |
+| `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Builds also use this warning for an over-budget home. |
+| `W307` | A selected home's shared level or companion differs from the fresh build. The selected build compares it and leaves it alone. |
+
+`doctrine check` fails an over-budget home with `E630`, unless the runtime
+sets `over = "warn"`. Warnings fail a check only with `--strict`.
+Examples 183 and 184 prove these cases.
+
 ## Shipped Graph Warnings
 
 These warnings only run when a graph opts in with a matching `warn <key>`

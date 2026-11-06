@@ -350,3 +350,18 @@ shows the canonical formatted shape for one shipped compile error.
 | `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
 | `E654` | Import line in Markdown source | A runtime import path would break once its text is inlined. Declare that file too and compose it. |
+
+## Homes And Load
+
+| Code | Summary | When |
+| --- | --- | --- |
+| `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
+| `E620` | Details outside a home | Details are in a skill package or an emitted document. |
+| `E621` | Shared details read one agent's words | A shared companion reads an agent or team value, in text or a title. |
+| `E630` | Over load budget | A check finds a home past its runtime's limit. |
+| `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
+| `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
+| `E633` | External file missing | A listed external is absent and has no reserve. |
+| `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. Move the edit to its source, then build. `--force` overwrites it. |
+| `E640` | No home matches | A selector matches no home path or agent name. |
+| `E641` | Bad revision | The given revision does not exist in this repository. |

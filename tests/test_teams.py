@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import unittest
+import json
+
+from tests.ws3_support import HomeProject
+from doctrine.homes import compile_homes
+from doctrine.emit_common import load_emit_targets
 
 from tests import test_late_binding
 from doctrine.diagnostics import CompileError
@@ -328,3 +333,19 @@ team T: "Team"
             self.session('team T: "Team"\n    home: "first"\n    home: "second"\n').compile_agent('T')
         self.assertEqual(caught.exception.code, 'E606')
         self.assertEqual(caught.exception.diagnostic.detail, 'Team `T` uses key `home` twice.')
+
+
+class TeamHomeTests(HomeProject, unittest.TestCase):
+    def test_team_contract_order_and_sections(self):
+        root = HomeProject.project(self, 'abstract team Base:\n    member qa: "QA"\n        role: "Test."\n        work: "Work"\n            "Test it."\nteam T[Base]: "Team"\n    home: "t"\n    member lead: "Lead"\n        role: "Lead."\n')
+        homes, files = compile_homes(load_emit_targets(root / 'pyproject.toml')['homes'])
+        members = json.loads(files['t/TEAM.contract.json'])['members']
+        self.assertEqual([member['key'] for member in members], ['qa', 'lead'])
+        self.assertEqual(members[0]['sections'], ['Work'])
+        self.assertEqual(homes['t/qa']['compiled'].fields[0].origin[0], 'Base.qa')
+
+    def test_e607_member_folder_collides_with_team(self):
+        root = HomeProject.project(self, 'team A: "A"\n    home: "a"\n    member qa: "QA"\n        role: "Test."\nteam B: "B"\n    home: "a/qa"\n    role: "Other."\n')
+        code, _, error = HomeProject.cli(self, root, 'build', '.')
+        self.assertEqual(code, 1)
+        self.assertIn('`A.qa` and `B` both land at `a/qa`.', error)

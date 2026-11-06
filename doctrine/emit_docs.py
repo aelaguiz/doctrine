@@ -171,6 +171,7 @@ def emit_target(
             seen_paths[bundled_path] = owner_label
 
     try:
+        session.emit_paths = {plan.root.agent_name: target.output_dir / plan.markdown_path.relative_to(output_root) for plan in planned_emits}
         previous_turn_contexts = _build_previous_turn_contexts(
             session,
             agent_roots=tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),
@@ -191,55 +192,27 @@ def emit_target(
         compiled_agents,
         strict=True,
     ):
-        rendered = render_markdown(compiled)
-        plan.markdown_path.parent.mkdir(parents=True, exist_ok=True)
-        plan.markdown_path.write_text(rendered)
-        emitted_paths.append(plan.markdown_path)
-        final_output = compiled.final_output
-        if (
-            final_output is not None
-            and final_output.generated_schema_relpath is not None
-            and final_output.lowered_schema is not None
-        ):
-            schema_path = plan.markdown_path.parent / final_output.generated_schema_relpath
-            schema_path.parent.mkdir(parents=True, exist_ok=True)
-            schema_path.write_text(
-                json.dumps(final_output.lowered_schema, indent=2) + "\n",
-                encoding="utf-8",
-            )
-            emitted_paths.append(schema_path)
-        final_output_contract_payload = _final_output_contract_payload(
-            plan=plan,
-            compiled=compiled,
-            target=target,
-        )
-        if final_output_contract_payload is not None:
-            final_output_contract_path = (
-                plan.markdown_path.parent / FINAL_OUTPUT_CONTRACT_FILENAME
-            )
-            final_output_contract_path.write_text(
-                json.dumps(final_output_contract_payload, indent=2) + "\n",
-                encoding="utf-8",
-            )
-            emitted_paths.append(final_output_contract_path)
-        if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
-            soul_compiled = _compile_runtime_package_soul(
-                plan,
-                target=target,
-            )
-            plan.soul_output_path.parent.mkdir(parents=True, exist_ok=True)
-            plan.soul_output_path.write_text(
-                render_markdown(soul_compiled),
-                encoding="utf-8",
-            )
-            emitted_paths.append(plan.soul_output_path)
-        for bundled_file in plan.bundled_files:
-            bundled_path = plan.markdown_path.parent / bundled_file.path
-            bundled_path.parent.mkdir(parents=True, exist_ok=True)
-            bundled_path.write_bytes(bundled_file.content)
-            emitted_paths.append(bundled_path)
+        for path, content in runtime_files(plan, compiled, target).items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(content)
+            emitted_paths.append(path)
 
     return tuple(emitted_paths)
+
+
+def runtime_files(plan, compiled, target):
+    files = {plan.markdown_path: render_markdown(compiled).encode()}
+    final_output = compiled.final_output
+    if final_output is not None and final_output.generated_schema_relpath is not None and final_output.lowered_schema is not None:
+        files[plan.markdown_path.parent / final_output.generated_schema_relpath] = (json.dumps(final_output.lowered_schema, indent=2) + "\n").encode()
+    contract = _final_output_contract_payload(plan=plan, compiled=compiled, target=target)
+    if contract is not None:
+        files[plan.markdown_path.parent / FINAL_OUTPUT_CONTRACT_FILENAME] = (json.dumps(contract, indent=2) + "\n").encode()
+    if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
+        files[plan.soul_output_path] = render_markdown(_compile_runtime_package_soul(plan, target=target)).encode()
+    for bundled_file in plan.bundled_files:
+        files[plan.markdown_path.parent / bundled_file.path] = bundled_file.content
+    return files
 
 
 def _final_output_contract_payload(

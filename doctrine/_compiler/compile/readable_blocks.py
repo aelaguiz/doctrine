@@ -71,6 +71,8 @@ class CompileReadableBlocksMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
+        if block.kind == "details":
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=block.origin, body=section_body_compiler(block.payload, owner_label))
         if block.kind == "roster":
             return compile_roster(self, block, unit=unit)
         if block.when_expr is not None:
@@ -109,6 +111,7 @@ class CompileReadableBlocksMixin:
                 source_span=block.source_span,
             )
             return CompiledSection(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=section_body_compiler(payload, block_owner_label),
                 requirement=block.requirement,
@@ -175,6 +178,7 @@ class CompileReadableBlocksMixin:
                 "checklist": CompiledChecklistBlock,
             }[block.kind]
             return compiled_cls(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=tuple(items),
                 requirement=block.requirement,
@@ -193,6 +197,7 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             return CompiledPropertiesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=properties.entries,
                 requirement=block.requirement,
@@ -248,6 +253,7 @@ class CompileReadableBlocksMixin:
                     )
                 )
             return CompiledDefinitionsBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=tuple(definitions),
                 requirement=block.requirement,
@@ -404,6 +410,7 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             return CompiledTableBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 table=CompiledTableData(
                     columns=tuple(resolved_columns),
@@ -434,6 +441,7 @@ class CompileReadableBlocksMixin:
                     hints=("Add a `when ...` guard expression to the guard block.",),
                 )
             return CompiledGuardBlock(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=section_body_compiler(payload, block_owner_label),
                 when_text=when_text,
@@ -467,6 +475,7 @@ class CompileReadableBlocksMixin:
                     ),
                 )
             return CompiledCalloutBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 kind=block.payload.kind,
                 body=tuple(
@@ -504,6 +513,7 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for readable code block text.",),
                 )
             return CompiledCodeBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=block.payload.text,
                 language=block.payload.language,
@@ -542,6 +552,7 @@ class CompileReadableBlocksMixin:
                     hints=("Use a multiline string for raw markdown or html readable blocks.",),
                 )
             return CompiledRawTextBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=text,
                 kind=block.kind,
@@ -559,6 +570,7 @@ class CompileReadableBlocksMixin:
                 render_profile=render_profile,
             )
             return CompiledFootnotesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=footnotes.entries,
                 requirement=block.requirement,
@@ -576,6 +588,7 @@ class CompileReadableBlocksMixin:
                     source_span=readable_source_span(block.payload) or block.source_span,
                 )
             return CompiledImageBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 src=self._interpolate_authored_prose_string(
                     block.payload.src,
@@ -617,6 +630,7 @@ class CompileReadableBlocksMixin:
             )
         if block.kind == "rule":
             return CompiledRuleBlock(
+                origin=block.origin, key=block.key,
                 requirement=block.requirement,
                 when_text=when_text,
             )

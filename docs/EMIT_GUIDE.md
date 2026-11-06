@@ -44,6 +44,85 @@ All three emit commands reuse the same prompts-root-aware target plumbing.
 `emit_docs` also compiles concrete root agents with safe default thread
 fan-out, while still writing outputs in deterministic authored order.
 
+## Build A Team Home Tree
+
+Use `doctrine build .` for a target with teams. A team's `home:` is a path
+from the target's `output_dir`. Each member has a folder below its team.
+Team text stays at that level. The runtime reads each level down to a member.
+Example 180 shows the full tree.
+
+```toml
+[[tool.doctrine.emit.targets]]
+name = "homes"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "."
+runtimes = ["claude", "codex"]
+
+[tool.doctrine.runtimes.claude]
+limit = 150000
+warn_at = 0.95
+over = "error"
+external = [{path = "~/.claude/CLAUDE.md", reserve = 14000}]
+```
+
+Claude sizes use UTF-16 code units. Its default limit is 150,000. Codex
+sizes use UTF-8 bytes. Its default is 32,768, or `project_doc_max_bytes`
+from `.codex/config.toml` beside the pyproject. A runtime's explicit `limit`
+wins. Do not list the Codex global file as an external: Codex does not
+charge it against that project limit. A present external counts its real
+size. An absent one needs a `reserve`.
+
+Both runtimes share `AGENTS.md`, with a relative `CLAUDE.md` symlink.
+A Claude-only target writes `CLAUDE.md`. With no runtimes set, the target
+writes `AGENTS.md`. Agents outside a team keep their current output.
+
+Each team-tree Markdown file has a source and body hash in its header.
+The build checks every file before any write. A hand edit fails with
+`E634`; move it to the source named by the error. `--force` overwrites it.
+Writes are atomic, and equal bytes keep their file's mtime.
+
+A whole build writes `HOMES.contract.json`, which lists every emitted path.
+It removes recorded paths the new source no longer emits. It leaves their
+folders alone. A missing record means no files are obsolete.
+A team with members also writes `TEAM.contract.json`. It lists member names,
+folders, parents, and top-level headings, in member order. Example 178
+proves this contract. Machine contracts have no header or hand-edit guard.
+
+```bash
+doctrine build .
+doctrine build Core.qa
+doctrine build . --check
+doctrine check --strict
+doctrine build . --rev HEAD --with prompts/core.prompt
+```
+
+A selector is an agent name or a home path. A path selects homes below it.
+One target with teams can be inferred; otherwise pass `--target NAME`.
+Each command takes `--pyproject PATH`.
+
+`build` writes files and runs no rules. Budgets only warn during a build.
+A selected build writes only those homes' folders. It compares shared
+levels and companions, and prints `W307` for any that differ.
+`--out DIR` uses a separate output root. `--check` writes nothing and lists
+`stale`, `edited`, `missing`, or `obsolete` paths. `--json` returns the build's
+written, unchanged, removed, and stale-level paths with `format_version: 1`.
+
+`check` writes nothing. It checks rules and budgets. A warning fails only
+with `--strict`. Exit 0 means no failing findings, 1 means findings, and 2
+means usage or a tool failure. Diagnostics go to stderr.
+
+`--rev REV` extracts only source inputs from git. Repeat `--with PATH` to
+overlay individual working-tree files; it needs `--rev`. Markdown `from`
+files are included. Their relative links follow the text to each emitted
+folder. `--out` keeps the same link bytes as the configured output root.
+
+`details` sends longer cases to a companion. A home ends with one line
+linking all its companions in first-use order. Team and member text goes to
+`DETAILS.md`. Shared declarations go once to `_details/<owner-slug>.md`.
+Shared words cannot read one home's values. Companions keep the headings
+that hold details, at the same depth. Details never count toward load.
+Examples 181 and 182 show both forms; 183 and 184 cover budgets and builds.
+
 ## Prerequisites
 
 Use [../README.md](../README.md) for the package-install command. The Python

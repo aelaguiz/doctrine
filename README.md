@@ -124,6 +124,17 @@ Want the packaged compiler?
 python -m pip install doctrine-agents
 ```
 
+For a configured team target, build its home tree and check its rules and budgets:
+
+```bash
+doctrine build .
+doctrine check
+```
+
+Teams keep shared text in their own folders. Members load those levels
+above their own file. Put longer cases in `details` to keep the always-on
+text small. See [the home-tree guide](docs/EMIT_GUIDE.md#build-a-team-home-tree).
+
 Need the example corpus, repo proof, or `emit_flow`?
 
 ```bash

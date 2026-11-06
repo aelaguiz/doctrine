@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
@@ -103,3 +104,19 @@ def order_team_fields(agent, fields, *, keys, parent_fields, unit):
             replace(own_members[key], scope_unit=own_members[key].scope_unit or unit) for key in order
         ]
     return fields
+
+
+def team_contract(context, team, *, unit, compiled_members):
+    members = team_members(context, team, unit=unit)
+    return {
+        "format_version": 1, "language_version": "6.0",
+        "team": {"key": team.name, "title": team.title, "home": team.home},
+        "members": [
+            {"key": member.key, "agent": member.name, "title": member.title,
+             "home": str(PurePosixPath(team.home) / member.key.replace("_", "-")),
+             "parent": None if member.parent_ref is None else ".".join((*member.parent_ref.module_parts, member.parent_ref.declaration_name)),
+             "sections": [field.title for field in compiled_members[member.name].fields
+                          if not isinstance(field, model.RoleScalar) and field.title]}
+            for member in members
+        ],
+    }

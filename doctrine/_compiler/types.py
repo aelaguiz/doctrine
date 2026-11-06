@@ -24,6 +24,9 @@ if TYPE_CHECKING:
 class CompiledSection:
     title: str
     body: tuple[CompiledBodyItem, ...]
+    kind: str = "section"
+    origin: tuple | None = None
+    key: str = ""
     requirement: str | None = None
     when_text: str | None = None
     emit_metadata: bool = False
@@ -40,6 +43,8 @@ class CompiledSequenceBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -51,6 +56,8 @@ class CompiledBulletsBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -62,6 +69,8 @@ class CompiledChecklistBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -71,6 +80,8 @@ class CompiledDefinitionsBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -80,6 +91,8 @@ class CompiledPropertiesBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -118,6 +131,8 @@ class CompiledTableBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -128,6 +143,8 @@ class CompiledCalloutBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -138,6 +155,8 @@ class CompiledCodeBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -148,6 +167,8 @@ class CompiledRawTextBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -157,6 +178,8 @@ class CompiledFootnotesBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -168,6 +191,8 @@ class CompiledImageBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
@@ -175,12 +200,16 @@ class CompiledGuardBlock:
     title: str | None
     body: tuple[CompiledBodyItem, ...]
     when_text: str
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)
 class CompiledRuleBlock:
     requirement: str | None = None
     when_text: str | None = None
+    origin: tuple | None = None
+    key: str = ""
 
 
 @dataclass(slots=True, frozen=True)

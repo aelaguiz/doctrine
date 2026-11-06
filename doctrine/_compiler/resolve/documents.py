@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.home_map import source_origin, child_origin
 from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from dataclasses import replace
 
@@ -94,6 +95,7 @@ class ResolveDocumentsMixin:
             ):
                 resolved = self._resolve_document_body(
                     document_decl.body,
+                    origin=source_origin(self, document_decl, unit, (), document_decl.source_span),
                     unit=unit,
                     owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
                     owner_source_span=document_decl.source_span,
@@ -126,6 +128,7 @@ class ResolveDocumentsMixin:
         parent_body: model.DocumentBody | None = None,
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
+        origin: tuple | None = None,
     ) -> ResolvedDocumentBody:
         document_body, patches = prepare_body_patches(
             document_body, parent_document, kind="document", owner_label=owner_label,
@@ -143,10 +146,10 @@ class ResolveDocumentsMixin:
         )
         if parent_document is None:
             return ResolvedDocumentBody(
-                title=document_body.title,
+                title=document_body.title, origin=origin,
                 preamble=resolved_preamble,
                 items=self._resolve_non_inherited_document_items(
-                    document_body.items,
+                    document_body.items, origin=origin,
                     unit=unit,
                     owner_label=owner_label,
                 ),
@@ -191,7 +194,7 @@ class ResolveDocumentsMixin:
                     )
                 resolved_items.append(
                     self._resolve_document_block(
-                        item,
+                        replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None)),
                         unit=unit,
                         owner_label=f"{owner_label}.{key}",
                     )
@@ -237,6 +240,7 @@ class ResolveDocumentsMixin:
                 self._resolve_document_block(
                     model.DocumentBlock(
                         kind=item.kind,
+                        origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None),
                         key=item.key,
                         title=(
                             item.title
@@ -290,7 +294,7 @@ class ResolveDocumentsMixin:
             )
 
         return ResolvedDocumentBody(
-            title=document_body.title,
+            title=document_body.title, origin=origin,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
         )
@@ -301,6 +305,7 @@ class ResolveDocumentsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        origin: tuple | None = None,
     ) -> tuple[model.DocumentBlock, ...]:
         resolved: list[model.DocumentBlock] = []
         seen_keys: dict[str, model.DocumentBlock] = {}
@@ -319,7 +324,7 @@ class ResolveDocumentsMixin:
                 seen_keys[item.key] = item
                 resolved.append(
                     self._resolve_document_block(
-                        item,
+                        replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None)),
                         unit=unit,
                         owner_label=f"{owner_label}.{item.key}",
                     )

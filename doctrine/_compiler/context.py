@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from doctrine import model
 from doctrine._compiler.late_binding import bind_home, reject_late_roots
+from doctrine.details import reject_details
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (
@@ -229,7 +230,8 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                 hints=("Render a concrete child agent instead.",),
             )
         flow = self.session.flow_for_unit(unit)
-        self._validate_all_rules_in_flow(flow)
+        if self.session.evaluate_rules:
+            self._validate_all_rules_in_flow(flow)
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
@@ -266,6 +268,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
         compiled = self._compile_skill_package_decl(declaration, unit=owner_unit)
+        reject_details(compiled, "a skill package")
         reject_late_roots(compiled, unit=owner_unit, why="a skill package has no home")
         return compiled
 

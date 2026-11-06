@@ -41,15 +41,8 @@ from doctrine._compiler.resolved_types import (
 
 
 def compile_paragraph(block, body, when_text):
-    return CompiledRawTextBlock(
-        kind="paragraph", title=block.title,
-        text="\n\n".join(
-            f"**{line.kind.upper()}**: {line.text}"
-            if isinstance(line, model.EmphasizedLine) else line
-            for line in body
-        ),
-        requirement=block.requirement, when_text=when_text,
-    )
+    return CompiledSection(kind="paragraph", title=block.title, body=body,
+        requirement=block.requirement, when_text=when_text, origin=block.origin, key=block.key)
 
 
 class CompileReadablesMixin:
@@ -281,7 +274,7 @@ class CompileReadablesMixin:
     ) -> CompiledSection:
         resolved = self._resolve_document_decl(decl, unit=unit)
         return CompiledSection(
-            title=resolved.title,
+            title=resolved.title, origin=resolved.origin,
             body=self._compile_document_body(resolved, unit=unit),
             render_profile=resolved.render_profile or ResolvedRenderProfile(name="ContractMarkdown"),
         )
@@ -327,6 +320,8 @@ class CompileReadablesMixin:
         *,
         unit: IndexedUnit,
     ) -> CompiledReadableBlock:
+        if block.kind == "details":
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=block.origin, body=self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span))
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None
@@ -343,6 +338,7 @@ class CompileReadablesMixin:
             return compile_roster(self, block, unit=unit)
         if block.kind == "section":
             return CompiledSection(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=self._compile_document_section_payload(
                     block.payload,
@@ -362,6 +358,7 @@ class CompileReadablesMixin:
                 "checklist": CompiledChecklistBlock,
             }[block.kind]
             return compiled_cls(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=self._compile_readable_list_payload(
                     block.payload,
@@ -383,6 +380,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledPropertiesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=payload.entries,
                 requirement=block.requirement,
@@ -391,6 +389,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "definitions":
             return CompiledDefinitionsBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=self._compile_readable_definitions_payload(
                     block.payload,
@@ -404,6 +403,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "table":
             return CompiledTableBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 table=self._compile_resolved_readable_table_payload(
                     block.payload,
@@ -426,6 +426,7 @@ class CompileReadablesMixin:
                     hints=("Add a `when ...` guard expression to the guard block.",),
                 )
             return CompiledGuardBlock(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=self._compile_document_section_payload(
                     block.payload,
@@ -443,6 +444,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledCalloutBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 body=payload.body,
                 kind=payload.kind,
@@ -458,6 +460,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledCodeBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=payload.text,
                 language=payload.language,
@@ -473,6 +476,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledRawTextBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=payload.text,
                 kind=block.kind,
@@ -488,6 +492,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledFootnotesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=payload.entries,
                 requirement=block.requirement,
@@ -502,6 +507,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledImageBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 src=payload.src,
                 alt=payload.alt,
@@ -512,6 +518,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "rule":
             return CompiledRuleBlock(
+                origin=block.origin, key=block.key,
                 requirement=block.requirement,
                 when_text=when_text,
             )

@@ -37,6 +37,7 @@ class SourceSpan:
 class RoleScalar:
     text: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -44,6 +45,7 @@ class RoleBlock:
     title: str
     lines: tuple[ProseLine, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)

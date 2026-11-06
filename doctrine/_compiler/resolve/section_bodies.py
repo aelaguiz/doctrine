@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from doctrine import model
+from dataclasses import replace
+from doctrine._compiler.home_map import child_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.resolved_types import (
@@ -21,6 +23,7 @@ class ResolveSectionBodiesMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        origin: tuple | None = None,
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
@@ -39,9 +42,11 @@ class ResolveSectionBodiesMixin:
                 resolved.append(
                     ResolvedSectionItem(
                         key=item.key,
+                        origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None),
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None),
                             unit=unit,
                             owner_label=f"{owner_label}.{item.key}",
                         ),
@@ -50,7 +55,7 @@ class ResolveSectionBodiesMixin:
                 )
                 continue
             if isinstance(item, model.ReadableBlock):
-                resolved.append(item)
+                resolved.append(replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None)))
                 continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(

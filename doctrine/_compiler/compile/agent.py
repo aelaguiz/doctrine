@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from doctrine import model
+from doctrine._compiler.home_map import field_origin
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import (
     _agent_typed_field_key,
@@ -608,7 +609,7 @@ class CompileAgentMixin:
                 )
                 for spec in specs
             ]
-            return tuple(field for field in compiled if field is not None)
+            return tuple(field_origin(spec, field) for spec, field in zip(specs, compiled) if field is not None)
 
         with ThreadPoolExecutor(max_workers=_default_worker_count(len(specs))) as executor:
             futures = [
@@ -629,8 +630,8 @@ class CompileAgentMixin:
                 for spec in specs
             ]
             return tuple(
-                field
-                for future in futures
+                field_origin(spec, field)
+                for spec, future in zip(specs, futures)
                 if (field := future.result()) is not None
             )
 

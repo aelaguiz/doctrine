@@ -17,6 +17,7 @@ class AuthoredSlotField:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -37,6 +38,7 @@ class AuthoredSlotOverride:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -45,6 +47,7 @@ class InputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -53,30 +56,35 @@ class OutputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class AnalysisField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class DecisionField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class ReviewField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -85,6 +93,7 @@ class FinalOutputField:
     route_path: tuple[str, ...] | None = None
     review_fields: ReviewFieldsConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -98,11 +107,18 @@ class AgentSelectorBinding:
 class SelectorsField:
     bindings: tuple[AgentSelectorBinding, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: tuple | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class ValuesField:
     items: tuple[tuple[str, str, SourceSpan], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class BudgetField:
+    items: tuple[tuple[str, float], ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -125,6 +141,7 @@ Field: _TypeAlias = (
     | FinalOutputField
     | SelectorsField
     | ValuesField
+    | BudgetField
 )
 
 

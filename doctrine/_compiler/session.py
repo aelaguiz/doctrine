@@ -8,6 +8,7 @@ from pathlib import Path
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
 from doctrine._compiler.late_binding import reject_late_roots
+from doctrine.details import reject_details
 from doctrine._compiler.indexing import (
     FlowLoadKey,
     IndexedFlow,
@@ -95,6 +96,7 @@ class CompilationSession:
         project_config: ProjectConfig | None = None,
         provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
         skill_package_host_context: SkillPackageHostCompileContext | None = None,
+        evaluate_rules: bool = True,
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
         resolved_project_config = project_config
@@ -148,6 +150,8 @@ class CompilationSession:
             ) from exc
 
         self.project_config = resolved_project_config
+        self.evaluate_rules = evaluate_rules
+        self.emit_paths: dict[str, Path] = {}
         self.provided_prompt_roots = compile_config.provided_prompt_roots
         self.import_root_labels = _import_root_labels(
             self.prompt_root,
@@ -342,6 +346,7 @@ class CompilationSession:
             compiled = CompilationContext(self).compile_readable_declaration(
                 declaration_kind, declaration_name
             )
+            reject_details(compiled, "an emitted document")
             reject_late_roots(compiled, unit=self.root_flow.entrypoint_unit, why="an emitted document has no home")
             return compiled
         except DoctrineError as exc:

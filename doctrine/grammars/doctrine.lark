@@ -124,6 +124,8 @@ abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_fiel
 abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
 workflow_markdown: "workflow" CNAME "from" string _NL
 values_block: "values" ":" _NL _INDENT value_item+ _DEDENT
+budget_block: "budget" ":" _NL _INDENT budget_item+ _DEDENT
+budget_item: CNAME ":" SIGNED_NUMBER _NL?
 value_item: CNAME ":" string _NL?
 team_decl: "team" CNAME inheritance? ":" string _NL _INDENT team_body _DEDENT
 abstract_team_decl: "abstract" "team" CNAME inheritance? ":" string? _NL _INDENT team_body _DEDENT
@@ -131,6 +133,7 @@ team_body: team_item+
 ?team_item: team_home_stmt
           | role_field
           | values_block
+          | budget_block
           | member_decl
           | member_override_decl
           | agent_slot_abstract
@@ -155,6 +158,7 @@ override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_
 // contract fields magical.
 ?agent_field: inherit_all
             | values_block
+            | budget_block
             | drop_item
             | role_field
             | inputs_patch_field
@@ -525,7 +529,9 @@ document_section_body: document_section_item+
 document_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 document_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 
-readable_nonsection_block: readable_paragraph_block
+readable_nonsection_block: readable_details_block
+                         | readable_bare_details_block
+                         | readable_paragraph_block
                          | readable_roster_block
                          | readable_sequence_block
                          | readable_properties_block
@@ -549,7 +555,8 @@ readable_nonsection_block: readable_paragraph_block
                          | readable_image_block
                          | readable_bare_image_block
                          | readable_rule_block
-override_readable_nonsection_block: override_readable_paragraph_block
+override_readable_nonsection_block: override_readable_details_block
+                                  | override_readable_paragraph_block
                                   | override_readable_sequence_block
                                   | override_readable_properties_block
                                   | override_readable_guard_shell_block
@@ -567,7 +574,13 @@ override_readable_nonsection_block: override_readable_paragraph_block
 
 readable_paragraph_block: "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
 override_readable_paragraph_block: "override" "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
-paragraph_body: (prose_line _NL?)+
+paragraph_body: prose_or_details+
+?prose_or_details: prose_line _NL?
+                 | readable_details_block
+                 | readable_bare_details_block
+readable_details_block: "details" CNAME ":" string _NL _INDENT shared_readable_body _DEDENT
+readable_bare_details_block: "details" ":" _NL _INDENT shared_readable_body _DEDENT
+override_readable_details_block: "override" "details" CNAME ":" string? _NL _INDENT shared_readable_body _DEDENT
 
 readable_sequence_block: "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_properties_block: "properties" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_properties_body _DEDENT

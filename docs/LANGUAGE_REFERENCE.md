@@ -191,6 +191,41 @@ final_output:
 - scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
 
+## Details And Budgets
+
+`details` moves longer text out of a home's always-on file. It takes the
+same body as a section. A named block gets a heading in the companion;
+a bare block stays under its section's heading.
+
+```doctrine
+team Core: "the core team"
+    home: "teams/core"
+    budget:
+        claude: 120000
+    work: "How to work"
+        "Keep the idea and one case here."
+        details older: "Older cases"
+            "Keep the longer case here."
+```
+
+A `paragraph` body can also hold `details`. Use `override details key:` to
+replace a named block in an inherited readable body.
+
+The lexical owner chooses the companion. Teams and members use their own
+`DETAILS.md`. A concrete agent uses `DETAILS.md` beside its emitted file.
+Abstract agents, abstract teams, workflows, and documents use one shared
+`_details/<owner-slug>.md`. Imported module names join the owner with `-`.
+A shared companion keeps its owner's headings and order even when homes
+reorder or retitle that text. Its text and titles cannot read agent or team
+values (`E621`). Skills and emitted documents cannot hold details (`E620`).
+
+`budget:` takes runtime names and positive integers. The nearest setting
+wins: the home, its team, outer teams by folder, then the runtime limit.
+A budget cannot exceed that runtime limit. These errors are `E631`.
+`doctrine check` judges the load. `doctrine build` only warns on budgets.
+See [the emit guide](EMIT_GUIDE.md#build-a-team-home-tree) and examples
+181 through 184.
+
 ## Values And Teams
 
 `values:` holds words that change between agents. It does not render.
@@ -241,7 +276,7 @@ A value cycle is `E603`. Setting a fact is `E604`.
 A concrete `team` needs `home:`. An `abstract team` cannot have one.
 The path is relative to the output root. `.` means the root. Absolute paths,
 `..`, and a trailing `/` are errors. Folder paths alone form the team tree.
-A team holds a role, values, slots, and members. It cannot hold typed agent
+A team holds a role, values, budgets, slots, and members. It cannot hold typed agent
 fields such as `inputs:` or `review:`. Slots and members share one key space.
 
 A team may inherit another team. Its inherited members come first, followed

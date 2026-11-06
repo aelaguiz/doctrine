@@ -36,6 +36,13 @@ class AgentTransformerMixin:
     def value_item(self, meta, key, value):
         return key, value, _source_span_from_meta(meta)
 
+    @v_args(meta=True)
+    def budget_block(self, meta, items):
+        return _with_source_span(model.BudgetField(items=tuple(items)), meta)
+
+    def budget_item(self, items):
+        return str(items[0]), float(items[1])
+
     def team_body(self, items):
         return items
 

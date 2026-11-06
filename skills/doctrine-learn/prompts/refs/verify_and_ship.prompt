@@ -191,3 +191,8 @@ Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution n
 
         """**Load when:** The author is about to commit, cut a release, delete a
 doc, or pick the right verify command for the surface they changed."""
+
+    section home_checks: "Build For Launch, Check For Change"
+        "A launch needs files even when an author's change breaks a rule or exceeds a budget. Run doctrine build to write them. It runs no rules and only warns on budgets. Run doctrine check on a change to judge rules and budgets; use --strict to fail warnings too. Example 183 proves the split."
+        "Use doctrine build . --check to compare without writing. It reports stale, edited, missing, and obsolete paths. Obsolete files need a whole-tree build and its record. Example 184 covers these states."
+        "Use --rev HEAD to compile committed source. Repeat --with PATH for each working-tree file to overlay. Other unfinished edits stay out. The revision includes the pyproject, prompt roots, Markdown from files, runtime config, and relative externals. A --out folder keeps link bytes from the configured output root."

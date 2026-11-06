@@ -77,6 +77,18 @@ class ReadableNodeTransformerMixin:
     def override_readable_paragraph_block(self, meta, key, *parts):
         return _with_source_span(self._readable_override_block("paragraph", key, parts), meta)
 
+    @v_args(meta=True, inline=True)
+    def readable_details_block(self, meta, key, title, body):
+        return _with_source_span(model.ReadableBlock(kind="details", key=key, title=title, payload=body), meta)
+
+    @v_args(meta=True, inline=True)
+    def readable_bare_details_block(self, meta, body):
+        return _with_source_span(model.ReadableBlock(kind="details", key="details", title=None, payload=body, anonymous=True), meta)
+
+    @v_args(meta=True, inline=True)
+    def override_readable_details_block(self, meta, key, *parts):
+        return _with_source_span(self._readable_override_block("details", key, parts), meta)
+
     def paragraph_body(self, items):
         return tuple(items)
 

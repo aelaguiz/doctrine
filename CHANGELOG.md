@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Homes and load (6.0.0; language 6.0)
+
+- Team targets emit home trees, runtime files, and `TEAM.contract.json`.
+  Whole builds record paths in `HOMES.contract.json` and remove obsolete files.
+  Headers guard hand edits. Equal bytes skip writes; writes are atomic.
+- `details` moves longer cases into local or shared companions. A paragraph
+  can hold details. Shared companions keep their owner's words and headings.
+- Runtime settings and `budget:` measure externals plus each loaded level.
+  `build` writes without running rules or failing budgets; `check` judges them.
+- The `doctrine` and `doctrine-agents` scripts share the CLI. Build selectors,
+  `--check`, `--force`, `--out`, `--rev`, and `--with` control home builds.
+- Relative links from Markdown-backed declarations follow their text into
+  each home. Rename `budget` and `details` keys where their new forms start.
+
+
 ### Values and teams (6.0.0; language 6.0)
 
 - `values:` supplies words to shared prose. Late `{{agent:key}}` and

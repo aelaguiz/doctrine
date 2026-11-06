@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine.details import reject_details
 from pathlib import Path
 
 from doctrine._compiler.late_binding import reject_late_roots
@@ -173,6 +174,7 @@ class CompileSkillPackageMixin:
                 source=".".join((*target_unit.module_parts, document_decl.name)) or document_decl.name,
             ):
                 compiled_document = self._compile_document_decl(document_decl, unit=target_unit)
+            reject_details(compiled_document, "an emitted document")
             reject_late_roots(compiled_document, unit=target_unit, why="an emitted document has no home")
             compiled_files.append(
                 CompiledSkillPackageFile(

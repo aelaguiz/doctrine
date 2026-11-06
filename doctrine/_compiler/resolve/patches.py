@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace, fields as dataclass_fields, is_dataclass
 
 from doctrine import model
+from doctrine._compiler.home_map import stamp_agent
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _agent_typed_field_key
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
@@ -215,7 +216,7 @@ def prepare_body_patches(body, parent, *, kind, owner_label, unit, source_span):
 
 
 def expand_agent_patches(context, agent, *, unit):
-    agent = validate_team(agent, unit=unit)
+    agent = stamp_agent(context, validate_team(agent, unit=unit), unit)
     validate_values(agent, unit=unit)
     parent_fields = {}
     keys = []
@@ -260,7 +261,7 @@ def expand_agent_patches(context, agent, *, unit):
                 if not isinstance(field, model.AuthoredSlotAbstract)
             )
         )
-    patch_fields = tuple(field for field in agent.fields if not isinstance(field, model.ValuesField))
+    patch_fields = tuple(field for field in agent.fields if not isinstance(field, (model.ValuesField, model.BudgetField)))
     if isinstance(agent, (model.Member, model.Team)) and keys and not any(
         isinstance(field, model.InheritAll) for field in patch_fields
     ):
@@ -345,7 +346,7 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit):
             value = patch.value
             items = (*value.preamble, *value.items)
             if isinstance(node, model.ReadableBlock) and node.kind == "paragraph":
-                if any(not isinstance(item, (str, model.EmphasizedLine)) for item in items):
+                if any(not isinstance(item, (str, model.EmphasizedLine)) and not (isinstance(item, model.ReadableBlock) and item.kind == "details") for item in items):
                     raise error(
                         "E611",
                         "Invalid patch path",

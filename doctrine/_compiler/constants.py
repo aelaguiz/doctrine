@@ -21,6 +21,8 @@ _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 LATE_ROOT = re.compile(r"\{\{\s*(agent|team):([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 _RESERVED_AGENT_FIELD_KEYS = {
     "values",
+    "budget",
+    "details",
     "role",
     "inputs",
     "outputs",

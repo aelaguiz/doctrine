@@ -1,4 +1,5 @@
 from __future__ import annotations
+from doctrine._model.agent import BudgetField
 
 from doctrine._model.agent import (
     Member,

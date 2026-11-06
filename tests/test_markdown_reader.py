@@ -5,6 +5,8 @@ import unittest
 from tests import test_late_binding
 from doctrine.diagnostics import CompileError
 from doctrine.renderer import render_markdown
+from doctrine.emit_common import load_emit_targets
+from doctrine.homes import compile_homes, build_homes
 
 
 class MarkdownReaderTests(unittest.TestCase):
@@ -66,3 +68,46 @@ class MarkdownReaderTests(unittest.TestCase):
         self.assertEqual(render_markdown(session.compile_agent('A')), 'Role.\n\n## Skills\n\nUse these skills.\n')
         dropped = self.markdown('Role.\n## Skills\nUse these skills.\n', '    drop skills_: "Unused."\n')
         self.assertEqual(render_markdown(dropped.compile_agent('A')), 'Role.\n')
+
+    def rebased(self, text, *, output="."):
+        root = self.session('abstract agent Craft from "shared/craft.md"\nteam T: "Team"\n    home: "pods/core"\n    member qa[Craft]: "QA"\n    member analyst[Craft]: "Analyst"\n', {"shared/craft.md": "Role.\n## Work\n" + text + "\n"})
+        config = root.root_flow.entrypoint_path.parent.parent / "pyproject.toml"
+        config.write_text(f'[[tool.doctrine.emit.targets]]\nname = "homes"\nentrypoint = "prompts/AGENTS.prompt"\noutput_dir = "{output}"\n')
+        target = load_emit_targets(config)["homes"]
+        _, files = compile_homes(target)
+        return files, target
+
+    def test_relative_link_rebased_per_home(self):
+        files, _ = self.rebased('[case](cases.md) ![art](art.png)')
+        self.assertIn(b'[case](../../../shared/cases.md) ![art](../../../shared/art.png)', files['pods/core/qa/AGENTS.md'])
+        self.assertIn(b'../../../shared/cases.md', files['pods/core/analyst/AGENTS.md'])
+
+    def test_anchor_kept_on_rebased_link(self):
+        files, _ = self.rebased('[case](cases.md#today)')
+        self.assertIn(b'../../../shared/cases.md#today', files['pods/core/qa/AGENTS.md'])
+
+    def test_scheme_root_and_anchor_links_left_alone(self):
+        text = '[site](https://example.com) [mail](mailto:a@example.com) [root](/docs) [home](~/docs) [here](#today)'
+        files, _ = self.rebased(text)
+        self.assertIn(text.encode(), files['pods/core/qa/AGENTS.md'])
+
+    def test_links_in_code_left_alone(self):
+        text = '``[span](span.md) `quoted` ``\n\n````md\n[code](code.md)\n```\n[more](more.md)\n````'
+        files, _ = self.rebased(text)
+        self.assertIn(text.encode(), files['pods/core/qa/AGENTS.md'])
+
+    def test_reference_definition_rebased(self):
+        files, _ = self.rebased('[more]: <more notes.md#today> "Title"')
+        self.assertIn(b'[more]: <../../../shared/more notes.md#today> "Title"', files['pods/core/qa/AGENTS.md'])
+
+    def test_out_dir_keeps_rebased_bytes(self):
+        files, target = self.rebased('[case](cases.md)', output="build")
+        homes, files = compile_homes(target)
+        other = target.output_dir.parent / "other"
+        build_homes(target, homes, files, output_dir=other)
+        self.assertEqual((other / 'pods/core/qa/AGENTS.md').read_bytes(), files['pods/core/qa/AGENTS.md'])
+
+    def test_no_emit_target_keeps_links_as_written(self):
+        text = '[case](cases.md#today)'
+        rendered = render_markdown(self.markdown('Role.\n## Work\n' + text + '\n').compile_agent('A'))
+        self.assertIn(text, rendered)

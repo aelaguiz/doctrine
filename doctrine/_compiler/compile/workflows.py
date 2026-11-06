@@ -118,6 +118,7 @@ class CompileWorkflowsMixin:
                 body.append(
                     CompiledSection(
                         title=item.title,
+                        origin=item.origin, key=item.key,
                         body=self._compile_section_body(
                             item.items,
                             unit=unit,
@@ -161,7 +162,7 @@ class CompileWorkflowsMixin:
                 )
             )
 
-        return CompiledSection(title=workflow_body.title, body=tuple(body))
+        return CompiledSection(title=workflow_body.title, body=tuple(body), origin=workflow_body.origin)
 
     def _compile_workflow_root_readable_block(
         self,
@@ -178,6 +179,7 @@ class CompileWorkflowsMixin:
             section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
                 self._resolve_section_body_items(
                     payload,
+                    origin=block.origin,
                     unit=unit,
                     owner_label=nested_owner_label,
                 ),
@@ -367,6 +369,7 @@ class CompileWorkflowsMixin:
                 body.append(
                     CompiledSection(
                         title=item.title,
+                        origin=item.origin, key=item.key,
                         body=self._compile_section_body(
                             item.items,
                             unit=unit,
@@ -397,6 +400,7 @@ class CompileWorkflowsMixin:
                         section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
                             self._resolve_section_body_items(
                                 payload,
+                                origin=item.origin,
                                 unit=unit,
                                 owner_label=nested_owner_label,
                             ),

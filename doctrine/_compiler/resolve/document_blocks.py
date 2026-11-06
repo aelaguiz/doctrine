@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.home_map import child_origin
 from dataclasses import replace
 
 from doctrine._compiler.readable_diagnostics import (
@@ -50,11 +51,12 @@ class ResolveDocumentBlocksMixin:
             schema_label="row_schema",
             surface_label=f"{item.kind} row schema",
         )
-        if item.kind in {"section", "paragraph"}:
+        if item.kind in {"section", "paragraph", "details"}:
             return replace(
                 item,
                 payload=self._resolve_document_shared_readable_body(
                     item.payload,
+                    origin=item.origin,
                     unit=unit,
                 owner_label=owner_label,
                 kind="section",
@@ -374,6 +376,7 @@ class ResolveDocumentBlocksMixin:
         owner_label: str,
         kind: str,
         owner_source_span: model.SourceSpan | None = None,
+        origin: tuple | None = None,
     ) -> tuple[model.ReadableSectionBodyItem, ...]:
         resolved: list[model.ReadableSectionBodyItem] = []
         for child in self._require_tuple_payload(
@@ -402,7 +405,7 @@ class ResolveDocumentBlocksMixin:
                 )
             resolved.append(
                 self._resolve_document_block(
-                    child,
+                    replace(child, origin=child_origin(origin, child.key, child.source_span, child.title if child.kind == "section" else None)),
                     unit=unit,
                     owner_label=f"{owner_label}.{child.key}",
                 )

@@ -5,25 +5,28 @@ from dataclasses import fields, is_dataclass, replace
 from pathlib import PurePosixPath
 
 from doctrine import model
+from doctrine.details import validate_shared_details
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members
 from doctrine._compiler.types import CompiledCodeBlock
+from doctrine._compiler.markdown_links import rebase_markdown
 
 
-def map_text(value, substitute):
+def map_text(value, substitute, markdown=None):
     if isinstance(value, str):
-        return value if isinstance(value, model.MarkdownProse) else substitute(value)
+        return (markdown(value) if markdown else value) if isinstance(value, model.MarkdownProse) else substitute(value)
     if isinstance(value, model.NameRef):
         return value
     if isinstance(value, CompiledCodeBlock):
-        return replace(value, title=map_text(value.title, substitute))
+        return replace(value, title=map_text(value.title, substitute, markdown))
     if isinstance(value, tuple):
-        return tuple(map_text(item, substitute) for item in value)
+        return tuple(map_text(item, substitute, markdown) for item in value)
     if is_dataclass(value):
+        validate_shared_details(value)
         return replace(value, **{
-            field.name: map_text(getattr(value, field.name), substitute)
-            for field in fields(value)
+            field.name: map_text(getattr(value, field.name), substitute, markdown)
+            for field in fields(value) if field.name != "origin"
         })
     return value
 
@@ -155,7 +158,8 @@ def bind_home(context, compiled, agent, *, unit):
     def substitute(text):
         return type(text)(LATE_ROOT.sub(lambda match: read(match[1], match[2]), text))
 
-    result = map_text(compiled, substitute)
+    output = context.session.emit_paths.get(agent.name)
+    result = map_text(compiled, substitute, (lambda text: rebase_markdown(text, output.parent)) if output else None)
     if missing:
         home = agent.name
         if team is not None:

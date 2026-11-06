@@ -17,8 +17,8 @@ how a harness consumes them. For deep output-layout detail, use
             """The compiler owns the translation. It lowers the typed surface into a
   reviewable Markdown layout and a set of stable sidecar files."""
             "Never hand-edit emitted Markdown. Edit the `.prompt`, then re-emit."
-            """Emitted trees should land in a build output directory that is safe to
-  delete and re-create."""
+            """Use a build output folder for ordinary emit targets. A team home target
+  may use the repository root; its header and tree record guard changes."""
 
     section emit_config_block: "The Emit Config Block"
         "All emit targets live in one block in the repo's `pyproject.toml`:"
@@ -38,8 +38,9 @@ output_dir = "examples/07_handoffs/build"
   under a `prompts/` tree."""
             """`output_dir`: the root directory for emitted artifacts. Must not
   already exist as a file."""
-        "Graph and skill targets may also use optional fields:"
+        "Targets may also use optional fields:"
         bullets optional_fields:
+            "`runtimes`: a home target can name claude, codex, or both. With no setting it writes AGENTS.md."
             "`graph`: the visible `skill_graph` name to emit or verify for graph targets."
             "`source_root`: the upstream source tree for an external skill source."
             "`source_id`: the stable id for that external source tree. Required with `source_root`."
@@ -416,3 +417,10 @@ not silently prefer one root. Fix the duplicate at the source."""
 
         """**Load when:** The author is configuring an emit target, running an
 emit command, or wiring a harness to consume emitted contract files."""
+
+    section home_tree: "Build The Homes Agents Read"
+        "Example 180 puts team text at each folder level and member text below it. The runtime reads those levels once. Name claude and codex in the target to share AGENTS.md through a relative CLAUDE.md link. Team contracts list members and their top-level headings, as example 178 shows."
+        "Run doctrine build . for the whole tree. Its record lists emitted paths and removes paths that are now obsolete. A selected build writes only those homes. Shared levels and companions are compared; W307 says when they differ."
+        "Generated headers name the source and hash the body. A hand edit fails before any file changes. Move the edit into source and build again. Equal bytes keep their mtime; writes are atomic. Example 184 proves the build modes."
+        "Examples 181 and 182 send longer cases to DETAILS.md or one shared _details file. A home ends with one pointer line. Details keep their headings and never count toward always-on load."
+        "Runtime settings live under tool.doctrine.runtimes. Claude counts UTF-16 units; Codex counts UTF-8 bytes. Codex can read project_doc_max_bytes from .codex/config.toml. List externals the runtime loads; absent ones need a reserve. Do not list the Codex global file against its project limit."

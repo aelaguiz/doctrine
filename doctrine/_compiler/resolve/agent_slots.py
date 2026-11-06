@@ -173,6 +173,7 @@ class ResolveAgentSlotsMixin:
                         if field.key == "workflow" and isinstance(field.value, model.WorkflowBody):
                             resolved_body = self._resolve_workflow_body(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot workflow",
                                 owner_source_span=field.source_span,
@@ -230,6 +231,7 @@ class ResolveAgentSlotsMixin:
                                 key=field.key,
                                 body=self._resolve_slot_value(
                                     field.value,
+                                    origin=field.origin,
                                     unit=unit,
                                     owner_label=f"agent {agent.name} slot {field.key}",
                                     owner_source_span=field.source_span,
@@ -243,6 +245,7 @@ class ResolveAgentSlotsMixin:
                             key=field.key,
                             body=self._resolve_slot_value(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
                                 owner_source_span=field.source_span,
@@ -415,6 +418,7 @@ class ResolveAgentSlotsMixin:
                             key=field.key,
                             body=self._resolve_slot_value(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
                                 owner_source_span=field.source_span,
@@ -463,10 +467,12 @@ class ResolveAgentSlotsMixin:
         unit: IndexedUnit,
         owner_label: str,
         owner_source_span: model.SourceSpan | None,
+        origin: tuple | None = None,
     ) -> ResolvedWorkflowBody:
         if isinstance(value, model.WorkflowBody):
             return self._resolve_workflow_body(
                 value,
+                origin=origin,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
