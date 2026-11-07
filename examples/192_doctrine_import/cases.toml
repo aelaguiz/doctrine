@@ -11,14 +11,14 @@ expected_exit = 0
 
 expected_stdout_lines = [
   "abstract agent QaCraft:",
-  "    role: \"You are the QA specialist.\"",
+  "    role: \"\"\"You are the QA specialist.\"\"\"",
   "    how_you_think: \"How you think\"",
   "        paragraph a_test_plan: \"A test plan.\"",
-  "            \"Grow it with the design.\"",
+  "            \"\"\"Grow it with the design.\"\"\"",
   "        paragraph sending_it_back: \"Sending it back.\"",
-  "            \"Say what failed.\"",
+  "            \"\"\"Say what failed.\"\"\"",
   "        paragraph text_1:",
-  "            \"Plain text in the section.\"",
+  "            \"\"\"Plain text in the section.\"\"\"",
   "        testing: \"Testing\"",
   "            \"\"\"- Test on a real phone.",
   "- Test as a new user.\"\"\"",
@@ -31,6 +31,44 @@ kind = "cli_contract"
 project = "project"
 args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent", "--check"]
 expected_exit = 0
+stderr_contains = ["Render matches."]
+
+[[cases]]
+name = "import converts dated quotes and lists quotes left as prose"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/quotes.md", "--name", "Quotes", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = [
+  'person JaneDoe: "Jane Doe"',
+  '({{JaneDoe, 2026-11-05, asking for you: "Keep this lesson for later use."}})',
+]
+stderr_contains = ["Quote left as prose at line 5.", "Render matches."]
+
+[[cases]]
+name = "import keys paragraphs in the opening"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/opening.md", "--name", "QaCraft", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = ["paragraph who_you_are: \"Who you are.\"", "paragraph phones_are_in_the:"]
+stderr_contains = ["Render matches."]
+
+[[cases]]
+name = "import shortens long keys and keeps quoted prose"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/long_headings.md", "--name", "LongHeadings", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = [
+  "role: \"\"\"You can paste \"quoted words\" here.\"\"\"",
+  "what_the_pod_s_change: \"What the pod's change means for the people who will use this process every single day\"",
+  "what_the_pod_s_change_2: \"What the pod's change means for a second group\"",
+]
+stderr_contains = ["Render matches."]
 
 [[cases]]
 name = "import check keeps a runtime import"

@@ -95,9 +95,11 @@ quote Shared: "Keep it plain"
 ```
 
 Use `{{Shared}}` in prose or put `Shared` on a section body line. Both render
-the words with the speaker and date. A quote may also have `to:` and `about:`.
-For a quote used once, write `{{Speaker, 2026-11-05: "Keep it plain"}}` inside
-a triple-quoted string. `doctrine sources` lists quotes and where they reach.
+the words with the speaker and date. A quote may also have `to:`, `about:`,
+and `context:` for free words. They render in the order written. Put parentheses
+in the prose where you want them. For a quote used once, write
+`{{Speaker, 2026-11-05, asking for you: "Keep it plain"}}` inside a
+triple-quoted string. `doctrine sources` lists quotes and where they reach.
 Use `--person` to filter or `--json` for the full source record.
 
 ## Agents
@@ -224,10 +226,30 @@ final_output:
   define them. Shared review comments therefore can still name local routed
   owners without moving the output declaration.
 
-`role` has two shipped shapes:
+`role` has three shipped shapes:
 
 - scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
+- a paragraph body emits keyed paragraphs without a heading
+
+A role can hold keyed paragraphs. A child or member can drop or override one:
+
+```prompt
+abstract agent Qa:
+    role:
+        paragraph who: "Who you are."
+            "You are on the core team."
+        paragraph phones:
+            "Phones are in the device guide."
+
+agent OtherQa[Qa]:
+    drop role.who: "This QA is on another team."
+    override role.phones:
+        "Phones are with the field guide."
+```
+
+A role paragraph override holds prose only. A missing key is `E610`. See
+`examples/195_role_paragraphs`.
 
 ## Details And Budgets
 
@@ -351,9 +373,12 @@ A team holds a role, values, budgets, slots, and members. It cannot hold typed a
 fields such as `inputs:` or `review:`. Slots and members share one key space.
 
 A team may inherit another team. Its inherited members come first, followed
-by new members. `override member key[Role]: "Title"` replaces an inherited
-member whole. `drop key: "Reason"` removes it. Each concrete team gets its
-own copy of the member templates from an abstract team.
+by new members. `override member key:` keeps the inherited member's class and
+title and patches the class. It can also set a new title. The inherited member
+must have no body of its own; move that body into its class or replace the member.
+`override member key[Role]:` replaces an inherited member whole and keeps its
+title unless a new title is given. `drop key: "Reason"` removes it. Each concrete
+team gets its own copy of the member templates from an abstract team.
 
 A member's parent may be an abstract agent, a concrete agent, or another
 member. Without a parent, it needs its own role. `Team.key` works in agent
@@ -734,7 +759,8 @@ Important rules:
 ### Prose And Paragraphs
 
 Each authored string is one paragraph. Adjacent strings have one blank line
-between them. A triple-quoted string keeps its own inner line breaks. List
+between them. Use triple-quoted strings for prose. They keep ordinary quotes
+and inner line breaks. List
 items, table cells, and definitions keep their own layout.
 
 A `paragraph` gives prose a key. Its optional title runs into the first string.

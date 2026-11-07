@@ -1,0 +1,44 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a plain child patches role paragraphs"
+status = "active"
+kind = "render_contract"
+agent = "OtherQa"
+assertion = "exact_lines"
+expected_lines = ["Phones are with the field guide."]
+
+[[cases]]
+name = "a member patches role paragraphs"
+status = "active"
+kind = "render_contract"
+agent = "Pod.qa"
+assertion = "exact_lines"
+expected_lines = ["Phones are with the field guide."]
+
+[[cases]]
+name = "inherit keeps the whole role"
+status = "active"
+kind = "render_contract"
+agent = "AllQa"
+assertion = "exact_lines"
+expected_lines = ["**Who you are.** You are on the core team.", "", "Phones are in the device guide."]
+
+[[cases]]
+name = "a scalar replaces the whole role"
+status = "active"
+kind = "render_contract"
+agent = "NewQa"
+assertion = "exact_lines"
+expected_lines = ["You test the app."]
+
+[[cases]]
+name = "a missing role paragraph fails"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/AGENTS.prompt"
+agent = "OtherQa"
+exception_type = "CompileError"
+error_code = "E610"
+location_line = 7

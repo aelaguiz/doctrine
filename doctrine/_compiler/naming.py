@@ -147,6 +147,8 @@ def model_walk(value):
     if is_dataclass(value):
         for field in fields(value):
             if field.compare:
+                if isinstance(value, model.RoleScalar) and value.paragraphs and field.name == "text":
+                    continue
                 child = getattr(value, field.name)
                 if isinstance(value, model.Team) and field.name == "fields":
                     child = tuple(item for item in child if not isinstance(item, model.Member))

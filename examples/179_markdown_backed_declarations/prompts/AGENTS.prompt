@@ -16,3 +16,7 @@ agent PodQa[QaCraft]: "Pod QA"
 agent Reader: "Reader"
     role: "See {{EveryAgent:whose_call_it_is.title}}."
     rules: EveryAgent
+
+abstract agent Opening from "specialists/opening.md"
+agent OtherQa[Opening]:
+    drop role.who_you_are: "This QA is on another team."

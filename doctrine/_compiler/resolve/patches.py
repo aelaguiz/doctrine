@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from doctrine import model
+from doctrine._model.core import role_text, interpolate_role_paragraphs
 from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model, model_walk
@@ -256,7 +257,22 @@ def expand_agent_patches(context, agent, *, unit):
                             surface_label="role prose",
                         ),
                     )
+                    if inherited.paragraphs:
+                        paragraphs = interpolate_role_paragraphs(
+                            inherited.paragraphs, context._interpolate_authored_prose_string,
+                            unit=parent_unit, owner_label=f"agent {parent.name}")
+                        inherited = replace(inherited, paragraphs=paragraphs)
+                    role_paths = {path: patch for path, patch in expansion.path_overrides.items() if path[0] == "role"}
+                    if role_paths:
+                        inherited = apply_path_patches(context, {"role": inherited}, role_paths,
+                                                       owner_label=agent.name, unit=unit)["role"]
                 elif isinstance(inherited, model.RoleBlock):
+                    role_paths = [p for p in expansion.path_overrides if p[0] == "role"]
+                    if role_paths:
+                        path = ".".join(role_paths[0])
+                        raise compile_error(code="E611", summary="Invalid patch path", path=unit.prompt_file.source_path,
+                            source_span=expansion.path_overrides[role_paths[0]][0].source_span,
+                            detail=f"`{agent.name}`: `{path}` steps through `role`, which has no keyed paragraphs.")
                     inherited = replace(
                         inherited,
                         lines=tuple(
@@ -355,7 +371,11 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
         ):
             kind = node.kind if isinstance(node, model.ReadableBlock) else "scalar"
             raise error("E611", "Invalid patch path", f"`{owner_label}`: `details {path}` attaches to a `{kind}`. Attach it to the section or paragraph that holds it.")
-        if isinstance(node, ResolvedAgentSlot):
+        if isinstance(node, model.RoleScalar):
+            if not node.paragraphs:
+                raise error("E611", "Invalid patch path", f"`{owner_label}`: `{path}` steps through `role`, which has no keyed paragraphs.")
+            children = node.paragraphs
+        elif isinstance(node, ResolvedAgentSlot):
             children = node.body.items
         elif isinstance(node, (ResolvedSectionItem, model.LocalSection)):
             children = node.items
@@ -405,6 +425,8 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
         )
         if isinstance(node, ResolvedAgentSlot):
             return replace(node, body=replace(node.body, items=children))
+        if isinstance(node, model.RoleScalar):
+            return replace(node, paragraphs=children, text=role_text(children))
         return replace(
             node, **{"payload" if isinstance(node, model.ReadableBlock) else "items": children}
         )

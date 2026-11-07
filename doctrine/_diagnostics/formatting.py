@@ -95,9 +95,16 @@ def _format_excerpt(
     number_width = max(len(str(line.number)) for line in excerpt)
     lines: list[str] = []
     for entry in excerpt:
-        lines.append(f"  {entry.number:>{number_width}} | {entry.text}")
+        text = entry.text
+        offset = 0
+        if len(text) > 120:
+            offset = max(0, min((caret_column or 1) - 61, len(text) - 114))
+            text = ("..." if offset else "") + text[offset:offset + 114]
+            if offset + 114 < len(entry.text):
+                text += "..."
+        lines.append(f"  {entry.number:>{number_width}} | {text}")
         if caret_column is not None and highlight_line is not None and entry.number == highlight_line:
-            padding = " " * (number_width + 5 + max(caret_column - 1, 0))
+            padding = " " * (number_width + 5 + max(caret_column - 1 - offset + (3 if offset else 0), 0))
             lines.append(f"{padding}^")
     return lines
 

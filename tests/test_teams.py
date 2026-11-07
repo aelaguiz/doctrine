@@ -343,6 +343,88 @@ team T: "Team"
         self.assertEqual(caught.exception.diagnostic.detail, 'Team `T` uses key `home` twice.')
 
 
+    def test_member_overlays_keep_the_class_and_member_values(self):
+        for role in ("First", "Second"):
+            source = f'''abstract agent First:
+    role: "First {{{{agent:title}}}} {{{{agent:word}}}}."
+    testing: "Testing"
+        "Class test."
+abstract agent Second:
+    role: "Second {{{{agent:title}}}} {{{{agent:word}}}}."
+    testing: "Testing"
+        "Class test."
+abstract team Base:
+    member qa[{role}]: "QA"
+team T[Base]: "Team"
+    home: "t"
+    values:
+        word: "team"
+    override member qa:
+        values:
+            word: "member"
+        override testing:
+            super
+            "Overlay test."
+        new: "New"
+            "New section."
+'''
+            with self.subTest(role=role):
+                rendered = render_markdown(self.session(source).compile_agent('T.qa'))
+                self.assertEqual(rendered, f'{role} QA member.\n\n## New\n\nNew section.\n\n## Testing\n\nClass test.\n\nOverlay test.\n')
+
+    def test_member_override_titles_and_concrete_team(self):
+        source = '''abstract agent First:
+    role: "First {{agent:title}}."
+abstract agent Second:
+    role: "Second {{agent:title}}."
+team Base: "Base"
+    home: "base"
+    member qa[First]: "QA"
+team Overlay[Base]: "Overlay"
+    home: "overlay"
+    override member qa: "Reviewer"
+team Replacement[Base]: "Replacement"
+    home: "replacement"
+    override member qa[Second]:
+'''
+        session = self.session(source)
+        self.assertEqual(render_markdown(session.compile_agent('Overlay.qa')), 'First Reviewer.\n')
+        self.assertEqual(render_markdown(session.compile_agent('Replacement.qa')), 'Second QA.\n')
+
+    def test_member_overlay_rejects_inherited_body(self):
+        source = '''abstract agent Role:
+    role: "Test."
+abstract team Base:
+    member qa[Role]: "QA"
+        extra: "Extra"
+            "Text."
+team T[Base]: "Team"
+    home: "t"
+    override member qa:
+'''
+        with self.assertRaises(CompileError) as caught:
+            self.session(source).compile_agent('T.qa')
+        self.assertEqual(caught.exception.code, 'E612')
+        self.assertEqual(caught.exception.diagnostic.detail, '`T` overlays `qa`, but the inherited member has its own body. Move that body into its class, or write `override member qa[Role]` to replace it.')
+
+    def test_overlay_role_keeps_its_source_module(self):
+        session = self.session('''import roles
+workflow Label: "Overlay"
+    "Text."
+team T[roles.Base]: "Team"
+    home: "t"
+    override member qa:
+        extra: "Extra"
+            "{{Label:title}}"
+''', {'prompts/roles/AGENTS.prompt': '''workflow Label: "Original"
+    "Text."
+abstract agent Role:
+    role: "{{Label:title}}"
+export abstract team Base:
+    member qa[Role]: "QA"
+'''})
+        self.assertEqual(render_markdown(session.compile_agent('T.qa')), 'Original\n\n## Extra\n\nOverlay\n')
+
 class TeamHomeTests(HomeProject, unittest.TestCase):
     def test_roster_on_a_team_with_a_chained_parent(self):
         root = self.project('''abstract team Level:

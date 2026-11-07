@@ -120,6 +120,11 @@ class ToAst(
         )
 
     @v_args(meta=True, inline=True)
+    def role_override_path(self, meta, key, body):
+        return _with_source_span(model.OverridePath(path=("role", key),
+            value=model.WorkflowBody(title=None, preamble=(), items=body)), meta)
+
+    @v_args(meta=True, inline=True)
     def details_path(self, meta, key, path, *parts):
         title = parts[0] if isinstance(parts[0], str) else None
         return _with_source_span(model.DetailsPath(

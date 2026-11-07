@@ -83,3 +83,11 @@ expected_lines = [
   "",
   "Ask when a call is not yours.",
 ]
+
+[[cases]]
+name = "drop a paragraph from a Markdown opening"
+status = "active"
+kind = "render_contract"
+agent = "OtherQa"
+assertion = "exact_lines"
+expected_lines = ["Phones are in the device guide."]

@@ -38,9 +38,18 @@ The release version for this major language move is 6.0.0.
 agent homes with a title. Root teams have no scope line. The line counts
 toward load. Remove authored scope lines that the build now supplies.
 
+`doctrine import` writes prose in triple quotes and uses shorter keys. Check
+key paths if you import a file again and replace its earlier output.
+
+Quotes no longer add parentheses. Put them in prose where you want them.
+
 Overrides now keep cases written in inherited bodies. Use `drop` with a reason to remove one.
 A team or member can add a case by path. An override fails with `E612` if
 its kept cases would repeat a key; drop a case or give it a different key.
+
+`override member` without a role now keeps the inherited member's class and
+patches it. An inherited member with its own body fails with `E612`; move the
+body into its class, or name a role in the override to replace the member.
 
 Shared cases can read agent and team values. Those cases, and cases with a
 roster, go to each home's `DETAILS.md`. `E621` is retired.

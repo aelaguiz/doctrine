@@ -1,0 +1,7 @@
+abstract agent Qa:
+    role:
+        paragraph who:
+            "You test the app."
+
+agent OtherQa[Qa]:
+    drop role.missing: "Not needed."

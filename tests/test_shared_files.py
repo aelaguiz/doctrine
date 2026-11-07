@@ -11,7 +11,7 @@ from tests.home_support import HomeProject
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
     def test_guide_is_charged_only_to_the_home_that_loads_it(self):
-        root = self.project(example="194_shared_files")
+        root = self.project(example="197_shared_files")
         code, output, error = self.cli(root, "load", "--json")
         self.assertEqual(code, 0, error)
         homes = {home["home"]: home for home in json.loads(output)["homes"]}
