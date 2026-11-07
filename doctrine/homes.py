@@ -116,12 +116,14 @@ def compile_home(target, session, context, home, owner, unit, plan):
             for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
             for text in model_walk(value) if isinstance(text, str)
             for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
+    contract_compiled = compiled
     compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
     files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
     data = {
         "owner": owner,
         "unit": unit,
         "compiled": compiled,
+        "contract_compiled": contract_compiled,
         "map": home_map,
         "files": list(files),
         "pointers": pointers,
@@ -227,7 +229,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
-        compiled[owner.name] = data["compiled"]
+        compiled[owner.name] = data["contract_compiled"]
         for companion, content in parts.items():
             collected = companions.setdefault(companion, [])
             collected.extend([
@@ -243,7 +245,9 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             and team_members(context, owner, unit=data["unit"])
         ):
             path = str(PurePosixPath(home) / "TEAM.contract.json")
-            contract = team_contract(context, owner, unit=data["unit"], compiled_members=compiled)
+            contract = team_contract(context, owner, unit=data["unit"], compiled_members={
+                name: map_text(value, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
+                for name, value in compiled.items()})
             files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
     files.update(companion_files(homes, companions, target))

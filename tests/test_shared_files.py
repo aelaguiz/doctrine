@@ -7,6 +7,9 @@ import tempfile
 from pathlib import Path
 
 from tests.home_support import HomeProject
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
+from doctrine.emit_flow import emit_target_flow
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
@@ -295,3 +298,115 @@ team T: "Team"
         code, _, error = self.cli(root, "build")
         self.assertEqual(code, 1, error)
         self.assertIn("E607", error)
+
+    def test_missing_imports_and_handles_add_no_load_rows(self):
+        root = self.project(example="197_shared_files")
+        (root / "CLAUDE.md").write_text("Parent notes. Ask @someone before you ship.\n@missing.md\n")
+        for command in (("build", "."), ("load", "pod/qa", "--runtime", "claude", "--json")):
+            code, output, error = self.cli(root, *command)
+            self.assertEqual(code, 0, error)
+            self.assertNotIn("someone", output)
+            self.assertNotIn("missing.md", output)
+
+    def test_all_dead_links_are_reported_in_build_order(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    member one: "One"
+        role: "Read [missing](../missing.md)."
+    member two: "Two"
+        role: "Read [missing](../missing.md)."
+''')
+        for command in ("build", "check"):
+            code, _, error = self.cli(root, command)
+            self.assertEqual(code, 1, error)
+            self.assertEqual(error.count("E636"), 1)
+            self.assertLess(error.index("t/one/AGENTS.md points"), error.index("t/two/AGENTS.md points"))
+
+    def test_emit_docs_renders_shared_links_and_loads(self):
+        root = self.project('''file Guide: "Test design"
+    path: "shared/guide.md"
+agent Writer:
+    role: "Before you write, read {{Guide}}."
+    work: "Work"
+        "Read first: {{load:Guide}}"
+''')
+        guide = root / "shared/guide.md"
+        guide.parent.mkdir()
+        guide.write_text("Guide.\n")
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "out"'))
+        target = load_emit_targets(config)["homes"]
+        for path in emit_target(target):
+            self.assertNotIn(b"\x1e", path.read_bytes())
+        output = (root / "out/writer/AGENTS.md").read_text()
+        self.assertIn("[Test design](../../shared/guide.md)", output)
+        self.assertIn("@../../shared/guide.md", output)
+
+    def test_team_contract_resolves_links_from_the_contract_folder(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    values:
+        ref: "{{Guide}}"
+    member one: "One"
+        role: "Work."
+        work: "Read {{team:ref}}"
+            "Work."
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        contract = json.loads((root / "t/TEAM.contract.json").read_text())
+        self.assertEqual(contract["members"][0]["sections"], ["Read [Guide](../guide.md)"])
+
+    def test_flow_renders_file_links_from_the_diagram_folder(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+workflow Steps: "Steps"
+    next: "Next"
+        route "Read {{Guide}}" -> Other
+agent Writer:
+    role: "Write."
+    work: Steps
+agent Other:
+    role: "Review."
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        target = load_emit_targets(root / "pyproject.toml")["homes"]
+        emitted = emit_target_flow(target, include_svg=False)
+        output = emitted[0].read_text()
+        self.assertNotIn("\x1e", output)
+        self.assertIn("[Guide](guide.md)", output)
+
+    def test_missing_imports_are_skipped_from_each_loaded_file(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Ask @compiled before work."
+''', settings='[tool.doctrine.runtimes.claude]\nexternal = [{path="external.md"}]\n')
+        (root / "CLAUDE.md").write_text("Ask @parent before work.\n@missing-parent.md\n")
+        (root / "external.md").write_text("Ask @external before work.\n@missing-external.md\n@imported.md\n")
+        (root / "imported.md").write_text("Ask @imported before work.\n@missing-import.md\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        code, output, error = self.cli(root, "load", "t", "--runtime", "claude", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        paths = [row["path"] for row in rows]
+        self.assertIn("imported.md", paths)
+        for name in ("compiled", "parent", "external", "imported", "missing-parent.md",
+                     "missing-external.md", "missing-import.md"):
+            self.assertNotIn(name, paths)
+
+    def test_an_import_path_ends_at_a_space_even_after_a_backslash(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Work."
+''', settings='[tool.doctrine.runtimes.claude]\nexternal = [{path="external.md"}]\n')
+        (root / "external.md").write_text("@guide\\ rest.md\n")
+        (root / "guide\\").write_text("Guide.\n")
+        code, output, error = self.cli(root, "load", "t", "--runtime", "claude", "--json")
+        self.assertEqual(code, 0, error)
+        paths = [row["path"] for row in json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]]
+        self.assertIn("guide\\", paths)
+        self.assertNotIn("guide rest.md", paths)
