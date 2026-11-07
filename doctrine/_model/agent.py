@@ -31,6 +31,7 @@ class AuthoredSlotAbstract:
 @_dataclass(slots=True, frozen=True)
 class AuthoredSlotInherit:
     key: str
+    wildcard: bool = _field(default=False, compare=False, kw_only=True)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

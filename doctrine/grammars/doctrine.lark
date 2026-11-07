@@ -105,17 +105,27 @@ rule_scope_block: "scope" ":" _NL _INDENT rule_scope_predicate+ _DEDENT
                      | flow_predicate
                      | role_class_predicate
                      | file_tree_predicate
+                     | team_predicate
+                     | member_predicate
+                     | home_predicate
 agent_tag_predicate: "agent_tag" ":" CNAME _NL
 flow_predicate: "flow" ":" name_ref _NL
 role_class_predicate: "role_class" ":" CNAME _NL
 file_tree_predicate: "file_tree" ":" string _NL
+team_predicate: "team" ":" (name_ref | "*") _NL
+member_predicate: "member" ":" CNAME _NL
+home_predicate: "home" ":" string _NL
 rule_assertions_block: "assertions" ":" _NL _INDENT rule_assertion+ _DEDENT
 ?rule_assertion: requires_inherit_assertion
                | forbids_bind_assertion
                | requires_declare_assertion
+               | requires_load_assertion
+               | forbids_load_assertion
 requires_inherit_assertion: "requires" "inherit" name_ref _NL
 forbids_bind_assertion: "forbids" "bind" name_ref _NL
 requires_declare_assertion: "requires" "declare" CNAME _NL
+requires_load_assertion: "requires" "load" name_ref _NL
+forbids_load_assertion: "forbids" "load" name_ref _NL
 rule_message: "message" ":" string _NL
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT

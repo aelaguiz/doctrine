@@ -4,8 +4,10 @@ Doctrine treats fail-loud errors as the default.
 Some valid authoring shapes still signal likely drift. Doctrine uses warnings
 for those cases when a hard error would be too strict.
 
-Doctrine currently ships graph-scoped warnings for `skill_graph` policy lines.
-Warnings are emitted into graph contracts and graph Markdown. They do not fail
+Doctrine ships project warnings in `doctrine check`, plus graph warnings
+for `skill_graph` policy lines. Project warnings are listed below.
+Graph warnings follow their graph's policy.
+Graph warnings are emitted into graph contracts and graph Markdown. They do not fail
 compile by themselves.
 The [agent-linter skill](AGENT_LINTER.md) is the current home for
 judgment-first authoring review.
@@ -21,6 +23,41 @@ judgment-first authoring review.
 sets `over = "warn"`. Warnings fail a check only with `--strict`.
 `check --json` keeps the plain finding text in each warning's `text` field.
 Examples 183 and 184 prove these cases.
+
+## Project Warnings
+
+`doctrine check` runs these checks. A warning prints to stderr and fails only
+with `--strict`. `doctrine build` runs none of these three checks.
+
+| Code | Key | Meaning |
+| --- | --- | --- |
+| `W301` | `near_copy` | Paragraphs in two source declarations are copies or differ by a few words. |
+| `W302` | `double_load` | The same declaration's text reaches a home from two files in its load. |
+| `W304` | `unused_value` | No home reads a `values:` key. |
+
+Turn off a warning for the project with:
+
+```toml
+[tool.doctrine.check]
+disable = ["W301"]
+```
+
+Near-copy checks read source paragraphs, so shared text used by many homes
+is counted once. Each authored string is split at blank lines. Paragraphs
+with fewer than 12 word tokens are skipped. Tokens ignore case and Markdown
+emphasis. Candidate pairs must share at least three 4-token shingles. A
+`SequenceMatcher` ratio of 0.85 or more is a finding, with `autojunk=False`.
+A ratio of 1 is a copy; lower ratios are near copies.
+
+Findings group by declaration pair. Text shows the first three examples and
+the total count. JSON warnings also carry every pair in `examples`, with
+`sites` and the differing `words`. A parent and child can count as copies.
+Share the text and put the words that vary in `values:`.
+
+Double-load checks group always-on text by its source declaration and source
+path across each runtime's full load. Two slot names for one workflow still
+count as the same source. A finding names the two files. Details do not count.
+See [example 188](../examples/188_project_warnings).
 
 ## Shipped Graph Warnings
 
@@ -73,10 +110,6 @@ warning.
 These are the families most aligned with Doctrine principles. They are
 candidates, not shipped codes.
 
-- **Context budget.** A concrete agent renders an unusually large
-  always-on home, or a local section carries a very large prose block.
-- **Reuse pressure.** Normalized prose, step lists, or typed scaffolds
-  repeat across agents or modules in one compile graph.
 - **Narrow semantic shadowing.** One agent carries review or route
   control meaning twice through separate authored surfaces.
 - **Transition fail-loud bridge.** A proven gap from

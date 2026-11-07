@@ -57,6 +57,19 @@ If the evidence is missing, it should say that plainly.
 Those calls still land under the existing `AL###` family. The skill teaches the
 judgment more clearly, not with a bigger public code set.
 
+## Change Mode
+
+Give the linter `doctrine diff --json`, each changed declaration's source,
+and one compiled home that the change reaches. It reviews only the changed
+declarations against the rest of that home. The whole home supplies context;
+it does not widen the audit to every old sentence.
+
+The linter asks whether the change repeats a lesson already there, adds a
+rule where a judgment already lives, or contradicts a parent. Findings use
+`AL231`, `AL232`, and `AL233`. Each finding shows the changed text and the
+existing text that makes it a problem. The linter makes these calls through
+judgment. These are not compiler checks.
+
 ## Prompt Comments
 
 Lines that start with `#` in Doctrine `.prompt` files are authoring comments.

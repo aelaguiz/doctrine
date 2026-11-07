@@ -14,6 +14,7 @@ skill package DoctrineAgentLinter: "Doctrine Agent Linter"
         "references/finding-catalog.md": FindingCatalog
     "Audit Doctrine agent authoring thoughtfully. Use model judgment plus exact evidence from the inspected surfaces. Help authors keep always-on context small, shared doctrine shared, exact truth typed, and harness-owned behavior out of prompts. Keep the default report human-first, easy to skim, vivid, and easy to act on."
     when_to_use: "When to use"
+        "Review changed declarations from `doctrine diff --json` against one reached home. Load `references/audit-method.md` for change mode."
         "Audit one `AGENTS.prompt`, `SOUL.prompt`, or `SKILL.prompt`."
         "Audit a full skill package or full flow and explain what is weak, duplicated, confusing, or too harness-heavy."
         "Audit a repo's instruction-bearing surfaces and tell the author what to fix first."

@@ -2212,8 +2212,9 @@ workflow law, and review semantics.
 ## Project Rules
 
 Doctrine ships a declarative `rule` primitive that a project uses to lint its
-own agent graph. A `rule` lives at the top of a prompt file and runs during
-compile. If the rule matches a concrete agent and the agent violates an
+own agent graph. A `rule` lives at the top of a prompt file. Inheritance
+and slot assertions run at compile. Load assertions run in `doctrine check`
+and `emit_docs` for the homes it compiles. `doctrine build` runs no rules. If the rule matches a concrete agent and the agent violates an
 assertion, the compiler raises a `RULE###` diagnostic (see
 [`COMPILER_ERRORS.md`](./COMPILER_ERRORS.md)).
 
@@ -2239,6 +2240,11 @@ agents the rule evaluates against:
 - `file_tree: <STRING>` — every agent whose prompt file path matches the
   glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root
 
+- `team: <NameRef>` matches that team's members. `team: *` matches all team members.
+- `member: <CNAME>` matches members with that key in any team.
+- `home: "pods/**"` matches home paths. `*` stays in one path segment;
+  `**` can cross segments.
+
 Multiple scope predicates combine with OR semantics: an agent matches the
 rule when at least one predicate matches.
 
@@ -2253,16 +2259,37 @@ Assertions say what scoped agents must or must not do:
 - `requires declare <CNAME>` — the scoped agent (or one of its declared
   ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`.
 
-The `flow: <NameRef>` scope predicate also requires its target to resolve. If
-it does not, the compiler raises `RULE001`.
+- `requires load <NameRef>` checks that the declaration wrote always-on
+  text in the home or a level above it. Missing text raises `RULE006`.
+- `forbids load <NameRef>` checks the reverse. A failure raises `RULE007`
+  and shows one shortest path through the source declarations.
 
-The `message:` body is surfaced back to the author when the rule fires. Use it
+Load assertions count text that lands through any path, including composition.
+Details do not count. An unknown load target raises `RULE002`.
+
+The `flow: <NameRef>` and `team: <NameRef>` scope predicates require their
+targets to resolve. An unknown target raises `RULE001`.
+
+For inheritance and slot assertions, the `message:` body is shown when the rule fires. Use it
 to explain the invariant in plain English so a downstream author can read the
 diagnostic alone and know what to fix.
 
 See [`../examples/146_declarative_project_lint_rule`](../examples/146_declarative_project_lint_rule)
-for the manifest-backed teaching example that covers all five shipped
-`RULE###` codes.
+for the first five `RULE###` codes. Examples
+[185](../examples/185_rule_team_scopes) and
+[186](../examples/186_rule_load_assertions) prove team scopes and load assertions.
+
+`doctrine diff --base HEAD` shows changed declarations, the homes they reach,
+and each home's load change in UTF-16 characters. Details have their own size
+change. Use `--base-tree DIR` to compare two project folders, or `--with PATH`
+to compare only those working files against the base. Repeat `--with` for
+several files. JSON `outputs` lists only files whose bytes changed. New
+sections that arrive through `inherit *` get their own list.
+
+`doctrine where "some words"` finds the source of text in a home's load.
+Case and whitespace do not matter. A sentence at a parent level reaches
+every home below it. Use `--home PATH` to limit the homes searched. A search
+with no match exits 1. See [example 187](../examples/187_doctrine_diff).
 
 ## Markdown Emission
 

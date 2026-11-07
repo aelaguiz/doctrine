@@ -302,6 +302,11 @@ from doctrine._model.readable import (
 )
 from doctrine._model.rule import (
     AgentTagPredicate,
+    TeamPredicate,
+    MemberPredicate,
+    HomePredicate,
+    RequiresLoadAssertion,
+    ForbidsLoadAssertion,
     FileTreePredicate,
     FlowPredicate,
     ForbidsBindAssertion,

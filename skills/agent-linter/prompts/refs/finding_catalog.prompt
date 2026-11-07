@@ -16,6 +16,9 @@ document FindingCatalog: "Finding Catalog"
 | `AL210` | Repeated Method Should Become A Skill | Several agents carry the same decision method without a shared skill owner. | Extract the shared method into a skill. |
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
 | `AL230` | Semantic Duplicate Across Agents | Several targets say the same rule in different words. | Collapse the semantic copies behind one shared owner. |
+| `AL231` | Lesson Restated Beside Old Text | A change repeats a lesson that the reached home already teaches. | Change the text that already makes the call. |
+| `AL232` | Rule Added Where A Judgment Lives | A change adds a fixed rule beside a judgment that already covers the case. | Fold it into the judgment, or show why it needs a rule. |
+| `AL233` | Change Contradicts A Parent | A change gives an answer that conflicts with its parent's guidance. | Change the parent, or say the departure plainly. |
 | `AL240` | Skill Hardcodes Invocation Inputs | A skill hardcodes changing subject, dataset, or case facts. | Keep the method in the skill and move changing facts into inputs or source reads. |
 | `AL245` | Gate Declared As Inline Prose | Review gate IDs appear as free-form prose on the review or in an output field body instead of as typed `contract.NAME` identities. | Declare the gates once on the review contract and reference them by `contract.NAME` in the review body and the same identities through Doctrine interpolation in authored prose. |
 | `AL246` | Per-Case Gate Delta Split Into Parallel Contracts | Two or more review cases share one `review_family` and differ only in a small gate delta, yet each case binds its own near-duplicate `contract:` workflow or schema. | Keep one shared contract and express the per-case delta through `override gates:` inside the case block. |
@@ -145,6 +148,15 @@ document FindingCatalog: "Finding Catalog"
             "Shared owner: Almost always required."
             "Good: `Use the shared SafetyEscalation rule.`"
             "Bad: One role says `raise blockers early` while another says `surface risks before handoff` for the same policy."
+
+        section al231: "`AL231` Lesson Restated Beside Old Text"
+            "The changed text teaches a lesson the reached home already holds. Show both spans and change the text that already makes the call."
+
+        section al232: "`AL232` Rule Added Where A Judgment Lives"
+            "The change adds a fixed answer where the home already teaches how to judge the case. Fold the lesson into that judgment, or show what needs a rule."
+
+        section al233: "`AL233` Change Contradicts A Parent"
+            "The changed declaration and a parent point to different actions in the same case. Show both spans. Change the parent, or state why this role departs from it."
 
         section al240: "`AL240` Skill Hardcodes Invocation Inputs"
             "What it means: A skill hardcodes the changing subject, dataset, or case."

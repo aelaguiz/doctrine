@@ -55,6 +55,26 @@ class RuleTransformerMixin:
     def file_tree_predicate(self, meta, glob):
         return _with_source_span(model.FileTreePredicate(glob=glob), meta)
 
+    @v_args(meta=True, inline=True)
+    def team_predicate(self, meta, target=None):
+        return _with_source_span(model.TeamPredicate(target=target), meta)
+
+    @v_args(meta=True, inline=True)
+    def member_predicate(self, meta, key):
+        return _with_source_span(model.MemberPredicate(key=key), meta)
+
+    @v_args(meta=True, inline=True)
+    def home_predicate(self, meta, glob):
+        return _with_source_span(model.HomePredicate(glob=glob), meta)
+
+    @v_args(meta=True, inline=True)
+    def requires_load_assertion(self, meta, ref):
+        return _with_source_span(model.RequiresLoadAssertion(target=ref), meta)
+
+    @v_args(meta=True, inline=True)
+    def forbids_load_assertion(self, meta, ref):
+        return _with_source_span(model.ForbidsLoadAssertion(target=ref), meta)
+
     def rule_assertions_block(self, assertions):
         return tuple(assertions)
 

@@ -312,23 +312,24 @@ Stability rules:
 
 The `RULE###` band covers diagnostics raised by the declarative `rule` primitive
 described in [`LANGUAGE_REFERENCE.md`](./LANGUAGE_REFERENCE.md). Rule checks run
-during compile and share the same error envelope as the `E###` codes.
+at compile for inheritance and slots, and in `check` and `emit_docs` for
+load assertions. `build` runs no rules. They use the `E###` error envelope.
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `RULE001` | Rule declaration references an unknown scope predicate target | A rule's `scope:` predicate names a `flow: <agent>` whose target agent is not declared in the prompt graph. |
-| `RULE002` | Rule assertion target does not resolve | A rule's `assertions:` block references an agent (for `requires inherit` or `forbids bind`) that is not declared in the prompt graph. |
+| `RULE001` | Rule declaration references an unknown scope predicate target | A `flow:` target is not an agent, or a `team:` target is not a team in this flow. |
+| `RULE002` | Rule assertion target does not resolve | An inheritance assertion names an unknown agent, or a load assertion names an unknown declaration. |
 | `RULE003` | Scoped agent fails `requires inherit` assertion | A concrete agent that matches the rule's `scope:` predicates does not inherit the required ancestor named in `requires inherit`. |
 | `RULE004` | Scoped agent violates `forbids bind` assertion | A concrete agent that matches the rule's `scope:` predicates inherits from an ancestor that the rule forbids via `forbids bind`. |
 | `RULE005` | Scoped agent fails `requires declare` assertion | A concrete agent that matches the rule's `scope:` predicates does not declare (or inherit) the slot named in `requires declare`. |
+| `RULE006` | Requires load | The scoped home's always-on load has no text from the named declaration. |
+| `RULE007` | Forbids load | The scoped home loads text from the named declaration. The detail shows one shortest source path that brought it there. |
 
-The rule primitive ships a closed predicate set: scope predicates are limited to
-`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`, and
-`file_tree: <STRING>`; assertions are limited to `requires inherit <NameRef>`,
-`forbids bind <NameRef>`, and `requires declare <CNAME>`. Codes `RULE006` through
-`RULE099` are reserved for future extensions of this closed-predicate surface.
-Codes `RULE100` and above are reserved for any future open-expression-language
-evolution of the rule primitive.
+The closed scope set is `agent_tag`, `flow`, `role_class`, `file_tree`,
+`team`, `member`, and `home`. Assertions are `requires inherit`,
+`forbids bind`, `requires declare`, `requires load`, and `forbids load`.
+Codes `RULE008` through `RULE099` stay reserved for closed predicates.
+Codes `RULE100` and above stay reserved for a future expression language.
 
 ## Example
 

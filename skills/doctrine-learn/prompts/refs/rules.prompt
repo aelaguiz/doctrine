@@ -5,9 +5,9 @@ graph at compile time. Use a `rule` when the same invariant must hold across
 many concrete agents and you want the compiler (not a reviewer turn, not a
 harness check) to enforce it.
 
-Rules live alongside agents at the top of a prompt file. They run during
-compile, match concrete agents through a closed predicate set, and fire one
-of the shipped `RULE###` diagnostics when an agent violates an assertion.
+Rules live beside agents at the top of a prompt file. Inheritance and slot
+assertions run at compile. Load assertions run in `doctrine check` and
+`emit_docs` for the homes it compiles. `doctrine build` runs no rules.
 
 Read the source of truth in this order before you ship code:"""
 
@@ -55,7 +55,7 @@ Read the source of truth in this order before you ship code:"""
             "`message:` is the plain-English explanation shown when the rule fires."
 
     section closed_predicate_set: "Closed predicate set"
-        """The shipped predicate set is closed. Codes `RULE006` through `RULE099` are
+        """The shipped predicate set is closed. Codes `RULE008` through `RULE099` are
 reserved for future extensions of this closed-predicate surface. Codes
 `RULE100` and above are reserved for any future open-expression-language
 evolution of the rule primitive. Do not invent new predicates in authoring."""
@@ -73,6 +73,11 @@ evolution of the rule primitive. Do not invent new predicates in authoring."""
                 """`file_tree: <STRING>` matches every agent whose prompt file path matches
   the glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root."""
 
+            bullets home_scopes:
+                "`team: GrowthPod` matches that team's members; `team: *` matches all team members."
+                "`member: qa` matches members with that key in any team."
+                "`home: \"pods/**\"` matches home paths. `*` stays in one segment; `**` crosses segments."
+
             """Multiple scope predicates combine with OR semantics: an agent matches when
 at least one predicate matches."""
 
@@ -88,6 +93,11 @@ at least one predicate matches."""
                 """`requires declare <CNAME>` — the scoped agent (or one of its declared
   ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`."""
 
+            bullets load_assertions:
+                "`requires load Lesson` checks for always-on text from Lesson in the home or a level above it. A failure raises `RULE006`."
+                "`forbids load Lesson` checks the reverse. `RULE007` shows one shortest source path that brought the text there."
+                "Load assertions follow any path, including composition. Details do not count. An unknown target raises `RULE002`."
+
     section shipped_diagnostics: "Shipped diagnostics"
         bullets codes:
             "`RULE001` — scope predicate names a flow or ancestor that does not exist."
@@ -95,6 +105,8 @@ at least one predicate matches."""
             "`RULE003` — scoped agent fails `requires inherit`."
             "`RULE004` — scoped agent violates `forbids bind`."
             "`RULE005` — scoped agent fails `requires declare`."
+            "`RULE006` — the required text is missing from the home's load."
+            "`RULE007` — forbidden text is in the home's load."
 
     section worked_example: "Worked example"
         """Copy `examples/146_declarative_project_lint_rule` when you add your first
@@ -141,3 +153,10 @@ assertion site."""
         """**Load when:** the author is adding a compile-time invariant across many
 concrete agents, retiring an ancestor that must never be inherited again, or
 requiring a named slot across a role class."""
+
+    section reach: "See what a change reaches"
+        "Copy examples 185 and 186 for team scopes and load rules. Example 187 shows `doctrine diff` and `doctrine where`."
+        "`doctrine diff --base HEAD` reports changed declarations and the homes they reach. `--base-tree DIR` compares project folders. Repeat `--with PATH` to compare only those working files against the base."
+        "Size changes count a home's full always-on load in UTF-16 characters. Details have their own change. JSON `outputs` lists only files whose bytes changed. New sections from `inherit *` get their own list."
+        "`doctrine where \"some words\"` finds the source of text and the homes that read it. Case and whitespace do not matter. Use `--home PATH` to limit the search."
+        "Example 188 shows project warnings for near copies, double loads, and unused values. `check --strict` fails on warnings. Set `[tool.doctrine.check] disable = [\"W301\"]` to turn a code off."

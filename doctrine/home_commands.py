@@ -2,20 +2,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import subprocess
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from doctrine._compiler.session import CompilationSession
+from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.load_rules import validate_load_rules
+from doctrine._compiler.home_map import home_entries
+from doctrine._compiler.source_graph import source_strings
+from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.diagnostics import compile_error
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
 from doctrine.homes import compile_homes, build_homes
 from doctrine.parser import parse_file
 from doctrine.project_config import load_project_config
+from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
-from doctrine.runtime_load import runtime_settings, home_loads, budget_findings, render_load
+from doctrine.runtime_load import runtime_settings, home_loads, budget_findings, render_load, loaded_levels
 
 
 @contextmanager
@@ -123,16 +130,21 @@ def build(args):
 
 
 def check(args):
-    homes = {}
+    homes, warnings = {}, []
     try:
         with resolve_target(args) as (target, session, _):
             if target is None:
                 return 2
             settings = runtime_settings(target)
             homes, files, _, _ = compile_homes(target, evaluate_rules=True, session=session)
+            validate_load_rules(CompilationContext(session), homes)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)
-            ok = not failed and not (args.strict and findings)
+            warnings = project_warnings(session, homes, loads)
+            disabled = (target.project_config.raw_check or {}).get("disable", [])
+            findings = [finding for finding in findings
+                        if not finding.startswith("W") or finding.split()[0] not in disabled]
+            ok = not failed and not (args.strict and (findings or warnings))
     except DoctrineError as exc:
         if not args.json:
             raise
@@ -149,7 +161,7 @@ def check(args):
                         for finding in findings
                         if not finding.startswith("W")
                     ],
-                    "warnings": [
+                    "warnings": warnings + [
                         {"code": finding.split()[0], "text": finding}
                         for finding in findings
                         if finding.startswith("W")
@@ -158,7 +170,7 @@ def check(args):
             )
         )
     else:
-        for finding in findings:
+        for finding in (*findings, *(warning["text"] for warning in warnings)):
             print(finding, file=sys.stderr)
         if ok:
             print(f"ok: {len(homes)} homes checked")
@@ -215,3 +227,45 @@ def run_command(args, command):
     except (argparse.ArgumentError, OSError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 2
+
+
+def where(args):
+    with resolve_target(args) as (target, session, _):
+        if target is None:
+            return 2
+        homes, _, selected, _ = compile_homes(
+            target, session=session, selectors=[args.home] if args.home else ()
+        )
+        needle = " ".join(args.words.casefold().split())
+        matches, strings = {}, {}
+        for home in sorted(selected):
+            for level, data in loaded_levels(homes, home):
+                _, _, _, texts = home_entries(data["source_compiled"])
+                for entry, text in texts.items():
+                    if (level != home and not entry.always_on) or needle not in " ".join(text.casefold().split()):
+                        continue
+                    source, start = entry.site.rsplit(":", 1)
+                    if source not in strings:
+                        path = target.project_config.config_dir / source
+                        strings[source] = source_strings(path) if path.suffix == ".prompt" else [
+                            (line, number) for number, line in enumerate(path.read_text().splitlines(), 1)
+                        ]
+                    site = entry.site
+                    for authored, line in strings[source]:
+                        if line < int(start):
+                            continue
+                        pattern = ".*?".join(re.escape(part) for part in _INTERPOLATION_RE.split(
+                            " ".join(authored.casefold().split())
+                        )[::2])
+                        found = re.search(pattern, " ".join(text.casefold().split()))
+                        if found and needle in found[0]:
+                            site = f"{source}:{line}"
+                            break
+                    key = (entry.origin, entry.origin_path, site)
+                    matches.setdefault(key, set()).add(home)
+        for (origin, path, site), reached in matches.items():
+            name = ".".join((origin, *path))
+            count = len(reached)
+            print(f"{name}  {site}")
+            print(f"  reaches {count} {'home' if count == 1 else 'homes'}: {', '.join(sorted(reached))}")
+        return 0 if matches else 1

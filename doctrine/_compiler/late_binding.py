@@ -8,7 +8,7 @@ from doctrine import model
 from doctrine._compiler.details import validate_shared_details
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.teams import find_home_team, team_members
+from doctrine._compiler.teams import find_home_team, team_members, home_value_sources
 from doctrine._compiler.types import CompiledCodeBlock
 from doctrine._compiler.markdown_links import rebase_markdown
 
@@ -76,32 +76,9 @@ def bind_home(context, compiled, agent, *, unit):
             for key, text, span in field.items
         }
 
-    def parents(decl, owner):
-        result = []
-        while decl.parent_ref is not None:
-            owner, decl = context._resolve_parent_agent_decl(decl, unit=owner)
-            result.append(values(decl, owner))
-        return result
-
-    agent_values = [values(agent, unit)]
-    team_values = []
-    if team is not None:
-        team_values.append(values(team, team_unit))
-        outer = []
-        flow = context.session.flow_for_unit(team_unit)
-        home = PurePosixPath(team.home)
-        for candidate in flow.teams_by_name.values():
-            if candidate.abstract or candidate is team:
-                continue
-            path = PurePosixPath(candidate.home)
-            if path in home.parents:
-                outer.append(candidate)
-        for candidate in sorted(outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True):
-            owner = flow.declaration_owner_units_by_id[id(candidate)]
-            team_values.append(values(candidate, owner))
-        team_values.extend(parents(team, team_unit))
-    agent_values.extend(team_values)
-    agent_values.extend(parents(agent, agent.scope_unit or unit if isinstance(agent, model.Member) else unit))
+    agent_sources, team_sources = home_value_sources(context, agent, unit)
+    agent_values = [values(decl, owner) for decl, owner in agent_sources]
+    team_values = [values(decl, owner) for decl, owner in team_sources]
 
     def read(root, key):
         if root == "team" and team is None:
@@ -144,6 +121,7 @@ def bind_home(context, compiled, agent, *, unit):
         for environment in agent_values if root == "agent" else team_values:
             if key in environment:
                 text, source, span = environment[key]
+                context.session.value_reads.add((source.prompt_file.source_path, span.line))
                 text = context._interpolate_authored_prose_string(
                     text, unit=source,
                     owner_label=f"value {key}", surface_label="value text")

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+import glob
+import re
 
 from doctrine import model
-from doctrine._compiler.teams import team_members
+from doctrine._compiler.source_graph import declaration_match
+from doctrine._compiler.teams import team_members, find_home_team
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 
@@ -40,6 +43,7 @@ class ValidateRulesMixin:
         for team in flow.teams_by_name.values():
             if not team.abstract:
                 owner = flow.declaration_owner_units_by_id[id(team)]
+                agents.append((owner, team))
                 agents.extend((owner, member) for member in team_members(self, team, unit=owner))
         for agent_unit, agent in agents:
             if not self._agent_matches_rule_scope(
@@ -72,6 +76,14 @@ class ValidateRulesMixin:
         rule_unit: IndexedUnit,
     ) -> None:
         for predicate in rule.scope.predicates:
+            if isinstance(predicate, model.TeamPredicate) and predicate.target is not None:
+                target = ".".join((*predicate.target.module_parts, predicate.target.declaration_name))
+                match = declaration_match(self, predicate.target, rule_unit)
+                if match is None or not isinstance(match[1], model.Team):
+                    self._raise_rule_unknown_scope_target(
+                        rule=rule, rule_unit=rule_unit, source_span=predicate.source_span,
+                        target_name=target,
+                    )
             if isinstance(predicate, model.FlowPredicate):
                 target = self._rule_agent_name(predicate.flow_ref, flow=flow)
                 if self._flow_decl_match(target, unit=rule_unit, registry_name="agents_by_name") is None:
@@ -112,6 +124,30 @@ class ValidateRulesMixin:
         flow,
     ) -> bool:
         for predicate in rule.scope.predicates:
+            if isinstance(predicate, model.TeamPredicate):
+                if isinstance(agent, model.Member):
+                    match = find_home_team(self, agent, unit=agent_unit)
+                    if predicate.target is None:
+                        return True
+                    rule_unit = flow.declaration_owner_units_by_id[id(rule)]
+                    target = declaration_match(self, predicate.target, rule_unit)
+                    if (match[0].prompt_file.source_path, match[1].name) == (target[0].prompt_file.source_path, target[1].name):
+                        return True
+                continue
+            if isinstance(predicate, model.MemberPredicate):
+                if isinstance(agent, model.Member) and agent.key == predicate.key:
+                    return True
+                continue
+            if isinstance(predicate, model.HomePredicate):
+                match = find_home_team(self, agent, unit=agent_unit)
+                home = self.session.home_paths.get(agent.name)
+                if match is not None:
+                    home = match[1].home
+                    if isinstance(agent, model.Member):
+                        home = str(PurePosixPath(home) / agent.key.replace("_", "-"))
+                if home is not None and re.fullmatch(glob.translate(predicate.glob, recursive=True), home):
+                    return True
+                continue
             if isinstance(predicate, model.AgentTagPredicate):
                 if agent.name == predicate.tag:
                     return True

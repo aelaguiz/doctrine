@@ -38,6 +38,8 @@ class HomeMap:
     agent: str
     entries: tuple[MapEntry, ...]
     drops: tuple[DropRecord, ...]
+    wildcard_keys: frozenset[tuple[str, ...]] = frozenset()
+    deps: frozenset[str] = frozenset()
 
 
 def source_origin(context, declaration, unit, path, span):
@@ -146,11 +148,13 @@ def drop_records(items, origin):
     )
 
 
-def build_home_map(compiled, home):
-    entries, drops = [], list(compiled.drops)
+def home_entries(compiled):
+    entries, texts, drops, wildcard_keys = [], {}, list(compiled.drops), set()
 
     def visit(item, path, depth, profile, always_on, entry, origin):
         origin = item.origin or origin
+        if origin and origin.wildcard:
+            wildcard_keys.add(path[:2])
         position = len(entries)
         details = isinstance(item, CompiledSection) and item.kind == "details"
         if details and always_on:
@@ -187,24 +191,22 @@ def build_home_map(compiled, home):
                     text = text.partition("\n\n")[2]
                 title = None if isinstance(item, CompiledRuleBlock) else item.title
             if text:
-                entries.insert(
-                    position,
-                    MapEntry(
-                        path[:2],
-                        title,
-                        origin.declaration,
-                        origin.path,
-                        origin.site,
-                        always_on,
-                        hashlib.sha256(text.encode()).hexdigest(),
-                        len(text.encode("utf-16-le")) // 2,
-                        len(text.encode()),
-                    ),
+                entry = MapEntry(
+                    path[:2], title, origin.declaration, origin.path, origin.site, always_on,
+                    hashlib.sha256(text.encode()).hexdigest(),
+                    len(text.encode("utf-16-le")) // 2, len(text.encode()),
                 )
+                entries.insert(position, entry)
+                texts[entry] = text
             return None
         return item
 
     for field in compiled.fields:
         path = ("role",) if isinstance(field, model.RoleScalar) else (field.key,)
         visit(field, path, 2, DEFAULT_PROFILE, True, True, field.origin)
-    return HomeMap(home, compiled.name, tuple(entries), tuple(drops))
+    return tuple(entries), tuple(drops), frozenset(wildcard_keys), texts
+
+
+def build_home_map(compiled, home):
+    entries, drops, wildcard_keys, _ = home_entries(compiled)
+    return HomeMap(home, compiled.name, entries, drops, wildcard_keys)

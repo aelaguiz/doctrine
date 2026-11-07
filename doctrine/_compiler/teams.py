@@ -19,6 +19,18 @@ def team_members(context, team, *, unit):
     )
 
 
+def find_team_member(context, unit, name):
+    if "." in name:
+        team_name, key = name.rsplit(".", 1)
+        flow = context.session.flow_for_unit(unit)
+        team = flow.teams_by_name.get(team_name)
+        if team is not None and not team.abstract:
+            owner = flow.declaration_owner_units_by_id[id(team)]
+            return next(((owner, member) for member in team_members(context, team, unit=owner)
+                         if member.key == key), None)
+    return None
+
+
 def find_home_team(context, agent, *, unit):
     if isinstance(agent, model.Team):
         return unit, agent
@@ -28,6 +40,35 @@ def find_home_team(context, agent, *, unit):
         team = flow.teams_by_name[name]
         return flow.declaration_owner_units_by_id[id(team)], team
     return None
+
+
+def home_value_sources(context, agent, unit):
+    def parents(decl, owner):
+        result = []
+        while decl.parent_ref is not None:
+            owner, decl = context._resolve_parent_agent_decl(decl, unit=owner)
+            result.append((decl, owner))
+        return result
+
+    owner = agent.scope_unit or unit if isinstance(agent, model.Member) else unit
+    agent_sources, team_sources = [(agent, owner)], []
+    match = None if agent.abstract else find_home_team(context, agent, unit=unit)
+    if match is not None:
+        team_unit, team = match
+        team_sources.append((team, team_unit))
+        flow = context.session.flow_for_unit(team_unit)
+        outer = [
+            candidate for candidate in flow.teams_by_name.values()
+            if not candidate.abstract and PurePosixPath(candidate.home) in PurePosixPath(team.home).parents
+        ]
+        team_sources.extend(
+            (candidate, flow.declaration_owner_units_by_id[id(candidate)])
+            for candidate in sorted(outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True)
+        )
+        team_sources.extend(parents(team, team_unit))
+    agent_sources.extend(team_sources)
+    agent_sources.extend(parents(agent, owner))
+    return agent_sources, team_sources
 
 
 def validate_team(agent, *, unit):

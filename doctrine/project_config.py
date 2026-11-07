@@ -46,6 +46,7 @@ class ProjectConfig:
     raw_compile: object = None
     raw_emit: object = None
     raw_runtimes: object = None
+    raw_check: object = None
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = ()
     raw_text: str | None = _field(default=None, compare=False, repr=False)
 
@@ -131,6 +132,7 @@ class ProjectConfig:
             raw_compile=self.raw_compile,
             raw_emit=self.raw_emit,
             raw_runtimes=self.raw_runtimes,
+            raw_check=self.raw_check,
             provided_prompt_roots=(
                 *self.provided_prompt_roots,
                 *tuple(provided_prompt_roots),
@@ -210,6 +212,7 @@ def load_project_config(
         raw_compile=_value_get(doctrine_table, "compile"),
         raw_emit=_value_get(doctrine_table, "emit"),
         raw_runtimes=_value_get(doctrine_table, "runtimes"),
+        raw_check=_value_get(doctrine_table, "check"),
         provided_prompt_roots=provided_prompt_roots,
         raw_text=raw_text,
     )

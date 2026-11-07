@@ -4,7 +4,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from doctrine import model
-from doctrine._compiler.teams import team_members
+from doctrine._compiler.teams import find_team_member
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_RENDER_PROFILE_NAMES,
@@ -53,11 +53,9 @@ class ResolveRefsMixin:
             team_name, key = declaration_name.rsplit(".", 1)
             team = flow.teams_by_name.get(team_name)
             if team is not None:
-                owner = flow.declaration_owner_units_by_id[id(team)]
-                if not team.abstract:
-                    for member in team_members(self, team, unit=owner):
-                        if member.key == key:
-                            return owner, member
+                match = find_team_member(self, unit, declaration_name)
+                if match is not None:
+                    return match
                 raise reference_compile_error(code="E276", summary="Missing local declaration reference",
                     detail=f"Missing local agent declaration: {declaration_name}", unit=unit, source_span=team.source_span)
         return lookup_flow_registry_decl(

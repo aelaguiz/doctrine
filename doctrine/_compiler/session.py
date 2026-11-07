@@ -151,7 +151,9 @@ class CompilationSession:
 
         self.project_config = resolved_project_config
         self.evaluate_rules = evaluate_rules
+        self.value_reads: set[tuple[Path, int]] = set()
         self.emit_paths: dict[str, Path] = {}
+        self.home_paths: dict[str, str] = {}
         self.provided_prompt_roots = compile_config.provided_prompt_roots
         self.import_root_labels = _import_root_labels(
             self.prompt_root,

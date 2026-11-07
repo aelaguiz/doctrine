@@ -32,8 +32,27 @@ class FileTreePredicate:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class TeamPredicate:
+    target: NameRef | None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class MemberPredicate:
+    key: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class HomePredicate:
+    glob: str
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 RuleScopePredicate: _TypeAlias = (
     AgentTagPredicate | FlowPredicate | RoleClassPredicate | FileTreePredicate
+    | TeamPredicate | MemberPredicate | HomePredicate
 )
 
 
@@ -61,12 +80,25 @@ class RequiresDeclareAssertion:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class RequiresLoadAssertion:
+    target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ForbidsLoadAssertion:
+    target: NameRef
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 RuleAssertion: _TypeAlias = (
     RequiresInheritAssertion | ForbidsBindAssertion | RequiresDeclareAssertion
+    | RequiresLoadAssertion | ForbidsLoadAssertion
 )
 
 RuleAssertionKind: _TypeAlias = _Literal[
-    "requires_inherit", "forbids_bind", "requires_declare"
+    "requires_inherit", "forbids_bind", "requires_declare", "requires_load", "forbids_load"
 ]
 
 

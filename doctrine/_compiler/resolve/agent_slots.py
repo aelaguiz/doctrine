@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import apply_path_patches
+from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches
 from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -352,7 +352,7 @@ class ResolveAgentSlotsMixin:
                             hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
-                    resolved_slots.append(parent_slot)
+                    resolved_slots.append(mark_wildcard(parent_slot) if field.wildcard else parent_slot)
                     continue
 
                 if isinstance(field, model.AuthoredSlotOverride):

@@ -13,7 +13,8 @@ from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.parser import parse_file
 from doctrine._compiler.home_map import build_home_map
-from doctrine.emit_docs import _build_previous_turn_contexts
+from doctrine.emit_docs import _build_previous_turn_contexts, emit_target
+from doctrine.emit_common import load_emit_targets
 from doctrine._verify_corpus.manifest import _load_manifest
 
 
@@ -29,6 +30,123 @@ class CliTests(HomeProject, unittest.TestCase):
                 code, _, error = self.cli(root, *command)
                 self.assertEqual(code, 1)
                 self.assertIn("E601", error)
+
+    def test_where_finds_value_text(self):
+        root = self.project(example="187_doctrine_diff")
+        code, output, error = self.cli(root, "where", "YOU   FOLLOW the BET")
+        self.assertEqual(code, 0, error)
+        self.assertIn("PodQa.whom  prompts/AGENTS.prompt:4", output)
+        self.assertIn("reaches 1 home: pods/growth/qa", output)
+        self.assertNotIn("pods/feature/qa", output)
+
+    def test_where_reports_reach(self):
+        root = self.project('''team T: "Team"
+    home: "pod"
+    role: "Read this shared sentence."
+    member qa: "QA"
+        role: "Test."
+    member writer: "Writer"
+        role: "Write."
+''')
+        result = self.cli(root, "where", "this shared sentence")
+        self.assertEqual(result[0], 0, result)
+        self.assertIn("reaches 3 homes: pod, pod/qa, pod/writer", result[1])
+        result = self.cli(root, "where", "this shared sentence", "--home", "pod/qa")
+        self.assertEqual(result[0], 0, result)
+        self.assertIn("reaches 1 home: pod/qa", result[1])
+
+    def test_exit_codes_for_diff_and_where(self):
+        root = self.project(example="187_doctrine_diff")
+        for command in (("diff", "--base-tree", "base"), ("where", "You test")):
+            with self.subTest(command=command):
+                self.assertEqual(self.cli(root, *command)[0], 0)
+                self.assertEqual(self.cli(root, *command, "--target", "absent")[0], 2)
+        self.assertEqual(self.cli(root, "where", "No such text")[0], 1)
+        path = root / "prompts/AGENTS.prompt"
+        path.write_text(path.read_text().replace("You test.", "{{agent:missing}}"))
+        self.assertEqual(self.cli(root, "diff", "--base-tree", "base")[0], 1)
+        self.assertEqual(self.cli(root, "where", "You test")[0], 1)
+
+    def test_load_rule_unknown_declaration_is_rule002(self):
+        for target in ("Missing", "Lesson.missing", "T.missing"):
+            with self.subTest(target=target):
+                root = self.project('''workflow Lesson: "Lesson"
+    "Shared text."
+team T: "Team"
+    home: "pod"
+    member qa: "QA"
+        role: "Test."
+        work: Lesson
+rule R: "Rule"
+    scope:
+        member: qa
+    assertions:
+        requires load TARGET
+    message: "Read the lesson."
+'''.replace("TARGET", target))
+                result = self.cli(root, "check")
+                self.assertEqual(result[0], 1, result)
+                self.assertIn("RULE002", result[2])
+                self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
+
+    def test_home_scope_matches_agent_outside_a_team(self):
+        root = self.project('''workflow Lesson: "Lesson"
+    "Shared text."
+agent Qa:
+    role: "Test."
+rule R: "Rule"
+    scope:
+        home: "qa"
+    assertions:
+        requires load Lesson
+    message: "Read the lesson."
+''')
+        result = self.cli(root, "check", "--target", "homes")
+        self.assertEqual(result[0], 1, result)
+        self.assertIn("RULE006", result[2])
+        self.assertIn("\n- Qa must load Lesson.", result[2])
+
+    def test_home_glob_star_stays_in_one_segment(self):
+        source = '''workflow Lesson: "Lesson"
+    "Shared text."
+team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Test."
+        work: Lesson
+rule R: "Rule"
+    scope:
+        home: "pods/*"
+    assertions:
+        forbids load Lesson
+    message: "No lesson."
+'''
+        self.assertEqual(self.cli(self.project(source), "check")[0], 0)
+        result = self.cli(self.project(source.replace("pods/*", "pods/**")), "check")
+        self.assertEqual(result[0], 1, result)
+        self.assertIn("RULE007", result[2])
+
+    def test_emit_docs_checks_load_rules_for_compiled_homes(self):
+        source = '''workflow Lesson: "Lesson"
+    "Shared text."
+agent Qa:
+    role: "Test."
+rule R: "Rule"
+    scope:
+        agent_tag: Qa
+    assertions:
+        requires load Lesson
+    message: "Read the lesson."
+'''
+        root = self.project(source)
+        target = load_emit_targets(root / "pyproject.toml")["homes"]
+        with self.assertRaises(DoctrineError) as caught:
+            emit_target(target)
+        self.assertEqual(caught.exception.code, "RULE006")
+        self.assertFalse((root / "AGENTS.md").exists())
+        path = root / "prompts/AGENTS.prompt"
+        path.write_text(source.replace('    role: "Test."', '    role: "Test."\n    work: Lesson'))
+        self.assertTrue(emit_target(target))
 
     def git_project(self, root):
         for args in (

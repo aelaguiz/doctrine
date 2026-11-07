@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Reach (6.0.0; language 6.0)
+
+- Rules can select teams, member keys, and home paths. `requires load` and
+  `forbids load` check the full always-on load in `check` and `emit_docs`.
+  `RULE006` and `RULE007` name missing and forbidden text. Builds run no rules.
+- `diff` compares source hashes and home loads against a revision or project
+  tree. It lists changed files, details sizes, reach, and new wildcard sections.
+  Source hashes include Markdown `from` files and ignore source line moves.
+- `where` finds the source and home reach of a sentence, ignoring case and
+  whitespace.
+- Project checks warn on near copies (`W301`), double loads (`W302`), and
+  unused values (`W304`). Projects can disable warning codes. JSON near-copy
+  findings include every example pair.
+- The agent linter can review changed declarations against a reached home.
+  Its three new findings cover repeated lessons, added rules beside a
+  judgment, and changes that contradict a parent.
+
 ### Homes and load (6.0.0; language 6.0)
 
 - Team targets emit home trees, runtime files, and `TEAM.contract.json`.

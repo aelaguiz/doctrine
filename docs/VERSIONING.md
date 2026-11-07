@@ -25,6 +25,10 @@ The release version for this major language move is 6.0.0.
    in readable bodies, plus `budget` and `details`, are also reserved where
    their forms can start.
 
+Load rules run in `doctrine check` and `emit_docs`. Builds run no rules.
+Use `check --strict` when project warnings should fail an author's change.
+`diff` and `where` report reach without changing source or built files.
+
 ## The Version Lines
 
 ### Doctrine Language Version

@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
-from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
+from doctrine._compiler.resolve.patches import mark_wildcard, prepare_body_patches, apply_path_patches
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
     workflow_related_site,
@@ -375,7 +375,7 @@ class ResolveWorkflowsMixin:
                         source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                resolved_items.append(mark_wildcard(parent_item) if item.wildcard else parent_item)
                 continue
 
             if parent_item is None:
@@ -844,7 +844,7 @@ class ResolveWorkflowsMixin:
                         source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                resolved_items.append(mark_wildcard(parent_item) if item.wildcard else parent_item)
                 continue
 
             if parent_item is None:

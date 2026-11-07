@@ -7,7 +7,7 @@ from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _agent_typed_field_key
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
-from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem
+from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem, IndexedUnit
 
 
 TYPED_FIELDS = (
@@ -159,7 +159,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                     result.append(
                         replacements.get(
                             key,
-                            inherit_type(key=key, source_span=item.source_span),
+                            inherit_type(key=key, wildcard=True, source_span=item.source_span),
                         )
                     )
             continue
@@ -299,7 +299,7 @@ def expand_agent_patches(context, agent, *, unit):
                             for line in inherited.lines
                         ),
                     )
-                fields.append(inherited)
+                fields.append(mark_wildcard(inherited) if field.wildcard else inherited)
         else:
             fields.append(field)
     missing = [key for key in parent_fields if key not in accounted]
@@ -422,3 +422,19 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
             )
         result[path[0]] = walk(result[path[0]], path[1:], (path[0],), patch, child_origin(patch.origin or origin, path[0], patch.source_span, result[path[0]].body.title if isinstance(result[path[0]], ResolvedAgentSlot) else None))
     return result
+
+
+def mark_wildcard(value):
+    if isinstance(value, model.Origin):
+        return replace(value, wildcard=True)
+    if isinstance(value, (model.NameRef, IndexedUnit)):
+        return value
+    if isinstance(value, tuple):
+        return tuple(mark_wildcard(item) for item in value)
+    if is_dataclass(value):
+        return replace(value, **{
+            field.name: mark_wildcard(getattr(value, field.name))
+            for field in dataclass_fields(value)
+            if field.name not in {"scope_unit", "team_unit"}
+        })
+    return value
