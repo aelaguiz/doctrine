@@ -27,6 +27,9 @@ class ResolveSectionBodiesMixin:
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
+            if isinstance(item, model.SuperItem):
+                resolved.append(item)
+                continue
             if isinstance(item, (str, model.EmphasizedLine)):
                 resolved.append(
                     self._interpolate_authored_prose_line(
@@ -98,6 +101,9 @@ class ResolveSectionBodiesMixin:
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
+            if isinstance(item, model.SuperItem):
+                resolved.append(item)
+                continue
             if isinstance(item, model.ReadableBlock) and not item.anonymous:
                 resolved.append(item)
                 continue

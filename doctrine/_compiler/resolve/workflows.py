@@ -4,7 +4,7 @@ from doctrine import model
 from dataclasses import replace
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches, keep_details,
+    mark_wildcard, prepare_body_patches, apply_path_patches, merge_override, reject_super,
 )
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
@@ -130,6 +130,7 @@ class ResolveWorkflowsMixin:
                     parent_unit=parent_unit if workflow_decl.parent_ref is not None else None,
                     parent_label=parent_label,
                 )
+            reject_super((resolved.preamble, tuple(item for item in resolved.items if isinstance(item, (ResolvedSectionItem, model.ReadableBlock)))), _dotted_decl_name(unit.module_parts, workflow_decl.name), unit)
             self._resolved_workflow_cache[workflow_key] = resolved
             return resolved
         finally:
@@ -422,7 +423,7 @@ class ResolveWorkflowsMixin:
                         key=key,
                         origin=section_origin,
                         title=item.title if item.title is not None else parent_item.title,
-                        items=keep_details(parent_item.items, self._resolve_section_body_items(
+                        items=merge_override(parent_item.items, self._resolve_section_body_items(
                             item.items,
                             origin=section_origin,
                             unit=unit,
@@ -889,7 +890,7 @@ class ResolveWorkflowsMixin:
                     ResolvedSectionItem(
                         key=key,
                         title=item.title if item.title is not None else parent_item.title,
-                        items=keep_details(parent_item.items, self._resolve_addressable_section_body_items(
+                        items=merge_override(parent_item.items, self._resolve_addressable_section_body_items(
                             item.items, unit=unit,
                         ), owner_label, key, unit, item.source_span, parent_item.origin),
                         source_span=item.source_span,
@@ -1262,8 +1263,8 @@ class ResolveWorkflowsMixin:
             origin=origin,
             key=item.key,
             title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
-            payload=keep_details(parent_item.payload, item.payload, owner_label, key, unit, item.source_span, parent_item.origin)
-            if item.kind in {"section", "paragraph", "guard"} else item.payload,
+            payload=merge_override(parent_item.payload, item.payload, owner_label, key, unit, item.source_span, parent_item.origin)
+            if item.kind in {"section", "paragraph", "guard", "sequence", "bullets", "checklist"} else item.payload,
             requirement=(
                 item.requirement
                 if item.requirement is not None
@@ -1285,6 +1286,6 @@ class ResolveWorkflowsMixin:
     ) -> str | None:
         if item.title is not None:
             return item.title
-        if item.kind in {"sequence", "bullets", "checklist"}:
+        if item.kind in {"sequence", "bullets", "checklist"} and not any(isinstance(part, model.SuperItem) for part in item.payload):
             return None
         return parent_item.title

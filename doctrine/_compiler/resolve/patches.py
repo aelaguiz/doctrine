@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from doctrine import model
 from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model
+from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model, model_walk
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem, IndexedUnit
 
@@ -88,7 +88,10 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                                            model.ReadableOverrideBlock, model.OverridePath)) and isinstance(
                     long_item, (model.DropItem, model.OverridePath, model.DetailsPath)
                 ):
-                    overlaps[long] = short
+                    body = short_item.value if isinstance(short_item, (model.AuthoredSlotOverride, model.OverridePath)) else short_item
+                    content = (*body.preamble, *body.items) if isinstance(body, model.WorkflowBody) else body.payload if isinstance(body, model.ReadableOverrideBlock) else body.items if isinstance(body, model.OverrideSection) else ()
+                    if not isinstance(content, tuple) or not any(isinstance(part, model.SuperItem) for part in content):
+                        overlaps[long] = short
                     continue
                 if isinstance(item, (model.InheritItem, model.AuthoredSlotInherit)) or isinstance(
                     first, (model.InheritItem, model.AuthoredSlotInherit)
@@ -303,7 +306,7 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
             if isinstance(patch, model.DropItem):
                 return None
             if not isinstance(node, (ResolvedSectionItem, model.LocalSection)) and not (
-                isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph", "details"}
+                isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph", "details", "sequence", "bullets", "checklist"}
             ):
                 kind = node.kind if isinstance(node, model.ReadableBlock) else "scalar"
                 raise error(
@@ -316,8 +319,12 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                 )
             value = patch.value
             items = (*value.preamble, *value.items)
+            if isinstance(node, model.ReadableBlock) and node.kind in {"sequence", "bullets", "checklist"}:
+                if any(not isinstance(item, (str, model.EmphasizedLine, model.SuperItem)) for item in items):
+                    raise error("E611", "Invalid patch path", f"`{owner_label}`: `override {path}` gives a list a body it can't hold. A list takes items.")
+                items = tuple(model.ReadableListItem(key=None, text=item) if isinstance(item, (str, model.EmphasizedLine)) else item for item in items)
             if isinstance(node, model.ReadableBlock) and node.kind == "paragraph":
-                if any(not isinstance(item, (str, model.EmphasizedLine)) and not (isinstance(item, model.ReadableBlock) and item.kind == "details") for item in items):
+                if any(not isinstance(item, (str, model.EmphasizedLine, model.SuperItem)) and not (isinstance(item, model.ReadableBlock) and item.kind == "details") for item in items):
                     raise error(
                         "E611",
                         "Invalid patch path",
@@ -333,14 +340,15 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                     replacement_origin, headings=(*replacement_origin.headings[:-1], title)
                 )
             if isinstance(node, model.ReadableBlock):
-                if node.kind != "details":
-                    items = keep_details(node.payload, items, owner_label, path, unit, patch.source_span, node.origin)
+                if node.kind != "details" or any(isinstance(item, model.SuperItem) for item in items):
+                    items = merge_override(node.payload, items, owner_label, path, unit, patch.source_span, node.origin)
                 return replace(node, title=title, payload=items, origin=replacement_origin,
+                               anonymous=False if node.kind in {"sequence", "bullets", "checklist"} and value.title is not None else node.anonymous,
                                patch=(path, ".".join(short)) if short else None)
             if isinstance(node, ResolvedSectionItem):
                 items = context._resolve_section_body_items(items, unit=unit, owner_label=owner_label, origin=replacement_origin)
             return replace(node, title=title, origin=replacement_origin,
-                items=keep_details(node.items, items, owner_label, path, unit, patch.source_span, node.origin))
+                items=merge_override(node.items, items, owner_label, path, unit, patch.source_span, node.origin))
         if isinstance(patch, model.DetailsPath) and len(tail) == 1 and not (
             isinstance(node, (ResolvedAgentSlot, ResolvedSectionItem, model.LocalSection)) or
             isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph"}
@@ -425,7 +433,26 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
     return result
 
 
-def keep_details(old, new, owner, path, unit, span, origin):
+def merge_override(old, new, owner, path, unit, span, origin, parent_preamble=None, preamble=None):
+    content = (*preamble, *new) if preamble is not None else new
+    supers = [item for item in content if isinstance(item, model.SuperItem)]
+    if len(supers) > 1:
+        raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
+            source_span=span, detail=f"`{owner}` writes `super` twice in `override {path}`.")
+    if supers:
+        old_keys = {patch_item_key(item) for item in old} - {None}
+        for item in new:
+            key = patch_item_key(item)
+            if key in old_keys:
+                raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
+                    source_span=span, detail=f"`{owner}` writes `{key}` in `override {path}`, and `super` already brings it. Override `{key}` on its own, or drop `super`.")
+        old = tuple(replace(item, origin=item.origin or child_origin(origin, item.key, item.source_span,
+            item.title if isinstance(item, (ResolvedSectionItem, model.LocalSection)) or item.kind == "section" else None))
+            if isinstance(item, (model.ReadableBlock, ResolvedSectionItem, model.LocalSection)) else item for item in old)
+        if preamble is not None:
+            head = tuple(part for item in preamble for part in (parent_preamble if isinstance(item, model.SuperItem) else (item,)))
+            return head, (*old, *new)
+        return tuple(part for item in new for part in (old if isinstance(item, model.SuperItem) else (item,)))
     def cases(items, direct, origin):
         for item in items:
             if isinstance(item, model.ReadableBlock):
@@ -452,7 +479,8 @@ def keep_details(old, new, owner, path, unit, span, origin):
                 source_span=span, detail=f"`{owner}` overrides `{path}`, which would keep two cases keyed `{case.key}`. Drop one with a reason, or give them different keys.")
         keys.add(case.key)
         kept.append(case)
-    return (*new, *kept)
+    result = (*new, *kept)
+    return (preamble, result) if preamble is not None else result
 
 
 def mark_wildcard(value):
@@ -462,3 +490,12 @@ def mark_wildcard(value):
         if isinstance(item, (model.NameRef, IndexedUnit)):
             return item
     return map_model(value, leaf, {"scope_unit", "team_unit"})
+
+
+def reject_super(body, owner, unit):
+    for item in model_walk(body):
+        if isinstance(item, model.SuperItem):
+            raise compile_error(code="E614", summary="Super outside an override",
+                detail=f"`{owner}` writes `super` outside an `override`.",
+                path=unit.prompt_file.source_path, source_span=item.source_span,
+                hints=("Write it in an override body, or delete it.",))

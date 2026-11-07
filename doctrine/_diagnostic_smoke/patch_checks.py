@@ -39,6 +39,9 @@ PATCH_FAILURES = {
         '    drop work.lead.child: "Gone."\n'
     ),
     "E612": ('abstract agent Base:\n    role: "A."\nagent A[Base]:\n    drop role: "Gone."\n'),
+    "E614": (
+        'agent A:\n    role: "A."\n    work: "Work"\n        super\n'
+    ),
     "E613": (
         'abstract agent Base:\n    role: "A."\nagent A[Base]:\n    inherit *\n    inherit *\n'
     ),

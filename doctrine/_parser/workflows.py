@@ -46,6 +46,8 @@ class WorkflowTransformerMixin:
 
     @v_args(meta=True, inline=True)
     def agent_slot_override(self, meta, key, value, body=None):
+        if isinstance(value, WorkflowBodyParts):
+            value, body = None, value
         return _with_source_span(
             model.AuthoredSlotOverride(
                 key=key,

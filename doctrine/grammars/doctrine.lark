@@ -245,6 +245,7 @@ agent_slot_abstract: "abstract" CNAME (":" name_ref)? _NL?
 agent_slot_inherit: "inherit" CNAME _NL? -> agent_slot_inherit
                   | "inherit" "{" grouped_inherit_keys "}" _NL? -> agent_slot_inherit_group
 agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
+                   | "override" CNAME ":" _NL slot_body
 
 ?slot_value: string | name_ref
 slot_body: _INDENT workflow_body _DEDENT
@@ -548,7 +549,8 @@ document_override_block: document_override_section_block
                        | override_readable_nonsection_block
 
 document_section_body: document_section_item+
-?document_section_item: prose_line _NL?
+?document_section_item: super_stmt
+                      | prose_line _NL?
                       | document_readable_block
 
 document_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
@@ -600,7 +602,8 @@ override_readable_nonsection_block: override_readable_details_block
 readable_paragraph_block: "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
 override_readable_paragraph_block: "override" "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
 paragraph_body: prose_or_details+
-?prose_or_details: prose_line _NL?
+?prose_or_details: super_stmt
+                 | prose_line _NL?
                  | readable_details_block
                  | readable_bare_details_block
 readable_details_block: "details" CNAME ":" string _NL _INDENT shared_readable_body _DEDENT
@@ -649,14 +652,16 @@ override_readable_image_block: "override" "image" CNAME ":" string? readable_req
 override_readable_rule_block: "override" "rule" CNAME readable_requirement? readable_guard? _NL?
 
 shared_readable_body: shared_readable_body_item+
-?shared_readable_body_item: prose_line _NL?
+?shared_readable_body_item: super_stmt
+                        | prose_line _NL?
                         | shared_readable_block
 shared_readable_block: shared_section_block
                      | readable_nonsection_block
 shared_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT shared_readable_body _DEDENT
 
 readable_list_body: readable_list_body_line+
-?readable_list_body_line: readable_item_schema_block
+?readable_list_body_line: super_stmt
+                        | readable_item_schema_block
                         | readable_list_item
 ?readable_list_item: prose_line _NL?
                    | readable_list_keyed_item
@@ -747,7 +752,8 @@ readable_guard: "when" expr
 workflow_body: workflow_body_line+
 
 workflow_string: prose_line _NL?
-workflow_body_line: workflow_string
+workflow_body_line: super_stmt
+                  | workflow_string
                   | workflow_item
                   | law_block
 
@@ -778,8 +784,10 @@ workflow_override_use: "override" CNAME ":" name_ref _NL?
 workflow_root_readable_block: readable_nonsection_block
                             | override_readable_nonsection_block
 
+super_stmt: "super" _NL?
 workflow_section_body: workflow_section_item+
-?workflow_section_item: prose_line _NL?
+?workflow_section_item: super_stmt
+                      | prose_line _NL?
                       | route_stmt
                       | local_section
                       | workflow_readable_block
