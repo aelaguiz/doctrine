@@ -48,6 +48,10 @@ roster, go to each home's `DETAILS.md`. `E621` is retired.
 Markdown-backed declarations and `doctrine import` accept runtime import lines.
 `E654` is retired.
 
+Shared `file` declarations can link to a kept file or write a document body.
+Load JSON adds `on_demand` and `shared_files`; diff JSON adds `shared_files`.
+Builds and checks report `E636` for missing destinations in compiled files.
+
 Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.
