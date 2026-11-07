@@ -115,10 +115,12 @@ Doctrine also ships narrower version lines.
   surface when Doctrine ships first-party `SKILL.prompt` bundles.
 - Emitted `SKILL.source.json` files are part of that public surface. They
   prove the source and output hashes for an emitted skill-package tree.
-  Their paths are relative, never absolute: `source.root` is relative to the
-  consuming project root and every `inputs[].path` is relative to
-  `source.root`. A committed receipt must not depend on which machine or
-  which checkout emitted it.
+  Inside the consuming project, their paths are relative: `source.root` is
+  relative to the project root and every `inputs[].path` is relative to
+  `source.root`. `SKILL_GRAPH.source.json` paths are relative to the project
+  root. A path outside the project stays absolute, as does any path in a
+  target with no project config. Keep receipt sources inside the project, so a
+  committed receipt doesn't depend on which machine or checkout emitted it.
 - When present, emitted `SKILL.contract.json` files are also part of that
   public skill-package surface.
   Additive keys such as `routes` or `json_schema` still count as public

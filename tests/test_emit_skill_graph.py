@@ -152,6 +152,28 @@ class EmitSkillGraphTests(unittest.TestCase):
             self.assertEqual(linked[0]["package_id"], "controller-package")
             self.assertEqual(linked[0]["target_name"], "skill_bundle")
 
+    def test_graph_receipt_reads_the_same_in_two_checkouts(self) -> None:
+        receipts = []
+        for name in ("first", "second/deeper"):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir) / name
+                root.mkdir(parents=True)
+                targets = load_emit_targets(_write_graph_repo(root))
+                emit_target_skill(targets["skill_bundle"])
+                with patch(
+                    "doctrine.emit_skill_graph.render_flow_svg",
+                    side_effect=lambda _d2, svg: svg.write_text("<svg>graph</svg>\n", encoding="utf-8"),
+                ):
+                    emit_target_skill_graph(targets["graph_bundle"])
+                receipts.append(
+                    graph_receipt_path_for_target(targets["graph_bundle"]).read_text(encoding="utf-8")
+                )
+        self.assertEqual(receipts[0], receipts[1])
+        payload = json.loads(receipts[0])
+        self.assertFalse(Path(payload["target"]["entrypoint"]).is_absolute())
+        self.assertFalse(Path(payload["inputs"][0]["path"]).is_absolute())
+        self.assertFalse(Path(payload["linked_package_receipts"][0]["receipt_path"]).is_absolute())
+
     def test_direct_graph_prompt_can_emit_selected_view(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
