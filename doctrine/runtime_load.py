@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 from doctrine import model
 
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.markdown_links import markdown_destinations
 from doctrine._compiler.teams import agent_parents
 
 
@@ -126,12 +127,29 @@ def loaded_levels(homes, home):
     return sorted(levels, key=lambda pair: len(PurePosixPath(pair[0]).parts))
 
 
+def follow_imports(path, text, reader, seen, depth):
+    if depth == 4:
+        return []
+    rows = []
+    for start, end, is_import in markdown_destinations(text):
+        if not is_import:
+            continue
+        imported = (path.parent / Path(text[start:end].replace("\\ ", " ")).expanduser()).resolve()
+        if imported in seen:
+            continue
+        seen.add(imported)
+        content = reader(imported)
+        rows.append((imported, content))
+        rows.extend(follow_imports(imported, content, reader, seen, depth + 1))
+    return rows
+
+
 def home_loads(target, homes, files, settings, selected):
     loads = []
     generated = {(target.output_dir / path).resolve(): content for path, content in files.items()
                  if isinstance(content, bytes)}
     def file_text(path):
-        return generated[path].decode() if path in generated else path.read_text(encoding="utf-8")
+        return (generated[path] if path in generated else path.read_bytes()).decode("utf-8", errors="replace")
     for home, data in homes.items():
         if home not in selected:
             continue
@@ -161,7 +179,22 @@ def home_loads(target, homes, files, settings, selected):
             loaded = list(setting["external"])
             parts = {}
             on_demand = {}
-            for level, item in levels:
+            root = target.project_config.config_dir.resolve()
+            home_dir = (target.output_dir / home).resolve()
+            by_folder = {(target.output_dir / level).resolve(): (level, item)
+                         for level, item in levels}
+            folders = [root, *(root.joinpath(*home_dir.relative_to(root).parts[:i])
+                               for i in range(1, len(home_dir.relative_to(root).parts) + 1))]
+            for folder in folders:
+                level, item = by_folder.get(folder, (None, None))
+                candidate = folder / RUNTIMES[runtime][0]
+                if item is None or str(PurePosixPath(level) / RUNTIMES[runtime][0]) not in files:
+                    if candidate.is_file():
+                        text = file_text(candidate.resolve())
+                        loaded.append({"path": relpath(candidate, root), "size": text_size(text, runtime),
+                            "kind": "level", "text": text, "on_disk": True})
+                    if item is None:
+                        continue
                 path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
                 if path in files:
                     on_disk = (target.output_dir / path).is_file()
@@ -197,6 +230,19 @@ def home_loads(target, homes, files, settings, selected):
                                 "kind": "read_first", "text": text, "on_disk": path.is_file()})
                     else:
                         on_demand[name] = text_size(file_text(path), runtime)
+            if runtime == "claude":
+                expanded, seen = [], set()
+                for entry in loaded:
+                    path = (root / entry["path"]).resolve()
+                    if path in seen:
+                        continue
+                    seen.add(path)
+                    expanded.append(entry)
+                    if entry["kind"] != "reserved":
+                        for imported, text in follow_imports(path, entry["text"], file_text, seen, 0):
+                            expanded.append({"path": relpath(imported, root), "size": text_size(text, runtime),
+                                "kind": "import", "text": text, "on_disk": imported.is_file()})
+                loaded = expanded
             limit = next(
                 (budget[runtime] for budget in budgets if runtime in budget), setting["limit"]
             )
@@ -332,7 +378,7 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "read first" if file["kind"] == "read_first" else "missing" if is_missing(file)
+                    "read first" if file["kind"] == "read_first" else "hand-written" if file["kind"] == "level" else "missing" if is_missing(file)
                     else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]

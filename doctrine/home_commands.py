@@ -8,7 +8,6 @@ import sys
 import subprocess
 from html import unescape
 from contextlib import contextmanager, nullcontext, redirect_stderr
-from dataclasses import replace
 from difflib import SequenceMatcher
 from os.path import relpath
 from pathlib import Path, PurePosixPath
@@ -191,7 +190,6 @@ def load(args):
         )
         if live_root:
             output = live_root / target.output_dir.relative_to(target.project_config.config_dir)
-            target = replace(target, output_dir=output)
             for values in settings.values():
                 for file in values["external"]:
                     file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
@@ -199,6 +197,9 @@ def load(args):
         for home in loads:
             for runtime, load in home["runtimes"].items():
                 for file in load["files"]:
+                    if live_root and file["kind"] == "home":
+                        link = PurePosixPath(file["path"]).parent / RUNTIMES[runtime][0]
+                        file["on_disk"] = (output / link).is_file()
                     if file["kind"] == "home" and not file["on_disk"]:
                         file["path"] = str(PurePosixPath(file["path"]).parent / RUNTIMES[runtime][0])
         if args.runtime and args.runtime not in settings:
