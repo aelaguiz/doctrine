@@ -1,0 +1,22 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "each level wins over the ones after it"
+status = "active"
+kind = "render_contract"
+agent = "Inner.m"
+assertion = "exact_lines"
+expected_lines = [
+  "role outer inner member",
+]
+
+[[cases]]
+name = "a member with no value of its own takes its team"
+status = "active"
+kind = "render_contract"
+agent = "Inner.n"
+assertion = "exact_lines"
+expected_lines = [
+  "role outer inner inner",
+]

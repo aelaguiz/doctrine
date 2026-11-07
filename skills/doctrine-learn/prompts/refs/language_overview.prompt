@@ -26,6 +26,11 @@ Load this when the author is new to Doctrine or is unsure which construct fits t
     section declarations: "Declarations At A Glance"
         "Every row below is a shipped declaration in `doctrine/grammars/doctrine.lark`. Each one points at one real example you can open and copy the shape from."
         bullets rows:
+            "**`quote`** — records words, their speaker, date, and optional source. First example: `examples/190_quotes`."
+            "**`person`** — names someone and lists the declarations or files they own. First example: `examples/189_person_and_ownership`."
+            "**`team`** — shared doctrine and members at a home path. First example: `examples/174_team_members`."
+            "**`abstract team`** — a reusable team and member list. First example: `examples/176_team_assembly`."
+            "**`member`** (team item) — an agent in a team home. First example: `examples/174_team_members`."
             "**`agent`** — a concrete runtime owner. Needs a `role`. Reserved typed fields include `inputs`, `outputs`, `analysis`, `decision`, `skills`, `review`, and `final_output`. Every other keyed field is an authored workflow slot. First example: `examples/01_hello_world`."
             "**`abstract agent`** — inheritance-only role scaffold. Does not emit. Use it to share structure across concrete agents. First example: `examples/12_role_home_composition`."
             "**`workflow`** — reusable instruction surface with titled sections, readable lists, prose, `use` composition, and optional `law:` for compiler-owned currentness, scope, and routing rules. First example: `examples/06_nested_workflows`. Body-ref composition: `examples/15_workflow_body_refs`."
@@ -54,8 +59,11 @@ Load this when the author is new to Doctrine or is unsure which construct fits t
             "**`analysis`** — a reusable reasoning program attached with `analysis:`. Supports `prove`, `derive`, `classify`, `compare`, and `defend`. First example: `examples/54_analysis_attachment`."
             "**`decision`** — a reusable candidate-pool and winner-selection scaffold attached with `decision:`. First example: `examples/74_decision_attachment`."
             "**`schema`** — a reusable artifact inventory with `sections:`, `artifacts:`, `groups:`, and optional `gates:`. Attached through `schema:` on `output` or through `contract:` on `review`. First example: `examples/55_owner_aware_schema_attachments`."
+            "**`rule`** — checks a project invariant across selected homes or agents. First example: `examples/146_declarative_project_lint_rule`; home scopes: `examples/185_rule_team_scopes`."
+            "**`paragraph`** (readable block) — keyed prose with an optional run-in title. First example: `examples/166_paragraph_blocks`."
+            "**`roster`** (readable block) — a table of team members built from their values. First example: `examples/177_roster`."
             "**`table`** — a reusable table contract with `columns:`, optional `row_schema:`, and optional default `notes:`. Documents place it under a local key with `table local_key: TableRef`. First example: `examples/116_first_class_named_tables`."
-            "**`document`** — a reusable Markdown structure with `section`, `sequence`, `bullets`, `checklist`, `definitions`, `properties`, `table`, `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, `guard`, and `rule` blocks. Each non-rule readable block kind has a bare form (no key, no heading) and a named form (CNAME plus heading). Attached through `structure:` on markdown-bearing inputs and outputs. First example: `examples/56_document_structure_attachments` and `examples/58_readable_document_blocks`. Bare-form parity: `examples/128_readable_block_parity`."
+            "**`document`** — a reusable Markdown structure with `section`, `paragraph`, `sequence`, `bullets`, `checklist`, `definitions`, `properties`, `table`, `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, `guard`, and `rule` blocks. Most readable blocks have bare and named forms; `paragraph` has a key and an optional title. Attached through `structure:` on markdown-bearing inputs and outputs. First example: `examples/56_document_structure_attachments` and `examples/58_readable_document_blocks`. Bare-form parity: `examples/128_readable_block_parity`. Paragraphs: `examples/166_paragraph_blocks`."
             "**`render_profile`** — reusable Markdown presentation policy. Attached with `render_profile:` on `analysis`, `schema`, `document`, and markdown-bearing outputs. First example: `examples/64_render_profiles_and_properties`."
             "**`enum`** — a closed vocabulary with typed members, titles, and optional `wire:` values. Used by law, review, and schema guards. First example: `examples/29_enums`."
             "**Imports** — cross-flow module and symbol imports plus same-flow bare refs. First example: `examples/03_imports`. Cross-root imports: `examples/75_cross_root_standard_library_imports`."
@@ -85,7 +93,7 @@ document ReleaseGuide: "Release Guide"
         "The rule of thumb: if the same contract could show up in two places, give it a name once."
 
     section composition: "Composition Rules"
-        "Doctrine does not merge by omission. Every inheritance choice is explicit."
+        "Ordinary children account for inherited items. Teams and members keep unmentioned inherited items by default. See `examples/170_inherit_wildcard` and `examples/176_team_assembly`."
         bullets rules:
             "`Child[Parent]` declares the parent."
             "`inherit key` keeps an inherited item in place."
@@ -93,7 +101,7 @@ document ReleaseGuide: "Release Guide"
             "`override key:` replaces an inherited item. You may also `override key: \"New Title\"` to change the heading."
             "`abstract key` on a concrete agent marks a slot the child must define directly."
 
-        """Children must account for every inherited keyed item exactly once. If a child forgets one, the compiler fails loud. See `examples/48_review_inheritance_and_explicit_patching` and `examples/112_output_inheritance_fail_loud` for the fail-loud shape.
+        """Ordinary children must account for every inherited keyed item exactly once. If a child forgets one, the compiler fails loud. See `examples/48_review_inheritance_and_explicit_patching` and `examples/112_output_inheritance_fail_loud` for the fail-loud shape.
 
 Changing block kind on an inherited document block also fails loud. A `section` cannot become a `sequence` by override."""
 
@@ -109,6 +117,7 @@ Changing block kind on an inherited document block also fails loud. A `section` 
     section next: "Where To Go Next"
         "Match the surface the author is writing to one of the other references in this skill:"
         bullets refs:
+            "`teams-and-homes.md` — values, teams, members, and home trees. See `examples/173_late_bound_values` and `examples/180_home_tree`."
             "`agents-and-workflows.md` — writing `agent`, `abstract agent`, `workflow`, `route_only`, `grounding`, `handoff_routing:`, or workflow law."
             "`reviews.md` — writing `review`, `review_family`, carried state, verdict coupling, or review-driven `final_output`."
             "`outputs-and-schemas.md` — shaping `output`, `output shape`, `output schema`, `route field`, or `final_output`."
@@ -121,6 +130,6 @@ Changing block kind on an inherited document block also fails loud. A `section` 
             "`examples-ladder.md` — the numbered corpus as a guided reading order."
             "`verify-and-ship.md` — the `make` targets and release policy."
 
-        """Always load `principles.md` alongside the surface-specific reference. The principles are the "why" behind every rule these references teach.
+        """Load `getting-good-results.md` first. Load `principles.md` when the choice is about design.
 
 **Load when:** the author is new to Doctrine, or is unsure which construct owns the job in front of them."""

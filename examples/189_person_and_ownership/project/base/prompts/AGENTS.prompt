@@ -1,0 +1,19 @@
+person Owner: "The owner"
+    owns:
+        EveryAgent
+
+
+workflow EveryAgent: "Every agent"
+    "Say what you found."
+
+
+workflow Free: "Free"
+    "Anyone may change this."
+
+
+team Root: "the repository"
+    home: "."
+    every: EveryAgent
+    free: Free
+    member chief: "chief"
+        role: "You lead."

@@ -7,6 +7,8 @@ from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
+from doctrine._compiler.late_binding import reject_late_roots
+from doctrine._compiler.details import reject_details
 from doctrine._compiler.indexing import (
     FlowLoadKey,
     IndexedFlow,
@@ -94,6 +96,7 @@ class CompilationSession:
         project_config: ProjectConfig | None = None,
         provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
         skill_package_host_context: SkillPackageHostCompileContext | None = None,
+        evaluate_rules: bool = True,
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
         resolved_project_config = project_config
@@ -147,6 +150,10 @@ class CompilationSession:
             ) from exc
 
         self.project_config = resolved_project_config
+        self.evaluate_rules = evaluate_rules
+        self.value_reads: set[tuple[Path, int]] = set()
+        self.emit_paths: dict[str, Path] = {}
+        self.emit_root: Path | None = None
         self.provided_prompt_roots = compile_config.provided_prompt_roots
         self.import_root_labels = _import_root_labels(
             self.prompt_root,
@@ -187,6 +194,9 @@ class CompilationSession:
                 self.root_flow.flow_root.resolve(),
             )
         ] = self.root_flow
+
+    def units(self):
+        return (unit for flow in self._flow_cache.values() for unit in flow.units_by_path.values())
 
     def _new_flow_ready_event(self) -> threading.Event:
         return threading.Event()
@@ -338,9 +348,12 @@ class CompilationSession:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(self).compile_readable_declaration(
+            compiled = CompilationContext(self).compile_readable_declaration(
                 declaration_kind, declaration_name
             )
+            reject_details(compiled, "an emitted document")
+            reject_late_roots(compiled, unit=self.root_flow.entrypoint_unit, why="an emitted document has no home")
+            return compiled
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"compile {declaration_kind} declaration `{declaration_name}`",
@@ -370,7 +383,7 @@ class CompilationSession:
             previous_turn_contexts=previous_turn_contexts,
         )
         context._active_agent_key = active_agent_key
-        context._active_skill_bind_agent_context = active_skill_bind_agent_context
+        context._active_home_agent_context = active_skill_bind_agent_context
         context._active_previous_turn_input_specs = active_previous_turn_input_specs or {}
         return context._compile_agent_field(
             spec,

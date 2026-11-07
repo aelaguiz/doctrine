@@ -1,15 +1,15 @@
 # Doctrine Learn
 
-The Doctrine Learn skill teaches an agent how to author Doctrine end-to-end.
-Where [AGENT_LINTER.md](AGENT_LINTER.md) is the audit brain, Doctrine Learn is
-the teaching brain.
+Doctrine Learn teaches how to get good results from agents, then the Doctrine
+language that helps authors get there. [AGENT_LINTER.md](AGENT_LINTER.md)
+reviews existing Doctrine work.
 
 Use it when you want to:
 
 - write a fresh Doctrine `AGENTS.prompt`, workflow, review, output schema,
   document, or `SKILL.prompt` package
 - port an existing agent or skill into Doctrine
-- onboard a teammate into this repo, principles first
+- onboard a teammate, starting with the result they want
 - review a Doctrine change with the right mental model
 
 The compiler still owns parse, type, route, and emit failures. Doctrine Learn
@@ -40,41 +40,13 @@ Restart Codex after install so it reloads the skill tree.
 
 ## What It Teaches
 
-The entrypoint `SKILL.prompt` stays thin. Depth lives behind twelve
-loadable references that the skill's `reference_map` routes to on demand:
+The skill first loads `references/getting-good-results.md`. It starts with the
+result an author wants or the problem they found. It then picks the language
+reference that fits, cites a real example, and guides a small working change.
 
-- `references/principles.md`: the nine principles from
-  [../PRINCIPLES.md](../PRINCIPLES.md) and the thin-harness rule from
-  [THIN_HARNESS_FAT_SKILLS.md](THIN_HARNESS_FAT_SKILLS.md). Load first, every
-  time.
-- `references/language-overview.md`: the shape of a `.prompt` file, the
-  declaration vocabulary, and the first three examples to read.
-- `references/agents-and-workflows.md`: `agent`, `workflow`, route-only
-  turns, `handoff_routing`, `grounding`, and workflow law.
-- `references/reviews.md`: `review`, `review_family`, verdict coupling,
-  carried state, and review-driven `final_output`.
-- `references/outputs-and-schemas.md`: `output`, `output schema`,
-  `route field`, `final_output`, output inheritance, and generated schema
-  artifacts.
-- `references/documents-and-tables.md`: `document`, `table`, readable lists,
-  and `render_profile`.
-- `references/skills-and-packages.md`: `skill`, `skill package`,
-  `SKILL.prompt`, `source:`, `SKILL.source.json`, `host_contract:`,
-  `bind:`, and `emit:` companions.
-- `references/imports-and-refs.md`: module and symbol imports, addressable
-  refs, `self:`, grouped `inherit { ... }`, and multi-root resolution.
-- `references/emit-targets.md`: `pyproject.toml` emit targets, `source_root`,
-  `lock_file`, `emit_flow`, `emit_skill`, runtime packages,
-  `SKILL.source.json`, and `final_output.contract.json`.
-- `references/authoring-patterns.md`: the task-first chooser and the
-  anti-patterns to avoid.
-- `references/examples-ladder.md`: the numbered corpus as a learning path.
-- `references/verify-and-ship.md`: `make` targets, diagnostics, versioning,
-  and the changelog shape.
-
-Every claim the skill makes about a construct cites at least one real
-example path from the shipped corpus (`examples/01_hello_world` through
-`examples/149_external_skill_source_target`). No invented snippets.
+The references cover design principles, teams and homes, agents and workflows,
+reviews, rules, outputs, documents, skills, imports, emit targets, and checks.
+The examples ladder runs through `examples/193_small_team_end_to_end`.
 
 ## How To Use It
 

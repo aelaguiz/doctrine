@@ -1,0 +1,20 @@
+# A team is a folder of agents with shared doctrine, words, and members.
+# `member` is an overlay: it keeps what it does not name.
+# Team doctrine stays in the team's own file. Members get it by the folder walk.
+
+abstract agent PodMember:
+    role: "You are {{team:title}}'s {{agent:title}}. Your folder is `{{agent:home}}`. Your handle is `{{team:folder}}-{{agent:folder}}`."
+    team_note: "Your team"
+        "Your team: {{team:members}}. The others: {{team:others}}."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "This file is for {{team:title}}, in `{{team:home}}`."
+    win: "What counts as a win"
+        "More users who pay."
+    member tech_lead[PodMember]: "technical lead"
+    member qa[PodMember]: "QA"
+        own: "Your own section"
+            "This comes before the craft."
+    member analyst[PodMember]: "analyst"

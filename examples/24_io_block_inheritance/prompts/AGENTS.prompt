@@ -43,6 +43,7 @@ inputs BaseSectionInputs: "Your Inputs"
 
 
 inputs ReviewSectionInputs[BaseSectionInputs]: "Your Inputs"
+    inherit preamble
     inherit {scoped_catalog_truth}
 
     override continuity_only: "Continuity Only"
@@ -60,6 +61,7 @@ outputs BaseSectionOutputs: "Your Outputs"
 
 
 outputs ReviewSectionOutputs[BaseSectionOutputs]: "Your Outputs"
+    inherit preamble
     inherit {durable_section_truth}
 
     override coordination_handoff: "Coordination Handoff"

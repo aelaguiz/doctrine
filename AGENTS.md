@@ -55,7 +55,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/164_skill_graph_artifacts`.
+- The corpus covers `examples/01_hello_world` through `examples/193_small_team_end_to_end`.
 
 ## Authoring Rules
 

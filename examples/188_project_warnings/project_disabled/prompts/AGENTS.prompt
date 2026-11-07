@@ -1,0 +1,5 @@
+team Root: "the repository"
+    home: "."
+    values:
+        never_read: "Nothing reads this."
+    role: "Root."

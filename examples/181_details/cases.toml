@@ -1,0 +1,38 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "details land beside the home that owns them"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 2 homes",
+]
+expected_file_lines = { "pods/growth/AGENTS.md" = [
+    "## When to wait",
+    "",
+    "Wait only when what you wait for could change what you'd do.",
+    "",
+    "Fuller cases, under the same headings: [DETAILS.md](DETAILS.md).",
+], "pods/growth/DETAILS.md" = [
+    "## When to wait",
+    "",
+    "On October 13 a watcher moved a member mid test pass.",
+], "pods/growth/qa/AGENTS.md" = [
+    "You test.",
+    "",
+    "## How you think",
+    "",
+    "**A test plan.** Grow it with the design.",
+    "",
+    "Fuller cases, under the same headings: [DETAILS.md](DETAILS.md).",
+], "pods/growth/qa/DETAILS.md" = [
+    "## How you think",
+    "",
+    "### Older cases",
+    "",
+    "November 5: the long case.",
+] }

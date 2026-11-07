@@ -1,0 +1,25 @@
+# A `quote` records someone's words once. `{{Name}}` renders one form.
+# An inline quote is written where it stands, in nearly the words it renders as.
+
+person Owner: "The owner"
+
+
+quote SharedContract: "There needs to be a shared contract"
+    by: Owner
+    on: "2026-11-05"
+    to: "the growth pod's lead"
+    source: "session:abc123"
+
+
+quote OneAdRemark: "This one ad is too long"
+    by: Owner
+    on: "2026-10-25"
+    about: "one ad"
+
+
+team Root: "the repository"
+    home: "."
+    how: "How code gets out"
+        "Every pod's code goes out by one contract {{SharedContract}}."
+        """Check the length of each ad {{OneAdRemark}}."""
+        """Keep what you make plain {{Owner, 2026-11-04, source 53dcb019: "Plain words win"}}."""

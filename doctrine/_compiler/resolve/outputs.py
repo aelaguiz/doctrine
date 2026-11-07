@@ -4,6 +4,9 @@ import json
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import (
+    expand_patch_items, prepare_body_patches, apply_path_patches,
+)
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -413,6 +416,13 @@ class ResolveOutputsMixin:
         parent_output_shape: model.OutputShapeDecl | None = None,
         parent_label: str | None = None,
     ) -> model.OutputShapeDecl:
+        patches = expand_patch_items(
+            output_shape_decl.items, parent_keys=() if parent_output_shape is None else
+            tuple(self._output_item_key(item) for item in parent_output_shape.items
+                  if self._output_item_key(item) is not None),
+            kind="output shape", owner_label=owner_label, unit=unit,
+        )
+        output_shape_decl = replace(output_shape_decl, items=patches.items)
         if parent_output_shape is None:
             patch_key = self._first_output_shape_patch_key(output_shape_decl)
             if patch_key is not None:
@@ -479,9 +489,12 @@ class ResolveOutputsMixin:
             for item in inherited_parent_output_shape.items
             if self._output_item_key(item) is not None
         }
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[model.OutputRecordItem] = []
         emitted_items: dict[str, object] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in output_shape_decl.items:
             key = self._output_item_key(item)
@@ -620,6 +633,33 @@ class ResolveOutputsMixin:
         parent_output: model.OutputDecl | None = None,
         parent_label: str | None = None,
     ) -> model.OutputDecl:
+        attachment_keys = ("schema", "structure", "render_profile", "trust_surface")
+        parent_keys = [] if parent_output is None else [
+            self._output_item_key(item) for item in parent_output.items
+            if self._output_item_key(item) is not None
+        ]
+        parent_keys.extend(key for key in attachment_keys if parent_output is not None
+                           and self._output_decl_has_attachment(parent_output, key))
+        attachment_accounts = tuple(
+            model.InheritItem(key, self._output_decl_attachment_source_span(output_decl, key))
+            for key in attachment_keys if getattr(output_decl, f"{key}_mode") is not None
+        )
+        patches = expand_patch_items(
+            (*output_decl.items, *attachment_accounts), parent_keys=parent_keys,
+            kind="output", owner_label=owner_label, unit=unit,
+        )
+        modes = {f"{key}_mode": "inherit" for item in patches.items
+                 if isinstance(item, model.InheritItem) and (key := item.key) in attachment_keys
+                 and getattr(output_decl, f"{key}_mode") is None}
+        output_decl = replace(output_decl, items=tuple(
+            item for item in patches.items if getattr(item, "key", None) not in attachment_keys
+        ), **modes)
+        if parent_output is not None:
+            parent_output = replace(parent_output, **{
+                "render_profile_ref" if key == "render_profile" else key:
+                () if key == "trust_surface" else None
+                for key in attachment_keys if key in patches.dropped_keys
+            })
         if parent_output is None:
             patch_key = self._first_output_patch_key(output_decl)
             if patch_key is not None:
@@ -685,9 +725,12 @@ class ResolveOutputsMixin:
             for item in inherited_parent_output.items
             if self._output_item_key(item) is not None
         }
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[model.OutputRecordItem] = []
         emitted_items: dict[str, object] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in output_decl.items:
             key = self._output_item_key(item)
@@ -1234,10 +1277,14 @@ class ResolveOutputsMixin:
         if isinstance(item, model.RecordScalar):
             return model.RecordScalar(
                 key=item.key,
-                value=self._rebind_inherited_output_scalar_value(
-                    item.value,
-                    parent_unit=parent_unit,
-                    rebound_imported=rebound_imported,
+                value=(
+                    replace(item.value, scope_unit=item.value.scope_unit or parent_unit)
+                    if item.key == "to" and isinstance(item.value, model.NameRef)
+                    else self._rebind_inherited_output_scalar_value(
+                        item.value,
+                        parent_unit=parent_unit,
+                        rebound_imported=rebound_imported,
+                    )
                 ),
                 body=(
                     None
@@ -1374,7 +1421,9 @@ class ResolveOutputsMixin:
         if len(ref.module_parts) != 1:
             return ref
         enum_name = ref.module_parts[0]
-        enum_ref = model.NameRef(module_parts=(), declaration_name=enum_name)
+        enum_ref = model.NameRef(
+            module_parts=(), declaration_name=enum_name, scope_unit=ref.scope_unit,
+        )
         if not self._inherited_output_ref_has_parent_decl(
             enum_ref, parent_unit=parent_unit
         ):
@@ -1383,6 +1432,7 @@ class ResolveOutputsMixin:
             module_parts=(*parent_unit.module_parts, enum_name),
             declaration_name=ref.declaration_name,
             rebound_imported=rebound_imported,
+            scope_unit=ref.scope_unit,
         )
 
     def _rebind_inherited_output_scalar_value(
@@ -1427,6 +1477,7 @@ class ResolveOutputsMixin:
             module_parts=parent_unit.module_parts,
             declaration_name=ref.declaration_name,
             rebound_imported=rebound_imported,
+            scope_unit=ref.scope_unit,
         )
 
     def _rebind_inherited_output_expr(
@@ -2639,6 +2690,9 @@ class ResolveOutputsMixin:
                     source_span=source_span,
                 )
             predecessor_unit, predecessor_agent = resolved_predecessor
+            predecessor_agent, _ = self._expand_agent_patches(
+                predecessor_agent, unit=predecessor_unit
+            )
             predecessor_contract = self._resolve_agent_contract(predecessor_agent, unit=predecessor_unit)
             predecessor_final_output_key: OutputDeclKey | None = None
             for field in predecessor_agent.fields:
@@ -3018,6 +3072,10 @@ class ResolveOutputsMixin:
         route_output_contexts: frozenset[tuple[OutputDeclKey, RouteSemanticContext]] = frozenset(),
         excluded_output_keys: frozenset[OutputDeclKey] = frozenset(),
     ) -> ResolvedIoBody:
+        io_body, patches = prepare_body_patches(
+            io_body, inheritance_parent_io if inheritance_parent_io is not None else parent_io,
+            kind=field_kind, owner_label=owner_label, unit=unit, source_span=parent_ref_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -3081,12 +3139,15 @@ class ResolveOutputsMixin:
         visible_parent_items_by_key = {
             item.key: item for item in parent_io.items if isinstance(item, ResolvedIoSection)
         }
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedIoItem] = []
         emitted_items: dict[
             str,
             model.IoSection | model.InheritItem | model.OverrideIoSection,
         ] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in io_body.items:
             if isinstance(item, model.RecordRef):

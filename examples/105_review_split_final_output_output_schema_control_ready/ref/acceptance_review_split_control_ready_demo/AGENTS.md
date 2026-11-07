@@ -118,6 +118,7 @@ This final response is control-ready. A host may read it as the review outcome.
 #### Field Notes
 
 Keep `verdict` aligned with the review verdict.
+
 Use null for `next_owner` and `blocked_gate` when this review does not set them.
 
 #### Verdict

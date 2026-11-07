@@ -192,15 +192,15 @@ class ParserSourceSpanTests(unittest.TestCase):
                 shape: MarkdownDocument
                 requirement: Required
 
-                details: "Details"
+                detail_body: "Details"
                     summary: "Summary"
                         "Keep the route record honest."
 
-                summary_copy: self:details.summary
-                guarded_summary: self:details.summary when route.exists
+                summary_copy: self:detail_body.summary
+                guarded_summary: self:detail_body.summary when route.exists
 
             output RouteNote[BaseRouteNote]: "Route Note"
-                override summary_copy: self:details
+                override summary_copy: self:detail_body
 
             input DemoInput: "Demo Input"
                 source: File
@@ -234,9 +234,9 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertEqual(
             summary_copy.value.source_span,
             model.SourceSpan(
-                line=lines.index("    summary_copy: self:details.summary") + 1,
-                column=lines[lines.index("    summary_copy: self:details.summary")].index(
-                    "self:details.summary"
+                line=lines.index("    summary_copy: self:detail_body.summary") + 1,
+                column=lines[lines.index("    summary_copy: self:detail_body.summary")].index(
+                    "self:detail_body.summary"
                 )
                 + 1,
             ),
@@ -249,13 +249,13 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertEqual(
             guarded_summary.value.source_span,
             model.SourceSpan(
-                line=lines.index("    guarded_summary: self:details.summary when route.exists")
+                line=lines.index("    guarded_summary: self:detail_body.summary when route.exists")
                 + 1,
                 column=lines[
                     lines.index(
-                        "    guarded_summary: self:details.summary when route.exists"
+                        "    guarded_summary: self:detail_body.summary when route.exists"
                     )
-                ].index("self:details.summary")
+                ].index("self:detail_body.summary")
                 + 1,
             ),
         )
@@ -269,10 +269,10 @@ class ParserSourceSpanTests(unittest.TestCase):
         self.assertEqual(
             override_summary.value.source_span,
             model.SourceSpan(
-                line=lines.index("    override summary_copy: self:details") + 1,
+                line=lines.index("    override summary_copy: self:detail_body") + 1,
                 column=lines[
-                    lines.index("    override summary_copy: self:details")
-                ].index("self:details")
+                    lines.index("    override summary_copy: self:detail_body")
+                ].index("self:detail_body")
                 + 1,
             ),
         )

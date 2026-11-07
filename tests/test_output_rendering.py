@@ -787,7 +787,7 @@ class OutputRenderingTests(unittest.TestCase):
 
         rendered = render_markdown(agent)
         self.assertIn("#### Read Order", rendered)
-        self.assertIn("_Advisory_", rendered)
+        self.assertIn("_Advisory · sequence_", rendered)
         self.assertNotIn("ordered list", rendered)
         self.assertIn("1. Read the issue.", rendered)
         self.assertIn("2. Read the repo status.", rendered)
@@ -796,8 +796,7 @@ class OutputRenderingTests(unittest.TestCase):
         self.assertIn("- Read the current status.", rendered)
         self.assertIn("- Read the latest validation notes.", rendered)
         self.assertIn("#### Checks", rendered)
-        self.assertIn("_Required_", rendered)
-        self.assertNotIn("· checklist", rendered)
+        self.assertIn("_Required · checklist_", rendered)
         self.assertIn("- [ ] Run lint.", rendered)
         self.assertIn("- [ ] Run tests.", rendered)
 

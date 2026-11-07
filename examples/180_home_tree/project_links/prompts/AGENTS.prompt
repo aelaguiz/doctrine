@@ -1,0 +1,8 @@
+# A relative link in a Markdown file keeps pointing at the same file once inlined.
+
+abstract agent QaCraft from "specialists/qa/AGENTS.md"
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[QaCraft]: "QA"

@@ -1,0 +1,24 @@
+workflow SpecialistsLesson: "A lesson for specialists"
+    "This lesson is for specialists."
+
+
+abstract agent QaCraft:
+    role: "You test."
+    lesson: SpecialistsLesson
+
+
+abstract agent PodQa[QaCraft]:
+    inherit *
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[PodQa]: "QA"
+
+
+rule PodsSkipSpecialistsLesson: "No pod member loads the specialists' lesson"
+    scope:
+        home: "pods/**"
+    assertions:
+        forbids load SpecialistsLesson
+    message: "A lesson for specialists stays with specialists."

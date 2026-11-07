@@ -1,0 +1,11 @@
+person Owner: "The owner"
+
+
+quote NeverCited: "Words nobody cites"
+    by: Owner
+    on: "2026-11-05"
+
+
+team Root: "the repository"
+    home: "."
+    role: "Root."

@@ -1,0 +1,47 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a dropped section is gone from the home"
+status = "active"
+kind = "render_contract"
+agent = "PodQa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the pod's QA.",
+  "",
+  "## Craft",
+  "",
+  "Test what users meet.",
+]
+
+[[cases]]
+name = "dropping a key the parent lacks fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_drop_missing/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E610"
+location_line = 9
+
+[[cases]]
+name = "two patches on one item fail loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_drop_and_inherit/AGENTS.prompt"
+agent = "PodQa"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 9
+
+[[cases]]
+name = "drop needs a reason"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_drop_without_reason/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E101"
+message_contains = [
+  "Unexpected",
+]

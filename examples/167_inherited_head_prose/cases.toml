@@ -1,0 +1,50 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "the parent head comes first, then the child head"
+status = "active"
+kind = "render_contract"
+agent = "KeepsHead"
+assertion = "exact_lines"
+expected_lines = [
+  "Keep.",
+  "",
+  "## Kept",
+  "",
+  "Everyone reads this first.",
+  "",
+  "This team reads this next.",
+  "",
+  "### Keep",
+  "",
+  "Keep your notes.",
+]
+
+[[cases]]
+name = "a dropped head is gone"
+status = "active"
+kind = "render_contract"
+agent = "ReplacesHead"
+assertion = "exact_lines"
+expected_lines = [
+  "Replace.",
+  "",
+  "## Replaced",
+  "",
+  "This team starts here.",
+  "",
+  "### Keep",
+  "",
+  "Keep your notes.",
+]
+
+[[cases]]
+name = "an unaccounted head fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unaccounted_preamble/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E003"
+location_line = 6

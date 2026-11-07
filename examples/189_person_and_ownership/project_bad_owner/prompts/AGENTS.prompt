@@ -1,0 +1,8 @@
+person Owner: "The owner"
+    owns:
+        NoSuchThing
+
+
+team Root: "the repository"
+    home: "."
+    role: "Root."

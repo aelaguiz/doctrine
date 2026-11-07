@@ -44,6 +44,10 @@ def resolve_flow_entrypoint(source_path: Path, *, prompt_root: Path | None = Non
             entrypoint_path = candidate / entrypoint_name
             if entrypoint_path.is_file():
                 return entrypoint_path
+    if (resolved_prompt_root is not None
+        and resolved.is_relative_to(resolved_prompt_root)
+        and resolved.suffix == ".prompt"):
+        return resolved
     raise compile_error(
         code="E292",
         summary="Could not resolve flow root",
@@ -72,6 +76,8 @@ def discover_flow_members(
 ) -> tuple[Path, ...]:
     flow_root = flow_root.resolve()
     resolved_entrypoint = None if entrypoint_path is None else entrypoint_path.resolve()
+    if resolved_entrypoint is not None and flow_boundary_kind_for_path(resolved_entrypoint) is None:
+        return (resolved_entrypoint,)
     member_paths: list[Path] = []
     for path in sorted(flow_root.rglob("*.prompt")):
         if path.is_symlink():

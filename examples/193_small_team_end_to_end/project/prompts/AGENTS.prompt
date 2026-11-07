@@ -1,0 +1,84 @@
+# One small team, start to finish: shared roles, shared words, thin homes,
+# checked reach, attributed words, and one message declared once.
+
+person Owner: "The owner"
+    owns:
+        Numbers
+
+
+abstract team Level:
+    role: "This file is for {{team:audience}}. If your session started in `{{team:home}}` or below, you are one of them. If it started anywhere else, this describes them; it does not make you one."
+
+
+abstract agent Member:
+    role: "You are {{team:title}}'s {{agent:title}}. If your session started anywhere else, this describes that member; it does not make you one."
+
+
+workflow Numbers: "Numbers"
+    "Get every number the canonical way."
+
+
+team Root[Level]: "the repository"
+    home: "."
+    values:
+        audience: "every agent here"
+    numbers: Numbers
+
+
+abstract agent Qa[Member]:
+    values:
+        calls: "Whether a change passes its testing"
+    whom: "Whom you work with"
+        "You follow the {{agent:unit}} from the design on."
+        details:
+            "The first test plan on this team missed a state nobody had named."
+    inherit *
+
+
+abstract agent Lead[Member]:
+    values:
+        calls: "Which {{agent:unit}} to take"
+    outputs: "Outputs"
+        CodeReady
+    inherit *
+
+
+output CodeReady: "Code is ready"
+    target: Message
+        to: "the release lead"
+    "One message when the code is ready."
+    bullets carries: "It carries"
+        "The pull requests that go out together"
+        "What users get from them"
+
+
+abstract team Pod[Level]:
+    who: "Who makes each call"
+        "Members: {{team:members}}."
+        roster calls: "The calls"
+            call: "The call" = "{{agent:calls}}"
+            who: "Who makes it" = "{{agent:title}}"
+    member lead[Lead]: "lead"
+    member qa[Qa]: "QA"
+
+
+team GrowthPod[Pod]: "the growth pod"
+    home: "pods/growth"
+    values:
+        audience: "every member of the growth pod"
+        unit: "bet"
+
+
+team FeaturePod[Pod]: "the feature pod"
+    home: "pods/feature"
+    values:
+        audience: "every member of the feature pod"
+        unit: "feature"
+
+
+rule EveryMemberLoadsNumbers: "Every member loads the numbers rule"
+    scope:
+        team: *
+    assertions:
+        requires load Numbers
+    message: "A rule meant for every agent reaches every agent."

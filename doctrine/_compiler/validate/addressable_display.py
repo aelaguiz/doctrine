@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.provenance import quote_data, render_quote
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.readable_diagnostics import readable_compile_error
@@ -196,6 +197,8 @@ class ValidateAddressableDisplayMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> DisplayValue:
         target = node.target
+        if isinstance(target, model.Quote):
+            return DisplayValue(text=render_quote(target, quote_data(self, node.unit, target)), kind="quote")
         if isinstance(target, AddressableProjectionTarget):
             return DisplayValue(text=target.text, kind=target.kind)
         if isinstance(target, ReviewSemanticFieldsRoot):

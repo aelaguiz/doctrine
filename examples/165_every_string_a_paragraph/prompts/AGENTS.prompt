@@ -1,0 +1,33 @@
+# Every authored string is one paragraph.
+# A readable block prints a metadata line only when it carries metadata.
+
+workflow Habits: "Habits"
+    "Read the brief."
+    "Then read the notes."
+    steps: "Steps"
+        "Start with the hardest part."
+        "Stop when it works."
+        section review: "Review"
+            "Read your work once."
+        table checks: "Checks"
+            columns:
+                check: "Check"
+            rows:
+                first:
+                    check: "It runs"
+
+
+workflow Gate: "Gate"
+    check: "Check"
+        section sign_off: "Sign Off" required
+            "Get a yes."
+
+
+agent Writer: "Writer"
+    role: "Write the weekly note."
+    habits: Habits
+
+
+agent Signer: "Signer"
+    role: "Sign the weekly note."
+    gate: Gate

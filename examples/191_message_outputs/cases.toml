@@ -1,0 +1,125 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "the sender renders the message and whom it goes to"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod.lead"
+assertion = "exact_lines"
+expected_lines = [
+  "You send.",
+  "",
+  "## Outputs",
+  "",
+  "### Code is ready",
+  "",
+  "Send this to the core dev pod's lead.",
+  "",
+  "One message when a team's code is ready.",
+  "",
+  "#### It carries",
+  "",
+  "- The pull requests that go out together",
+  "- What users get from them",
+]
+
+[[cases]]
+name = "the receiver renders the same body"
+status = "active"
+kind = "render_contract"
+agent = "CoreDev.lead"
+assertion = "exact_lines"
+expected_lines = [
+  "You receive.",
+  "",
+  "## Inputs",
+  "",
+  "### Code is ready",
+  "",
+  "You receive this message.",
+  "",
+  "One message when a team's code is ready.",
+  "",
+  "#### It carries",
+  "",
+  "- The pull requests that go out together",
+  "- What users get from them",
+]
+
+[[cases]]
+name = "one agent may send and read a note to itself"
+status = "active"
+kind = "render_contract"
+agent = "CoreDev.keeper"
+assertion = "exact_lines"
+expected_lines = [
+  "You keep notes for yourself.",
+  "",
+  "## Inputs",
+  "",
+  "### Save note",
+  "",
+  "You receive this message.",
+  "",
+  "A note before a restart.",
+  "",
+  "## Outputs",
+  "",
+  "### Save note",
+  "",
+  "Send this to your next session.",
+  "",
+  "A note before a restart.",
+]
+
+[[cases]]
+name = "a message takes no shape"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_shape_on_message/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E660"
+location_line = 4
+
+[[cases]]
+name = "only a message may be an input"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_input_from_turn_output/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E301"
+location_line = 9
+
+[[cases]]
+name = "a message in a sibling file reads the same way"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/two_files/AGENTS.prompt"
+agent = "Reader"
+assertion = "exact_lines"
+expected_lines = [
+  "You read.",
+  "",
+  "## Inputs",
+  "",
+  "### Note",
+  "",
+  "You receive this message.",
+  "",
+  "A short note.",
+]
+
+[[cases]]
+name = "a message with no reader warns"
+status = "active"
+kind = "cli_contract"
+project = "project_no_reader"
+args = ["check"]
+expected_exit = 0
+stderr_contains = [
+  "W303",
+  "CodeReady goes to CoreDev.lead",
+]

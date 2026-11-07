@@ -1,7 +1,8 @@
 # Doctrine Authoring Patterns
 
-This guide answers one question:
-If you need to do this, do it this way in Doctrine.
+Start with the result you want or what went wrong.
+[Doctrine Learn](DOCTRINE_LEARN.md) teaches how to get good results, then
+helps you pick the language surface. This guide maps common jobs to that surface.
 
 Use this guide when you are porting a prose-heavy agent system into Doctrine,
 or when you know the syntax exists but do not yet know which surface to pick.
@@ -11,6 +12,41 @@ ladder.
 
 This guide is not a second syntax reference.
 It is a porting guide.
+
+## Writing A Mostly Prose Home
+
+Use triple-quoted strings for prose. They take ordinary quotes and keep line
+breaks as written. Two separate strings become two paragraphs. One-line strings
+fit short rules.
+
+Put a whole code fence in one `"""` string or a `code` block.
+
+Use `paragraph` when a lead-in needs a key. The title runs into the first string,
+so write its final punctuation. Leave out the title for plain prose that still
+needs an address. See examples 165 and 166.
+
+```prompt
+workflow WorkingHabits: "Working habits"
+    paragraph test_plan: "A test plan that grows with the design."
+        """You test a change best having followed it from the start.
+Write the plan while the design settles, and ask "what could fail?"."""
+```
+
+When a child no longer needs inherited text, write `drop key: "Reason"`.
+Removing an `inherit` line leaves an item unaccounted for and fails the build.
+
+## Name Owners In One Place
+
+Use a `person` and its `owns:` list to name who owns shared declarations.
+Several people can own the same declaration. A file glob can cover declarations
+in that file and declarations that read it with `from`. See
+[example 189](../examples/189_person_and_ownership).
+
+## Keep Words With Their Source
+
+Use `quote` when the same words appear in several places. For one use, write
+an inline quote. Add `source:` when you have a link or record to check later.
+`doctrine sources` finds quotes with no source.
 
 ## What To Preserve When You Port
 
@@ -719,3 +755,20 @@ If you want one short path through the guide, read these first:
   to emit a real `SKILL.prompt` package tree.
 - Use [../examples/README.md](../examples/README.md) when you want the full
   proof ladder in teaching order.
+
+## Shared Roles With Different Words
+
+When two roles differ only in a few words, keep the shared judgment in one
+role and put those words in `values:`. In example 173, the same QA role
+reads `bet` in one home and `feature` in another. A sentence for one team
+belongs in that team's override. It does not need a template language.
+
+A team gives shared doctrine a folder. Its members keep their own sections
+before their craft by default. The shared team text stays above them, rather
+than being copied into every member. Use `roster` when the team needs a table
+of who makes each call. Examples 174 to 177 show these forms.
+
+To port a Markdown home one file at a time, start with
+`abstract agent Craft from "craft.md"` or `workflow Shared from "shared.md"`.
+Its headings become keys you can inherit, override, or drop with a reason.
+The original file stays the source. Example 179 shows both declaration kinds.

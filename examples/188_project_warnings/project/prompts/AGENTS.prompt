@@ -1,0 +1,35 @@
+# `doctrine check` warns on near-copies, double loads, and unused values.
+# A near-copy compares source paragraphs, so a shared section is never one.
+
+workflow Shared: "Shared"
+    "Keep your notes current and short so the next reader can act on them without asking you."
+
+
+abstract agent GrowthQa:
+    role: "You test."
+    plan: "Plan"
+        "You follow the opportunity's card from the design on, and you write the test plan as the design settles."
+
+
+abstract agent FeatureQa:
+    role: "You test."
+    plan: "Plan"
+        "You follow the feature's card from the design on, and you write the test plan as the design settles."
+
+
+team Root: "the repository"
+    home: "."
+    values:
+        never_read: "Nothing reads this."
+    shared: Shared
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[GrowthQa]: "QA"
+        again: Shared
+
+
+team FeaturePod: "the feature pod"
+    home: "pods/feature"
+    member qa[FeatureQa]: "QA"

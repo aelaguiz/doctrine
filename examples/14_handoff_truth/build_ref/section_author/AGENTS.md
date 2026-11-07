@@ -3,10 +3,15 @@ Core job: turn the current brief into the current dossier, leave one honest hand
 ## Your Job
 
 Read the current issue plan and current brief before you write.
+
 Use prior review notes only as continuity help, not as proof.
+
 Write the current dossier and current validation record.
+
 Leave one handoff comment that names the exact files to use now.
+
 Say plainly whether current review files apply yet.
+
 Route the issue to the honest next owner.
 
 ## Inputs
@@ -36,6 +41,7 @@ Use the current brief as the upstream scope for this turn.
 - Requirement: Advisory
 
 Use this only for continuity when it exists.
+
 Do not treat it as proof of the current turn.
 
 ## Outputs
@@ -90,8 +96,11 @@ A downstream reader should be able to read this comment alone and understand wha
 #### Example
 
 - changed: rewrote the dossier scope and added the validation record
+
 - use now: SECTION_DOSSIER.md and DOSSIER_VALIDATION.md
+
 - review files: no current review files apply yet
+
 - next owner: AcceptanceCritic
 
 ## Handoff Routing
@@ -113,4 +122,5 @@ Stop when the handoff comment names the exact files to use now and the next owne
 ### Hard Stop Rule
 
 If the current brief is missing, stop and escalate.
+
 Do not point the next owner at stale notes, old copies, or a folder name instead of exact files.

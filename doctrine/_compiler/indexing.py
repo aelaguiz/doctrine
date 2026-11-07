@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
 import doctrine._model.declarations as model
+from doctrine._compiler.markdown_reader import read_markdown
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
 from doctrine._compiler.declaration_validation import (
     validate_enum_decl,
@@ -66,6 +67,9 @@ class UnitDeclarations:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    teams_by_name: dict[str, model.Team]
+    people_by_name: dict[str, model.Person]
+    quotes_by_name: dict[str, model.Quote]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -106,7 +110,7 @@ class IndexedFlow:
     flow_root: Path
     flow_parts: tuple[str, ...]
     entrypoint_path: Path
-    boundary_kind: FlowBoundaryKind
+    boundary_kind: FlowBoundaryKind | None
     member_paths: tuple[Path, ...]
     entrypoint_unit: IndexedUnit
     units_by_path: dict[Path, IndexedUnit]
@@ -138,6 +142,9 @@ class IndexedFlow:
     skills_blocks_by_name: dict[str, model.SkillsDecl]
     enums_by_name: dict[str, model.EnumDecl]
     agents_by_name: dict[str, model.Agent]
+    teams_by_name: dict[str, model.Team]
+    people_by_name: dict[str, model.Person]
+    quotes_by_name: dict[str, model.Quote]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -176,7 +183,7 @@ def _flow_module_source_kind(
 def _flow_package_root(
     *,
     flow_root: Path,
-    boundary_kind: FlowBoundaryKind,
+    boundary_kind: FlowBoundaryKind | None,
     entrypoint_module_source_kind: ModuleSourceKind,
 ) -> Path | None:
     if boundary_kind == "skill_flow" or entrypoint_module_source_kind == "runtime_package":
@@ -384,9 +391,8 @@ def build_indexed_flow(
 ) -> IndexedFlow:
     resolved_entrypoint = entrypoint_path.resolve()
     boundary_kind = flow_boundary_kind_for_path(resolved_entrypoint)
-    assert boundary_kind is not None
     resolved_prompt_root = prompt_root.resolve()
-    flow_root = resolved_entrypoint.parent.resolve()
+    flow_root = resolved_entrypoint.parent if boundary_kind is not None else resolved_entrypoint
     flow_parts = flow_root.relative_to(resolved_prompt_root).parts
     package_root = _flow_package_root(
         flow_root=flow_root,
@@ -444,6 +450,16 @@ def build_indexed_flow(
             entrypoint_unit = indexed_unit
         declarations = unit_declarations(indexed_unit)
 
+        for registry_name, unit_registry in (
+            ("agents_by_name", declarations.teams_by_name),
+            ("teams_by_name", declarations.agents_by_name),
+        ):
+            _register_flow_registry(
+                dict(flow_registries[registry_name]), unit_registry,
+                owner_unit=indexed_unit,
+                declaration_owner_units_by_id=declaration_owner_units_by_id,
+                flow_parts=flow_parts, source_path=member_path,
+            )
         for kind in DECLARATION_KINDS:
             _register_flow_registry(
                 flow_registries[kind.registry_attr],
@@ -727,6 +743,9 @@ def index_unit(
     skill_packages_by_id: dict[str, model.SkillPackageDecl] = {}
     artifacts_by_name: dict[str, model.ArtifactDecl] = {}
     agents_by_name: dict[str, model.Agent] = {}
+    teams_by_name: dict[str, model.Team] = {}
+    people_by_name: dict[str, model.Person] = {}
+    quotes_by_name: dict[str, model.Quote] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
     receipts_by_name: dict[str, model.ReceiptDecl] = {}
@@ -735,6 +754,24 @@ def index_unit(
     skill_graphs_by_name: dict[str, model.SkillGraphDecl] = {}
 
     for declaration in prompt_file.declarations:
+        if isinstance(declaration, (model.Agent, model.WorkflowDecl)) and declaration.markdown_path:
+            declaration = read_markdown(declaration, source_path=prompt_file.source_path,
+                project_path=session.project_config.path, prompt_root=prompt_root)
+        if isinstance(declaration, model.Quote):
+            _register_decl(quotes_by_name, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            quotes_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.Person):
+            _register_decl(people_by_name, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            people_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.Team):
+            _register_decl({**agents_by_name, **teams_by_name}, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            teams_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.ImportDecl):
             imports.append(declaration)
             continue
@@ -986,7 +1023,7 @@ def index_unit(
             continue
         if isinstance(declaration, model.Agent):
             _register_decl(
-                agents_by_name,
+                {**teams_by_name, **agents_by_name},
                 declaration,
                 declaration.name,
                 module_parts,
@@ -1097,6 +1134,9 @@ def index_unit(
         skills_blocks_by_name=skills_blocks_by_name,
         enums_by_name=enums_by_name,
         agents_by_name=agents_by_name,
+        teams_by_name=teams_by_name,
+        people_by_name=people_by_name,
+        quotes_by_name=quotes_by_name,
         rules_by_name=rules_by_name,
         receipts_by_name=receipts_by_name,
         stages_by_name=stages_by_name,
@@ -1328,7 +1368,10 @@ def load_flow(
 ) -> IndexedFlow:
     resolved_prompt_root = prompt_root.resolve()
     entrypoint_path = resolve_flow_entrypoint(source_path, prompt_root=resolved_prompt_root)
-    flow_root = entrypoint_path.parent.resolve()
+    flow_root = (
+        entrypoint_path.parent
+        if flow_boundary_kind_for_path(entrypoint_path) is not None else entrypoint_path
+    )
     flow_key = _flow_load_key(resolved_prompt_root, flow_root)
     cached = session._flow_cache.get(flow_key)
     if cached is not None:

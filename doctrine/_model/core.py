@@ -5,6 +5,17 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 
+class AuthoredProse(str):
+    pass
+
+
+class MarkdownProse(AuthoredProse):
+    def __new__(cls, text, source_path):
+        value = super().__new__(cls, text)
+        value.source_path = source_path
+        return value
+
+
 @_dataclass(slots=True, frozen=True)
 class EmphasizedLine:
     kind: str
@@ -23,9 +34,21 @@ class SourceSpan:
 
 
 @_dataclass(slots=True, frozen=True)
+class Origin:
+    declaration: str
+    path: tuple[str, ...]
+    site: str
+    companion: str | None
+    headings: tuple[str, ...]
+    line: int
+    wildcard: bool = _field(default=False, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class RoleScalar:
     text: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -33,6 +56,7 @@ class RoleBlock:
     title: str
     lines: tuple[ProseLine, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -59,6 +83,7 @@ class NameRef:
     # used `from X import Y as Z` instead of `import X`). The resolver then
     # falls back to `imported_units` for these refs only.
     rebound_imported: bool = _field(default=False, compare=False)
+    scope_unit: object | None = _field(default=None, compare=False, repr=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -126,4 +151,26 @@ class SectionBodyRef:
 @_dataclass(slots=True, frozen=True)
 class InheritItem:
     key: str
+    wildcard: bool = _field(default=False, compare=False, kw_only=True)
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class InheritAll:
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class DropItem:
+    path: tuple[str, ...]
+    reason: str
+    origin: Origin | None = _field(default=None, compare=False)
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class OverridePath:
+    path: tuple[str, ...]
+    value: object
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)

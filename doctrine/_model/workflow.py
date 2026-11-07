@@ -5,9 +5,13 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
+    Origin,
     AddressableRef,
     Expr,
     InheritItem,
+    InheritAll,
+    DropItem,
+    OverridePath,
     NameRef,
     ProseLine,
     RouteLine,
@@ -28,6 +32,7 @@ class LocalSection:
     key: str
     title: str
     items: tuple[SectionBodyItem, ...]
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -100,7 +105,10 @@ class OverrideSkillsSection:
 
 
 SkillsItem: _TypeAlias = (
-    SkillsSection | SkillEntry | InheritItem | OverrideSkillsSection | OverrideSkillEntry
+    SkillsSection | SkillEntry | InheritItem
+    | InheritAll
+    | DropItem
+    | OverrideSkillsSection | OverrideSkillEntry
 )
 
 
@@ -132,8 +140,9 @@ WorkflowItem: _TypeAlias = (
     LocalSection
     | ReadableBlock
     | WorkflowUse
-    | InheritItem
+    | InheritItem | InheritAll | DropItem
     | ReadableOverrideBlock
+    | OverridePath
     | OverrideSection
     | OverrideUse
     | WorkflowSkillsItem
@@ -155,6 +164,7 @@ class WorkflowDecl:
     body: WorkflowBody
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    markdown_path: str | None = None
 
 
 @_dataclass(slots=True, frozen=True)

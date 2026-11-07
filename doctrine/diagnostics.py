@@ -327,7 +327,7 @@ class ParseError(DoctrineError):
             hints = ("Finish the current declaration or block before the file ends.",)
             cause = _format_expected_tokens(getattr(exc, "expected", None))
         elif isinstance(exc, UnexpectedToken):
-            code, summary, hints = _classify_unexpected_token(exc)
+            code, summary, hints = _classify_unexpected_token(exc, source)
             cause = _format_unexpected_token_cause(exc)
         else:
             summary = "Unexpected parser input"

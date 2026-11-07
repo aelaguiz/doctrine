@@ -1,0 +1,14 @@
+# `drop key: "reason"` accounts for an inherited item and removes it.
+
+abstract agent Specialist:
+    role: "You are the QA specialist."
+    craft: "Craft"
+        "Test what users meet."
+    queue: "Your queue"
+        "Work the labeled queue."
+
+
+agent PodQa[Specialist]: "Pod QA"
+    role: "You are the pod's QA."
+    inherit craft
+    drop queue: "A pod's QA works the pod's changes, not the labeled queue."

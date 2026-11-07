@@ -4,7 +4,10 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.core import NameRef, RoleBlock, RoleScalar, SourceSpan
+from doctrine._model.core import (
+    Origin,
+    InheritAll, DropItem, OverridePath, NameRef, RoleBlock, RoleScalar, SourceSpan,
+)
 from doctrine._model.io import IoFieldValue
 from doctrine._model.review import ReviewFieldsConfig
 from doctrine._model.workflow import SkillsValue, WorkflowSlotValue
@@ -15,6 +18,7 @@ class AuthoredSlotField:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -27,6 +31,7 @@ class AuthoredSlotAbstract:
 @_dataclass(slots=True, frozen=True)
 class AuthoredSlotInherit:
     key: str
+    wildcard: bool = _field(default=False, compare=False, kw_only=True)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -35,6 +40,7 @@ class AuthoredSlotOverride:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -43,6 +49,7 @@ class InputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -51,30 +58,35 @@ class OutputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class AnalysisField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class DecisionField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class ReviewField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -83,6 +95,7 @@ class FinalOutputField:
     route_path: tuple[str, ...] | None = None
     review_fields: ReviewFieldsConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -96,6 +109,19 @@ class AgentSelectorBinding:
 class SelectorsField:
     bindings: tuple[AgentSelectorBinding, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class ValuesField:
+    items: tuple[tuple[str, str, SourceSpan], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class BudgetField:
+    items: tuple[tuple[str, float], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
 Field: _TypeAlias = (
@@ -104,6 +130,9 @@ Field: _TypeAlias = (
     | AuthoredSlotField
     | AuthoredSlotAbstract
     | AuthoredSlotInherit
+    | InheritAll
+    | DropItem
+    | OverridePath
     | AuthoredSlotOverride
     | InputsField
     | OutputsField
@@ -113,6 +142,8 @@ Field: _TypeAlias = (
     | ReviewField
     | FinalOutputField
     | SelectorsField
+    | ValuesField
+    | BudgetField
 )
 
 
@@ -124,3 +155,22 @@ class Agent:
     abstract: bool = False
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
+    markdown_path: str | None = None
+    drops: tuple = _field(default=(), compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class Member(Agent):
+    override: bool = False
+    team_unit: object | None = _field(default=None, compare=False, repr=False)
+    scope_unit: object | None = _field(default=None, compare=False, repr=False)
+
+    @property
+    def key(self):
+        return self.name.rsplit(".", 1)[-1]
+
+
+@_dataclass(slots=True, frozen=True)
+class Team(Agent):
+    fields: tuple[Field | Member | tuple[str, str], ...]
+    home: str | None = None

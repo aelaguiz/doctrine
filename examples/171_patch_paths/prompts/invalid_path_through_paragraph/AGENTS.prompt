@@ -1,0 +1,12 @@
+workflow Craft: "Craft"
+    how: "How"
+        paragraph plan: "Plans."
+            "Grow them."
+
+abstract agent Specialist:
+    role: "Specialist."
+    craft: Craft
+
+agent PodQa[Specialist]: "Pod QA"
+    role: "Pod QA."
+    drop craft.how.plan.deeper: "A paragraph has no keyed items."

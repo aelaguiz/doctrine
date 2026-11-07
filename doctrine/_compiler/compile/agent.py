@@ -3,6 +3,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from doctrine import model
+from doctrine._compiler.teams import _message_target
+from doctrine._compiler.home_map import field_origin
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import (
     _agent_typed_field_key,
@@ -49,11 +51,11 @@ class CompileAgentMixin:
     """Agent compile helpers for CompilationContext."""
 
     def _compile_agent_decl(self, agent: model.Agent, *, unit: IndexedUnit) -> CompiledAgent:
-        self._enforce_legacy_role_workflow_order(agent, unit=unit)
         self._validate_typed_abstract_slot_binding(agent, unit=unit)
         resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
         agent_contract = self._resolve_agent_contract(agent, unit=unit)
-        agent_key = self._flow_agent_key(unit, agent.name)
+        agent, _ = self._expand_agent_patches(agent, unit=unit)
+        agent_key = self._flow_agent_key(agent.team_unit if isinstance(agent, model.Member) else unit, agent.name)
         previous_turn_input_specs = tuple(
             spec
             for spec in (
@@ -70,7 +72,7 @@ class CompileAgentMixin:
         self._active_previous_turn_input_specs = {
             spec.input_key: spec for spec in previous_turn_input_specs
         }
-        prior_skill_bind_context = self._active_skill_bind_agent_context
+        prior_skill_bind_context = self._active_home_agent_context
         try:
             unresolved_abstract_slots = [
                 slot.key
@@ -137,7 +139,7 @@ class CompileAgentMixin:
                 (field for field in agent.fields if isinstance(field, model.AnalysisField)),
                 None,
             )
-            self._active_skill_bind_agent_context = ActiveSkillBindAgentContext(
+            self._active_home_agent_context = ActiveSkillBindAgentContext(
                 agent=agent,
                 unit=unit,
                 agent_contract=agent_contract,
@@ -198,6 +200,8 @@ class CompileAgentMixin:
             seen_typed_fields: dict[str, model.Field] = {}
 
             for field in agent.fields:
+                if isinstance(field, model.Member):
+                    continue
                 if isinstance(field, model.RoleScalar):
                     if seen_role:
                         raise compile_error(
@@ -291,14 +295,14 @@ class CompileAgentMixin:
                 seen_typed_fields[field_key] = field
                 field_specs.append(AgentFieldCompileSpec(field=field))
 
-            if not seen_role:
+            if not seen_role and not isinstance(agent, model.Team):
                 raise compile_error(
                     code="E205",
                     summary="Concrete agent is missing role field",
                     detail=f"Concrete agent `{agent.name}` is missing its required `role` field.",
                     path=unit.prompt_file.source_path,
                     source_span=agent.source_span,
-                    hints=("Add a `role:` field before the rest of the authored workflow surface.",),
+                    hints=("Add a `role:` field to the concrete agent.",),
                 )
 
             selectors_field = next(
@@ -346,13 +350,14 @@ class CompileAgentMixin:
             return CompiledAgent(
                 name=agent.name,
                 fields=compiled_fields,
+                drops=agent.drops,
                 final_output=final_output,
                 review=review_contract,
                 route=route_contract,
                 io=io_contract,
             )
         finally:
-            self._active_skill_bind_agent_context = prior_skill_bind_context
+            self._active_home_agent_context = prior_skill_bind_context
             self._active_agent_key = None
             self._active_previous_turn_input_specs = {}
 
@@ -436,6 +441,11 @@ class CompileAgentMixin:
             )
         target_item = scalar_items.get("target")
         shape_item = scalar_items.get("shape")
+        if _message_target(output_decl):
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key, output_name=output_decl.name, output_title=output_decl.title,
+                target_key="Message", target_title="Message",
+            )
         if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
             return CompiledPreviousTurnOutputSpec(
                 output_key=output_key,
@@ -606,7 +616,7 @@ class CompileAgentMixin:
                 )
                 for spec in specs
             ]
-            return tuple(field for field in compiled if field is not None)
+            return tuple(field_origin(spec, field) for spec, field in zip(specs, compiled) if field is not None)
 
         with ThreadPoolExecutor(max_workers=_default_worker_count(len(specs))) as executor:
             futures = [
@@ -621,14 +631,14 @@ class CompileAgentMixin:
                     final_output=final_output,
                     previous_turn_contexts=self._previous_turn_contexts,
                     active_agent_key=self._active_agent_key,
-                    active_skill_bind_agent_context=self._active_skill_bind_agent_context,
+                    active_skill_bind_agent_context=self._active_home_agent_context,
                     active_previous_turn_input_specs=self._active_previous_turn_input_specs,
                 )
                 for spec in specs
             ]
             return tuple(
-                field
-                for future in futures
+                field_origin(spec, field)
+                for spec, future in zip(specs, futures)
                 if (field := future.result()) is not None
             )
 
@@ -1052,7 +1062,7 @@ class CompileAgentMixin:
             CompiledSection(
                 title="Purpose",
                 body=(
-                    self._interpolate_authored_prose_string(
+                    self._interpolate_authored_prose_line(
                         purpose_item.value,
                         unit=target_unit,
                         owner_label=f"skill {skill_decl.name}",
@@ -1087,7 +1097,7 @@ class CompileAgentMixin:
                 CompiledSection(
                     title="Reason",
                     body=(
-                        self._interpolate_authored_prose_string(
+                        self._interpolate_authored_prose_line(
                             reason.value,
                             unit=entry.metadata_unit,
                             owner_label=f"skill reference {skill_decl.name}",

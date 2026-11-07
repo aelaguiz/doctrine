@@ -1,6 +1,10 @@
 from __future__ import annotations
+from doctrine._model.agent import BudgetField
 
 from doctrine._model.agent import (
+    Member,
+    Team,
+    ValuesField,
     Agent,
     AgentSelectorBinding,
     AnalysisField,
@@ -38,7 +42,10 @@ from doctrine._model.analysis import (
     ProveStmt,
 )
 from doctrine._model.core import (
+    Origin,
     AddressableRef,
+    AuthoredProse,
+    MarkdownProse,
     EmphasizedLine,
     Expr,
     ExprBinary,
@@ -48,6 +55,9 @@ from doctrine._model.core import (
     ImportDecl,
     ImportPath,
     InheritItem,
+    InheritAll,
+    DropItem,
+    OverridePath,
     NameRef,
     ProseLine,
     RenderProfileDecl,
@@ -58,7 +68,7 @@ from doctrine._model.core import (
     SectionBodyRef,
     SourceSpan,
 )
-from doctrine._model.declarations import Declaration, PromptFile
+from doctrine._model.declarations import Declaration, Person, Quote, PromptFile
 from doctrine._model.io import (
     AnyRecordItem,
     EnumDecl,
@@ -292,6 +302,11 @@ from doctrine._model.readable import (
 )
 from doctrine._model.rule import (
     AgentTagPredicate,
+    TeamPredicate,
+    MemberPredicate,
+    HomePredicate,
+    RequiresLoadAssertion,
+    ForbidsLoadAssertion,
     FileTreePredicate,
     FlowPredicate,
     ForbidsBindAssertion,

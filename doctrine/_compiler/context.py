@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from doctrine import model
+from doctrine._compiler.late_binding import bind_home, reject_late_roots
+from doctrine._compiler.details import reject_details
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (
@@ -32,6 +34,7 @@ from doctrine._compiler.resolved_types import (
 from doctrine._compiler.display import DisplayMixin
 from doctrine._compiler.compile import CompileMixin
 from doctrine._compiler.resolve import ResolveMixin
+from doctrine._compiler.resolve.patches import expand_agent_patches
 from doctrine._compiler.flow import FlowMixin
 from doctrine._compiler.validate import ValidateMixin
 
@@ -142,14 +145,23 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             tuple[tuple[str, ...], str],
             tuple[ResolvedAgentSlotState, ...],
         ] = {}
+        self._expanded_agent_cache: dict[tuple[tuple[str, ...], str], tuple] = {}
         self._compiled_skill_package_cache: dict[
             tuple[tuple[str, ...], str],
             CompiledSkillPackage,
         ] = {}
-        self._active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None
+        self._active_home_agent_context: ActiveSkillBindAgentContext | None = None
         # Mutable resolution stacks and caches remain local to one compile task.
         self.root_flow = session.root_flow
         self.root_entrypoint_unit = session.root_flow.entrypoint_unit
+
+    def _expand_agent_patches(self, agent, *, unit):
+        if isinstance(agent, model.Member):
+            unit = agent.scope_unit or unit
+        key = (unit.module_parts, agent.name)
+        if key not in self._expanded_agent_cache:
+            self._expanded_agent_cache[key] = expand_agent_patches(self, agent, unit=unit)
+        return self._expanded_agent_cache[key]
 
     def _flow_identity(self, unit: IndexedUnit) -> tuple[Path, Path]:
         flow = self.session.flow_for_unit(unit)
@@ -174,14 +186,14 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         flow = self.session.flow_by_key(prompt_root, flow_root)
         if flow is None:
             return None
-        agent = flow.agents_by_name.get(agent_name)
-        if agent is None:
-            return None
-        owner_unit = flow.declaration_owner_units_by_id[id(agent)]
-        return owner_unit, agent
+        return self._flow_decl_match(agent_name, unit=flow.entrypoint_unit, registry_name="agents_by_name")
 
     def compile_agent(self, agent_name: str) -> CompiledAgent:
-        agent = self.root_flow.agents_by_name.get(agent_name)
+        agent = self.root_flow.teams_by_name.get(agent_name) or self.root_flow.agents_by_name.get(agent_name)
+        if agent is None and "." in agent_name:
+            match = self._flow_decl_match(agent_name, unit=self.root_entrypoint_unit, registry_name="agents_by_name")
+            if match is not None:
+                return self.compile_agent_from_unit(match[0], agent_name)
         if agent is None:
             raise _context_compile_error(
                 path=self.root_flow.entrypoint_path,
@@ -197,7 +209,11 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         unit: IndexedUnit,
         agent_name: str,
     ) -> CompiledAgent:
-        agent = unit_declarations(unit).agents_by_name.get(agent_name)
+        agent = unit_declarations(unit).teams_by_name.get(agent_name) or unit_declarations(unit).agents_by_name.get(agent_name)
+        if agent is None and "." in agent_name:
+            match = self._flow_decl_match(agent_name, unit=unit, registry_name="agents_by_name")
+            if match is not None:
+                unit, agent = match
         if agent is None:
             raise _context_compile_error(
                 path=unit.prompt_file.source_path,
@@ -214,11 +230,13 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
                 hints=("Render a concrete child agent instead.",),
             )
         flow = self.session.flow_for_unit(unit)
-        self._validate_all_rules_in_flow(flow)
+        if self.session.evaluate_rules:
+            self._validate_all_rules_in_flow(flow)
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        return self._compile_agent_decl(agent, unit=unit)
+        return bind_home(self, self._compile_agent_decl(agent,
+            unit=agent.scope_unit or unit if isinstance(agent, model.Member) else unit), agent, unit=unit)
 
     def compile_skill_package(
         self,
@@ -249,7 +267,10 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_stages_in_flow(flow)
         self._validate_all_skill_flows_in_flow(flow)
         self._validate_all_skill_graphs_in_flow(flow)
-        return self._compile_skill_package_decl(declaration, unit=owner_unit)
+        compiled = self._compile_skill_package_decl(declaration, unit=owner_unit)
+        reject_details(compiled, "a skill package")
+        reject_late_roots(compiled, unit=owner_unit, why="a skill package has no home")
+        return compiled
 
     def compile_skill_graph(
         self,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.indexing import unit_declarations
+from doctrine._compiler.indexing import lookup_flow_registry_decl, unit_declarations
 from doctrine._compiler.resolved_types import (
     AgentContract,
     CanonicalLawPath,
@@ -436,7 +436,7 @@ class ValidateLawPathsMixin:
         except CompileError:
             return False
         for lookup_target in lookup_targets:
-            registry = getattr(unit_declarations(lookup_target.unit), registry_name)
-            if registry.get(lookup_target.declaration_name) is not None:
+            if lookup_flow_registry_decl(self.session.flow_for_unit(lookup_target.unit),
+                    registry_name=registry_name, declaration_name=lookup_target.declaration_name):
                 return True
         return False

@@ -1,0 +1,5 @@
+abstract agent Imports from "shared/imports.md"
+
+agent A[Imports]: "A"
+    role: "A."
+    inherit *

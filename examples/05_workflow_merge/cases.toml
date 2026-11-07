@@ -13,7 +13,12 @@ expected_lines = [
   "",
   "## Ordered Briefing",
   "",
+  "Deliver the briefing in the base order.",
+  "",
+  "Keep the framing brief and direct.",
+  "",
   "Deliver the revised briefing in the explicit order below.",
+  "",
   "This child places inherited, overridden, and new sections on purpose.",
   "",
   "### Opening",
@@ -53,7 +58,12 @@ expected_lines = [
   "",
   "## Revised Briefing",
   "",
+  "Deliver the briefing in the base order.",
+  "",
+  "Keep the framing brief and direct.",
+  "",
   "Deliver the revised briefing below.",
+  "",
   "This child keeps the structure but changes one section title on purpose.",
   "",
   "### Opening",
@@ -80,7 +90,7 @@ kind = "compile_fail"
 agent = "InvalidOverrideBriefingAgent"
 exception_type = "CompileError"
 error_code = "E001"
-location_line = 80
+location_line = 83
 
 [[cases]]
 name = "missing inherited entry fails with E003"

@@ -1,10 +1,11 @@
 skill package DoctrineLearn: "Doctrine Learn"
     metadata:
         name: "doctrine-learn"
-        description: "Teach an agent how to author Doctrine end-to-end: the principles that guide every choice, the full shipped language surface, including compiler-owned skill graphs, how to package and emit reusable skills, how to verify and ship, and which example in the numbered corpus to copy next. Use when a user asks how to write a Doctrine agent, workflow, review, output schema, skill package, or skill graph; how to port an existing agent into Doctrine; how to onboard into the repo; or how to review a Doctrine change with the right mental model. Not for running an audit on existing code (that is the agent-linter skill), not for resolving a compiler error (that is docs/COMPILER_ERRORS.md), and not for harness, runtime, or tool-orchestration work."
+        description: "Teach an author how to get agents that stay small, stay in step, and do well on work nobody wrote down, and then the Doctrine language that does it: how to stop copies and drift, where a lesson lands, how to keep always-on text thin, the principles that guide every choice, the full shipped language surface, including compiler-owned skill graphs, how to package and emit reusable skills, how to verify and ship, and which example in the numbered corpus to copy next. Use when a user asks how to fix copied or drifting instructions, where a lesson belongs, or how to shrink a home; how to write a Doctrine agent, workflow, review, output schema, skill package, or skill graph; how to port an existing agent into Doctrine; how to onboard into the repo; or how to review a Doctrine change with the right mental model. Not for running an audit on existing code (that is the agent-linter skill), not for resolving a compiler error (that is docs/COMPILER_ERRORS.md), and not for harness, runtime, or tool-orchestration work."
         version: "1.0.0"
         license: "MIT"
     emit:
+        "references/getting-good-results.md": GettingGoodResults
         "references/principles.md": Principles
         "references/language-overview.md": LanguageOverview
         "references/examples-ladder.md": ExamplesLadder
@@ -15,12 +16,14 @@ skill package DoctrineLearn: "Doctrine Learn"
         "references/reviews.md": Reviews
         "references/rules.md": Rules
         "references/agents-and-workflows.md": AgentsAndWorkflows
+        "references/teams-and-homes.md": TeamsAndHomes
         "references/documents-and-tables.md": DocumentsAndTables
         "references/skills-and-packages.md": SkillsAndPackages
         "references/skill-graphs.md": SkillGraphs
         "references/outputs-and-schemas.md": OutputsAndSchemas
-    "Teach Doctrine authoring end-to-end. Start with the principles, pick the one surface the author is about to write, load the matching reference, cite a real example from the shipped corpus, then guide a minimal working version. Always keep the thin-harness rule, the typed-truth-over-prose rule, and the always-on-context-is-a-budget rule in front of every recommendation."
+    "Teach an author how to get good results, and then the language that gets them. Start from what the author wants or what went wrong, find the tool that fixes it, load the matching reference, cite a real example from the shipped corpus, then guide a minimal working version. Always keep the thin-harness rule, the typed-truth-over-prose rule, and the always-on-context-is-a-budget rule in front of every recommendation."
     when_to_use: "When to use"
+        "Help an author stop copied or drifting instructions, land a lesson in the right place, or shrink a home that grew too long."
         "Teach someone how to write a fresh Doctrine agent, workflow, review, output schema, document, or skill package from scratch."
         "Teach someone how to write a compiler-owned graph with top-level `receipt`, `stage`, `skill_flow`, `skill_graph`, skill relations, checked skill mentions, and graph warnings."
         "Port an existing agent, workflow, or skill into Doctrine and explain which construct owns which job."
@@ -36,32 +39,34 @@ skill package DoctrineLearn: "Doctrine Learn"
         "Prefer typed surfaces over prose for exact truth. Prefer prose only for reading, synthesis, comparison, and taste."
         "Treat always-on prompt budget as a hard constraint. Every line the author ships must earn its keep."
         "Always cite a real example path from `examples/` when teaching a construct. Do not invent snippets that are not in the shipped corpus."
-        "Load only the reference the author's surface needs. Do not dump every reference at once."
+        "Load `references/getting-good-results.md`, then only the reference the author's surface needs. Do not dump every reference at once."
         "Stay read-only unless the author explicitly asks for an edit. Offer minimal working code when asked; never rewrite unrelated code."
         "Teach plain language at about a 7th grade reading level. Keep Doctrine terms exact, but simplify the sentences around them."
         "Fail loud. If the author is about to write something the compiler will reject, say so and point at the matching code in `docs/COMPILER_ERRORS.md`."
     first_move: "First move"
-        "Ask which surface the author is writing: fresh agent, workflow, review, output schema, document, skill package, skill graph, or import/ref fix."
-        "If unclear, load `references/principles.md` first and ask the author to pick one surface from the reference map below."
-        "Match the surface to exactly one reference before opening any example. Do not start with an example."
+        "Ask what result the author wants, or what went wrong. That comes before which surface they are writing."
+        "Load `references/getting-good-results.md` first. It takes the author from a failure to a tool."
+        "Match the tool to exactly one reference before opening any example. Do not start with an example."
     workflow: "Workflow"
-        "Step 1 — Read principles. Load `references/principles.md` to ground every decision that follows."
-        "Step 2 — Pick the surface. Match the ask to one of: agents/workflows, reviews, outputs/schemas, documents/tables, skills/packages, skill graphs, imports/refs."
-        "Step 3 — Load the matching reference. Read only that one file before proposing code."
+        "Step 1 — Name the result. Load `references/getting-good-results.md` and find what the author wants or what went wrong."
+        "Step 2 — Pick the surface. Match the tool to one of: teams/homes, agents/workflows, reviews, rules, outputs/schemas, documents/tables, skills/packages, skill graphs, imports/refs. Load `references/principles.md` when the choice is one of design."
+        "Step 3 — Load the matching reference. Read only that one language reference before proposing code."
         "Step 4 — Cite a real example. Open the example path the reference points at. Copy its structure, not its content."
         "Step 5 — Author minimal code. Use the smallest set of declarations that earns the job. Prefer explicit typed declarations over magic."
-        "Step 6 — Verify. Load `references/verify-and-ship.md` and run the matching `make` target for the surface that changed."
-        "Step 7 — Ship. If public compatibility changed, update `docs/VERSIONING.md` and `CHANGELOG.md` per the policy in `references/verify-and-ship.md`."
+        "Step 6 — Verify. In the author's own project, run The Loop from `references/getting-good-results.md`. In the Doctrine repo itself, load `references/verify-and-ship.md` and run the matching `make` target."
+        "Step 7 — Ship. In the Doctrine repo, if public compatibility changed, update `docs/VERSIONING.md` and `CHANGELOG.md` per the policy in `references/verify-and-ship.md`."
     output_expectations: "Output expectations"
         "Lead with the one-sentence recommendation before showing any code."
         "Cite every claim about a construct with at least one example path from the shipped corpus."
         "Show the smallest working snippet that demonstrates the construct. Do not dump a full file unless the author asked for one."
         "When the author is stuck between two constructs, say which one to use and why, in one sentence, before showing either."
         "If the author is about to push runtime behavior into Doctrine, stop and explain the thin-harness rule before proceeding."
-        "End every teaching turn with the exact verify command the author should run next."
+        "End every teaching turn with the exact check the author should run next."
     reference_map: "Reference map"
-        "`references/principles.md` owns the thin-harness rule, the typed-truth rule, the prompt-budget rule, and the nine principles. Load this first, every time."
+        "`references/getting-good-results.md` owns how to get good results: what Doctrine is for, which tool fixes which failure, where a lesson lands, and how to keep homes thin. Load this first, every time."
+        "`references/principles.md` owns the thin-harness rule, the typed-truth rule, the prompt-budget rule, and the ten principles. Load when a choice is one of design."
         "`references/language-overview.md` owns the shipped grammar shape, the core declaration vocabulary, and the ladder of first examples. Load when the author is new to Doctrine or unsure which construct fits."
+        "`references/teams-and-homes.md` owns values, team folders, members, overlays, roster tables, and Markdown-backed declarations. Load when sharing a role across homes or porting a Markdown file. See examples 173 to 177 and 179."
         "`references/agents-and-workflows.md` owns `agent`, `workflow`, route-only turns, `handoff_routing`, `grounding`, and workflow law. Load when the author is wiring turn flow or handoffs."
         "`references/reviews.md` owns `review`, `review_family`, carried state, verdict coupling, and review-driven `final_output`. Load when the author is adding a gate, a verdict, or a reviewer agent."
         "`references/rules.md` owns the declarative project `rule` primitive, its closed scope and assertion predicate set, and the `RULE###` diagnostic band. Load when the author is adding a compile-time invariant across many concrete agents."

@@ -1,0 +1,52 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "members are stamped out per team"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod.qa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the growth pod's QA. You work on each bet.",
+]
+
+[[cases]]
+name = "the same role reads another team's words"
+status = "active"
+kind = "render_contract"
+agent = "FeaturePod.qa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the feature pod's QA. You work on each feature.",
+]
+
+[[cases]]
+name = "a team adds a member"
+status = "active"
+kind = "render_contract"
+agent = "FeaturePod.writer"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the feature pod's writer. You work on each feature.",
+]
+
+[[cases]]
+name = "override member replaces the member whole"
+status = "active"
+kind = "render_contract"
+agent = "ProductPod.lead"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the product pod's pod lead. You work on each change.",
+]
+
+[[cases]]
+name = "dropping an unknown member fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_drop_unknown_member/AGENTS.prompt"
+agent = "T"
+exception_type = "CompileError"
+error_code = "E610"
+location_line = 7

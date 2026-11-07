@@ -1,0 +1,43 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a member passes the rules that match it"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod.qa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are on a team.",
+  "",
+  "## Craft",
+  "",
+  "Test what users meet.",
+]
+
+[[cases]]
+name = "member scope catches the wrong base"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_member_scope/AGENTS.prompt"
+agent = "GrowthPod.qa"
+exception_type = "CompileError"
+error_code = "RULE003"
+
+[[cases]]
+name = "home scope catches a forbidden base"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_home_scope/AGENTS.prompt"
+agent = "GrowthPod.qa"
+exception_type = "CompileError"
+error_code = "RULE004"
+
+[[cases]]
+name = "an unknown team fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_unknown_team/AGENTS.prompt"
+agent = "Alone"
+exception_type = "CompileError"
+error_code = "RULE001"

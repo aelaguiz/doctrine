@@ -76,6 +76,7 @@ Rejected plan goes to PlanAuthor.
 #### Field Notes
 
 Use the schema fields exactly once.
+
 Keep `next_owner` aligned with the routed outcome.
 
 #### Verdict

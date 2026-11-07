@@ -1,0 +1,17 @@
+workflow Craft: "Craft"
+    how: "How"
+        table calls: "Calls"
+            columns:
+                call: "Call"
+            rows:
+                one:
+                    call: "A call"
+
+abstract agent Specialist:
+    role: "Specialist."
+    craft: Craft
+
+agent PodQa[Specialist]: "Pod QA"
+    role: "Pod QA."
+    override craft.how.calls: "Calls"
+        "A table has its own body form, so override the section that holds it."

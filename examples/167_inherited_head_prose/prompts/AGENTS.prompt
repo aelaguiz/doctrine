@@ -1,0 +1,29 @@
+# Prose outside any keyed item is the reserved key `preamble`.
+# A child accounts for it like any other inherited item.
+
+workflow Base: "Base"
+    "Everyone reads this first."
+    keep: "Keep"
+        "Keep your notes."
+
+
+workflow Kept[Base]: "Kept"
+    "This team reads this next."
+    inherit preamble
+    inherit keep
+
+
+workflow Replaced[Base]: "Replaced"
+    "This team starts here."
+    drop preamble: "This team has its own opening."
+    inherit keep
+
+
+agent KeepsHead: "Keeps Head"
+    role: "Keep."
+    work: Kept
+
+
+agent ReplacesHead: "Replaces Head"
+    role: "Replace."
+    work: Replaced

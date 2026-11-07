@@ -1,0 +1,9 @@
+# A `.prompt` file with no flow entrypoint above it is a one-file flow.
+# No folder of its own and no `AGENTS.prompt` are needed to import it.
+
+from shared.habits import Habits
+
+
+agent Writer: "Writer"
+    role: "Write the weekly note."
+    habits: Habits

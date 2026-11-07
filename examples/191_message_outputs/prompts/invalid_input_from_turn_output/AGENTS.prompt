@@ -1,0 +1,9 @@
+output Note: "Note"
+    target: TurnResponse
+    shape: Comment
+    requirement: Required
+
+agent A: "A"
+    role: "A."
+    inputs: "Inputs"
+        Note

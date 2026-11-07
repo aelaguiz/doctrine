@@ -1,0 +1,11 @@
+workflow Craft: "Craft"
+    how: "How"
+        paragraph plan: "Plans."
+            "Grow them."
+
+workflow PodCraft[Craft]: "Pod Craft"
+    drop how.nope: "Never there."
+
+agent PodQa: "Pod QA"
+    role: "Pod QA."
+    craft: PodCraft

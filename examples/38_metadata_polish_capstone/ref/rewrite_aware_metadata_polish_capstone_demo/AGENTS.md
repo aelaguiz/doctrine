@@ -2,6 +2,8 @@ Handle the last narrow wording pass after structure is already locked.
 
 ## Metadata Polish
 
+Handle the last narrow wording pass after structure is already locked.
+
 Use this pass only when metadata polish is owed now.
 
 This pass is for `section-summary` mode.

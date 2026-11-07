@@ -1,0 +1,18 @@
+# A hand-written Markdown file can stand in for a declaration.
+# `##` is a keyed section and `###` a keyed section inside it.
+
+abstract agent QaCraft from "specialists/qa.md"
+workflow EveryAgent from "shared/every-agent.md"
+
+
+agent PodQa[QaCraft]: "Pod QA"
+    role: "You are the pod's QA."
+    drop which_pull_requests_are_yours: "A pod's QA works the pod's changes."
+    override your_craft.sending_it_back: "Sending it back"
+        "A failure goes to whoever built the change."
+    inherit *
+
+
+agent Reader: "Reader"
+    role: "See {{EveryAgent:whose_call_it_is.title}}."
+    rules: EveryAgent

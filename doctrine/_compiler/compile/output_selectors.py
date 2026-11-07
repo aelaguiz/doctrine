@@ -215,6 +215,7 @@ class CompileOutputSelectorsMixin:
             module_parts=enum_member_ref.module_parts[:-1],
             declaration_name=enum_member_ref.module_parts[-1],
             rebound_imported=enum_member_ref.rebound_imported,
+            scope_unit=enum_member_ref.scope_unit,
         )
         resolved = self._try_resolve_enum_decl_with_unit(enum_ref, unit=unit)
         if resolved is None:

@@ -68,7 +68,8 @@ class AgentFieldCompileSpec:
 FlowAgentKey = tuple[Path, Path, str]
 FlowArtifactKey = tuple[Path, Path, str]
 ReadableDecl: TypeAlias = (
-    model.Agent
+    model.Quote
+    | model.Agent
     | model.AnalysisDecl
     | model.SchemaDecl
     | model.TableDecl
@@ -161,6 +162,7 @@ class ResolvedSectionItem:
     title: str
     items: tuple[ResolvedSectionBodyItem, ...]
     source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
+    origin: model.Origin | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -294,6 +296,8 @@ class ResolvedDocumentBody:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.DocumentBlock, ...]
     render_profile: ResolvedRenderProfile | None = None
+    origin: model.Origin | None = None
+    drops: tuple = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -341,6 +345,8 @@ class ResolvedWorkflowBody:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedWorkflowItem, ...]
     law: model.LawBody | None = None
+    origin: model.Origin | None = None
+    drops: tuple = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -379,6 +385,7 @@ class ContractSectionSummary:
 
 @dataclass(slots=True, frozen=True)
 class ContractBodySummary:
+    preamble: tuple[model.ProseLine, ...]
     keyed_items: tuple[ContractSectionSummary, ...]
     unkeyed_artifacts: tuple[ContractArtifact, ...]
     artifacts: tuple[ContractArtifact, ...]
@@ -387,7 +394,7 @@ class ContractBodySummary:
 
 @dataclass(slots=True, frozen=True)
 class AgentContract:
-    inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]]
+    inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl | model.OutputDecl]]
     input_bindings_by_path: dict[tuple[str, ...], ContractBinding]
     outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]]
     output_bindings_by_path: dict[tuple[str, ...], ContractBinding]

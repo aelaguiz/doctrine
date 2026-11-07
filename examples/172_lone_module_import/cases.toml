@@ -1,0 +1,16 @@
+schema_version = 1
+default_prompt = "prompts/agents/writer/AGENTS.prompt"
+
+[[cases]]
+name = "a lone module file imports like any flow"
+status = "active"
+kind = "render_contract"
+agent = "Writer"
+assertion = "exact_lines"
+expected_lines = [
+  "Write the weekly note.",
+  "",
+  "## Habits",
+  "",
+  "Read the brief.",
+]

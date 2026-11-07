@@ -1,0 +1,32 @@
+# `roster` builds a table from the members actually declared.
+# A member with no value for a column gets no row. Static rows follow.
+
+abstract agent Lead:
+    role: "You lead."
+    values:
+        calls: "Which bet to take"
+
+
+abstract agent Qa:
+    role: "You test."
+    values:
+        calls: "Whether a change passes"
+
+
+abstract agent Watcher:
+    role: "You watch."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    how: "How we work"
+        roster calls: "Who makes each call"
+            call: "The call" = "{{agent:calls}}"
+            who: "Who makes it" = "{{agent:title}}"
+            rows:
+                owner:
+                    call: "The goal and the money"
+                    who: "the owner"
+    member lead[Lead]: "lead"
+    member qa[Qa]: "QA"
+    member watcher[Watcher]: "watcher"

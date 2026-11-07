@@ -26,6 +26,11 @@ It is for human review."""
             """enough context that a tired human can fix the issue without re-reading the
   whole package"""
 
+    section change_report: "Change reports"
+        "Name the changed declarations and the reached home used for context. Keep the findings on those changes."
+        "For `AL231` and `AL232`, show the changed text beside the old lesson or judgment. For `AL233`, show the changed text and the parent's words."
+        "Point the fix at the text that should own the call. Say when a stated departure earns its place."
+
     section human_finding_shape: "Human Finding Shape"
         "Every finding should carry:"
         bullets fields:

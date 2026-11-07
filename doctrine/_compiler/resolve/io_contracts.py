@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from doctrine import model
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -30,6 +33,7 @@ class ResolveIoContractsMixin:
         return getattr(value, "source_span", None)
 
     def _resolve_agent_contract(self, agent: model.Agent, *, unit: IndexedUnit) -> AgentContract:
+        agent, _ = self._expand_agent_patches(agent, unit=unit)
         inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]] = {}
         input_bindings_by_path: dict[tuple[str, ...], ContractBinding] = {}
         outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]] = {}
@@ -94,6 +98,10 @@ class ResolveIoContractsMixin:
             )
         if field_kind == "inputs":
             if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
+                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+                if _message_target(decl):
+                    return ContractArtifact(kind="input", unit=target_unit, decl=decl,
+                                            source_span=item.source_span)
                 raise authored_compile_error(
                     code="E301",
                     summary="Invalid IO bucket item",
@@ -265,6 +273,12 @@ class ResolveIoContractsMixin:
 
         if field_kind == "inputs":
             if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
+                target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
+                if _message_target(decl):
+                    section = self._compile_output_decl(decl, unit=target_unit, allow_review_semantics=True)
+                    return (replace(section, body=("You receive this message.", *section.body[1:])),
+                            ContractArtifact(kind="input", unit=target_unit, decl=decl,
+                                             source_span=item.source_span))
                 raise authored_compile_error(
                     code="E301",
                     summary="Invalid IO bucket item",

@@ -21,6 +21,7 @@ Reply and stop.
 #### Expected Structure
 
 Lead with the shipped outcome.
+
 Keep the answer concise unless the user asked for depth.
 
 #### Read on Its Own

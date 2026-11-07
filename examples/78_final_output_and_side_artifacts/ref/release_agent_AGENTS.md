@@ -36,6 +36,7 @@ RELEASE_NOTES.md should stand on its own and say what shipped.
 #### Expected Structure
 
 Lead with the shipped outcome.
+
 End with the next owner or step when one matters.
 
 #### Read on Its Own

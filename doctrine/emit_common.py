@@ -81,6 +81,7 @@ class EmitTarget:
     source_id: str | None = None
     source_root: Path | None = None
     lock_file: Path | None = None
+    runtimes: tuple[str, ...] = ("codex",)
 
 
 @dataclass(slots=True, frozen=True)
@@ -158,6 +159,7 @@ def load_emit_targets(
     pyproject_path: str | Path | None = None,
     *,
     start_dir: str | Path | None = None,
+    target_names: tuple[str, ...] | None = None,
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
 ) -> dict[str, EmitTarget]:
     """Load `[[tool.doctrine.emit.targets]]` from pyproject.toml.
@@ -209,6 +211,8 @@ def load_emit_targets(
             )
 
         name = require_str(raw_target, "name", label=f"emit target #{index}")
+        if target_names is not None and name not in target_names:
+            continue
         if name in targets:
             raise emit_error(
                 "E509",
@@ -327,6 +331,7 @@ def load_emit_targets(
             source_id=source_id,
             source_root=source_root,
             lock_file=lock_file,
+            runtimes=tuple(raw_target.get("runtimes", ())) or ("codex",),
         )
 
     return targets

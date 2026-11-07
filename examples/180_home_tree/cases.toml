@@ -1,0 +1,85 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "each level writes one file and CLAUDE.md links to it"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 4 homes, 10 files changed",
+]
+expected_files = { "HOMES.contract.json" = "expected/homes_contract.json" }
+expected_file_lines = { "AGENTS.md" = [
+    "This file is for every agent here. If your session started in `.` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
+    "",
+    "## What everyone shares",
+    "",
+    "Say what you found.",
+], "pods/AGENTS.md" = [
+    "This file is for every pod member. If your session started in `pods` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
+    "",
+    "## How pods work",
+    "",
+    "A pod works toward one goal.",
+], "pods/growth/AGENTS.md" = [
+    "This file is for every member of the growth pod. If your session started in `pods/growth` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
+    "",
+    "## What counts as a win",
+    "",
+    "More users who pay.",
+], "pods/growth/qa/AGENTS.md" = [
+    "You are the growth pod's QA.",
+    "",
+    "## Your job",
+    "",
+    "Do the work.",
+] }
+expected_links = { "CLAUDE.md" = "AGENTS.md", "pods/CLAUDE.md" = "AGENTS.md", "pods/growth/CLAUDE.md" = "AGENTS.md", "pods/growth/qa/CLAUDE.md" = "AGENTS.md" }
+
+[[cases]]
+name = "two homes with one path fail loud"
+status = "active"
+kind = "cli_contract"
+project = "project_collision"
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = [
+  "E607",
+  "Pods.growth",
+  "GrowthPod",
+]
+
+[[cases]]
+name = "two team targets may not share an output folder"
+status = "active"
+kind = "cli_contract"
+project = "project_shared_output"
+args = ["build", ".", "--target", "homes"]
+expected_exit = 1
+stderr_contains = [
+  "E607",
+  "homes",
+  "other",
+]
+
+[[cases]]
+name = "a relative link follows the text to its home"
+status = "active"
+kind = "cli_contract"
+project = "project_links"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "You test what users meet.",
+    "",
+    "## Older work",
+    "",
+    "See [older cases](../../../specialists/qa/cases.md), [the shared notes](../../../specialists/notes.md#today), [the site](https://example.com), and [more][more].",
+    "",
+    "Code stays as written: `cases.md` and `[older cases](cases.md)`.",
+    "",
+    "[more]: ../../../specialists/qa/more.md",
+] }

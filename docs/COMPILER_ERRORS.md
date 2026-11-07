@@ -71,6 +71,7 @@ Stability rules:
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
 | `E133` | Missing `via` carrier | A workflow-law currentness or invalidation statement omitted its required `via Output.field` carrier. |
+| `E134` | Missing block title | A named readable block ends its head line without a title. The error shows a title form, a declared-table form for `table`, and a bare form when the kind has one. |
 | `E199` | Parse failure | Generic fallback parse code when the failure does not fit a narrower shipped parse code yet, including parser-level output owner conflicts such as `schema:` plus `must_include:`, `schema:` plus `structure:`, invalid named-table ownership such as `columns:` on a named table use site, or parser-owned `skill_flow` block-shape failures such as a missing required `why:` line or duplicate edge or repeat body keys. |
 
 ### Compile codes
@@ -82,7 +83,7 @@ Stability rules:
 | `E203` | Duplicate role field | One agent defines `role` more than once. |
 | `E204` | Duplicate typed field | One agent defines the same typed field more than once. |
 | `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field. |
-| `E206` | Unsupported agent field order | The authoring shape is outside the shipped subset, such as violating the bootstrap role/workflow order rule. |
+| `E206` | Retired | Retired in language 6.0. A role keeps its authored position. Slots may come before it. |
 | `E207` | Cyclic agent inheritance | Agent inheritance forms a cycle. |
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
 | `E209` | Concrete agent is missing abstract authored slots | A concrete agent still has unresolved `abstract <slot_key>` requirements after inheritance resolution. |
@@ -186,6 +187,11 @@ Stability rules:
 | `E382` | Duplicate inherited law subsection | An inherited workflow-law block accounted for the same parent subsection more than once. |
 | `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
 | `E384` | Cannot override undefined law subsection | `override <section_key>:` targeted a law subsection the parent workflow does not define. |
+| `E605` | Code fence split across strings | A prose string opens a code fence it does not close. Put the whole fence in one triple-quoted string or a `code` block. |
+| `E610` | Missing patch target | A drop or dotted override names a key the parent lacks, or `inherit *` has nothing to inherit. |
+| `E611` | Invalid patch path | A path steps through an item with no keyed children, or an override targets the wrong block kind or gives a paragraph a nested block. |
+| `E612` | Conflicting patches | Two patches account for one item, a whole-item account conflicts with a deeper patch, or a child drops `role`. |
+| `E613` | Duplicate inherit * | A body writes `inherit *` twice. |
 
 ### Review codes
 
@@ -306,26 +312,60 @@ Stability rules:
 
 The `RULE###` band covers diagnostics raised by the declarative `rule` primitive
 described in [`LANGUAGE_REFERENCE.md`](./LANGUAGE_REFERENCE.md). Rule checks run
-during compile and share the same error envelope as the `E###` codes.
+at compile for inheritance and slots, and in `check` and `emit_docs` for
+load assertions. `build` runs no rules. They use the `E###` error envelope.
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `RULE001` | Rule declaration references an unknown scope predicate target | A rule's `scope:` predicate names a `flow: <agent>` whose target agent is not declared in the prompt graph. |
-| `RULE002` | Rule assertion target does not resolve | A rule's `assertions:` block references an agent (for `requires inherit` or `forbids bind`) that is not declared in the prompt graph. |
+| `RULE001` | Rule declaration references an unknown scope predicate target | A `flow:` target is not an agent, or a `team:` target is not a team in this flow. |
+| `RULE002` | Rule assertion target does not resolve | An inheritance assertion names an unknown agent, or a load assertion names an unknown declaration. |
 | `RULE003` | Scoped agent fails `requires inherit` assertion | A concrete agent that matches the rule's `scope:` predicates does not inherit the required ancestor named in `requires inherit`. |
 | `RULE004` | Scoped agent violates `forbids bind` assertion | A concrete agent that matches the rule's `scope:` predicates inherits from an ancestor that the rule forbids via `forbids bind`. |
 | `RULE005` | Scoped agent fails `requires declare` assertion | A concrete agent that matches the rule's `scope:` predicates does not declare (or inherit) the slot named in `requires declare`. |
+| `RULE006` | Requires load | The scoped home's always-on load has no text from the named declaration. |
+| `RULE007` | Forbids load | The scoped home loads text from the named declaration, at any depth. The detail shows one shortest source path that brought it there. |
 
-The rule primitive ships a closed predicate set: scope predicates are limited to
-`agent_tag: <CNAME>`, `flow: <NameRef>`, `role_class: <CNAME>`, and
-`file_tree: <STRING>`; assertions are limited to `requires inherit <NameRef>`,
-`forbids bind <NameRef>`, and `requires declare <CNAME>`. Codes `RULE006` through
-`RULE099` are reserved for future extensions of this closed-predicate surface.
-Codes `RULE100` and above are reserved for any future open-expression-language
-evolution of the rule primitive.
+The closed scope set is `agent_tag`, `flow`, `role_class`, `file_tree`,
+`team`, `member`, and `home`. Assertions are `requires inherit`,
+`forbids bind`, `requires declare`, `requires load`, and `forbids load`.
+Codes `RULE008` through `RULE099` stay reserved for closed predicates.
+Codes `RULE100` and above stay reserved for a future expression language.
 
 ## Example
 
 The checked-in error reference under
 [examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md](../examples/05_workflow_merge/ref/invalid_override_briefing_agent/COMPILER_ERROR.md)
 shows the canonical formatted shape for one shipped compile error.
+
+## Values, Teams, And Markdown Sources
+
+| Code | Summary | Detail |
+| --- | --- | --- |
+| `E601` | Unfilled value | `Home <home> reads values nothing fills:` followed by each blank as `<root>:<key>` and its file and line. |
+| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. |
+| `E603` | Value cycle | `Values read each other:` followed by the full cycle, such as `a -> b -> a`. |
+| `E604` | Value sets a fact | `values:` sets a key the compiler supplies. |
+| `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |
+| `E608` | Value set twice | `values:` sets one key twice in the same body, in one block or across two. |
+| `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
+| `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. |
+| `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
+| `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
+| `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
+| `E654` | Import line in Markdown source | A runtime import path would break once its text is inlined. Declare that file too and compose it. |
+| `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
+
+## Homes And Load
+
+| Code | Summary | When |
+| --- | --- | --- |
+| `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
+| `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, or `python -m doctrine.emit_docs`. |
+| `E621` | Shared details read one agent's words | A shared companion reads an agent or team value, in text or a title. |
+| `E630` | Over load budget | A check finds a home past its runtime's limit and lists its biggest source parts. |
+| `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
+| `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
+| `E633` | External file missing | A listed external is absent and has no reserve. |
+| `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
+| `E640` | No home matches | A selector matches no home path or agent name. |
+| `E641` | Bad revision | The given revision does not exist in this repository. |

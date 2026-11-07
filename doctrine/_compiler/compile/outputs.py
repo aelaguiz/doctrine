@@ -4,6 +4,10 @@ import re
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.teams import _message_target
+from doctrine._compiler.teams import find_home_team, resolve_message_recipient
+from doctrine._compiler.details import reject_details
+from doctrine._compiler.late_binding import bind_home
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
@@ -28,6 +32,7 @@ class CompileOutputsMixin:
     """Input and output surface compile helpers for CompilationContext."""
 
     def _compile_input_decl(self, decl: model.InputDecl, *, unit: IndexedUnit) -> CompiledSection:
+        reject_details(decl.items, "an input body")
         scalar_items, _section_items, extras = self._split_record_items(
             decl.items,
             scalar_keys={"source", "shape", "requirement"},
@@ -154,6 +159,7 @@ class CompileOutputsMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
     ) -> CompiledSection:
+        reject_details(decl.items, "an output body")
         self._validate_output_declaration_structure(decl, unit=unit)
         self._validate_output_guard_sections(
             decl,
@@ -174,6 +180,20 @@ class CompileOutputsMixin:
         shape_item = scalar_items.get("shape")
         requirement_item = scalar_items.get("requirement")
         files_section = section_items.get("files")
+
+        message = _message_target(decl)
+        if message:
+            for field, value, span in (
+                ("shape", shape_item, _source_span(shape_item)),
+                ("requirement", requirement_item, _source_span(requirement_item)),
+                ("schema", decl.schema_ref, decl.schema_source_span),
+                ("structure", decl.structure_ref, decl.structure_source_span),
+                ("files", files_section, _source_span(files_section)),
+            ):
+                if value is not None:
+                    raise output_compile_error(code="E660", summary="Invalid message",
+                        detail=f"`Message` output `{decl.name}` can't have `{field}`. A message is prose.",
+                        unit=unit, source_span=span or decl.source_span)
 
         if files_section is not None and (target_item is not None or shape_item is not None):
             related = []
@@ -204,7 +224,7 @@ class CompileOutputsMixin:
                     "Choose either `files:` or the `target:` / `shape:` pair, not both.",
                 ),
             )
-        if files_section is None and (target_item is None or shape_item is None):
+        if files_section is None and (target_item is None or (shape_item is None and not message)):
             primary_span = (
                 _source_span(target_item)
                 or _source_span(shape_item)
@@ -238,7 +258,31 @@ class CompileOutputsMixin:
             schema_section: CompiledSection | None = None
             structure_items: tuple[CompiledBodyItem, ...] = ()
             use_compact_contract = False
-            if files_section is not None:
+            if message:
+                recipient = next((item for item in message.body or ()
+                                  if isinstance(item, model.RecordScalar) and item.key == "to"), None)
+                match = None
+                if recipient is not None and not isinstance(recipient.value, str):
+                    if isinstance(recipient.value, model.NameRef):
+                        match = resolve_message_recipient(self, recipient.value, unit=unit)
+                    else:
+                        raise output_compile_error(code="E660", summary="Invalid message",
+                            detail=f"`to:` in `{decl.name}` must be an agent, a team, or a string.",
+                            unit=unit, source_span=recipient.source_span)
+                self._compile_output_config_rows(message.body or (),
+                    spec=self._resolve_output_target_spec(message.value, unit=unit), unit=unit,
+                    owner_label=f"output {decl.name} target", owner_source_span=message.source_span)
+                if isinstance(recipient.value, str):
+                    title = recipient.value
+                else:
+                    owner, agent = match
+                    title = bind_home(self, agent.title or agent.name, agent, unit=owner)
+                    if isinstance(agent, model.Member):
+                        _, team = find_home_team(self, agent, unit=owner)
+                        team_title = bind_home(self, team.title, agent, unit=owner)
+                        title = f"{team_title}'s {title}"
+                body.append(f"Send this to {title}.")
+            elif files_section is not None:
                 contract_rows = [
                     ("Target", "File Set"),
                 ]
@@ -1274,6 +1318,7 @@ class CompileOutputsMixin:
         unit: IndexedUnit,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
+        reject_details(document_body, "an output structure")
         summary_rows, detail_blocks = self._compile_output_structure_summary_rows(
             document_body,
             unit=unit,

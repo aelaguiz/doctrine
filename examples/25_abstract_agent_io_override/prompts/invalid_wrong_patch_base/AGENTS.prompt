@@ -30,6 +30,8 @@ abstract agent BaseSectionRole:
 agent InvalidWrongPatchBase[BaseSectionRole]:
     role: "Trigger a wrong-kind IO patch base."
 
+    inherit outputs
+
     inputs[BaseSectionOutputs]: "Your Inputs"
         override scoped_catalog_truth: "Scoped Catalog Truth"
             ScopedCatalogTruth

@@ -9,13 +9,16 @@ document FindingCatalog: "Finding Catalog"
 | `AL100` | Oversized Always-On Context | The role home carries too much always-on text, or new local bulk does not buy clearer loading, stronger reuse, or exact truth. | Move deep reference material into a shared skill, module, or docs index. |
 | `AL110` | Pasted Reference Instead Of Pointer | Long reference text is pasted where a shared pointer should exist. | Replace the pasted block with a pointer to one shared source. |
 | `AL120` | Deep Procedure In The Role Home | A reusable method is taught inline instead of through a shared skill. A per-case decision taxonomy (if field X is populated, install rule Y; if Z appears, install rule W) is the canonical shape. | Move the reusable method into a skill. |
-| `AL130` | Dead Inherited Section | Inherited text is present but not used. | Drop the inherit or move the pointer to the step that needs it. |
+| `AL130` | Dead Inherited Section | Inherited text is present but not used. | Write `drop key:` with a reason, or move the pointer to the step that needs it. |
 | `AL140` | Planning-Doc Scaffolding In Agent Body | The role body cites planning docs by path or rule ID, or carries authoring rationale. | Strip the citation and rule IDs; keep only the behavior. |
 | `AL150` | Role Body Carries Markdown Section Tree | The `role:` value is a multiline string holding markdown headings (`##` / `###`) or a numbered section list, instead of typed workflow slots on the agent. The string's internal sections are invisible to the compiler. | Keep `role:` to a one-sentence headline. Move each internal heading into a typed agent slot (`your_job`, `workflow_core`, or any authored slot key) pointed at a `workflow` with titled children. |
 | `AL200` | Duplicate Rule Across Agents | The same rule or step list appears in several agents. A fixed vocabulary written as a pipe list (for example `A \\| B \\| C`) and repeated on several roles or on the critic gate is a canonical shape. | Lift the repeated rule into one shared skill or module. For a pipe-list vocabulary, declare an `enum` and type the field with it. |
 | `AL210` | Repeated Method Should Become A Skill | Several agents carry the same decision method without a shared skill owner. | Extract the shared method into a skill. |
 | `AL220` | Repeated Background Block Across Agents | Several agent homes carry the same background or glossary block. | Move the shared background into one importable module. |
 | `AL230` | Semantic Duplicate Across Agents | Several targets say the same rule in different words. | Collapse the semantic copies behind one shared owner. |
+| `AL231` | Lesson Restated Beside Old Text | A change repeats a lesson that the reached home already teaches. | Change the text that already makes the call. |
+| `AL232` | Rule Added Where A Judgment Lives | A change adds a fixed rule beside a judgment that already covers the case. | Fold it into the judgment, or show why it needs a rule. |
+| `AL233` | Change Contradicts A Parent | A change gives an answer that conflicts with its parent's guidance. | Change the parent, or say the departure plainly. |
 | `AL240` | Skill Hardcodes Invocation Inputs | A skill hardcodes changing subject, dataset, or case facts. | Keep the method in the skill and move changing facts into inputs or source reads. |
 | `AL245` | Gate Declared As Inline Prose | Review gate IDs appear as free-form prose on the review or in an output field body instead of as typed `contract.NAME` identities. | Declare the gates once on the review contract and reference them by `contract.NAME` in the review body and the same identities through Doctrine interpolation in authored prose. |
 | `AL246` | Per-Case Gate Delta Split Into Parallel Contracts | Two or more review cases share one `review_family` and differ only in a small gate delta, yet each case binds its own near-duplicate `contract:` workflow or schema. | Keep one shared contract and express the per-case delta through `override gates:` inside the case block. |
@@ -91,7 +94,7 @@ document FindingCatalog: "Finding Catalog"
         section al130: "`AL130` Dead Inherited Section"
             "What it means: Inherited text is present but not used."
             "Why it matters: Dead inherited text hides the real active path."
-            "Default fix: Drop the inherit or point to the step that needs it."
+            "Default fix: Write `drop key:` with a reason, or point to the step that needs it."
             "Good: `Inherit only the shared EvidenceCheck block that this role still calls.`"
             "Bad: `Inherit the full ReviewerWorkflow` with no remaining reference to it."
 
@@ -145,6 +148,15 @@ document FindingCatalog: "Finding Catalog"
             "Shared owner: Almost always required."
             "Good: `Use the shared SafetyEscalation rule.`"
             "Bad: One role says `raise blockers early` while another says `surface risks before handoff` for the same policy."
+
+        section al231: "`AL231` Lesson Restated Beside Old Text"
+            "The changed text teaches a lesson the reached home already holds. Show both spans and change the text that already makes the call."
+
+        section al232: "`AL232` Rule Added Where A Judgment Lives"
+            "The change adds a fixed answer where the home already teaches how to judge the case. Fold the lesson into that judgment, or show what needs a rule."
+
+        section al233: "`AL233` Change Contradicts A Parent"
+            "The changed declaration and a parent point to different actions in the same case. Show both spans. Change the parent, or state why this role departs from it."
 
         section al240: "`AL240` Skill Hardcodes Invocation Inputs"
             "What it means: A skill hardcodes the changing subject, dataset, or case."

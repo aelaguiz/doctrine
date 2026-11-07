@@ -1,0 +1,36 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "diff names the cause and the reach"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["diff", "--base-tree", "base"]
+expected_exit = 0
+expected_stdout_lines = [
+  "1 declaration changed. 2 homes changed.",
+  "",
+  "PodQa (prompts/AGENTS.prompt) reaches 2 homes, +8 characters each:",
+  "  pods/feature/qa, pods/growth/qa",
+]
+
+[[cases]]
+name = "where finds the source of a sentence and its reach"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "You follow the bet"]
+expected_exit = 0
+expected_stdout_lines = [
+  "PodQa.whom  prompts/AGENTS.prompt:3",
+  "  reaches 1 home: pods/growth/qa",
+]
+
+[[cases]]
+name = "where fails when nothing matches"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "No such words"]
+expected_exit = 1

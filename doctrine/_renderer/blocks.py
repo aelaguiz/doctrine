@@ -30,7 +30,7 @@ from doctrine._renderer.tables import (
     render_structured_table as _render_structured_table,
 )
 from doctrine.emit_common import render_valid_values_line
-from doctrine.model import EmphasizedLine, ReadableInlineSchemaData
+from doctrine.model import AuthoredProse, EmphasizedLine, ReadableInlineSchemaData
 
 def _render_block(
     block: CompiledReadableBlock,
@@ -39,6 +39,9 @@ def _render_block(
     profile: ResolvedRenderProfile,
 ) -> str:
     if isinstance(block, CompiledSection):
+        if block.kind == "paragraph":
+            text = "\n".join(_render_body_lines(block.body, depth=depth, profile=profile))
+            return _render_raw_text_block(CompiledRawTextBlock(title=block.title, text=text, kind="paragraph", requirement=block.requirement, when_text=block.when_text), depth=depth)
         active_profile = block.render_profile or profile
         semantic_render = _render_semantic_section(
             block,
@@ -134,6 +137,13 @@ def _render_body_lines(
     analysis_stage_counter = 1
 
     for item in body:
+        if isinstance(item, (AuthoredProse, EmphasizedLine)):
+            rendered = _render_prose_line(item, profile=profile)
+            if body_lines and body_lines[-1] != "":
+                body_lines.append("")
+            body_lines.append(f"{line_prefix}{rendered}" if line_prefix else rendered)
+            previous_was_block = True
+            continue
         if isinstance(item, str):
             if not item:
                 if body_lines and body_lines[-1] != "":
@@ -143,13 +153,6 @@ def _render_body_lines(
             if previous_was_block and body_lines and body_lines[-1] != "":
                 body_lines.append("")
             body_lines.append(f"{line_prefix}{item}" if line_prefix else item)
-            previous_was_block = False
-            continue
-        if isinstance(item, EmphasizedLine):
-            rendered = f"**{item.kind.upper()}**: {item.text}"
-            if previous_was_block and body_lines and body_lines[-1] != "":
-                body_lines.append("")
-            body_lines.append(f"{line_prefix}{rendered}" if line_prefix else rendered)
             previous_was_block = False
             continue
         if (
@@ -204,7 +207,8 @@ def _render_list_block(
 
     metadata = _render_metadata_line(
         requirement=block.requirement,
-        kind_label=None,
+        kind_label=("sequence" if isinstance(block, CompiledSequenceBlock) else
+                    "bullets" if isinstance(block, CompiledBulletsBlock) else "checklist"),
         when_text=block.when_text,
     )
     lines: list[str] = []
@@ -331,6 +335,12 @@ def _render_code_block(block: CompiledCodeBlock, *, depth: int) -> str:
 
 
 def _render_raw_text_block(block: CompiledRawTextBlock, *, depth: int) -> str:
+    if block.kind == "paragraph":
+        text = f"**{block.title}** {block.text}" if block.title is not None else block.text
+        metadata = _render_metadata_line(
+            requirement=block.requirement, kind_label="paragraph", when_text=block.when_text,
+        )
+        return f"{metadata}\n\n{text}" if metadata is not None else text
     if block.anonymous and block.title is None:
         return "\n".join(block.text.splitlines()).rstrip()
     metadata = _render_metadata_line(
@@ -435,7 +445,9 @@ def _render_table_block(
     if block.table.notes:
         if lines and lines[-1] != "":
             lines.append("")
-        lines.extend(_render_prose_line(note, profile=profile) for note in block.table.notes)
+        lines.append(
+            "\n\n".join(_render_prose_line(note, profile=profile) for note in block.table.notes)
+        )
 
     return "\n".join(lines).rstrip()
 
@@ -454,9 +466,11 @@ def _render_callout_block(block: CompiledCalloutBlock, *, profile: ResolvedRende
             lines.append(f"> {metadata}")
     else:
         lines.append(f"> **{label}**")
-    for line in block.body:
+    for index, line in enumerate(block.body):
+        if index:
+            lines.append(">")
         text = _render_prose_line(line, profile=profile)
-        lines.append(f"> {text}" if text else ">")
+        lines.extend(f"> {part}" if part else ">" for part in text.split("\n"))
     return "\n".join(lines).rstrip()
 
 
@@ -561,6 +575,8 @@ def _render_metadata_line(
     when_text: str | None,
     extra: str | None = None,
 ) -> str | None:
+    if requirement is None and when_text is None:
+        return None
     parts: list[str] = []
     if requirement is not None:
         parts.append(requirement.capitalize())
@@ -570,8 +586,6 @@ def _render_metadata_line(
         parts.append(extra)
     if when_text is not None:
         parts.append(f"when {when_text}")
-    if not parts:
-        return None
     return "_" + " · ".join(parts) + "_"
 
 

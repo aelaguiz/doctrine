@@ -1,0 +1,13 @@
+abstract agent SpecialistsBase:
+    role: "You work alone."
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[SpecialistsBase]: "QA"
+
+rule NothingInPodsTakesSpecialists: "Nothing under pods inherits the specialists' base"
+    scope:
+        home: "pods/**"
+    assertions:
+        forbids bind SpecialistsBase
+    message: "A pod member does not inherit the specialists' base."

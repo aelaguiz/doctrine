@@ -1,0 +1,33 @@
+# `paragraph` gives one paragraph an address and, if you want, a run-in lead-in.
+
+workflow HowYouThink: "How you think"
+    paragraph test_plan: "A test plan that grows with the design."
+        "You test a change best having followed it from the start."
+        "Write the plan while the design settles."
+    paragraph quiet_note:
+        "A quiet note with an address and no lead-in."
+
+
+workflow PodHowYouThink[HowYouThink]: "How you think"
+    inherit test_plan
+    override paragraph quiet_note:
+        "The pod's own quiet note."
+
+
+workflow Pointers: "Pointers"
+    "See {{HowYouThink:test_plan.title}}"
+
+
+agent Tester: "Tester"
+    role: "Test the change."
+    think: HowYouThink
+
+
+agent PodTester: "Pod Tester"
+    role: "Test the pod's change."
+    think: PodHowYouThink
+
+
+agent Reader: "Reader"
+    role: "Read."
+    pointers: Pointers

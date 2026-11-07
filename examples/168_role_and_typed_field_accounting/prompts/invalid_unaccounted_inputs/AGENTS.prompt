@@ -1,0 +1,12 @@
+input Brief: "Brief"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+abstract agent Base:
+    role: "Shared."
+    inputs: "Inputs"
+        Brief
+
+agent Child[Base]: "Child"
+    role: "Child."

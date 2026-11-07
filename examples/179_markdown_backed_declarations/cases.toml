@@ -1,0 +1,78 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "missing fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_missing/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E652"
+location_line = 1
+
+[[cases]]
+name = "duplicate_heading fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_duplicate_heading/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E653"
+location_line = 1
+
+[[cases]]
+name = "import_line fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_import_line/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E654"
+location_line = 1
+
+[[cases]]
+name = "drop_gone_heading fails loud"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_drop_gone_heading/AGENTS.prompt"
+agent = "A"
+exception_type = "CompileError"
+error_code = "E610"
+location_line = 5
+
+[[cases]]
+name = "Markdown headings patch like keyed sections"
+status = "active"
+kind = "render_contract"
+agent = "PodQa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the pod's QA.",
+  "",
+  "## Your craft",
+  "",
+  "Test what users meet.",
+  "",
+  "### Sending it back",
+  "",
+  "A failure goes to whoever built the change.",
+]
+
+[[cases]]
+name = "a Markdown workflow composes, and its keys are checked refs"
+status = "active"
+kind = "render_contract"
+agent = "Reader"
+assertion = "exact_lines"
+expected_lines = [
+  "See Whose call it is.",
+  "",
+  "## What every agent follows",
+  "",
+  "Read before you act.",
+  "",
+  "### Whose call it is",
+  "",
+  "Ask when a call is not yours.",
+]

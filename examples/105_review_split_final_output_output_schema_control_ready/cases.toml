@@ -129,6 +129,7 @@ expected_lines = [
   "#### Field Notes",
   "",
   "Keep `verdict` aligned with the review verdict.",
+  "",
   "Use null for `next_owner` and `blocked_gate` when this review does not set them.",
   "",
   "#### Verdict",

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+from dataclasses import fields, is_dataclass, replace
+
+from doctrine import model
 
 from doctrine._model.agent import (
     AnalysisField,
@@ -123,3 +126,67 @@ def _parse_interpolated_addressable_ref(
         path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
         source_span=source_span,
     )
+
+
+def map_model(value, leaf, excluded):
+    mapped = leaf(value)
+    if mapped is not None:
+        return mapped
+    if isinstance(value, tuple):
+        return tuple(map_model(item, leaf, excluded) for item in value)
+    if is_dataclass(value):
+        return replace(value, **{
+            field.name: map_model(getattr(value, field.name), leaf, excluded)
+            for field in fields(value) if field.name not in excluded
+        })
+    return value
+
+
+def model_walk(value):
+    yield value
+    if is_dataclass(value):
+        for field in fields(value):
+            if field.compare:
+                child = getattr(value, field.name)
+                if isinstance(value, model.Team) and field.name == "fields":
+                    child = tuple(item for item in child if not isinstance(item, model.Member))
+                yield from model_walk(child)
+    elif isinstance(value, (tuple, list)):
+        for item in value:
+            yield from model_walk(item)
+
+
+
+
+TYPED_FIELDS = (
+    model.RoleScalar,
+    model.RoleBlock,
+    model.InputsField,
+    model.OutputsField,
+    model.AnalysisField,
+    model.DecisionField,
+    model.SkillsField,
+    model.ReviewField,
+    model.FinalOutputField,
+    model.SelectorsField,
+)
+
+
+def patch_item_key(item):
+    if isinstance(item, (model.RoleScalar, model.RoleBlock)):
+        return "role"
+    if isinstance(item, TYPED_FIELDS):
+        return _agent_typed_field_key(item).split(":", 1)[0]
+    if isinstance(item, (model.ReviewFieldsConfig, model.ReviewOverrideFields)):
+        return "fields"
+    if isinstance(item, (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock)):
+        return "sections"
+    if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock)):
+        return "gates"
+    if isinstance(item, (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock)):
+        return "artifacts"
+    if isinstance(item, (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock)):
+        return "groups"
+    return getattr(item, "key", None)
+
+

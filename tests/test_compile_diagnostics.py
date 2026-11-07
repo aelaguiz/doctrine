@@ -5764,30 +5764,18 @@ class CompileDiagnosticTests(unittest.TestCase):
         )
         self.assertIn("`law:` is not allowed on authored slot `notes`", str(error))
 
-    def test_legacy_role_workflow_order_points_at_role_line(self) -> None:
+    def test_role_keeps_authored_position_after_workflow(self) -> None:
+        from doctrine.renderer import render_markdown
+
         with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            source = """\
+            prompt_path = self._write_prompt(Path(temp_dir), '''
                 agent Demo:
                     workflow: "Reply"
-                        "This should fail."
-                    role: "This role arrives too late."
-                """
-            rendered = textwrap.dedent(source)
-            prompt_path = self._write_prompt(root, source)
-
-            with self.assertRaises(CompileError) as ctx:
-                CompilationSession(parse_file(prompt_path)).compile_agent("Demo")
-
-        error = ctx.exception
-        self.assertEqual(error.diagnostic.code, "E206")
-        self.assertEqual(error.diagnostic.location.path, prompt_path.resolve())
-        self.assertEqual(
-            error.diagnostic.location.line,
-            rendered.splitlines().index('    role: "This role arrives too late."') + 1,
-        )
-        self.assertIn("Unsupported agent field order", str(error))
-        self.assertIn("Expected `role` followed by `workflow`", str(error))
+                        "Write the reply."
+                    role: "Read this role here."
+            ''')
+            rendered = render_markdown(CompilationSession(parse_file(prompt_path)).compile_agent("Demo"))
+        self.assertEqual(rendered, "## Reply\n\nWrite the reply.\n\nRead this role here.\n")
 
     def test_reserved_authored_slot_key_points_at_slot_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

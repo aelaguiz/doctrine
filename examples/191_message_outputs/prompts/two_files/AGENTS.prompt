@@ -1,0 +1,12 @@
+# Sibling files are one flow, so a message in one reads the same from the other.
+
+agent Sender:
+    role: "You send."
+    outputs: "Outputs"
+        Note
+
+
+agent Reader:
+    role: "You read."
+    inputs: "Inputs"
+        Note

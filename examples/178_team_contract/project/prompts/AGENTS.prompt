@@ -1,0 +1,12 @@
+# A team with members writes TEAM.contract.json for a harness to read.
+
+abstract agent Role:
+    role: "You are the {{agent:title}}."
+    job: "Your job"
+        "Do the work."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[Role]: "QA"
+    member tech_lead[Role]: "technical lead"

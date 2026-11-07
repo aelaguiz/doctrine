@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from doctrine._compiler.details import validate_shared_details
 from doctrine import model
+from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
@@ -37,6 +39,11 @@ from doctrine._compiler.resolved_types import (
     ResolvedSchemaBody,
     ResolvedSectionRef,
 )
+
+
+def compile_paragraph(block, body, when_text):
+    return CompiledSection(kind="paragraph", title=block.title, body=body,
+        requirement=block.requirement, when_text=when_text, origin=block.origin, key=block.key)
 
 
 class CompileReadablesMixin:
@@ -268,7 +275,8 @@ class CompileReadablesMixin:
     ) -> CompiledSection:
         resolved = self._resolve_document_decl(decl, unit=unit)
         return CompiledSection(
-            title=resolved.title,
+            title=resolved.title, origin=resolved.origin,
+            drops=resolved.drops,
             body=self._compile_document_body(resolved, unit=unit),
             render_profile=resolved.render_profile or ResolvedRenderProfile(name="ContractMarkdown"),
         )
@@ -314,15 +322,26 @@ class CompileReadablesMixin:
         *,
         unit: IndexedUnit,
     ) -> CompiledReadableBlock:
+        if block.kind == "details":
+            validate_shared_details(block)
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=block.origin, body=self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span))
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None
-        elif block.kind in {"sequence", "bullets", "checklist"}:
+        elif block.kind in {"sequence", "bullets", "checklist", "paragraph"}:
             title = block.title
         else:
             title = block.title or _humanize_key(block.key)
+        if block.kind == "paragraph":
+            return compile_paragraph(block, self._compile_document_section_payload(
+                block.payload, unit=unit, owner_label=f"paragraph {block.key}",
+                source_span=block.source_span,
+            ), when_text)
+        if block.kind == "roster":
+            return compile_roster(self, block, unit=unit)
         if block.kind == "section":
             return CompiledSection(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=self._compile_document_section_payload(
                     block.payload,
@@ -342,6 +361,7 @@ class CompileReadablesMixin:
                 "checklist": CompiledChecklistBlock,
             }[block.kind]
             return compiled_cls(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=self._compile_readable_list_payload(
                     block.payload,
@@ -363,6 +383,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledPropertiesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=payload.entries,
                 requirement=block.requirement,
@@ -371,6 +392,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "definitions":
             return CompiledDefinitionsBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 items=self._compile_readable_definitions_payload(
                     block.payload,
@@ -384,6 +406,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "table":
             return CompiledTableBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 table=self._compile_resolved_readable_table_payload(
                     block.payload,
@@ -406,6 +429,7 @@ class CompileReadablesMixin:
                     hints=("Add a `when ...` guard expression to the guard block.",),
                 )
             return CompiledGuardBlock(
+                origin=block.origin, key=block.key,
                 title=title or _humanize_key(block.key),
                 body=self._compile_document_section_payload(
                     block.payload,
@@ -423,6 +447,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledCalloutBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 body=payload.body,
                 kind=payload.kind,
@@ -438,6 +463,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledCodeBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=payload.text,
                 language=payload.language,
@@ -453,6 +479,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledRawTextBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 text=payload.text,
                 kind=block.kind,
@@ -468,6 +495,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledFootnotesBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 entries=payload.entries,
                 requirement=block.requirement,
@@ -482,6 +510,7 @@ class CompileReadablesMixin:
                 source_span=block.source_span,
             )
             return CompiledImageBlock(
+                origin=block.origin, key=block.key,
                 title=title,
                 src=payload.src,
                 alt=payload.alt,
@@ -492,6 +521,7 @@ class CompileReadablesMixin:
             )
         if block.kind == "rule":
             return CompiledRuleBlock(
+                origin=block.origin, key=block.key,
                 requirement=block.requirement,
                 when_text=when_text,
             )

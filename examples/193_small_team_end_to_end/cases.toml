@@ -1,0 +1,46 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "one role reads each team's words"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 7 homes",
+]
+expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "You are the growth pod's QA. If your session started anywhere else, this describes that member; it does not make you one.",
+    "",
+    "## Whom you work with",
+    "",
+    "You follow the bet from the design on.",
+    "",
+    "Fuller cases, under the same headings: [_details/qa.md](../../../_details/qa.md).",
+], "pods/feature/qa/AGENTS.md" = [
+    "You are the feature pod's QA. If your session started anywhere else, this describes that member; it does not make you one.",
+    "",
+    "## Whom you work with",
+    "",
+    "You follow the feature from the design on.",
+    "",
+    "Fuller cases, under the same headings: [_details/qa.md](../../../_details/qa.md).",
+], "_details/qa.md" = [
+    "## Whom you work with",
+    "",
+    "The first test plan on this team missed a state nobody had named.",
+] }
+expected_links = { "pods/growth/qa/CLAUDE.md" = "AGENTS.md" }
+
+[[cases]]
+name = "the whole team passes check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+expected_exit = 0
+stdout_contains = [
+  "ok",
+]
