@@ -10,6 +10,20 @@ from tests.home_support import HomeProject
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_exported_file_keeps_its_project_path(self):
+        root = self.project('''from shared import Guide
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        flow = root / "prompts/shared/AGENTS.prompt"
+        flow.parent.mkdir()
+        flow.write_text('export file Guide: "Guide"\n    path: "guide.md"\n')
+        (root / "guide.md").write_text("Guide.\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        self.assertIn("[Guide](../guide.md)", (root / "t/AGENTS.md").read_text())
+
     def test_file_refs_keep_authored_paragraphs_separate(self):
         root = self.project('''file Guide: "Guide"
     path: "guide.md"
