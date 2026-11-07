@@ -1412,8 +1412,10 @@ step.
 Two additions:
 
 1. A new built-in output target, `Message`. It takes one required key, `to:`, an agent ref,
-   a team ref, or a string. A `Message` output has no `shape` or `requirement`, because a
-   message is prose written to be acted on cold, not a form. Writing one is `E660`.
+   a team ref, or a string. A `Message` output has no `shape`, `requirement`, `schema`,
+   `structure`, or `files`, because a message is prose written to be acted on cold, not a
+   form. Writing one is `E660`. A `to:` ref that isn't an agent, member, or team is `E660`
+   too. A missing `to:` is the shipped error for a missing target key.
 
 ```prompt
 output CodeReady: "Code is ready"
@@ -1450,14 +1452,20 @@ One message to the core dev pod's lead when a team's code is ready.
 ```
 
 The receiver, in its inputs section, has the line `You receive this message.` in place of
-the `Send this to ...` line. Adding a line to `carries` changes both homes.
+the `Send this to ...` line. Adding a line to `carries` changes both homes. The line stands
+where an ordinary output prints its target rows, and no target, shape, or requirement row
+prints. In `inputs:` a `Message` output is an input artifact whose declaration is the output,
+so the flow graph shows it as an input of that agent.
 
 `to:` renders as: a member's `<team title>'s <member title>`, an agent's or team's title, or
 the string as written.
 
 `W303` fires when a `Message` output's `to:` is an agent or team ref and no agent in that
 scope lists it in `inputs:`. A string `to:` has no check, which covers a note to one's next
-session. One agent may list one `Message` in both `outputs:` and `inputs:`.
+session. One agent may list one `Message` in both `outputs:` and `inputs:`. An agent ref's
+scope is that agent. A team ref's scope is its members and the members of teams under its home.
+Inherited `inputs:` count, read through `_expand_agent_patches`. `W303` runs in
+`doctrine check` with the other project warnings.
 
 `AGENT_IO_DESIGN_NOTES.md` keeps "a packet primitive" as a non-goal and gains this line:
 "`Message` is an ordinary `output`. Doctrine renders it on both sides and carries nothing
@@ -1774,7 +1782,9 @@ section, and one `_details/` file results).
 
 **`tests/test_messages.py`**: `test_both_homes_share_body`, `test_field_change_reaches_both`,
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
-`test_string_to_has_no_reader_check`, `test_same_agent_sends_and_reads`.
+`test_string_to_has_no_reader_check`, `test_same_agent_sends_and_reads`,
+`test_e660_each_field`, `test_e660_bad_to_ref`, `test_w303_inherited_input_counts`,
+`test_w303_team_scope`, `test_message_input_in_flow_graph`.
 
 **`tests/test_import.py`**: `test_lead_in_becomes_paragraph`, `test_check_passes_on_lossless`,
 `test_check_reports_first_difference`, `test_text_after_keyed_item_gets_untitled_paragraph`,
@@ -1938,7 +1948,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E652` | `Missing Markdown source` | `` `<decl>` reads `<path>`, which does not exist. `` |
 | `E653` | `Duplicate heading key` | `` `<path>` has two sibling headings with key `<key>`, at lines <a> and <b>. `` |
 | `E654` | `Import line in Markdown source` | `` `<path>` line <n> is a runtime import, and its path would break once inlined. Declare that file too and compose it. `` |
-| `E660` | `Message has no shape` | `` `Message` output `<name>` can't have `<field>`. A message is prose. `` |
+| `E660` | `Invalid message` | `` `Message` output `<name>` can't have `<field>`. A message is prose. ``; `` `to:` in `<name>` must be an agent, a team, or a string. `` |
 | `RULE006` | `Requires load` | `` - <agent> must load <target>. `` |
 | `RULE007` | `Forbids load` | Section 8.1 |
 
