@@ -8,9 +8,19 @@ from tests.home_support import HomeProject
 
 class ProjectWarningTests(HomeProject, unittest.TestCase):
     def warnings(self, root, *args):
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         result = self.cli(root, "check", "--json", *args)
         self.assertEqual(result[0], 0, result)
         return json.loads(result[1])["warnings"]
+
+    def test_whole_build_prints_project_warnings_but_selected_build_does_not(self):
+        root = self.project(example="188_project_warnings")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("W301", error)
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("W301", error)
 
     def test_w301_type_1_and_near(self):
         root = self.project(example="188_project_warnings")

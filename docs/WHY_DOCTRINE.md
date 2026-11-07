@@ -136,9 +136,8 @@ that level once, then their own file. A long case can stay in `details`,
 with one pointer from the home. It does not take always-on space.
 
 `doctrine load` shows which sources take that space, across all loaded
-levels. A budget checks that space during `doctrine check`. A launch uses
-`doctrine build`, which writes files without running rules or failing on a
-budget. A selected launch compiles its homes and shared levels. Errors in
-other homes cannot stop it. A bad budget setting prints an error while the
-files still build. Use `doctrine check` to judge the whole change.
-Examples 180 through 184 show the tree, companions, and this build/check split.
+levels. `doctrine build` checks rules and budgets before writing files.
+A selected build compiles its homes and shared levels. A semantic error in
+another home cannot stop it. A parse error in the flow stops it. Use
+`doctrine check` to check a change without writing files.
+Examples 180 through 184 show the tree, companions, and build checks.

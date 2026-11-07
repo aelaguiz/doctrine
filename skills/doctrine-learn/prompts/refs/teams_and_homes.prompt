@@ -141,7 +141,7 @@ agent PodQa[QaCraft]: "Pod QA"
 """
         "A budget takes a runtime name and a positive integer no larger than the runtime's limit. The nearest budget wins: the home, its team, outer teams, then the runtime limit."
         "Load counts externals first, then the runtime file at each folder level down to the home. Details never count. Claude counts UTF-16 units; Codex counts UTF-8 bytes."
-        "`doctrine check` fails an over-budget home unless `over` is `warn`. Build only warns, so a launch can still start. At `warn_at` of the limit, `W306` gives an early signal."
+        "`doctrine build` and `doctrine check` fail an over-budget home unless `over` is `warn`. At `warn_at` of the limit, `W306` gives an early signal."
         "Run `doctrine load` to see all team and member homes by headroom. Select one home for its file order, biggest source parts, and drop reasons. Sizes include externals and each loaded level. Details stay separate. Nested source entries never count text twice."
 
     section tree_and_tools: "Build And Inspect Homes"

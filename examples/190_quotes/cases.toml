@@ -50,6 +50,7 @@ status = "active"
 kind = "cli_contract"
 project = "project_unused"
 args = ["check"]
+setup = [["build", "."]]
 expected_exit = 0
 stderr_contains = [
   "W305",

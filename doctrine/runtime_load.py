@@ -86,6 +86,7 @@ def runtime_settings(target):
                     "size": size,
                     "kind": "external" if path.is_file() else "reserved",
                     "text": text,
+                    "on_disk": path.is_file(),
                 }
             )
         settings[runtime] = {**values, "external": external}
@@ -123,9 +124,11 @@ def loaded_levels(homes, home):
     return sorted(levels, key=lambda pair: len(PurePosixPath(pair[0]).parts))
 
 
-def home_loads(target, homes, files, settings):
+def home_loads(target, homes, files, settings, selected):
     loads = []
     for home, data in homes.items():
+        if home not in selected:
+            continue
         levels = loaded_levels(homes, home)
         budgets = []
         declarations = [
@@ -154,10 +157,13 @@ def home_loads(target, homes, files, settings):
             for level, item in levels:
                 path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
                 if path in files:
+                    on_disk = (target.output_dir / path).is_file()
                     content = files[path]
                     if isinstance(content, Path):
-                        path = str(PurePosixPath(level) / str(content))
-                        content = files[path]
+                        target_path = str(PurePosixPath(level) / str(content))
+                        content = files[target_path]
+                        if on_disk:
+                            path = target_path
                     for entry in item["map"].entries:
                         if entry.always_on:
                             size = entry.size_utf16 if runtime == "claude" else entry.size_bytes
@@ -169,6 +175,7 @@ def home_loads(target, homes, files, settings):
                             "size": text_size(text, runtime),
                             "kind": "home",
                             "text": text,
+                            "on_disk": on_disk,
                         }
                     )
             limit = next(
@@ -289,7 +296,8 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "" if file["kind"] == "home" else file["kind"],
+                    "missing" if not file["on_disk"]
+                    else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]
             ]

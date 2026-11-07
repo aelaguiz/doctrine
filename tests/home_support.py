@@ -58,4 +58,4 @@ class HomeProject:
             parse_file(target.entrypoint), project_config=target.project_config
         )
         homes, files, _, _ = compile_homes(target, session=session)
-        return home_loads(target, homes, files, runtime_settings(target))
+        return home_loads(target, homes, files, runtime_settings(target), homes)

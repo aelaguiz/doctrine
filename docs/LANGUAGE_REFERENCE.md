@@ -261,7 +261,8 @@ sibling `SOUL.prompt` files, and emitted documents cannot hold details (`E620`).
 `budget:` takes runtime names and positive integers. The nearest setting
 wins: the home, its team, outer teams by folder, then the runtime limit.
 A budget cannot exceed that runtime limit. These errors are `E631`.
-`doctrine check` judges the load. `doctrine build` only warns on budgets.
+`doctrine build` and `doctrine check` fail an over-budget home unless
+the runtime sets `over = "warn"`.
 See [the emit guide](EMIT_GUIDE.md#build-a-team-home-tree) and examples
 181 through 184.
 
@@ -2261,9 +2262,10 @@ workflow law, and review semantics.
 
 Doctrine ships a declarative `rule` primitive that a project uses to lint its
 own agent graph. A `rule` lives at the top of a prompt file. Inheritance
-and slot assertions run at compile. Load assertions run in `doctrine check`
-and `emit_docs` for the homes it compiles. `doctrine build` runs no rules. If the rule matches a concrete agent and the agent violates an
-assertion, the compiler raises a `RULE###` diagnostic (see
+and slot assertions run at compile. Load assertions run in `doctrine build`,
+`doctrine check`, and `emit_docs` for the homes they compile. If the rule
+matches a concrete agent and the agent violates an assertion, the compiler
+raises a `RULE###` diagnostic (see
 [`COMPILER_ERRORS.md`](./COMPILER_ERRORS.md)).
 
 The shape is:

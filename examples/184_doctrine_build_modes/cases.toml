@@ -2,23 +2,20 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
-name = "a selected home writes only its own folder and warns on a stale level"
+name = "a selected build fails on a stale parent"
 status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["build", "pods/growth/qa"]
-expected_exit = 0
+expected_exit = 1
 setup = [["build", "."]]
 edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text changed.\"\n    member qa: \"QA\"\n        role: \"QA text changed.\"\n    member analyst: \"analyst\"\n        role: \"Analyst text.\"\n" }
-stdout_contains = [
-  "built 1 home, 1 file changed",
-]
 stderr_contains = [
-  "W307",
+  "E635",
   "pods/growth/AGENTS.md",
 ]
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
-    "QA text changed.",
+    "QA text.",
 ], "pods/growth/AGENTS.md" = [
     "Team text.",
 ] }
@@ -28,11 +25,11 @@ name = "check mode reports stale files and writes nothing"
 status = "active"
 kind = "cli_contract"
 project = "project"
-args = ["build", ".", "--check"]
+args = ["check", "."]
 expected_exit = 1
 setup = [["build", "."]]
 edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text changed.\"\n    member qa: \"QA\"\n        role: \"QA text changed.\"\n    member analyst: \"analyst\"\n        role: \"Analyst text.\"\n" }
-stdout_contains = [
+stderr_contains = [
   "stale pods/growth/AGENTS.md",
   "stale pods/growth/qa/AGENTS.md",
 ]
@@ -45,7 +42,7 @@ name = "check mode is clean on a fresh tree"
 status = "active"
 kind = "cli_contract"
 project = "project"
-args = ["build", ".", "--check"]
+args = ["check", "."]
 expected_exit = 0
 setup = [["build", "."]]
 
@@ -68,11 +65,11 @@ name = "check mode labels a hand edit"
 status = "active"
 kind = "cli_contract"
 project = "project"
-args = ["build", ".", "--check"]
+args = ["check", "."]
 expected_exit = 1
 setup = [["build", "."]]
 edit = { "pods/growth/qa/AGENTS.md" = "<!-- doctrine sha256=000000000000 source=prompts/AGENTS.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\nA hand edit.\n" }
-stdout_contains = [
+stderr_contains = [
   "edited pods/growth/qa/AGENTS.md",
 ]
 
@@ -105,11 +102,11 @@ name = "check mode names a file no home writes any more"
 status = "active"
 kind = "cli_contract"
 project = "project"
-args = ["build", ".", "--check"]
+args = ["check", "."]
 expected_exit = 1
 setup = [["build", "."]]
 edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text.\"\n    member qa: \"QA\"\n        role: \"QA text.\"\n" }
-stdout_contains = [
+stderr_contains = [
   "obsolete pods/growth/analyst/AGENTS.md",
   "obsolete pods/growth/analyst/CLAUDE.md",
 ]
@@ -157,3 +154,32 @@ edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home
 expected_file_lines = { "pods/growth/analyst/AGENTS.md" = [
     "Analyst text.",
 ] }
+
+[[cases]]
+name = "a selected build needs its parent on a clean tree"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "GrowthPod.qa"]
+expected_exit = 1
+stderr_contains = ["E635", "`pods/growth/qa` loads `pods/growth/AGENTS.md`, which is missing."]
+absent_files = ["pods/growth/qa/AGENTS.md"]
+
+[[cases]]
+name = "a selected build works after a whole build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "GrowthPod.qa"]
+expected_exit = 0
+setup = [["build", "."]]
+
+[[cases]]
+name = "a selected build needs its shared companion"
+status = "active"
+kind = "cli_contract"
+project = "project_companion"
+args = ["build", "T.qa"]
+expected_exit = 1
+stderr_contains = ["E635", "`t/qa` links to `_details/r.md`, which is missing."]
+absent_files = ["t/qa/AGENTS.md"]

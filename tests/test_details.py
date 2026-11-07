@@ -148,6 +148,24 @@ team T: "Team"
             text[HEADER.match(text).end() :], "## Work\n\n### Step\n\n#### Old case\n\nLong case.\n"
         )
 
+    def test_selected_build_needs_a_loaded_level_companion(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    work: "Work"
+        details:
+            "Long case."
+    member qa: "QA"
+        role: "Test."
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "t/DETAILS.md").unlink()
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("`t/qa` links to `t/DETAILS.md`, which is missing.", error)
+        code, _, error = self.cli(root, "check", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("missing t/DETAILS.md", error)
+
     def test_repeat_headings_get_suffix_anchors(self):
         root = self.project("""team T: "Team"
     home: "t"
@@ -254,8 +272,8 @@ team T: "Team"
         drop first: "QA owns this case."
 """)
         code, _, error = self.cli(root, "build", "T.qa")
-        self.assertEqual(code, 0, error)
-        self.assertNotIn("W307 stale level: _details/", error)
+        self.assertEqual(code, 1, error)
+        self.assertIn("E635", error)
         companion = root / "_details/r.md"
         self.assertFalse(companion.exists())
         self.assertEqual(self.cli(root, "build", ".")[0], 0)

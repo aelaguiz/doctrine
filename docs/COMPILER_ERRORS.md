@@ -314,8 +314,8 @@ Stability rules:
 
 The `RULE###` band covers diagnostics raised by the declarative `rule` primitive
 described in [`LANGUAGE_REFERENCE.md`](./LANGUAGE_REFERENCE.md). Rule checks run
-at compile for inheritance and slots, and in `check` and `emit_docs` for
-load assertions. `build` runs no rules. They use the `E###` error envelope.
+at compile for inheritance and slots, and in `build`, `check`, and `emit_docs`
+for load assertions. They use the `E###` error envelope.
 
 | Code | Summary | Notes |
 | --- | --- | --- |
@@ -369,5 +369,6 @@ shows the canonical formatted shape for one shipped compile error.
 | `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
 | `E633` | External file missing | A listed external is absent and has no reserve. |
 | `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
+| `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |
 | `E640` | No home matches | A selector matches no home path or agent name. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |

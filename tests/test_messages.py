@@ -39,6 +39,7 @@ class MessageTests(HomeProject, unittest.TestCase):
 
     def warnings(self, source):
         root = self.project(source)
+        self.assertEqual(self.cli(root, "build", "--target", "homes")[0], 0)
         code, output, error = self.cli(root, "check", "--json", "--target", "homes")
         self.assertEqual(code, 0, error)
         return [row["text"] for row in json.loads(output)["warnings"] if row["code"] == "W303"]
@@ -304,10 +305,12 @@ team Inner: "Inner"
         inputs: "Inputs"
             Note
 ''')
+        self.assertEqual(self.cli(root, "build", ".", "--target", "homes")[0], 0)
         code, output, error = self.cli(root, "check", "--json", "--target", "homes")
         self.assertEqual(code, 0, error)
         self.assertFalse([row for row in json.loads(output)["warnings"] if row["code"] == "W303"])
         lib.write_text(lib.read_text().replace('        inputs: "Inputs"\n            Note\n', ''))
+        self.assertEqual(self.cli(root, "build", ".", "--target", "homes")[0], 0)
         code, output, error = self.cli(root, "check", "--json", "--target", "homes")
         self.assertEqual(code, 0, error)
         self.assertEqual(len([row for row in json.loads(output)["warnings"] if row["code"] == "W303"]), 1)

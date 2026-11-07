@@ -31,7 +31,7 @@ expected_stdout_lines = [
   "pods/growth/small on claude: 342 of 1,000 characters, 658 left",
   "",
   "Files:",
-  "  not-here.md                  100  reserved",
+  "  not-here.md                  100  missing",
   "  pods/growth/AGENTS.md        123",
   "  pods/growth/small/AGENTS.md  119",
   "",
@@ -134,6 +134,7 @@ kind = "cli_contract"
 project = "project_warn"
 args = ["check"]
 expected_exit = 0
+setup = [["build", "."]]
 stderr_contains = [
   "W306 over budget: pods/growth/big loads 1,035 of 1,000 on claude.",
   "W306 over budget: pods/growth/big loads 935 of 800 on codex.",

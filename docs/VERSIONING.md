@@ -30,7 +30,7 @@ The release version for this major language move is 6.0.0.
 5. `Message` is now a built-in output target, like `File`. Rename any
    project's own `output target Message` and update its references.
 
-Load rules run in `doctrine check` and `emit_docs`. Builds run no rules.
+Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.
 In diff JSON, each changed declaration's `homes` list holds a `home`, its total
@@ -92,7 +92,9 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
-- A selected build now fails if a loaded parent fails to compile.
+- The unified build gate is `breaking`: replace `doctrine build --check` with
+  `doctrine check`. Builds now fail on rule and budget errors. A selected build
+  needs a whole build first, with current loaded levels and linked files.
 - Refreshing a first-party emitted skill bundle while keeping its stable code
   catalog, install layout, and machine-readable proof shape unchanged is still
   a patch-level public fix.

@@ -84,6 +84,8 @@ def diagnostic_to_dict(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) 
 def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -> str:
     diagnostic = _coerce_diagnostic(error_or_diagnostic)
     lines = [f"{diagnostic.code} {diagnostic.stage} error: {diagnostic.summary}"]
+    if diagnostic.code == "E635":
+        return f"{lines[0]}\n- {diagnostic.detail}\nHint: {diagnostic.hints[0]}"
 
     if diagnostic.location is not None:
         lines.extend(["", "Location:", f"- {_format_location(diagnostic.location)}"])

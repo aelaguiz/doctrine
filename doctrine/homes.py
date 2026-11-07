@@ -24,7 +24,7 @@ from doctrine.emit_docs import (
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown
-from doctrine.runtime_load import home_budgets
+from doctrine.runtime_load import home_budgets, loaded_levels
 
 
 HEADER = re.compile(
@@ -202,6 +202,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     homes = {home: data for home, data in homes.items() if home in needed}
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
+        session.evaluate_rules = evaluate_rules and home in selected
         data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
@@ -254,7 +255,10 @@ def file_state(path, fresh):
         return "missing"
     content = path.read_bytes()
     if path.suffix == ".md":
-        text = content.decode()
+        try:
+            text = content.decode()
+        except UnicodeDecodeError:
+            return "edited"
         match = HEADER.match(text)
         if (
             match is None
@@ -326,33 +330,54 @@ def hand_edit_detail(root, name, files, homes):
     return detail
 
 
-def stale_levels(root, selected, files):
-    stale = []
-    for home in selected:
-        for level in PurePosixPath(home).parents:
-            if str(level) in selected:
+def stale_levels(root, homes, files, selected):
+    for home in sorted(selected):
+        levels = loaded_levels(homes, home)
+        for level, data in levels:
+            if level in selected:
                 continue
             for filename in ("AGENTS.md", "CLAUDE.md"):
-                path = str(level / filename)
-                if (root / path).is_file() and not (root / path).read_bytes().startswith(
-                    b"<!-- doctrine sha256="
-                ):
-                    continue
-                if (
-                    path in files
-                    and file_state(root / path, files[path]) != "unchanged"
-                    or path not in files
-                    and (root / path).exists()
-                ):
-                    stale.append(path)
-    return sorted(set(stale))
+                path = str(PurePosixPath(level) / filename)
+                disk = root / path
+                if path not in files:
+                    if not disk.is_file() or not disk.read_bytes().startswith(b"<!-- doctrine sha256="):
+                        continue
+                    state = "stale"
+                else:
+                    state = file_state(disk, files[path])
+                if state != "unchanged":
+                    detail = "missing" if state == "missing" else "out of date"
+                    raise compile_error(
+                        code="E635", summary="Home needs a full build",
+                        detail=f"`{home}` loads `{path}`, which is {detail}.",
+                        hints=("Run `doctrine build .`, then build this home.",),
+                    )
+        for path in dict.fromkeys(path for _, data in levels for path in data["pointers"]):
+            if not (root / path).is_file():
+                raise compile_error(
+                    code="E635", summary="Home needs a full build",
+                    detail=f"`{home}` links to `{path}`, which is missing.",
+                    hints=("Run `doctrine build .`, then build this home.",),
+                )
 
 
 def build_homes(
-    target, homes, files, *, selected, whole, output_dir=None, check=False, force=False
+    target, homes, files, *, selected, whole, output_dir=None, read_only=False, force=False
 ):
     root = output_dir or target.output_dir
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
+    if read_only and not whole:
+        wanted.update(path for home in selected for level, data in loaded_levels(homes, home)
+                      if level not in selected for path in data["files"]
+                      if PurePosixPath(path).name in ("AGENTS.md", "CLAUDE.md"))
+        for home in selected:
+            for level, _ in loaded_levels(homes, home):
+                if level not in selected:
+                    for filename in ("AGENTS.md", "CLAUDE.md"):
+                        path = str(PurePosixPath(level) / filename)
+                        disk = root / path
+                        if path not in files and disk.is_file() and disk.read_bytes().startswith(b"<!-- doctrine sha256="):
+                            wanted.add(path)
     obsolete = set()
     record = root / "HOMES.contract.json"
     if whole:
@@ -369,7 +394,9 @@ def build_homes(
         }
         wanted.add("HOMES.contract.json")
     states = {name: file_state(root / name, files.get(name)) for name in sorted(wanted | obsolete)}
-    if not check and not force:
+    if not whole and not read_only:
+        stale_levels(root, homes, files, selected)
+    if not read_only and not force:
         for name, state in states.items():
             if state == "edited":
                 raise compile_error(
@@ -383,16 +410,20 @@ def build_homes(
         "written": [],
         "unchanged": [],
         "removed": [],
-        "stale_levels": [] if whole else stale_levels(root, selected, files),
     }
-    if check:
+    if read_only:
         result["paths"] = [
             {"path": name, "state": "obsolete" if name in obsolete else state}
             for name, state in states.items()
             if name in obsolete or state != "unchanged"
         ]
+        if not whole:
+            pointers = {path for home in selected for _, data in loaded_levels(homes, home)
+                        for path in data["pointers"]}
+            result["paths"].extend({"path": path, "state": "missing"} for path in sorted(pointers)
+                                   if path not in wanted and not (root / path).is_file())
     for name, state in states.items():
-        if check:
+        if read_only:
             continue
         if name in obsolete:
             if (root / name).exists() or (root / name).is_symlink():

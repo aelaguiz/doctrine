@@ -521,6 +521,7 @@ team T: "Team"
         unused: "No reader."
 ''')
         self.git_project(root)
+        self.assertEqual(self.cli(app, "build", ".")[0], 0)
         code, _, error = self.cli(app, "check")
         self.assertEqual(code, 0, error)
         self.assertIn("../shared/prompts/shared.prompt:5", error)
@@ -655,7 +656,7 @@ rule R: "Rule"
                 code, _, error = self.cli(root, "check")
                 self.assertEqual(code, 1, error)
                 self.assertIn("RULE001", error)
-                self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
+                self.assertEqual(self.cli(root, "build", "T.qa")[0], 1)
 
     def test_shipped_assertions_skip_teams(self):
         for scope in ('home: "**"', 'file_tree: "**"'):
@@ -667,7 +668,9 @@ rule R: "Rule"
         requires inherit Craft
     message: "Inherit the shared role."
 '''
-                result = self.cli(self.project(source), "check")
+                root = self.project(source)
+                self.assertEqual(self.cli(root, "build", ".")[0], 0)
+                result = self.cli(root, "check")
                 self.assertEqual(result[0], 0, result)
 
     def test_forbids_load_sees_any_depth(self):
@@ -712,6 +715,7 @@ agent Worker[T.qa]:
     inherit *
 '''
         root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         result = self.cli(root, "check", "--target", "homes")
         self.assertEqual(result[0], 0, result)
         result = json.loads(self.compare(

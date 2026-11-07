@@ -36,7 +36,7 @@ def compile_side(args):
         return {
             "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
             "owners": declaration_owners(context, declarations, base),
-            "loads": home_loads(target, homes, files, runtime_settings(target)),
+            "loads": home_loads(target, homes, files, runtime_settings(target), homes),
             "hashes": {
                 name: source_hash(declaration, base)
                 for name, (_, declaration) in declarations.items()

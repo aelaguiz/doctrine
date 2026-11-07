@@ -10,9 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `doctrine build` checks rules, budgets, and hand edits before writing. A
+  selected build requires current loaded levels and linked files.
+- `doctrine check` reports files that are not current. It accepts selectors and
+  replaces `doctrine build --check`.
+- `doctrine load` marks missing runtime files and reports `on_disk` in JSON.
 - Builds fail for over-budget homes, invalid budgets or runtime settings, and
   missing external files.
-
 - A selected build stops when a loaded parent fails to compile.
 
 - `W302` compares rendered text, so different words from a shared declaration

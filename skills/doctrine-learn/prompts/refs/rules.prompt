@@ -6,8 +6,8 @@ many concrete agents and you want the compiler (not a reviewer turn, not a
 harness check) to enforce it.
 
 Rules live beside agents at the top of a prompt file. Inheritance and slot
-assertions run at compile. Load assertions run in `doctrine check` and
-`emit_docs` for the homes it compiles. `doctrine build` runs no rules.
+assertions run at compile. Load assertions run in `doctrine build`,
+`doctrine check`, and `emit_docs` for the homes they compile.
 
 Read the source of truth in this order before you ship code:"""
 

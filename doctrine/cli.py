@@ -20,11 +20,10 @@ def main(argv=None):
         if verb != "where":
             command.add_argument("--rev")
             command.add_argument("--with", dest="overlays", action="append", default=[])
-        if verb not in {"check", "where"}:
+        if verb != "where":
             command.add_argument("selectors", nargs="*")
         if verb == "build":
             command.add_argument("--out")
-            command.add_argument("--check", action="store_true")
             command.add_argument("--force", action="store_true")
         elif verb == "check":
             command.add_argument("--strict", action="store_true")

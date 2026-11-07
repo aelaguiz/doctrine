@@ -83,7 +83,7 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         for process in processes:
             stdout, stderr = process.communicate(timeout=60)
             self.assertEqual(process.returncode, 0, (stdout, stderr))
-        self.assertEqual(self.cli(root, "build", ".", "--check")[0], 0)
+        self.assertEqual(self.cli(root, "check", ".")[0], 0)
 
     def test_write_skipped_when_bytes_match(self):
         root = self.project()
@@ -129,7 +129,7 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
                 if path.name == "HOMES.contract.json"
                 else "{}\n"
             )
-        self.assertEqual(self.cli(root, "build", ".", "--check")[0], 1)
+        self.assertEqual(self.cli(root, "check", ".")[0], 1)
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.assertEqual(
             json.loads((root / "HOMES.contract.json").read_text())["format_version"], 1
@@ -193,9 +193,9 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         obsolete = root / "gone/AGENTS.md"
         obsolete.parent.mkdir()
         obsolete.write_text("Old file.\n")
-        code, output, error = self.cli(root, "build", ".", "--check")
+        code, output, error = self.cli(root, "check", ".")
         self.assertEqual(code, 1, error)
-        self.assertIn("stale HOMES.contract.json", output)
+        self.assertIn("stale HOMES.contract.json", error)
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.assertEqual(json.loads(record.read_text())["files"], paths)
         self.assertEqual(obsolete.read_text(), "Old file.\n")
@@ -227,4 +227,4 @@ team T: "Team"
         for name in ('team/a1/schemas/result.schema.json', 'team/a1/final_output.contract.json'):
             self.assertTrue((root / name).is_file())
             self.assertIn(name, json.loads((root / 'HOMES.contract.json').read_text())['files'])
-        self.assertEqual(self.cli(root, 'build', '--check')[0], 0)
+        self.assertEqual(self.cli(root, 'check')[0], 0)
