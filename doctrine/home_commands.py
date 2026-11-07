@@ -139,10 +139,13 @@ def check(args):
             validate_load_rules(CompilationContext(session), homes)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)
-            warnings = project_warnings(session, homes, loads)
+            warnings = project_warnings(session, homes, loads) + [
+                {"code": finding.split()[0], "text": finding}
+                for finding in findings if finding.startswith("W")
+            ]
             disabled = (target.project_config.raw_check or {}).get("disable", [])
-            findings = [finding for finding in findings
-                        if not finding.startswith("W") or finding.split()[0] not in disabled]
+            warnings = [warning for warning in warnings if warning["code"] not in disabled]
+            findings = [finding for finding in findings if not finding.startswith("W")]
             ok = not failed and not (args.strict and (findings or warnings))
     except DoctrineError as exc:
         if not args.json:
@@ -158,13 +161,8 @@ def check(args):
                     "errors": [
                         {"code": finding.split()[0], "text": finding}
                         for finding in findings
-                        if not finding.startswith("W")
                     ],
-                    "warnings": warnings + [
-                        {"code": finding.split()[0], "text": finding}
-                        for finding in findings
-                        if finding.startswith("W")
-                    ],
+                    "warnings": warnings,
                 }
             )
         )

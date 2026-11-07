@@ -154,7 +154,7 @@ def home_entries(compiled):
     def visit(item, path, depth, profile, always_on, entry, origin):
         origin = item.origin or origin
         if origin and origin.wildcard:
-            wildcard_keys.add(path[:2])
+            wildcard_keys.add(path)
         position = len(entries)
         details = isinstance(item, CompiledSection) and item.kind == "details"
         if details and always_on:
@@ -175,7 +175,7 @@ def home_entries(compiled):
                         depth + 1,
                         profile,
                         always_on,
-                        bool(child.key) and len(path) < 2,
+                        bool(child.key),
                         origin,
                     )
                     if result is not None:
@@ -192,7 +192,7 @@ def home_entries(compiled):
                 title = None if isinstance(item, CompiledRuleBlock) else item.title
             if text:
                 entry = MapEntry(
-                    path[:2], title, origin.declaration, origin.path, origin.site, always_on,
+                    path, title, origin.declaration, origin.path, origin.site, always_on,
                     hashlib.sha256(text.encode()).hexdigest(),
                     len(text.encode("utf-16-le")) // 2, len(text.encode()),
                 )

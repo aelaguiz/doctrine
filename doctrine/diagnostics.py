@@ -118,7 +118,11 @@ def format_diagnostic(error_or_diagnostic: DoctrineError | DoctrineDiagnostic) -
 
     if diagnostic.detail:
         lines.extend(["", "Detail:"])
-        lines.extend(_format_block(diagnostic.detail))
+        if diagnostic.code == "RULE007":
+            details = diagnostic.detail.splitlines()
+            lines.extend([f"- {details[0]}", *details[1:]])
+        else:
+            lines.extend(_format_block(diagnostic.detail))
 
     if diagnostic.trace:
         lines.extend(["", "Trace:"])

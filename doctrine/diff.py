@@ -5,6 +5,7 @@ import json
 import shutil
 import sys
 from contextlib import nullcontext
+from os.path import relpath
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -15,7 +16,7 @@ from doctrine._compiler.source_graph import build_home_deps, source_hash
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
-from doctrine.homes import compile_homes, select_homes
+from doctrine.homes import compile_homes, home_selectors, select_homes
 from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, text_size
 
 
@@ -43,7 +44,10 @@ def compare_homes(before, after, selectors):
     selected = select_homes(
         [(home, data["owner"], data["unit"], None)
          for home, data in {**old_homes, **new_homes}.items()],
-        selectors,
+        home_selectors(
+            [data["owner"] for data in {**old_homes, **new_homes}.values()
+             if isinstance(data["owner"], model.Team)], selectors
+        ),
     )
     outputs = sorted(
         path for path in old_files.keys() | new_files.keys()
@@ -53,14 +57,18 @@ def compare_homes(before, after, selectors):
         outputs.append("HOMES.contract.json")
         outputs.sort()
     changed_levels = {
-        home for home, data in {**old_homes, **new_homes}.items()
+        home for homes in (old_homes, new_homes) for home, data in homes.items()
         if any(path in outputs and Path(path).name in {"AGENTS.md", "CLAUDE.md"}
                for path in data["files"])
     }
     old_loads = {load["home"]: load for load in before["loads"]}
     new_loads = {load["home"]: load for load in after["loads"]}
     home_changes, new_sections, details_changes = [], {}, set()
-    for home in sorted(selected):
+    levels = {
+        level for home in selected for homes in (old_homes, new_homes)
+        for level, _ in loaded_levels(homes, home)
+    }
+    for home in sorted(levels):
         old, new = old_homes.get(home), new_homes.get(home)
         details_changed = any(
             old_files.get(path) != new_files.get(path)
@@ -107,17 +115,24 @@ def compare_homes(before, after, selectors):
                 "delta": (b.size_utf16 if b else 0) - (a.size_utf16 if a else 0),
             })
             if a is None and path in new["map"].wildcard_keys:
-                new_sections.setdefault((entry.origin, entry.origin_path), []).append(home)
-        home_changes.append({
-            "home": home,
-            "delta": {"always_on": sizes[1] - sizes[0], "details": details[1] - details[0]},
-            "entries": entries,
-        })
+                reached = {
+                    child for child in selected
+                    if child == home or (entry.always_on and any(
+                        level == home for level, _ in loaded_levels(new_homes, child)
+                    ))
+                }
+                new_sections.setdefault((entry.origin, entry.origin_path), set()).update(reached)
+        if home in selected:
+            home_changes.append({
+                "home": home,
+                "delta": {"always_on": sizes[1] - sizes[0], "details": details[1] - details[0]},
+                "entries": entries,
+            })
     return {
         "homes": home_changes, "changed_levels": changed_levels,
         "details_changes": details_changes, "selected": selected,
         "new_sections": [
-            {"origin": origin, "path": list(path), "homes": paths}
+            {"origin": origin, "path": list(path), "homes": sorted(paths)}
             for (origin, path), paths in sorted(new_sections.items())
         ],
         "outputs": outputs,
@@ -132,22 +147,24 @@ def build_result(before, after, comparison, base):
         reached = []
         for home in comparison["homes"]:
             path = home["home"]
-            levels = loaded_levels(after["homes"], path)
+            side = after if path in after["homes"] else before
+            levels = loaded_levels(side["homes"], path)
             if any(
                 name in data["map"].deps and level in comparison["changed_levels"]
                 for level, data in levels
-            ) or (path in comparison["details_changes"] and path in after["homes"]
-                  and name in after["homes"][path]["map"].deps):
+            ) or (path in comparison["details_changes"]
+                  and name in side["homes"][path]["map"].deps):
                 reached.append({"home": path, "delta": home["delta"]})
         if not reached:
             continue
-        unit, declaration, _ = after["graph"][name]
+        side = after if name in after["graph"] else before
+        unit, declaration, _ = side["graph"][name]
         kind = next(
             kind.name for kind in DECLARATION_KINDS if isinstance(declaration, kind.decl_type)
         )
         if isinstance(declaration, model.Agent) and declaration.abstract:
             kind = "abstract " + kind
-        source = unit.prompt_file.source_path.relative_to(after["base_dir"])
+        source = relpath(unit.prompt_file.source_path, side["base_dir"])
         changed.append({
             "name": name, "kind": kind, "site": f"{source}:{declaration.source_span.line}",
             "owners": [], "homes": reached,
@@ -210,6 +227,8 @@ def diff(args):
     try:
         before = compile_side(base_args)
     except DoctrineError as exc:
+        if exc.code == "E641":
+            raise
         print(
             f"Base {args.base_tree or args.base} does not compile, so nothing was compared.",
             file=sys.stderr,
@@ -231,7 +250,10 @@ def diff(args):
                 source = (Path.cwd() / path).resolve()
                 destination = root / source.relative_to(config.parent)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(source, destination)
+                if source.exists():
+                    shutil.copy2(source, destination)
+                else:
+                    destination.unlink(missing_ok=True)
             new_args.pyproject, new_args.rev = str(root / "pyproject.toml"), None
         after = compile_side(new_args)
         if after is None:

@@ -44,7 +44,8 @@ disable = ["W301"]
 
 Near-copy checks read source paragraphs, so shared text used by many homes
 is counted once. Each authored string and `from` file is split at blank lines.
-Code fences do not count. A `from` paragraph names its own file and line.
+A `from` paragraph names its own file and line. Each file is read once,
+even when several declarations read it.
 Paragraphs with fewer than 12 word tokens are skipped. Tokens ignore case and Markdown
 emphasis. Candidate pairs must share at least three 4-token shingles. A
 `SequenceMatcher` ratio of 0.85 or more is a finding, with `autojunk=False`.
@@ -54,6 +55,9 @@ Findings group by declaration pair. Text shows the first three examples and
 the total count. JSON warnings also carry every pair in `examples`, with
 `sites` and the differing `words`. A parent and child can count as copies.
 Share the text and put the words that vary in `values:`.
+
+When text reads a value key, the key counts as read in each place that sets
+it. This includes a role default that a team overrides.
 
 Double-load checks group always-on text by its source declaration and source
 path across each runtime's full load. Two slot names for one workflow still

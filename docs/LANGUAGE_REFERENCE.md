@@ -2265,10 +2265,13 @@ Assertions say what scoped agents must or must not do:
   and shows one shortest path through the source declarations.
 
 Load assertions count text that lands through any path, including composition.
-Details do not count. An unknown load target raises `RULE002`.
+Nested text counts at any depth. Details do not count. An unknown load target
+raises `RULE002`. Inheritance and slot assertions judge agents and members;
+they skip team homes.
 
 The `flow: <NameRef>` and `team: <NameRef>` scope predicates require their
-targets to resolve. An unknown target raises `RULE001`.
+targets to resolve. An unknown target raises `RULE001`. A team target must
+be concrete and in the rule's own flow, or it also raises `RULE001`.
 
 For inheritance and slot assertions, the `message:` body is shown when the rule fires. Use it
 to explain the invariant in plain English so a downstream author can read the
@@ -2287,6 +2290,9 @@ several files. JSON `outputs` lists only files whose bytes changed. Each
 changed declaration's `homes` list holds a `home` and its `delta`. New
 sections that arrive through `inherit *` get their own list. A base that
 cannot compile exits 2 and prints its error. No comparison takes place.
+A bad revision is `E641` and exits 1. A team name selects the team's home
+and the homes under it. Removed homes keep the source that changed them.
+New sections list every home whose load holds them.
 
 `doctrine where "some words"` finds the source of text in a home's load.
 Case and whitespace do not matter. A sentence at a parent level reaches

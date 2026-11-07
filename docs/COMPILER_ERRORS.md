@@ -323,7 +323,7 @@ load assertions. `build` runs no rules. They use the `E###` error envelope.
 | `RULE004` | Scoped agent violates `forbids bind` assertion | A concrete agent that matches the rule's `scope:` predicates inherits from an ancestor that the rule forbids via `forbids bind`. |
 | `RULE005` | Scoped agent fails `requires declare` assertion | A concrete agent that matches the rule's `scope:` predicates does not declare (or inherit) the slot named in `requires declare`. |
 | `RULE006` | Requires load | The scoped home's always-on load has no text from the named declaration. |
-| `RULE007` | Forbids load | The scoped home loads text from the named declaration. The detail shows one shortest source path that brought it there. |
+| `RULE007` | Forbids load | The scoped home loads text from the named declaration, at any depth. The detail shows one shortest source path that brought it there. |
 
 The closed scope set is `agent_tag`, `flow`, `role_class`, `file_tree`,
 `team`, `member`, and `home`. Assertions are `requires inherit`,

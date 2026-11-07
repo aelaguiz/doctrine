@@ -63,7 +63,10 @@ def revision_source(args):
                 if name in paths or any(parent in paths for parent in name.parents):
                     destination = scratch / name
                     destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(source, destination)
+                    if source.exists():
+                        shutil.copy2(source, destination)
+                    else:
+                        destination.unlink(missing_ok=True)
 
         extract([relative])
         project = scratch / relative
@@ -82,7 +85,7 @@ def revision_source(args):
             path = relative.parent / target["entrypoint"]
             prompt_roots.add(next(parent for parent in path.parents if parent.name == "prompts"))
         prompt_roots.update(
-            relative.parent / path
+            Path(os.path.normpath(relative.parent / path))
             for path in raw.get("compile", {}).get("additional_prompt_roots", [])
         )
         extract([*prompt_roots, relative.parent / ".codex/config.toml"])

@@ -43,7 +43,6 @@ class ValidateRulesMixin:
         for team in flow.teams_by_name.values():
             if not team.abstract:
                 owner = flow.declaration_owner_units_by_id[id(team)]
-                agents.append((owner, team))
                 agents.extend((owner, member) for member in team_members(self, team, unit=owner))
         for agent_unit, agent in agents:
             if not self._agent_matches_rule_scope(
@@ -81,7 +80,8 @@ class ValidateRulesMixin:
                     *predicate.target.module_parts, predicate.target.declaration_name
                 ))
                 match = declaration_match(self, predicate.target, rule_unit)
-                if match is None or not isinstance(match[1], model.Team):
+                if (match is None or not isinstance(match[1], model.Team) or match[1].abstract
+                        or self.session.flow_for_unit(match[0]) is not flow):
                     self._raise_rule_unknown_scope_target(
                         rule=rule, rule_unit=rule_unit, source_span=predicate.source_span,
                         target_name=target,

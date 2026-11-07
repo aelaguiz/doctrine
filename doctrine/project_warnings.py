@@ -5,18 +5,18 @@ import re
 from collections import defaultdict
 from difflib import SequenceMatcher
 from itertools import combinations
+from os.path import relpath
 
 from lark import Token
 
 from doctrine import model
-from doctrine._compiler.markdown_reader import fenced_lines
 from doctrine._compiler.source_graph import model_walk
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
 
 
 def project_warnings(session, homes, loads):
-    paragraphs, unused, units = [], {}, {}
+    paragraphs, unused, units, from_files = [], {}, {}, set()
     base = session.project_config.config_dir
     for flow in session._flow_cache.values():
         for unit in flow.units_by_path.values():
@@ -51,13 +51,11 @@ def project_warnings(session, homes, loads):
             if (isinstance(declaration, (model.Agent, model.WorkflowDecl))
                     and declaration.markdown_path):
                 source = base / declaration.markdown_path
-                name = ".".join((*unit.module_parts, declaration.name))
-                texts.append((name, source, 1, source.read_text()))
+                if source.resolve() not in from_files:
+                    from_files.add(source.resolve())
+                    name = ".".join((*unit.module_parts, declaration.name))
+                    texts.append((name, source, 1, source.read_text()))
         for name, source, line, text in texts:
-            text = "".join(
-                "\n" if inside else line
-                for line, inside in fenced_lines(text.splitlines(keepends=True))
-            )
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):
                 paragraph = re.sub(
@@ -65,7 +63,7 @@ def project_warnings(session, homes, loads):
                 )
                 tokens = re.findall(r"\w+", paragraph.casefold())
                 if len(tokens) >= 12:
-                    paragraphs.append((name, f"{source.relative_to(base)}:{line + offset}", tokens))
+                    paragraphs.append((name, f"{relpath(source, base)}:{line + offset}", tokens))
                 offset += paragraph.count("\n")
     index, candidates = defaultdict(set), defaultdict(int)
     for number, (_, _, tokens) in enumerate(paragraphs):
@@ -89,11 +87,14 @@ def project_warnings(session, homes, loads):
     warnings = []
     for (a, b), examples in groups.items():
         text = (
-            f"W301 near copy: {a} and {b} share {len(examples)} paragraphs "
+            f"W301 near copy: {a} and {b} share {len(examples)} "
+            f"{'paragraph' if len(examples) == 1 else 'paragraphs'} "
             "that differ by a few words."
         )
         for example in examples[:3]:
-            text += "\n- " + " and ".join(example["sites"]) + ": " + " / ".join(example["words"])
+            text += "\n- " + " and ".join(example["sites"])
+            if example["words"]:
+                text += ": " + " / ".join(example["words"])
         text += "\nHint: Share the paragraph and put the different words in `values:`."
         warnings.append({"code": "W301", "text": text, "examples": examples})
     for load in loads:
@@ -115,7 +116,6 @@ def project_warnings(session, homes, loads):
     for (path, line), key in unused.items():
         if (path, line) not in session.value_reads:
             warnings.append({"code": "W304", "text": (
-                f"W304 unused value: {key} at {path.relative_to(base)}:{line} is read by no home."
+                f"W304 unused value: {key} at {relpath(path, base)}:{line} is read by no home."
             )})
-    disabled = (session.project_config.raw_check or {}).get("disable", [])
-    return [warning for warning in warnings if warning["code"] not in disabled]
+    return warnings

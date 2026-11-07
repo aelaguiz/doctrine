@@ -8,7 +8,9 @@ from doctrine import model
 from doctrine._compiler.constants import _INTERPOLATION_RE, LATE_ROOT
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
 from doctrine._compiler.indexing import unit_loaded_imports, lookup_flow_registry_decl
-from doctrine._compiler.teams import find_team_member, home_value_sources
+from doctrine._compiler.teams import (
+    find_home_team, find_team_member, home_value_sources, team_members,
+)
 
 
 def model_walk(value):
@@ -16,13 +18,20 @@ def model_walk(value):
     if is_dataclass(value):
         for field in fields(value):
             if field.compare:
-                yield from model_walk(getattr(value, field.name))
+                child = getattr(value, field.name)
+                if isinstance(value, model.Team) and field.name == "fields":
+                    child = tuple(item for item in child if not isinstance(item, model.Member))
+                yield from model_walk(child)
     elif isinstance(value, (tuple, list)):
         for item in value:
             yield from model_walk(item)
 
 
 def source_hash(declaration, base):
+    if isinstance(declaration, model.Team):
+        declaration = replace(declaration, fields=tuple(
+            field for field in declaration.fields if not isinstance(field, model.Member)
+        ))
     def data(value):
         if isinstance(value, model.SourceSpan):
             return None
@@ -72,13 +81,20 @@ def dependency_graph(context, sources):
     graph = {}
 
     def visit(decl, owner):
-        name = ".".join((*owner.module_parts, decl.name))
+        name_unit = decl.team_unit if isinstance(decl, model.Member) else owner
+        name = ".".join((*name_unit.module_parts, decl.name))
         if name in graph:
             return name
         dependencies = set()
         graph[name] = (owner, decl, dependencies)
         for value in model_walk(decl):
             refs = []
+            if isinstance(value, model.ReadableBlock) and value.kind == "roster":
+                team_unit, team = find_home_team(context, sources[0][0], unit=sources[0][1])
+                dependencies.update(
+                    visit(member, member.scope_unit or team_unit)
+                    for member in team_members(context, team, unit=team_unit)
+                )
             if isinstance(value, model.NameRef):
                 refs.append(value)
             elif isinstance(value, str):

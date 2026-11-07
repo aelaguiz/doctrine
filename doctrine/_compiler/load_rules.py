@@ -27,7 +27,8 @@ def validate_load_rules(context, homes):
                         )),
                     )
                 unit, declaration = match
-                target = ".".join((*unit.module_parts, declaration.name))
+                name_unit = declaration.team_unit if isinstance(declaration, model.Member) else unit
+                target = ".".join((*name_unit.module_parts, declaration.name))
                 for home, data in homes.items():
                     if context.session.flow_for_unit(data["unit"]) is not flow:
                         continue

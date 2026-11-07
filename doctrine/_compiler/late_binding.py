@@ -118,10 +118,14 @@ def bind_home(context, compiled, agent, *, unit):
                 detail=f"Values read each other: `{cycle}`",
                 path=readings[0][0] if readings else unit.prompt_file.source_path,
                 source_span=model.SourceSpan(readings[0][1], 1) if readings else agent.source_span)
-        for environment in agent_values if root == "agent" else team_values:
+        environments = agent_values if root == "agent" else team_values
+        for environment in environments:
+            if key in environment:
+                _, source, span = environment[key]
+                context.session.value_reads.add((source.prompt_file.source_path, span.line))
+        for environment in environments:
             if key in environment:
                 text, source, span = environment[key]
-                context.session.value_reads.add((source.prompt_file.source_path, span.line))
                 text = context._interpolate_authored_prose_string(
                     text, unit=source,
                     owner_label=f"value {key}", surface_label="value text")

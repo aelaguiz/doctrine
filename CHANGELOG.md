@@ -17,12 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   tree. It lists changed files, details sizes, reach, and new wildcard sections.
   JSON lists each reached home's size change. A base that cannot compile
   exits 2. Source hashes include Markdown `from` files and ignore source line moves.
+  Team names select their member homes too. Removed homes keep their causes,
+  and a member edit counts once. New sections list every home that loads them.
 - `where` finds the source and home reach of a sentence, ignoring case and
   whitespace. Text and JSON name the source section and the homes it reaches.
 - Project checks warn on near copies (`W301`), double loads (`W302`), and
   unused values (`W304`). Projects can disable warning codes. JSON near-copy
-  findings include every example pair. Near-copy checks read `from` files too
-  and skip code fences.
+  findings include every example pair. Near-copy checks read each `from` file
+  once. Read value keys count in both defaults and overrides.
 - The agent linter can review changed declarations against a reached home.
   Its three new findings cover repeated lessons, added rules beside a
   judgment, and changes that contradict a parent.

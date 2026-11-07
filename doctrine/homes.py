@@ -116,17 +116,13 @@ def companion_files(homes, companions):
     return files
 
 
+def home_selectors(teams, selectors):
+    homes = {team.name: team.home for team in teams if not team.abstract}
+    return tuple(homes.get(selector, selector) for selector in selectors)
+
+
 def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
-    selectors = tuple(
-        next(
-            (
-                team.home for team in session.root_flow.teams_by_name.values()
-                if not team.abstract and team.name == selector
-            ),
-            selector,
-        )
-        for selector in selectors
-    )
+    selectors = home_selectors(session.root_flow.teams_by_name.values(), selectors)
     whole = not selectors or "." in selectors
     session.evaluate_rules = evaluate_rules
     context = CompilationContext(session)

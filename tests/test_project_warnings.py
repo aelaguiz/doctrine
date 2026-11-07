@@ -25,6 +25,13 @@ class ProjectWarningTests(HomeProject, unittest.TestCase):
         self.assertEqual(len(warnings), 3)
         self.assertTrue(any(not item["examples"][0]["words"] for item in warnings))
         self.assertTrue(any("opportunity" in item["examples"][0]["words"] for item in warnings))
+        for warning in warnings:
+            self.assertIn("share 1 paragraph that", warning["text"])
+            if not warning["examples"][0]["words"]:
+                self.assertEqual(
+                    warning["text"].splitlines()[1],
+                    "- " + " and ".join(warning["examples"][0]["sites"]),
+                )
 
     def test_w301_short_paragraph_skipped(self):
         root = self.project('''team T: "Team"
@@ -45,16 +52,45 @@ team T: "Team"
 ''')
         paragraph = "Read every change with care and test each part that a user will meet today."
         (root / "first.md").write_text(
-            f"# Role\n\n{paragraph}\n\n~~~text\n{paragraph}\n```\n\n{paragraph}\n~~~\n"
+            f"# Role\n\n{paragraph}\n\n~~~text\n\n{paragraph}\n\n~~~\n"
         )
         (root / "second.md").write_text(
-            f"# Work\n\n{paragraph.replace('user', 'reader')}\n\n```text\n{paragraph}\n```\n"
+            f"# Work\n\n{paragraph.replace('user', 'reader')}\n\n```text\n\n{paragraph}\n\n```\n"
         )
         warning, = self.warnings(root)
         self.assertEqual(warning["code"], "W301")
         self.assertEqual(warning["examples"], [
-            {"sites": ["first.md:3", "second.md:3"], "words": ["user", "reader"]}
+            {"sites": ["first.md:3", "second.md:3"], "words": ["user", "reader"]},
+            {"sites": ["first.md:3", "second.md:7"], "words": []},
+            {"sites": ["first.md:7", "second.md:3"], "words": ["user", "reader"]},
+            {"sites": ["first.md:7", "second.md:7"], "words": []},
         ])
+
+    def test_w301_reads_each_from_file_once(self):
+        root = self.project('''abstract agent A from "shared.md"
+workflow B from "./shared.md"
+team T: "Team"
+    home: "pod"
+    member qa[A]: "QA"
+        work: B
+''')
+        (root / "shared.md").write_text(
+            "Read every change with care and test each part that a user will meet today.\n"
+        )
+        self.assertEqual(self.warnings(root), [])
+
+    def test_w304_default_counts_as_read(self):
+        root = self.project('''abstract agent Role:
+    role: "Read {{agent:word}}."
+    values:
+        word: "Default."
+team T: "Team"
+    home: "pod"
+    values:
+        word: "Team word."
+    member qa[Role]: "QA"
+''')
+        self.assertEqual(self.warnings(root), [])
 
     def test_w301_shared_section_not_a_copy(self):
         root = self.project('''workflow Shared: "Shared"
@@ -127,6 +163,11 @@ team T: "Team"
 
     def test_check_disable_list(self):
         root = self.project(example="188_project_warnings", fixture="project_disabled")
+        self.assertEqual(self.warnings(root, "--strict"), [])
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('"W304"', '"W304", "W306"') + (
+            '[tool.doctrine.runtimes.codex]\nlimit = 100000\nwarn_at = 0.00001\n'
+        ))
         self.assertEqual(self.warnings(root, "--strict"), [])
 
     def test_strict_fails_on_warning(self):
