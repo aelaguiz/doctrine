@@ -1739,6 +1739,7 @@ Important rules:
   or `files`. The sender lists it in `outputs:` and the receiver can list the
   same output in `inputs:`. Both see the same body. `W303` warns when an agent
   or team named in `to:` has no reader in its scope.
+  A message crossing flows is declared in the receiver's flow, because imports run one way.
 - Custom targets can be declared with `output target`.
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.

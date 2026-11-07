@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 from doctrine import model
+from doctrine._compiler.constants import _message_target
 from doctrine._compiler.home_map import field_origin
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.naming import (
@@ -64,7 +65,6 @@ class CompileAgentMixin:
                     agent_key=agent_key,
                 )
                 for (_input_key, (input_unit, input_decl)) in sorted(agent_contract.inputs.items())
-                if isinstance(input_decl, model.InputDecl)
             )
             if spec is not None
         )
@@ -441,6 +441,11 @@ class CompileAgentMixin:
             )
         target_item = scalar_items.get("target")
         shape_item = scalar_items.get("shape")
+        if _message_target(output_decl):
+            return CompiledPreviousTurnOutputSpec(
+                output_key=output_key, output_name=output_decl.name, output_title=output_decl.title,
+                target_key="Message", target_title="Message",
+            )
         if target_item is None or shape_item is None or not isinstance(target_item.value, model.NameRef):
             return CompiledPreviousTurnOutputSpec(
                 output_key=output_key,

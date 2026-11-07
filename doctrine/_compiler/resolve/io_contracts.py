@@ -275,7 +275,7 @@ class ResolveIoContractsMixin:
             if self._ref_exists_in_registry(item.ref, unit=unit, registry_name="outputs_by_name"):
                 target_unit, decl = self._resolve_output_decl(item.ref, unit=unit)
                 if _message_target(decl):
-                    section = self._compile_output_decl(decl, unit=target_unit)
+                    section = self._compile_output_decl(decl, unit=target_unit, allow_review_semantics=True)
                     return (replace(section, body=("You receive this message.", *section.body[1:])),
                             ContractArtifact(kind="input", unit=target_unit, decl=decl,
                                              source_span=item.source_span))

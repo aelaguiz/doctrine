@@ -10,6 +10,13 @@ from doctrine._compiler.diagnostics import compile_error
 FACT_KEYS = frozenset({"key", "title", "home", "folder", "members", "others"})
 
 
+def resolve_message_recipient(context, ref, *, unit):
+    if context._ref_exists_in_registry(ref, unit=unit, registry_name="teams_by_name"):
+        return context._resolve_decl_ref(ref, unit=unit, registry_name="teams_by_name",
+                                         missing_label="team declaration")
+    return context._resolve_agent_ref(ref, unit=unit)
+
+
 def team_members(context, team, *, unit):
     expanded, _ = context._expand_agent_patches(team, unit=unit)
     return tuple(

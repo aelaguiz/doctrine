@@ -1277,7 +1277,8 @@ class ResolveOutputsMixin:
         if isinstance(item, model.RecordScalar):
             return model.RecordScalar(
                 key=item.key,
-                value=self._rebind_inherited_output_scalar_value(
+                value=replace(item.value, scope_unit=item.value.scope_unit or parent_unit)
+                if item.key == "to" and isinstance(item.value, model.NameRef) else self._rebind_inherited_output_scalar_value(
                     item.value,
                     parent_unit=parent_unit,
                     rebound_imported=rebound_imported,

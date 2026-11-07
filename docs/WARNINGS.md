@@ -33,6 +33,7 @@ with `--strict`. `doctrine build` runs none of these three checks.
 | --- | --- | --- |
 | `W301` | `near_copy` | Paragraphs in two source declarations are copies or differ by a few words. |
 | `W302` | `double_load` | The same declaration's text reaches a home from two files in its load. |
+| `W303` | `message_without_reader` | A sent message names an agent or team, but no one in its scope reads it. |
 | `W304` | `unused_value` | No home reads a `values:` key. |
 | `W305` | `unused_quote` | A named quote is cited nowhere. |
 

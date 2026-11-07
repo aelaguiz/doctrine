@@ -5,8 +5,7 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.constants import _message_target
-from doctrine._compiler.source_graph import declaration_match
-from doctrine._compiler.teams import find_home_team
+from doctrine._compiler.teams import find_home_team, resolve_message_recipient
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
@@ -264,8 +263,8 @@ class CompileOutputsMixin:
                 match = None
                 if recipient is not None and not isinstance(recipient.value, str):
                     if isinstance(recipient.value, model.NameRef):
-                        match = declaration_match(self, recipient.value, unit)
-                    if match is None or not isinstance(match[1], model.Agent):
+                        match = resolve_message_recipient(self, recipient.value, unit=unit)
+                    else:
                         raise output_compile_error(code="E660", summary="Invalid message",
                             detail=f"`to:` in `{decl.name}` must be an agent, a team, or a string.",
                             unit=unit, source_span=recipient.source_span)

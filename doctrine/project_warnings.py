@@ -12,9 +12,11 @@ from lark import Token
 
 from doctrine import model
 from doctrine._compiler.constants import _message_target
+from doctrine._compiler.indexing import lookup_flow_registry_decl
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.provenance import collect_quotes
-from doctrine._compiler.source_graph import declaration_match, model_walk
+from doctrine._compiler.source_graph import model_walk
+from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
 
@@ -134,8 +136,7 @@ def project_warnings(session, homes, loads, context, all_declarations):
 def message_warnings(context, homes):
     outputs, warnings = {}, []
     for data in homes.values():
-        if not isinstance(data["owner"], model.Team):
-            outputs.update(context._resolve_agent_contract(data["owner"], unit=data["unit"]).outputs)
+        outputs.update(context._resolve_agent_contract(data["owner"], unit=data["unit"]).outputs)
     for key, (unit, declaration) in outputs.items():
         target = _message_target(declaration)
         if not target:
@@ -143,13 +144,19 @@ def message_warnings(context, homes):
         recipient = next(item.value for item in target.body if item.key == "to")
         if not isinstance(recipient, model.NameRef):
             continue
-        recipient_unit, receiver = declaration_match(context, recipient, unit)
+        recipient_unit, receiver = resolve_message_recipient(context, recipient, unit=unit)
         if receiver.abstract:
             continue
         if isinstance(receiver, model.Team):
-            readers = (context._resolve_agent_contract(data["owner"], unit=data["unit"]).inputs
-                       for home, data in homes.items() if isinstance(data["owner"], model.Member)
-                       and PurePosixPath(receiver.home) in PurePosixPath(home).parents)
+            flow = context.session.flow_for_unit(recipient_unit)
+            teams = (team for team in flow.teams_by_name.values() if not team.abstract
+                     and (team.home == receiver.home
+                          or PurePosixPath(receiver.home) in PurePosixPath(team.home).parents))
+            readers = (context._resolve_agent_contract(member, unit=team_unit).inputs
+                       for team in teams
+                       for team_unit, _ in (lookup_flow_registry_decl(flow, registry_name="teams_by_name",
+                                                                      declaration_name=team.name),)
+                       for member in team_members(context, team, unit=team_unit))
         else:
             readers = (context._resolve_agent_contract(receiver, unit=recipient_unit).inputs,)
         if not any(key in inputs for inputs in readers):
