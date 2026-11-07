@@ -13,7 +13,6 @@ from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
-from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.teams import team_members, team_contract
 from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
@@ -22,7 +21,7 @@ from doctrine.emit_docs import (
     runtime_files,
 )
 from doctrine.diagnostics import DoctrineError
-from doctrine.parser import parse_file
+from doctrine.emit_common import entrypoint_relative_dir
 from doctrine.renderer import render_markdown
 from doctrine.runtime_load import home_budgets
 
@@ -115,54 +114,86 @@ def companion_files(homes, companions):
     return files
 
 
-def compile_homes(target, *, evaluate_rules=False, session=None, selectors=()):
-    session = session or CompilationSession(
-        parse_file(target.entrypoint),
-        project_config=target.project_config,
-        evaluate_rules=evaluate_rules,
+def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
+    selectors = tuple(
+        next(
+            (
+                team.home for team in session.root_flow.teams_by_name.values()
+                if not team.abstract and team.name == selector
+            ),
+            selector,
+        )
+        for selector in selectors
     )
+    whole = not selectors or "." in selectors
     session.evaluate_rules = evaluate_rules
     context = CompilationContext(session)
     homes, files, compiled, companions = {}, {}, {}, {}
-    owners = []
-    plans = tuple(
-        _build_runtime_emit_plan(
-            root,
-            target=target,
-            output_root=target.output_dir,
-            provider_root=session.provided_prompt_root_for(root.unit.prompt_root),
-        )
-        for root in _runtime_emit_roots_for_target(session, target=target)
-    )
-    session.emit_paths = {plan.root.agent_name: plan.markdown_path for plan in plans}
-    for plan in plans:
-        unit = plan.root.unit
-        owner = session.flow_for_unit(unit).agents_by_name[plan.root.agent_name]
-        home = plan.markdown_path.parent.relative_to(target.output_dir).as_posix()
-        owners.append((home, owner, unit, plan))
+    owners, failures = [], []
+    for root in _runtime_emit_roots_for_target(session, target=target):
+        try:
+            plan = _build_runtime_emit_plan(
+                root,
+                target=target,
+                output_root=target.output_dir,
+                provider_root=session.provided_prompt_root_for(root.unit.prompt_root),
+            )
+            unit = root.unit
+            owner = session.flow_for_unit(unit).agents_by_name[root.agent_name]
+            home = plan.markdown_path.parent.relative_to(target.output_dir).as_posix()
+            owners.append((home, owner, unit, plan))
+            session.emit_paths[root.agent_name] = plan.markdown_path
+        except DoctrineError as exc:
+            home = entrypoint_relative_dir(root.unit.prompt_file.source_path).as_posix()
+            if whole or any(
+                selector == root.agent_name or selector == home or home.startswith(selector + "/")
+                for selector in selectors
+            ):
+                raise
+            failures.append(exc)
     for team in session.root_flow.teams_by_name.values():
         if not team.abstract:
             unit = session.root_flow.declaration_owner_units_by_id[id(team)]
+            try:
+                members = team_members(context, team, unit=unit)
+            except DoctrineError as exc:
+                if whole or any(
+                    selector == team.home
+                    or selector.startswith(team.home + "/")
+                    or team.home.startswith(selector + "/")
+                    or selector.startswith(team.name + ".")
+                    for selector in selectors
+                ):
+                    raise
+                failures.append(exc)
+                continue
             owners.append((team.home, team, unit, None))
             owners.extend(
                 (str(PurePosixPath(team.home) / member.key.replace("_", "-")), member, unit, None)
-                for member in team_members(context, team, unit=unit)
+                for member in members
             )
     for home, owner, unit, plan in owners:
-        if home in homes:
-            raise compile_error(
-                code="E607",
-                summary="Two homes, one path",
-                detail=f"`{homes[home]['owner'].name}` and `{owner.name}` both land at `{home}`.",
-            )
-        homes[home] = {"owner": owner, "unit": unit, "plan": plan}
-    selected = select_homes(homes, selectors)
+        homes.setdefault(home, {"owner": owner, "unit": unit, "plan": plan})
+    try:
+        selected = select_homes(owners, selectors)
+    except DoctrineError:
+        if failures:
+            raise failures[0]
+        raise
+    for failure in failures:
+        print(failure, file=sys.stderr)
     needed = {
         home
         for home in homes
         if home in selected
         or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
     }
+    for home, owner, unit, plan in owners:
+        if home in needed and homes[home]["owner"] is not owner:
+            raise compile_error(
+                code="E607", summary="Two homes, one path",
+                detail=f"`{homes[home]['owner'].name}` and `{owner.name}` both land at `{home}`.",
+            )
     homes = {home: data for home, data in homes.items() if home in needed}
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
@@ -209,25 +240,17 @@ def compile_homes(target, *, evaluate_rules=False, session=None, selectors=()):
             files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
     files.update(companion_files(homes, companions))
-    return homes, files
+    return homes, files, selected, whole
 
 
-def select_homes(homes, selectors):
+def select_homes(owners, selectors):
     selected = set()
     for selector in selectors or ["."]:
-        selector = next(
-            (
-                home
-                for home, data in homes.items()
-                if isinstance(data["owner"], model.Team) and data["owner"].name == selector
-            ),
-            selector,
-        )
         matches = {
             home
-            for home, data in homes.items()
+            for home, owner, unit, plan in owners
             if selector == "."
-            or data["owner"].name == selector
+            or owner.name == selector
             or home == selector
             or home.startswith(selector + "/")
         }
@@ -320,20 +343,17 @@ def hand_edit_detail(root, name, files, homes):
     return detail
 
 
-def stale_levels(root, selected, homes, files):
+def stale_levels(root, selected, files):
     stale = []
     for home in selected:
-        stale.extend(
-            path
-            for path in homes[home]["pointers"]
-            if path.startswith("_details/") and file_state(root / path, files[path]) != "unchanged"
-        )
         for level in PurePosixPath(home).parents:
             if str(level) in selected:
                 continue
             for filename in ("AGENTS.md", "CLAUDE.md"):
                 path = str(level / filename)
-                if (root / path).is_file() and not HEADER.match((root / path).read_text()):
+                if (root / path).is_file() and not (root / path).read_bytes().startswith(
+                    b"<!-- doctrine sha256="
+                ):
                     continue
                 if (
                     path in files
@@ -345,19 +365,10 @@ def stale_levels(root, selected, homes, files):
     return sorted(set(stale))
 
 
-def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=False, force=False):
+def build_homes(
+    target, homes, files, *, selected, whole, output_dir=None, check=False, force=False
+):
     root = output_dir or target.output_dir
-    selected = select_homes(homes, selectors)
-    whole = (
-        not selectors
-        or "." in selectors
-        or any(
-            home == "."
-            and isinstance(data["owner"], model.Team)
-            and data["owner"].name in selectors
-            for home, data in homes.items()
-        )
-    )
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
     obsolete = set()
     record = root / "HOMES.contract.json"
@@ -389,7 +400,7 @@ def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=Fa
         "written": [],
         "unchanged": [],
         "removed": [],
-        "stale_levels": [] if whole else stale_levels(root, selected, homes, files),
+        "stale_levels": [] if whole else stale_levels(root, selected, files),
     }
     if check:
         result["paths"] = [
@@ -410,4 +421,4 @@ def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=Fa
             atomic_write(root / name, files[name])
             result["written"].append(name)
     changed = any(state != "unchanged" or name in obsolete for name, state in states.items())
-    return selected, result, changed
+    return result, changed

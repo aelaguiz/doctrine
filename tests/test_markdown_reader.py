@@ -6,6 +6,8 @@ from tests import test_late_binding
 from doctrine.diagnostics import CompileError
 from doctrine.renderer import render_markdown
 from doctrine.emit_common import load_emit_targets
+from doctrine.compiler import CompilationSession
+from doctrine.parser import parse_file
 from doctrine.homes import compile_homes, build_homes
 
 
@@ -74,7 +76,10 @@ class MarkdownReaderTests(unittest.TestCase):
         config = root.root_flow.entrypoint_path.parent.parent / "pyproject.toml"
         config.write_text(f'[[tool.doctrine.emit.targets]]\nname = "homes"\nentrypoint = "prompts/AGENTS.prompt"\noutput_dir = "{output}"\n')
         target = load_emit_targets(config)["homes"]
-        _, files = compile_homes(target)
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        _, files, _, _ = compile_homes(target, session=session)
         return files, target
 
     def test_relative_link_rebased_per_home(self):
@@ -109,9 +114,12 @@ class MarkdownReaderTests(unittest.TestCase):
 
     def test_out_dir_keeps_rebased_bytes(self):
         files, target = self.rebased('[case](cases.md)', output="build")
-        homes, files = compile_homes(target)
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        homes, files, selected, whole = compile_homes(target, session=session)
         other = target.output_dir.parent / "other"
-        build_homes(target, homes, files, output_dir=other)
+        build_homes(target, homes, files, selected=selected, whole=whole, output_dir=other)
         self.assertEqual((other / 'pods/core/qa/AGENTS.md').read_bytes(), files['pods/core/qa/AGENTS.md'])
 
     def test_no_emit_target_keeps_links_as_written(self):

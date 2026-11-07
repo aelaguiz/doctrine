@@ -513,6 +513,102 @@ agent A:
         self.assertNotIn("W307", error)
         self.assertEqual(path.read_text(), "Hand written.\n")
 
+    def test_broken_team_elsewhere_cannot_stop_build(self):
+        for problem, diagnostic in (("parent", "Missing"), ("plan", "E299"), ("collision", "E607")):
+            with self.subTest(problem=problem):
+                root = self.project()
+                source = root / "prompts/AGENTS.prompt"
+                if problem == "parent":
+                    source.write_text(source.read_text() +
+                        'team FeaturePod[Missing]: "Feature"\n    home: "pods/feature"\n')
+                    broken = "FeaturePod"
+                elif problem == "plan":
+                    source.write_text("import worker\n" + source.read_text())
+                    package = root / "prompts/worker"
+                    package.mkdir()
+                    (package / "AGENTS.prompt").write_text('export agent A:\n    role: "Work."\n')
+                    (package / "extra.prompt").write_text('workflow Extra: "Extra"\n    "Text."\n')
+                    broken = "A"
+                else:
+                    source.write_text(source.read_text() +
+                        'team First: "First"\n    home: "other"\n    role: "First."\n'
+                        'team Second: "Second"\n    home: "other"\n    role: "Second."\n')
+                    broken = "other"
+                code, _, error = self.cli(root, "build", "pods/growth/qa")
+                self.assertEqual(code, 0, error)
+                self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+                self.assertFalse((root / "pods/growth/AGENTS.md").exists())
+                selectors = [".", broken]
+                if problem == "parent":
+                    selectors.append("pods")
+                elif problem == "collision":
+                    selectors.append("Second")
+                for selector in selectors:
+                    code, _, error = self.cli(root, "build", selector)
+                    self.assertEqual(code, 1)
+                    self.assertIn(diagnostic, error)
+                    self.assertNotIn("E640", error)
+                if problem != "collision":
+                    code, _, error = self.cli(root, "build", "absent")
+                    self.assertEqual(code, 1)
+                    self.assertIn(diagnostic, error)
+                    self.assertNotIn("E640", error)
+
+    def test_malformed_settings_are_e632(self):
+        for setting, external, config in (
+            ('external = [1]', None, None),
+            ('external = [{}]', None, None),
+            ('external = [{path=1}]', None, None),
+            ('external = 1', None, None),
+            ('external = [{path="foreign.md"}]', b"\xffforeign", None),
+            ('', None, b'project_doc_max_bytes = ['),
+            ('', None, b'\xff'),
+        ):
+            with self.subTest(setting=setting, config=config):
+                root = self.project()
+                project = root / "pyproject.toml"
+                project.write_text(project.read_text() +
+                                   "\n[tool.doctrine.runtimes.codex]\n" + setting + "\n")
+                if external is not None:
+                    (root / "foreign.md").write_bytes(external)
+                if config is not None:
+                    (root / ".codex").mkdir()
+                    (root / ".codex/config.toml").write_bytes(config)
+                for verb in ("check", "load", "build"):
+                    code, output, error = self.cli(root, verb)
+                    self.assertEqual(code, 0 if verb == "build" else 1, error)
+                    self.assertIn("E632 compile error: Invalid runtime settings", error)
+                    self.assertNotIn("W306", error)
+                    if verb == "build":
+                        self.assertIn("built 3 homes", output)
+                        self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+
+    def test_binary_level_file_cannot_stop_build(self):
+        root = self.project()
+        paths = [
+            str(Path(folder) / filename)
+            for folder in (".", "pods/growth")
+            for filename in ("AGENTS.md", "CLAUDE.md")
+        ]
+        for name in paths:
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"Hand written: \xff\n")
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("W307", error)
+        self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+        for name in paths:
+            self.assertEqual((root / name).read_bytes(), b"Hand written: \xff\n")
+
+    def test_target_with_no_emit_table_exits_2(self):
+        root = self.project()
+        (root / "pyproject.toml").write_text('[project]\nname = "fixture"\nversion = "0.0.0"\n')
+        for verb in ("build", "check", "load"):
+            code, _, error = self.cli(root, verb, "--target", "nope")
+            self.assertEqual(code, 2)
+            self.assertEqual(error, "Unknown target: nope\n")
+
     def test_check_json_is_only_json(self):
         root = self.project()
         code, output, error = self.cli(root, "build", ".", "--check", "--json")

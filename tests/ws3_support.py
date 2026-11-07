@@ -8,6 +8,8 @@ from pathlib import Path
 
 from doctrine.cli import main
 from doctrine.emit_common import load_emit_targets
+from doctrine.compiler import CompilationSession
+from doctrine.parser import parse_file
 from doctrine.homes import compile_homes
 from doctrine.runtime_load import home_loads, runtime_settings
 
@@ -52,5 +54,8 @@ class HomeProject:
 
     def loads(self, root):
         target = load_emit_targets(root / "pyproject.toml")["homes"]
-        homes, files = compile_homes(target)
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        homes, files, _, _ = compile_homes(target, session=session)
         return home_loads(target, homes, files, runtime_settings(target))

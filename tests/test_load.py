@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 
 from doctrine.emit_common import load_emit_targets
+from doctrine.compiler import CompilationSession
+from doctrine.parser import parse_file
 from doctrine.homes import compile_homes
 
 from tests.ws3_support import HomeProject
@@ -168,7 +170,10 @@ team T: "Team"
                 "Deep replacement."
 """)
         target = load_emit_targets(root / "pyproject.toml")["homes"]
-        homes, _ = compile_homes(target)
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        homes, _, _, _ = compile_homes(target, session=session)
         entries = homes["t/qa"]["map"].entries
         expected = {
             ("role",): ("Base", "Role 🙂."),
@@ -265,7 +270,10 @@ team T[Template]: "Team"
     home: "t"
 """)
         target = load_emit_targets(root / "pyproject.toml")["homes"]
-        homes, _ = compile_homes(target)
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        homes, _, _, _ = compile_homes(target, session=session)
         home_map = homes["t/qa"]["map"]
         child = next(entry for entry in home_map.entries if entry.path == ("work", "child"))
         self.assertEqual(child.origin, "Template.qa")

@@ -38,7 +38,13 @@ def runtime_settings(target):
         limit = RUNTIMES[runtime][2]
         config = base / ".codex/config.toml"
         if runtime == "codex" and "limit" not in values and config.is_file():
-            limit = tomllib.loads(config.read_text()).get("project_doc_max_bytes", limit)
+            try:
+                limit = tomllib.loads(config.read_text()).get("project_doc_max_bytes", limit)
+            except (tomllib.TOMLDecodeError, UnicodeDecodeError):
+                raise compile_error(
+                    code="E632", summary="Invalid runtime settings",
+                    detail="`.codex/config.toml` for `codex`: invalid TOML.",
+                )
         values = {"limit": limit, "warn_at": 0.95, "over": "error", "external": [], **values}
         for key, valid, detail in (
             (
@@ -60,6 +66,14 @@ def runtime_settings(target):
                     detail=f"`{key}` for `{runtime}`: {detail}.",
                 )
         external = []
+        if not isinstance(values["external"], list) or any(
+            not isinstance(item, dict) or not isinstance(item.get("path"), str)
+            for item in values["external"]
+        ):
+            raise compile_error(
+                code="E632", summary="Invalid runtime settings",
+                detail=f"`external` for `{runtime}`: each entry needs a string `path`.",
+            )
         for item in values["external"]:
             if "reserve" in item and type(item["reserve"]) is not int:
                 raise compile_error(
@@ -70,7 +84,13 @@ def runtime_settings(target):
             path = Path(item["path"]).expanduser()
             path = path if path.is_absolute() else base / path
             if path.is_file():
-                text = path.read_bytes().decode("utf-8")
+                try:
+                    text = path.read_bytes().decode("utf-8")
+                except UnicodeDecodeError:
+                    raise compile_error(
+                        code="E632", summary="Invalid runtime settings",
+                        detail=f"`external` for `{runtime}`: `{item['path']}` is not UTF-8.",
+                    )
                 size = text_size(text, runtime)
             elif "reserve" in item:
                 text, size = "", item["reserve"]

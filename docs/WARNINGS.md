@@ -15,7 +15,7 @@ judgment-first authoring review.
 | Code | Meaning |
 | --- | --- |
 | `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Builds also use this warning for an over-budget home. |
-| `W307` | A selected home's shared level or companion differs from the fresh build. The selected build compares it and leaves it alone. |
+| `W307` | A selected home's shared level differs from the fresh build. The selected build compares it and leaves it alone. |
 
 `doctrine check` fails an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.

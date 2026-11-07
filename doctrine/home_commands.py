@@ -11,7 +11,7 @@ from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.diagnostics import compile_error
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
-from doctrine.homes import compile_homes, build_homes, select_homes
+from doctrine.homes import compile_homes, build_homes
 from doctrine.parser import parse_file
 from doctrine.project_config import load_project_config
 from doctrine.revision_source import revision_source
@@ -24,7 +24,7 @@ def resolve_target(args):
     with source as (project_path, target_names, live_root):
         config = load_project_config(resolve_pyproject_path(project_path))
         if args.target:
-            raw_targets = config.raw_emit["targets"]
+            raw_targets = (config.raw_emit or {}).get("targets", [])
             chosen = next((item for item in raw_targets if item["name"] == args.target), None)
             if chosen is None:
                 print(f"Unknown target: {args.target}", file=sys.stderr)
@@ -65,8 +65,9 @@ def build(args):
     with resolve_target(args) as (target, session, live_root):
         if target is None:
             return 2
-        homes, files = compile_homes(target, session=session, selectors=args.selectors)
-        selected = select_homes(homes, args.selectors)
+        homes, files, selected, whole = compile_homes(
+            target, session=session, selectors=args.selectors
+        )
         try:
             settings = runtime_settings(target)
             loads = home_loads(target, homes, files, settings)
@@ -88,11 +89,12 @@ def build(args):
                 else None
             )
         )
-        selected, result, changed = build_homes(
+        result, changed = build_homes(
             target,
             homes,
             files,
-            selectors=args.selectors,
+            selected=selected,
+            whole=whole,
             output_dir=output,
             check=args.check,
             force=args.force,
@@ -127,7 +129,7 @@ def check(args):
             if target is None:
                 return 2
             settings = runtime_settings(target)
-            homes, files = compile_homes(target, evaluate_rules=True, session=session)
+            homes, files, _, _ = compile_homes(target, evaluate_rules=True, session=session)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)
             ok = not failed and not (args.strict and findings)
@@ -168,9 +170,10 @@ def load(args):
         if target is None:
             return 2
         settings = runtime_settings(target)
-        homes, files = compile_homes(target, session=session)
+        homes, files, selected, _ = compile_homes(
+            target, session=session, selectors=args.selectors
+        )
         loads = home_loads(target, homes, files, settings)
-        selected = select_homes(homes, args.selectors)
         if args.runtime and args.runtime not in settings:
             raise compile_error(
                 code="E632",

@@ -112,8 +112,9 @@ Bad budgets, bad runtime settings, and missing externals print errors but
 skip the budget report and keep building. Budget warnings name only selected
 homes. A selected build compiles those homes and the levels they load, then
 writes only those homes' folders. Errors in other homes cannot stop it. A
-broken shared level prints its error and is left alone. Shared levels and
-companions that differ print `W307`. Selected homes and files with no Doctrine
+broken shared level prints its error and is left alone. Shared levels that
+differ print `W307`. A selected build does not compare shared companions; only
+a whole-tree build writes them. Selected homes and files with no Doctrine
 header are never stale levels.
 `--out DIR` uses a separate output root. `--check` writes nothing and lists
 `stale`, `edited`, `missing`, or `obsolete` paths. `--json` returns the build's
@@ -150,8 +151,9 @@ linking all its companions in first-use order. Team and member text goes to
 `DETAILS.md`. Shared declarations go once to `_details/<owner-slug>.md`.
 Shared words cannot read one home's values. Companions keep the headings
 that hold details, at the same depth. Details never count toward load.
-Details are not allowed in input or output bodies, skill packages, or emitted
-documents. The `python -m doctrine.emit_docs` command rejects details too;
+Details are not allowed in skills, skill packages, input or output bodies,
+emitted documents, or documents used as output structures.
+The `python -m doctrine.emit_docs` command rejects details too;
 use `doctrine build` to write their companions. A role's budget is a default:
 the home's own budget, its team, and teams above it come first.
 Examples 181 and 182 show both forms; 183 and 184 cover budgets and builds.

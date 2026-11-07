@@ -18,10 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   stays the same and rejects details without companions.
 - `details` moves longer cases into local or shared companions. A paragraph
   can hold details. Shared companions keep their owner's words and headings.
+  Skills and output structures reject details with `E620`.
 - Runtime settings and `budget:` measure externals plus each loaded level.
   `build` writes without running rules or failing budgets; `check` judges them.
   Selected launches compile only their homes and shared levels. Bad budgets,
-  runtime settings, and missing externals cannot stop a build. Role budgets
+  runtime settings, and missing externals cannot stop a build. Unselected team
+  and plan errors cannot stop it either. Selected builds do not compare shared
+  companions. Malformed settings report `E632`. Role budgets
   serve as defaults. Unknown runtime settings fail loudly.
 - `load` reports team and member homes, loaded files, source sizes, and drop
   reasons. Nested entries count each line once. `check --json` returns findings.

@@ -32,6 +32,8 @@ def split_details(compiled, home):
             return item
         if isinstance(item, CompiledSection) and item.kind == "details":
             origin = item.origin
+            if origin is None:
+                reject_details(item, "a declaration without a home")
             path = origin.companion or str(PurePosixPath(home) / "DETAILS.md")
             if origin.companion:
                 headings = origin.headings

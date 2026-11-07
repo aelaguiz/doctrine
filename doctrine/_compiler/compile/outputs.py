@@ -1265,7 +1265,6 @@ class CompileOutputsMixin:
                 render_profile=render_profile,
             )
             for line in lines
-            if not isinstance(line, model.ReadableBlock) or line.kind != "details"
         ]
         text = " ".join(line.strip() for line in rendered if line.strip()).strip()
         return text or None
@@ -1278,6 +1277,7 @@ class CompileOutputsMixin:
         unit: IndexedUnit,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
+        reject_details(document_body, "an output structure")
         summary_rows, detail_blocks = self._compile_output_structure_summary_rows(
             document_body,
             unit=unit,

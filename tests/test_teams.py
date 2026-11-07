@@ -4,6 +4,8 @@ import unittest
 import json
 
 from tests.ws3_support import HomeProject
+from doctrine.compiler import CompilationSession
+from doctrine.parser import parse_file
 from doctrine.homes import compile_homes
 from doctrine.emit_common import load_emit_targets
 
@@ -342,7 +344,11 @@ team T: "Team"
 class TeamHomeTests(HomeProject, unittest.TestCase):
     def test_team_contract_order_and_sections(self):
         root = HomeProject.project(self, 'abstract team Base:\n    member qa: "QA"\n        role: "Test."\n        work: "Work"\n            "Test it."\nteam T[Base]: "Team"\n    home: "t"\n    member lead: "Lead"\n        role: "Lead."\n')
-        homes, files = compile_homes(load_emit_targets(root / 'pyproject.toml')['homes'])
+        target = load_emit_targets(root / 'pyproject.toml')['homes']
+        session = CompilationSession(
+            parse_file(target.entrypoint), project_config=target.project_config
+        )
+        homes, files, _, _ = compile_homes(target, session=session)
         members = json.loads(files['t/TEAM.contract.json'])['members']
         self.assertEqual([member['key'] for member in members], ['qa', 'lead'])
         self.assertEqual(members[0]['sections'], ['Work'])

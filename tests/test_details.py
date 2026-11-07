@@ -233,6 +233,40 @@ team T: "Team"
         self.assertIn("## Work\n\n### Child\n\n#### Inner\n\nLong case.", text)
         self.assertFalse((root / "_details/base.md").exists())
 
+    def test_selected_build_does_not_compare_shared_companions(self):
+        root = self.project("""abstract agent R:
+    role: "Test."
+    first: "First"
+        details:
+            "First case."
+    second: "Second"
+        details:
+            "Second case."
+team T: "Team"
+    home: "t"
+    member qa[R]: "QA"
+        inherit role
+        inherit first
+        drop second: "The lead owns this case."
+    member lead[R]: "Lead"
+        inherit role
+        inherit second
+        drop first: "QA owns this case."
+""")
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("W307 stale level: _details/", error)
+        companion = root / "_details/r.md"
+        self.assertFalse(companion.exists())
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        original = companion.read_bytes()
+        self.assertIn(b"First case.", original)
+        self.assertIn(b"Second case.", original)
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("W307", error)
+        self.assertEqual(companion.read_bytes(), original)
+
     def test_details_in_document_section(self):
         root = self.project("""document D: "Document"
     section work: "Work"
@@ -269,6 +303,47 @@ agent A:
                 self.assertEqual(code, 1)
                 self.assertIn("E620 compile error: Details not allowed here", error)
                 self.assertIn(f"`details` can't be used in an {surface} body.", error)
+
+    def test_e620_in_output_structure(self):
+        root = self.project("""document D: "Document"
+    section work: "Work"
+        "Brief."
+        details:
+            "Long case."
+output O: "Output"
+    target: File
+        path: "result.md"
+    shape: MarkdownDocument
+    requirement: Required
+    structure: D
+agent A:
+    role: "Test."
+    outputs: "Outputs"
+        O
+""")
+        code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 1)
+        self.assertIn("E620 compile error: Details not allowed here", error)
+        self.assertIn("`details` can't be used in an output structure.", error)
+        self.assertFalse((root / "a/AGENTS.md").exists())
+
+    def test_e620_in_skill(self):
+        root = self.project("""skill S: "Skill"
+    purpose: "Use the skill."
+    details:
+        "Long case."
+skills Available: "Available"
+    can_run: "Can run"
+        skill s: S
+agent A:
+    role: "Test."
+    skills: Available
+""")
+        code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 1)
+        self.assertIn("E620 compile error: Details not allowed here", error)
+        self.assertIn("`details` can't be used in a declaration without a home.", error)
+        self.assertFalse((root / "a/AGENTS.md").exists())
 
     def test_e620_in_emit_docs(self):
         for soul in (False, True):
