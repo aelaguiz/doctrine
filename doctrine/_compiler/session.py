@@ -153,7 +153,7 @@ class CompilationSession:
         self.evaluate_rules = evaluate_rules
         self.value_reads: set[tuple[Path, int]] = set()
         self.emit_paths: dict[str, Path] = {}
-        self.home_paths: dict[str, str] = {}
+        self.emit_root: Path | None = None
         self.provided_prompt_roots = compile_config.provided_prompt_roots
         self.import_root_labels = _import_root_labels(
             self.prompt_root,

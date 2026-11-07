@@ -44,6 +44,40 @@ def compile_side(args):
         }
 
 
+def compare_entries(old, new, home, selected, new_homes, new_sections):
+    old_entries = {
+        (entry.path, entry.origin_path, entry.always_on): entry for entry in old["map"].entries
+    } if old else {}
+    new_entries = {
+        (entry.path, entry.origin_path, entry.always_on): entry for entry in new["map"].entries
+    } if new else {}
+    entries = []
+    for key in sorted(old_entries.keys() | new_entries.keys()):
+        path = key[0]
+        a, b = old_entries.get(key), new_entries.get(key)
+        if a and b and a.text_hash == b.text_hash:
+            continue
+        entry = b or a
+        entries.append({
+            "path": list(path),
+            "status": "added" if a is None else "removed" if b is None else "changed",
+            "origin": entry.origin,
+            "delta": (b.size_utf16 if b else 0) - (a.size_utf16 if a else 0),
+        })
+        if old and new and a is None and path in new["map"].wildcard_keys:
+            reached = {
+                child for child in selected
+                if child == home or (entry.always_on and any(
+                    level == home for level, _ in loaded_levels(new_homes, child)
+                ))
+            }
+            if reached:
+                new_sections.setdefault((entry.origin, entry.origin_path), set()).update(
+                    reached
+                )
+    return entries
+
+
 def compare_homes(before, after, selectors):
     old_homes, new_homes = before["homes"], after["homes"]
     old_files, new_files = before["files"], after["files"]
@@ -101,36 +135,7 @@ def compare_homes(before, after, selectors):
             if data else 0
             for data, files in ((old, old_files), (new, new_files))
         ]
-        old_entries = {
-            (entry.path, entry.origin_path, entry.always_on): entry for entry in old["map"].entries
-        } if old else {}
-        new_entries = {
-            (entry.path, entry.origin_path, entry.always_on): entry for entry in new["map"].entries
-        } if new else {}
-        entries = []
-        for key in sorted(old_entries.keys() | new_entries.keys()):
-            path = key[0]
-            a, b = old_entries.get(key), new_entries.get(key)
-            if a and b and a.text_hash == b.text_hash:
-                continue
-            entry = b or a
-            entries.append({
-                "path": list(path),
-                "status": "added" if a is None else "removed" if b is None else "changed",
-                "origin": entry.origin,
-                "delta": (b.size_utf16 if b else 0) - (a.size_utf16 if a else 0),
-            })
-            if old and new and a is None and path in new["map"].wildcard_keys:
-                reached = {
-                    child for child in selected
-                    if child == home or (entry.always_on and any(
-                        level == home for level, _ in loaded_levels(new_homes, child)
-                    ))
-                }
-                if reached:
-                    new_sections.setdefault((entry.origin, entry.origin_path), set()).update(
-                        reached
-                    )
+        entries = compare_entries(old, new, home, selected, new_homes, new_sections)
         if home in selected:
             home_changes.append({
                 "home": home,

@@ -88,7 +88,6 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
 def compile_home(target, session, context, home, owner, unit, plan):
     if isinstance(owner, (model.Team, model.Member)):
         bind_home(context, owner.title, owner, unit=unit)
-    session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
     if plan is None:
         compiled = session.compile_agent(owner.name)
     else:
@@ -151,13 +150,9 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             owner = session.flow_for_unit(unit).agents_by_name[root.agent_name]
             home = plan.markdown_path.parent.relative_to(target.output_dir).as_posix()
             owners.append((home, owner, unit, plan))
-            session.emit_paths[root.agent_name] = plan.markdown_path
         except DoctrineError as exc:
             home = entrypoint_relative_dir(root.unit.prompt_file.source_path).as_posix()
-            if whole or any(
-                selector == root.agent_name or selector == home or home.startswith(selector + "/")
-                for selector in selectors
-            ):
+            if whole or any(matches_home(home, root.agent_name, selector) for selector in selectors):
                 raise
             failures.append(exc)
     for team in session.root_flow.teams_by_name.values():
@@ -167,9 +162,8 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 members = team_members(context, team, unit=unit)
             except DoctrineError as exc:
                 if whole or any(
-                    selector == team.home
-                    or selector.startswith(team.home + "/")
-                    or team.home.startswith(selector + "/")
+                    matches_home(team.home, team.name, selector)
+                    or matches_home(selector, "", team.home)
                     or selector.startswith(team.name + ".")
                     for selector in selectors
                 ):
@@ -181,9 +175,10 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 (member_home(team, member), member, unit, None)
                 for member in members
             )
+    session.emit_root = target.output_dir
     for home, owner, unit, plan in owners:
         homes.setdefault(home, {"owner": owner, "unit": unit, "plan": plan})
-        session.home_paths[owner.name] = home
+        session.emit_paths[owner.name] = plan.markdown_path if plan else target.output_dir / home / "AGENTS.md"
     try:
         selected = select_homes(((home, owner) for home, owner, _, _ in owners), selectors)
     except DoctrineError:
@@ -208,9 +203,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
         try:
-            data, content, parts = compile_home(
-                target, session, context, home, owner, unit, plan
-            )
+            data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         except DoctrineError as exc:
             if home in selected:
                 raise
@@ -222,13 +215,10 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         compiled[owner.name] = data["compiled"]
         for companion, content in parts.items():
             collected = companions.setdefault(companion, [])
-            collected.extend(
-                [
-                    part
-                    for part in content
-                    if not companion.startswith("_details/") or part not in collected
-                ]
-            )
+            collected.extend([
+                part for part in content
+                if not companion.startswith("_details/") or part not in collected
+            ])
     for home, data in homes.items():
         owner = data["owner"]
         if (
@@ -244,18 +234,16 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     return homes, files, selected, whole
 
 
+def matches_home(home, name, selector):
+    return name == selector or home == selector or home.startswith(selector + "/")
+
+
 def select_homes(owners, selectors):
     owners = tuple(owners)
     selected = set()
     for selector in selectors or ["."]:
-        matches = {
-            home
-            for home, owner in owners
-            if selector == "."
-            or owner.name == selector
-            or home == selector
-            or home.startswith(selector + "/")
-        }
+        matches = {home for home, owner in owners
+                   if selector == "." or matches_home(home, owner.name, selector)}
         if not matches:
             raise compile_error(
                 code="E640", summary="No home matches", detail=f"`{selector}` matches no home."

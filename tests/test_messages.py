@@ -360,3 +360,26 @@ output_dir = "build"
         self.assertEqual(note["target"]["key"], "Message")
         self.assertEqual(note["target"]["title"], "Message")
         self.assertEqual(note["readback_mode"], "unsupported")
+
+    def test_message_title_uses_receiver_values(self):
+        root = self.project('''output Note: "Note"
+    target: Message
+        to: Beta.lead
+team Alpha: "Alpha"
+    home: "alpha"
+    values:
+        pod: "alpha pod"
+    member sender: "sender"
+        role: "Send."
+        outputs: "Outputs"
+            Note
+team Beta: "Beta"
+    home: "beta"
+    values:
+        pod: "beta pod"
+    member lead: "{{team:pod}} lead"
+        role: "Lead."
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        self.assertIn("Send this to Beta's beta pod lead.", (root / 'alpha/sender/AGENTS.md').read_text())

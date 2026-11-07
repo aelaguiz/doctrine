@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import fields, is_dataclass
+from dataclasses import fields, is_dataclass, replace
 
 from doctrine import model
 
@@ -126,6 +126,20 @@ def _parse_interpolated_addressable_ref(
         path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
         source_span=source_span,
     )
+
+
+def map_model(value, leaf, excluded):
+    mapped = leaf(value)
+    if mapped is not None:
+        return mapped
+    if isinstance(value, tuple):
+        return tuple(map_model(item, leaf, excluded) for item in value)
+    if is_dataclass(value):
+        return replace(value, **{
+            field.name: map_model(getattr(value, field.name), leaf, excluded)
+            for field in fields(value) if field.name not in excluded
+        })
+    return value
 
 
 def model_walk(value):

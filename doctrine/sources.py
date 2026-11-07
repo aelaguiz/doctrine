@@ -47,26 +47,30 @@ def sources(args):
         if args.json:
             print(json.dumps(result))
         else:
-            blocks = []
-            for person in result["people"]:
-                quotes = person["quotes"]
-                missing = [quote for quote in quotes if quote["source"] is None]
-                blocks.append(f"{person['title']}: {len(quotes)} "
-                              f"{'quote' if len(quotes) == 1 else 'quotes'}, "
-                              f"{len(missing)} with no source")
-                for quote in quotes:
-                    line = f"{quote['on']}  {quote_site(quote)}"
-                    for key in ('to', 'about', 'source'):
-                        if quote[key] is not None:
-                            line += f"\n  {key}{':' if key == 'source' else ''} {quote[key]}"
-                    count, reached = len(quote['cited_in']), len(quote['homes'])
-                    line += (f"\n  cited in {count} "
-                             f"{'declaration' if count == 1 else 'declarations'}, "
-                             f"reaches {reached} {'home' if reached == 1 else 'homes'}")
-                    blocks.append(line)
-                if missing:
-                    blocks.append('No source:\n' + '\n'.join(
-                        f"  {quote_site(quote)}" for quote in missing
-                    ))
-            print('\n\n'.join(blocks))
+            print(render_sources(result))
         return 0
+
+
+def render_sources(result):
+    blocks = []
+    for person in result["people"]:
+        quotes = person["quotes"]
+        missing = [quote for quote in quotes if quote["source"] is None]
+        blocks.append(f"{person['title']}: {len(quotes)} "
+                      f"{'quote' if len(quotes) == 1 else 'quotes'}, "
+                      f"{len(missing)} with no source")
+        for quote in quotes:
+            line = f"{quote['on']}  {quote_site(quote)}"
+            for key in ('to', 'about', 'source'):
+                if quote[key] is not None:
+                    line += f"\n  {key}{':' if key == 'source' else ''} {quote[key]}"
+            count, reached = len(quote['cited_in']), len(quote['homes'])
+            line += (f"\n  cited in {count} "
+                     f"{'declaration' if count == 1 else 'declarations'}, "
+                     f"reaches {reached} {'home' if reached == 1 else 'homes'}")
+            blocks.append(line)
+        if missing:
+            blocks.append('No source:\n' + '\n'.join(
+                f"  {quote_site(quote)}" for quote in missing
+            ))
+    return '\n\n'.join(blocks)

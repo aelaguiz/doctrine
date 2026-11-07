@@ -7,6 +7,7 @@ from doctrine import model
 from doctrine._compiler.teams import _message_target
 from doctrine._compiler.teams import find_home_team, resolve_message_recipient
 from doctrine._compiler.details import reject_details
+from doctrine._compiler.late_binding import bind_home
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
@@ -275,7 +276,6 @@ class CompileOutputsMixin:
                     title = recipient.value
                 else:
                     owner, agent = match
-                    from doctrine._compiler.late_binding import bind_home
                     title = bind_home(self, agent.title or agent.name, agent, unit=owner)
                     if isinstance(agent, model.Member):
                         _, team = find_home_team(self, agent, unit=owner)

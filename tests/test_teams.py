@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 import json
 
 from tests.home_support import HomeProject
@@ -377,3 +379,43 @@ team G[Pod]: "Group"
         code, _, error = HomeProject.cli(self, root, 'build', '.')
         self.assertEqual(code, 1)
         self.assertIn('`A.qa` and `B` both land at `a/qa`.', error)
+
+    def test_team_library_outside_project_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / 'project'
+            (root / 'prompts').mkdir(parents=True)
+            (base / 'shared/prompts/lib').mkdir(parents=True)
+            (base / 'shared/prompts/lib/base.prompt').write_text('''export abstract team Base: "Base"
+    member lead: "Lead"
+        role: "Lead."
+''')
+            (root / 'prompts/AGENTS.prompt').write_text('''import lib.base
+team Mine[lib.base.Base]: "Mine"
+    home: "mine"
+    inherit *
+''')
+            (root / 'pyproject.toml').write_text('''[tool.doctrine.compile]
+additional_prompt_roots = ["../shared/prompts"]
+[[tool.doctrine.emit.targets]]
+name = "homes"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "."
+''')
+            code, _, error = self.cli(root, 'build')
+            self.assertEqual(code, 0, error)
+            self.assertIn('source=../shared/prompts/lib/base.prompt', (root / 'mine/lead/AGENTS.md').read_text())
+
+    def test_self_reading_title_is_e603(self):
+        for title, role in (('Alpha {{team:title}}', 'Lead.'), ('Alpha', 'Lead.')):
+            with self.subTest(title=title):
+                member = 'Ann of {{team:members}}' if title == 'Alpha' else 'Ann'
+                root = self.project(f'''team Alpha: "{title}"
+    home: "alpha"
+    role: "{role}"
+    member a1: "{member}"
+        role: "A."
+''')
+                code, _, error = self.cli(root, 'build')
+                self.assertEqual(code, 1)
+                self.assertIn('E603', error)

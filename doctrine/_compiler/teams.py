@@ -60,14 +60,13 @@ def find_home_team(context, agent, *, unit):
     return flow.declaration_owner_units_by_id[id(team)], team
 
 
-def home_value_sources(context, agent, unit):
-    def parents(decl, owner):
-        result = []
-        while decl.parent_ref is not None:
-            owner, decl = context._resolve_parent_agent_decl(decl, unit=owner)
-            result.append((decl, owner))
-        return result
+def agent_parents(context, decl, owner):
+    while decl.parent_ref is not None:
+        owner, decl = context._resolve_parent_agent_decl(decl, unit=owner)
+        yield decl, owner
 
+
+def home_value_sources(context, agent, unit):
     owner = agent.scope_unit or unit if isinstance(agent, model.Member) else unit
     agent_sources, team_sources = [(agent, owner)], []
     match = None if agent.abstract else find_home_team(context, agent, unit=unit)
@@ -86,9 +85,9 @@ def home_value_sources(context, agent, unit):
                 outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True
             )
         )
-        team_sources.extend(parents(team, team_unit))
+        team_sources.extend(agent_parents(context, team, team_unit))
     agent_sources.extend(team_sources)
-    agent_sources.extend(parents(agent, owner))
+    agent_sources.extend(agent_parents(context, agent, owner))
     return agent_sources, team_sources
 
 
@@ -116,7 +115,9 @@ def validate_team(agent, *, unit):
         keys = set()
         for field in agent.fields:
             key = field[0] if isinstance(field, tuple) else "role" if isinstance(field, (model.RoleScalar, model.RoleBlock)) else getattr(field, "key", None)
-            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotAbstract, model.AuthoredSlotOverride)) and key in {"inputs", "outputs", "analysis", "decision", "skills", "review", "final_output", "selectors"}:
+            if (isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotAbstract,
+                                   model.AuthoredSlotOverride)) and key in {
+                "inputs", "outputs", "analysis", "decision", "skills", "review", "final_output", "selectors"}):
                 raise error(f"Team `{agent.name}` can't hold `{key}`. A team takes `role`, `values`, `budget`, slots, and members.", field)
             if key is not None:
                 if key in keys:

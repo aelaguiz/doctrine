@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import re
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.details import validate_shared_details
+from doctrine._compiler.naming import map_model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members, home_value_sources, member_home
@@ -13,20 +14,14 @@ from doctrine._compiler.markdown_links import rebase_markdown
 
 
 def map_text(value, substitute, markdown=None):
-    if isinstance(value, str):
-        return (markdown(value) if markdown else value) if isinstance(value, model.MarkdownProse) else substitute(value)
-    if isinstance(value, model.NameRef):
-        return value
-    if isinstance(value, CompiledCodeBlock):
-        return replace(value, title=map_text(value.title, substitute, markdown))
-    if isinstance(value, tuple):
-        return tuple(map_text(item, substitute, markdown) for item in value)
-    if is_dataclass(value):
-        return replace(value, **{
-            field.name: map_text(getattr(value, field.name), substitute, markdown)
-            for field in fields(value) if field.name not in {"origin", "drops"}
-        })
-    return value
+    def leaf(item):
+        if isinstance(item, str):
+            return (markdown(item) if markdown else item) if isinstance(item, model.MarkdownProse) else substitute(item)
+        if isinstance(item, model.NameRef):
+            return item
+        if isinstance(item, CompiledCodeBlock):
+            return replace(item, title=map_text(item.title, substitute, markdown))
+    return map_model(value, leaf, {"origin", "drops"})
 
 
 def reject_late_roots(value, *, unit, why):

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.markdown_reader import heading_key, markdown_lines
+from doctrine._compiler.markdown_reader import heading_key, markdown_head, markdown_lines
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import ParseError
 from doctrine.parser import parse_file, parse_text
@@ -17,18 +17,7 @@ from doctrine.renderer import render_markdown, render_readable_block
 
 def import_markdown(args):
     path = Path(args.path)
-    if not path.is_file():
-        raise compile_error(
-            code="E652", summary="Missing Markdown source",
-            detail=f"`{args.name}` reads `{args.path}`, which does not exist.",
-        )
-    lines = path.read_text(encoding="utf-8").splitlines()
-    title = args.name
-    if lines and lines[0].startswith("# "):
-        title = lines.pop(0)[2:]
-        start = 2
-    else:
-        start = 1
+    lines, title, start = markdown_head(path, args.name, args.path)
     output = [f'abstract agent {args.name}:' if args.kind == 'agent'
               else f'workflow {args.name}: {source_string(title)}']
     stack = [{"keys": {}, "keyed": False, "text": 0}]

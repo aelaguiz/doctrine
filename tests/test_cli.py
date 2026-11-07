@@ -872,3 +872,16 @@ agent A:
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
         self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())
+
+    def test_skill_target_is_usage_error(self):
+        root = self.project('agent A:\n    role: "A."\n')
+        (root / 'prompts/SKILL.prompt').write_text('skill package S: "Skill"\n    "Read."\n')
+        with (root / 'pyproject.toml').open('a') as config:
+            config.write('''\n[[tool.doctrine.emit.targets]]
+name = "sk"
+entrypoint = "prompts/SKILL.prompt"
+output_dir = "skill"
+''')
+        code, _, error = self.cli(root, 'build', '--target', 'sk')
+        self.assertEqual(code, 2)
+        self.assertIn('Target sk has no homes.', error)

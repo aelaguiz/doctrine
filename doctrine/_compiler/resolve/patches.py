@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace, fields as dataclass_fields, is_dataclass
+from dataclasses import dataclass, replace
 
 from doctrine import model
 from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS
+from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem, IndexedUnit
 
@@ -194,20 +194,8 @@ def expand_agent_patches(context, agent, *, unit):
         parent, _ = context._expand_agent_patches(parent, unit=parent_unit)
 
         def rebind(value):
-            if isinstance(value, model.NameRef):
-                return replace(value, scope_unit=value.scope_unit or parent_unit)
-            if isinstance(value, tuple):
-                return tuple(rebind(item) for item in value)
-            if is_dataclass(value):
-                return replace(
-                    value,
-                    **{
-                        field.name: rebind(getattr(value, field.name))
-                        for field in dataclass_fields(value)
-                        if field.name not in {"scope_unit", "team_unit"}
-                    },
-                )
-            return value
+            return map_model(value, lambda item: replace(item, scope_unit=item.scope_unit or parent_unit)
+                             if isinstance(item, model.NameRef) else None, {"scope_unit", "team_unit"})
 
         for field in parent.fields:
             if isinstance(
@@ -280,7 +268,9 @@ def expand_agent_patches(context, agent, *, unit):
             source_span=agent.source_span,
         )
     fields = order_team_fields(agent, fields, keys=keys, parent_fields=parent_fields, unit=unit)
-    return replace(agent, fields=tuple(fields), drops=(*(parent.drops if agent.parent_ref else ()), *drop_records(agent.fields, ".".join((*unit.module_parts, agent.name))))), expansion
+    drops = (*(parent.drops if agent.parent_ref else ()),
+             *drop_records(agent.fields, ".".join((*unit.module_parts, agent.name))))
+    return replace(agent, fields=tuple(fields), drops=drops), expansion
 
 
 def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origin=None):
@@ -363,7 +353,10 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                 "Missing patch target",
                 f"`{owner_label}` patches `{path}`, but its parent has no such key.",
             )
-        replacement = walk(matched, tail[1:], (*prefix, tail[0]), patch, child_origin(replacement_origin, tail[0], patch.source_span, matched.title if isinstance(matched, (ResolvedSectionItem, model.LocalSection)) or isinstance(matched, model.ReadableBlock) and matched.kind == "section" else None))
+        title = matched.title if isinstance(matched, (ResolvedSectionItem, model.LocalSection)) or (
+            isinstance(matched, model.ReadableBlock) and matched.kind == "section") else None
+        replacement = walk(matched, tail[1:], (*prefix, tail[0]), patch,
+                           child_origin(replacement_origin, tail[0], patch.source_span, title))
         children = tuple(
             replacement if child is matched else child
             for child in children
@@ -388,21 +381,17 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                 path=unit.prompt_file.source_path,
                 source_span=patch.source_span,
             )
-        result[path[0]] = walk(result[path[0]], path[1:], (path[0],), patch, child_origin(patch.origin or origin, path[0], patch.source_span, result[path[0]].body.title if isinstance(result[path[0]], ResolvedAgentSlot) else None))
+        item = result[path[0]]
+        title = item.body.title if isinstance(item, ResolvedAgentSlot) else None
+        result[path[0]] = walk(item, path[1:], (path[0],), patch,
+                               child_origin(patch.origin or origin, path[0], patch.source_span, title))
     return result
 
 
 def mark_wildcard(value):
-    if isinstance(value, model.Origin):
-        return replace(value, wildcard=True)
-    if isinstance(value, (model.NameRef, IndexedUnit)):
-        return value
-    if isinstance(value, tuple):
-        return tuple(mark_wildcard(item) for item in value)
-    if is_dataclass(value):
-        return replace(value, **{
-            field.name: mark_wildcard(getattr(value, field.name))
-            for field in dataclass_fields(value)
-            if field.name not in {"scope_unit", "team_unit"}
-        })
-    return value
+    def leaf(item):
+        if isinstance(item, model.Origin):
+            return replace(item, wildcard=True)
+        if isinstance(item, (model.NameRef, IndexedUnit)):
+            return item
+    return map_model(value, leaf, {"scope_unit", "team_unit"})

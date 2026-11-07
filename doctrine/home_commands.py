@@ -47,7 +47,6 @@ def resolve_target(args):
                 session = CompilationSession(
                     parse_file(target.entrypoint),
                     project_config=target.project_config,
-                    evaluate_rules=False,
                 )
                 sessions[target.name] = session
                 if any(not team.abstract for team in session.root_flow.teams_by_name.values()):

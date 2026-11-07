@@ -376,3 +376,23 @@ agent A:
                 self.assertEqual(process.returncode, 1, process.stderr)
                 self.assertIn("E620 compile error: Details not allowed here", process.stderr)
                 self.assertFalse((root / ("worker" if soul else "a") / "AGENTS.md").exists())
+
+    def test_roster_in_shared_details_is_e621(self):
+        root = self.project('''workflow W: "Work"
+    details who: "Who"
+        roster members: "Members"
+            who: "Who" = "{{agent:title}}"
+team Alpha: "Alpha"
+    home: "alpha"
+    work: W
+    member a: "A"
+        role: "A."
+team Beta: "Beta"
+    home: "beta"
+    work: W
+    member b: "B"
+        role: "B."
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 1)
+        self.assertIn('E621', error)

@@ -176,10 +176,7 @@ def emit_target(
 
     try:
         session.emit_paths = {plan.root.agent_name: target.output_dir / plan.markdown_path.relative_to(output_root) for plan in planned_emits}
-        session.home_paths = {
-            plan.root.agent_name: plan.markdown_path.parent.relative_to(output_root).as_posix()
-            for plan in planned_emits
-        }
+        session.emit_root = target.output_dir
         previous_turn_contexts = _build_previous_turn_contexts(
             session,
             agent_roots=tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),

@@ -10,9 +10,9 @@ from doctrine.runtime_load import loaded_levels
 
 def validate_load_rules(context, homes):
     build_home_deps(context, homes)
-    for flow in tuple(context.session._flow_cache.values()):
-        for rule in flow.rules_by_name.values():
-            rule_unit = flow.declaration_owner_units_by_id[id(rule)]
+    for rule_unit in tuple(context.session.units()):
+        flow = context.session.flow_for_unit(rule_unit)
+        for rule in rule_unit.declarations.rules_by_name.values():
             for assertion in rule.assertions:
                 if not isinstance(
                     assertion, (model.RequiresLoadAssertion, model.ForbidsLoadAssertion)

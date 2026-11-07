@@ -199,3 +199,32 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.assertEqual(json.loads(record.read_text())["files"], paths)
         self.assertEqual(obsolete.read_text(), "Old file.\n")
+
+    def test_member_home_gets_schema_and_contract(self):
+        root = self.project('''output schema S: "Schema"
+    field text: "Text"
+        type: string
+output shape Shape: "Shape"
+    kind: JsonObject
+    schema: S
+output Result: "Result"
+    target: TurnResponse
+    shape: Shape
+    requirement: Required
+abstract agent Reporter:
+    role: "Report."
+    outputs: "Outputs"
+        Result
+    final_output: Result
+team T: "Team"
+    home: "team"
+    member a1[Reporter]: "Reporter"
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        text = (root / 'team/a1/AGENTS.md').read_text()
+        self.assertIn('schemas/result.schema.json', text)
+        for name in ('team/a1/schemas/result.schema.json', 'team/a1/final_output.contract.json'):
+            self.assertTrue((root / name).is_file())
+            self.assertIn(name, json.loads((root / 'HOMES.contract.json').read_text())['files'])
+        self.assertEqual(self.cli(root, 'build', '--check')[0], 0)

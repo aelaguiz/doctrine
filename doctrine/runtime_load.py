@@ -6,6 +6,7 @@ from pathlib import Path, PurePosixPath
 from doctrine import model
 
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.teams import agent_parents
 
 
 RUNTIMES = {"claude": ("CLAUDE.md", "utf16", 150000), "codex": ("AGENTS.md", "bytes", 32768)}
@@ -107,12 +108,10 @@ def validate_budget(field, settings):
 
 
 def home_budgets(owner, unit, context):
-    budgets = []
-    while True:
-        budgets.append([field for field in owner.fields if isinstance(field, model.BudgetField)])
-        if owner.parent_ref is None:
-            return budgets
-        unit, owner = context._resolve_parent_agent_decl(owner, unit=unit)
+    return [
+        [field for field in declaration.fields if isinstance(field, model.BudgetField)]
+        for declaration, _ in [(owner, unit), *agent_parents(context, owner, unit)]
+    ]
 
 
 def loaded_levels(homes, home):

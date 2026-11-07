@@ -20,11 +20,10 @@ from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
 
 
-def project_warnings(session, homes, loads, context, all_declarations):
-    paragraphs, unused, units, from_files = [], {}, {}, set()
+def near_copy_warnings(session):
+    paragraphs, unused, from_files = [], {}, set()
     base = session.project_config.config_dir
-    for unit in session.units():
-        units[unit.prompt_file.source_path] = unit
+    units = {unit.prompt_file.source_path: unit for unit in session.units()}
     for path, unit in units.items():
         declarations = [
             declaration for declaration in unit.prompt_file.declarations
@@ -101,6 +100,11 @@ def project_warnings(session, homes, loads, context, all_declarations):
                 text += ": " + " / ".join(example["words"])
         text += "\nHint: Share the paragraph and put the different words in `values:`."
         warnings.append({"code": "W301", "text": text, "examples": examples})
+    return warnings, unused
+
+
+def double_load_warnings(homes, loads):
+    warnings = []
     for load in loads:
         for runtime in load["runtimes"].values():
             groups = defaultdict(set)
@@ -117,6 +121,13 @@ def project_warnings(session, homes, loads, context, all_declarations):
                     )}
                     if warning not in warnings:
                         warnings.append(warning)
+    return warnings
+
+
+def project_warnings(session, homes, loads, context, all_declarations):
+    warnings, unused = near_copy_warnings(session)
+    base = session.project_config.config_dir
+    warnings.extend(double_load_warnings(homes, loads))
     for (path, line), key in unused.items():
         if (path, line) not in session.value_reads:
             warnings.append({"code": "W304", "text": (

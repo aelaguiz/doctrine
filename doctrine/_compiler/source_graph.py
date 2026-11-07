@@ -65,9 +65,6 @@ def declaration_match(context, ref, unit):
         member = find_team_member(context, owner, f"{declaration.name}.{ref.declaration_name}")
         return None if member is None else (member[1].scope_unit or member[0], member[1])
     for target in context._decl_lookup_targets(ref, unit=unit):
-        member = find_team_member(context, target.unit, target.declaration_name)
-        if member is not None:
-            return member[1].scope_unit or member[0], member[1]
         for kind in DECLARATION_KINDS:
             match = lookup_flow_registry_decl(
                 context.session.flow_for_unit(target.unit),

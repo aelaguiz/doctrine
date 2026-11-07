@@ -144,7 +144,8 @@ class ValidateRulesMixin:
                 continue
             if isinstance(predicate, model.HomePredicate):
                 match = find_home_team(self, agent, unit=agent_unit)
-                home = self.session.home_paths.get(agent.name)
+                output = self.session.emit_paths.get(agent.name)
+                home = output.parent.relative_to(self.session.emit_root).as_posix() if output else None
                 if match is not None:
                     home = match[1].home
                     if isinstance(agent, model.Member):
