@@ -97,4 +97,6 @@ expected_file_lines = { "AGENTS.md" = [
     "This file is for every member of the growth pod.",
 ], "pods/feature/AGENTS.md" = [
     "This file is for the people building features.",
+], "pods/outside/AGENTS.md" = [
+    "We work for the company.",
 ] }

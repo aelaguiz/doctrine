@@ -66,26 +66,27 @@ def agent_parents(context, decl, owner):
         yield decl, owner
 
 
+def team_chain(context, team, unit):
+    return [(team, unit), *agent_parents(context, team, unit)]
+
+
 def home_value_sources(context, agent, unit):
     owner = agent.scope_unit or unit if isinstance(agent, model.Member) else unit
     agent_sources, team_sources = [(agent, owner)], []
     match = None if agent.abstract else find_home_team(context, agent, unit=unit)
     if match is not None:
         team_unit, team = match
-        team_sources.append((team, team_unit))
-        team_sources.extend(agent_parents(context, team, team_unit))
+        team_sources.extend(team_chain(context, team, team_unit))
         flow = context.session.flow_for_unit(team_unit)
         outer = [
             candidate for candidate in flow.teams_by_name.values()
             if not candidate.abstract
             and PurePosixPath(candidate.home) in PurePosixPath(team.home).parents
         ]
-        team_sources.extend(
-            (candidate, flow.declaration_owner_units_by_id[id(candidate)])
-            for candidate in sorted(
-                outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True
+        for candidate in sorted(outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True):
+            team_sources.extend(
+                team_chain(context, candidate, flow.declaration_owner_units_by_id[id(candidate)])
             )
-        )
     agent_sources.extend(team_sources)
     agent_sources.extend(agent_parents(context, agent, owner))
     return agent_sources, team_sources
