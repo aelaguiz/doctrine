@@ -1462,7 +1462,8 @@ prints. In `inputs:` a `Message` output is an input artifact whose declaration i
 so the flow graph shows it as an input of that agent.
 
 `to:` renders as: a member's `<team title>'s <member title>`, an agent's or team's title, or
-the string as written.
+the string as written. A title with late roots binds in the receiver's own home, never the
+sender's.
 
 `W303` fires when a `Message` output's `to:` is an agent or team ref and no agent in that
 scope lists it in `inputs:`. A string `to:` has no check, which covers a note to one's next
@@ -1823,6 +1824,7 @@ section, and one `_details/` file results).
 `test_w303_team_scope`, `test_message_input_in_flow_graph`, `test_w303_skips_abstract_scope`,
 `test_w303_unsent_message_has_no_check`, `test_w303_child_output_reads_as_itself`,
 `test_message_in_sibling_file`, `test_child_output_keeps_parent_to`,
+`test_message_title_uses_receiver_values`,
 `test_w303_team_in_another_flow`, `test_review_comment_message`,
 `test_sidecar_names_message_target`, `test_to_follows_export_rule`.
 
@@ -2003,3 +2005,19 @@ Warnings print one line, then any detail lines:
 | `W305` | `` W305 unused quote: <name> at <site> is cited nowhere. `` |
 | `W306` | `` W306 near budget: <home> loads <n> of <limit> on <runtime>. `` |
 | `W307` | `` W307 stale level: <path> differs from this build. `` |
+
+
+## 18. End-Of-Branch Rulings
+
+A member's home folder holds the same sidecars a plain agent gets: `schemas/*.schema.json` and
+`final_output.contract.json`. `HOMES.contract.json` lists them, so `doctrine build --check` and
+obsolete-file removal cover them.
+
+A `roster` inside shared `details` is `E621`, like any other read of one agent's values.
+
+A title that reads itself is `E603`, like any value cycle.
+
+`doctrine build`, `check`, `load`, `where`, `diff`, or `sources` on a target that isn't a home
+target is a usage error: `Target <name> has no homes.` on stderr, exit 2.
+
+Home paths work for a team library in an additional prompt root outside the project folder.
