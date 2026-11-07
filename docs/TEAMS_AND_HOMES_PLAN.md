@@ -1495,6 +1495,8 @@ stdout. This is the lossless first step of a port: file by file, before any refa
   one it is an untitled `paragraph text_<N>:`, with `N` counting those in the section from 1.
 - A string is `"..."` when it fits on one line and holds no `"` or `\`. Otherwise it is
   `"""..."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
+  Inside one, `\` doubles, and `"` escapes only where the string needs it: a run of three,
+  and a final `"`. Text full of quotes should read as it did in Markdown.
 - A repeated key in one section gets `_2`, `_3`, in order. A key that is a keyword in that
   position gets a final `_`, as Python does, so `## Details` prints `details_: "Details"`.
   Find out by parsing a small source with that key in that position, not from a word list,
@@ -1512,9 +1514,22 @@ stdout. This is the lossless first step of a port: file by file, before any refa
 - Link destinations stay as written. Text in `.prompt` source doesn't follow its file, so
   the port docs say to turn relative links into paths from the repository root first.
 
-`--check` compiles the printed source in memory and compares its render with the input,
-ignoring the first-line `# Heading` and trailing whitespace. A difference prints its first
-line and exits 1. Lossless means this check passes.
+`--check` prints the source as usual, compiles it, and compares its render with the input,
+ignoring the first-line `# Heading` and trailing whitespace. Lossless means this check passes.
+It compiles a temporary `prompts/AGENTS.prompt`, because a session needs a prompt root.
+
+- An abstract agent has no render, so `--kind agent` compiles the source with `agent` in
+  place of `abstract agent`. With no text before the first `##`, it adds a stand-in `role:`
+  and drops that line from the render.
+- A workflow has no render of its own, so `--kind workflow` adds a small agent that holds the
+  workflow in one slot, and renders that slot's section at depth 1.
+- A difference prints this to stderr and exits 1, with `<n>` the line in the Markdown file:
+
+```text
+Line <n> differs.
+  Markdown: <line>
+  Render: <line>
+```
 
 ## 12. WS8: Doctrine Learn Teaches Results
 

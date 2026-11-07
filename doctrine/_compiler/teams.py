@@ -40,13 +40,14 @@ def find_team_member(context, unit, name):
 
 def find_home_team(context, agent, *, unit):
     if isinstance(agent, model.Team):
-        return unit, agent
-    if isinstance(agent, model.Member):
+        name, flow = agent.name, context.session.flow_for_unit(unit)
+    elif isinstance(agent, model.Member):
         name = agent.name.rsplit(".", 1)[0]
         flow = context.session.flow_for_unit(agent.team_unit)
-        team = flow.teams_by_name[name]
-        return flow.declaration_owner_units_by_id[id(team)], team
-    return None
+    else:
+        return None
+    team = flow.teams_by_name[name]
+    return flow.declaration_owner_units_by_id[id(team)], team
 
 
 def home_value_sources(context, agent, unit):
