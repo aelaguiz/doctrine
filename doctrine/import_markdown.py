@@ -104,42 +104,47 @@ def import_markdown(args):
     flush()
     print("\n".join(output))
     if args.check:
-        source = "\n".join(output) + "\n"
+        return check_render(args, output, lines, start)
+    return 0
+
+
+def check_render(args, output, lines, start):
+    source = "\n".join(output) + "\n"
+    if args.kind == "agent":
+        source = source.replace("abstract agent ", "agent ", 1)
+        stand_in = not output[1].startswith("    role:")
+        if stand_in:
+            source = source.replace("\n", '\n    role: "Stand-in."\n', 1)
+        agent = args.name
+    else:
+        agent = args.name + "Check"
+        source += f'\nagent {agent}:\n    role: "Stand-in."\n    content: {args.name}\n'
+    with tempfile.TemporaryDirectory() as directory:
+        prompt = Path(directory) / "prompts" / "AGENTS.prompt"
+        prompt.parent.mkdir()
+        prompt.write_text(source, encoding="utf-8")
+        compiled = CompilationSession(parse_file(prompt)).compile_agent(agent)
         if args.kind == "agent":
-            source = source.replace("abstract agent ", "agent ", 1)
-            stand_in = not output[1].startswith("    role:")
+            rendered = render_markdown(compiled).splitlines()
             if stand_in:
-                source = source.replace("\n", '\n    role: "Stand-in."\n', 1)
-            agent = args.name
+                rendered = rendered[2:]
         else:
-            agent = args.name + "Check"
-            source += f'\nagent {agent}:\n    role: "Stand-in."\n    content: {args.name}\n'
-        with tempfile.TemporaryDirectory() as directory:
-            prompt = Path(directory) / "prompts" / "AGENTS.prompt"
-            prompt.parent.mkdir()
-            prompt.write_text(source, encoding="utf-8")
-            compiled = CompilationSession(parse_file(prompt)).compile_agent(agent)
-            if args.kind == "agent":
-                rendered = render_markdown(compiled).splitlines()
-                if stand_in:
-                    rendered = rendered[2:]
-            else:
-                rendered = render_readable_block(compiled.fields[1], depth=1).splitlines()[1:]
-        original = [line.rstrip() for line in lines]
-        rendered = [line.rstrip() for line in rendered]
-        while original and not original[0]:
-            original.pop(0)
-            start += 1
-        while original and not original[-1]:
-            original.pop()
-        while rendered and not rendered[0]:
-            rendered.pop(0)
-        while rendered and not rendered[-1]:
-            rendered.pop()
-        for number, (before, after) in enumerate(zip_longest(original, rendered, fillvalue=""), start):
-            if before != after:
-                print(f"Line {number} differs.\n  Markdown: {before}\n  Render: {after}", file=sys.stderr)
-                return 1
+            rendered = render_readable_block(compiled.fields[1], depth=1).splitlines()[1:]
+    original = [line.rstrip() for line in lines]
+    rendered = [line.rstrip() for line in rendered]
+    while original and not original[0]:
+        original.pop(0)
+        start += 1
+    while original and not original[-1]:
+        original.pop()
+    while rendered and not rendered[0]:
+        rendered.pop(0)
+    while rendered and not rendered[-1]:
+        rendered.pop()
+    for number, (before, after) in enumerate(zip_longest(original, rendered, fillvalue=""), start):
+        if before != after:
+            print(f"Line {number} differs.\n  Markdown: {before}\n  Render: {after}", file=sys.stderr)
+            return 1
     return 0
 
 
