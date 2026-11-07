@@ -81,3 +81,33 @@ location_line = 33
 related = [
     { label = "first `Accept` arm", line = 31 },
 ]
+
+[[cases]]
+name = "route_from rejects a literal arm with a real error"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_literal_route_arm/AGENTS.prompt"
+agent = "RouteFromWorkflowDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 37
+
+[[cases]]
+name = "route_from rejects a string arm with a real error"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_string_route_arm/AGENTS.prompt"
+agent = "RouteFromWorkflowDemo"
+exception_type = "CompileError"
+error_code = "E299"
+location_line = 37
+
+[[cases]]
+name = "route_from rejects a string selector with a real error"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_string_route_selector/AGENTS.prompt"
+agent = "RouteFromWorkflowDemo"
+exception_type = "CompileError"
+error_code = "E346"
+location_line = 35

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.diagnostics import expr_source_span
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
 from doctrine._compiler.review_diagnostics import (
     collect_review_accept_stmts,
@@ -159,7 +160,7 @@ class CompileReviewCasesMixin:
                             f"a member of `{enum_decl.name}`."
                         ),
                         unit=unit,
-                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        source_span=expr_source_span(option, case.head.source_span or case.source_span),
                         hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 option_enum_decl, member_value = resolved_option
@@ -172,7 +173,7 @@ class CompileReviewCasesMixin:
                             f"a member of `{enum_decl.name}`."
                         ),
                         unit=unit,
-                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        source_span=expr_source_span(option, case.head.source_span or case.source_span),
                         hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 previous_case = seen_case_members.get(member_value)

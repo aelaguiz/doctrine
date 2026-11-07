@@ -3,7 +3,11 @@ from __future__ import annotations
 from doctrine import model
 from dataclasses import replace
 
-from doctrine._compiler.diagnostics import compile_error, related_prompt_site
+from doctrine._compiler.diagnostics import (
+    compile_error,
+    expr_source_span,
+    related_prompt_site,
+)
 from doctrine._compiler.naming import _dotted_ref_name, _name_ref_from_dotted_name
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
@@ -875,7 +879,7 @@ class ValidateRoutesMixin:
                     f"in {owner_label}."
                 ),
                 unit=unit,
-                source_span=getattr(stmt.expr, "source_span", None) or stmt.source_span,
+                source_span=expr_source_span(stmt.expr, stmt.source_span),
             )
 
     def _validate_match_stmt(
@@ -913,7 +917,7 @@ class ValidateRoutesMixin:
                         f"{member_value}"
                     ),
                     unit=unit,
-                    source_span=case.head.source_span,
+                    source_span=expr_source_span(case.head, case.source_span),
                     hints=(
                         f"Name one member of `{enum_decl.name}`, or add `else` for the remaining cases.",
                     ),
@@ -1024,7 +1028,7 @@ class ValidateRoutesMixin:
                     f"{owner_label}: {fixed_choice}"
                 ),
                 path=unit.prompt_file.source_path,
-                source_span=stmt.expr.source_span,
+                source_span=expr_source_span(stmt.expr, stmt.source_span),
                 hints=(
                     f"Make the selector resolve to one member of `{enum_decl.name}`.",
                 ),
@@ -1210,7 +1214,7 @@ class ValidateRoutesMixin:
                 summary="Compile failure",
                 detail=f"route_from arm must name a member of {enum_decl.name} in {owner_label}",
                 path=unit.prompt_file.source_path,
-                source_span=expr.source_span,
+                source_span=expr_source_span(expr, fallback_source_span),
                 hints=(
                     f"Name one member of `{enum_decl.name}`, or use `else` for the remaining members.",
                 ),
@@ -1225,7 +1229,7 @@ class ValidateRoutesMixin:
                     f"{member_value}"
                 ),
                 path=unit.prompt_file.source_path,
-                source_span=expr.source_span,
+                source_span=expr_source_span(expr, fallback_source_span),
                 hints=(
                     f"Name one member of `{enum_decl.name}`, or use `else` for the remaining members.",
                 ),
@@ -1384,7 +1388,7 @@ class ValidateRoutesMixin:
 
     def _branch_with_stmt(self, branch: LawBranch, stmt: model.LawStmt) -> LawBranch:
         if isinstance(stmt, model.ActiveWhenStmt):
-            return replace(branch, activation_exprs=(*branch.activation_exprs, stmt.expr))
+            return replace(branch, activations=(*branch.activations, stmt))
         if isinstance(stmt, model.ModeStmt):
             return replace(branch, mode_bindings=(*branch.mode_bindings, stmt))
         if isinstance(stmt, (model.CurrentArtifactStmt, model.CurrentNoneStmt)):
@@ -1771,7 +1775,7 @@ class ValidateRoutesMixin:
         branch: LawBranch,
     ) -> model.SourceSpan | None:
         candidates = (
-            [expr.source_span for expr in branch.activation_exprs]
+            [stmt.source_span for stmt in branch.activations]
             + [stmt.source_span for stmt in branch.mode_bindings]
             + [stmt.source_span for stmt in branch.musts]
             + [stmt.source_span for stmt in branch.owns]

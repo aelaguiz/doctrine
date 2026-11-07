@@ -82,3 +82,16 @@ message_contains = [
   "Authored workflow slot references cannot also define an inline body",
   "override read_first",
 ]
+
+[[cases]]
+name = "titled authored slots need a body"
+status = "active"
+kind = "parse_fail"
+prompt = "prompts/invalid_titled_slot_without_body/AGENTS.prompt"
+exception_type = "ParseError"
+error_code = "E105"
+message_contains = [
+  "Invalid authored slot body",
+  "A titled authored workflow slot must define an indented body",
+  "notes",
+]

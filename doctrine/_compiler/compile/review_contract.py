@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from doctrine import model
-from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.diagnostics import compile_error, expr_source_span
 from doctrine._compiler.constants import _REVIEW_VERDICT_TEXT
 from doctrine._compiler.final_output_diagnostics import final_output_compile_error
 from doctrine._compiler.review_diagnostics import (
@@ -683,7 +683,7 @@ class CompileReviewContractMixin:
                             f"a member of `{enum_decl.name}`."
                         ),
                         unit=unit,
-                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        source_span=expr_source_span(option, case.head.source_span or case.source_span),
                         hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 option_enum_decl, member_value = resolved_option
@@ -696,7 +696,7 @@ class CompileReviewContractMixin:
                             f"a member of `{enum_decl.name}`."
                         ),
                         unit=unit,
-                        source_span=option.source_span or case.head.source_span or case.source_span,
+                        source_span=expr_source_span(option, case.head.source_span or case.source_span),
                         hints=("Use enum member refs from the selected enum in each `when` line.",),
                     )
                 previous_case = seen_case_members.get(member_value)

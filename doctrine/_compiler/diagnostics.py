@@ -44,6 +44,11 @@ def prompt_site(
     )
 
 
+def expr_source_span(expr, fallback=None):
+    """A literal such as `true` has no span of its own, so `fallback` stands in."""
+    return getattr(expr, "source_span", None) or fallback
+
+
 def related_prompt_site(
     *,
     label: str,

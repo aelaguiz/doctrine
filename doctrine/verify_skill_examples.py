@@ -38,6 +38,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n{len(failures)} of {total_blocks} prompt block(s) failed to parse.")
         return 1
 
+    if not total_blocks:
+        print("No prompt blocks found. Point --root at built skill Markdown.")
+        return 1
+
     print(f"All {total_blocks} prompt block(s) parsed cleanly.")
     return 0
 
@@ -56,8 +60,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--root",
         action="append",
         help=(
-            "Path to a skill prompts directory to verify. "
-            "Repeat to check multiple roots. Defaults to skills/*/prompts."
+            "Path to a built skill directory to verify. "
+            "Repeat to check multiple roots. Defaults to skills/*/build."
         ),
     )
     return parser
