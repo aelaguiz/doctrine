@@ -1500,7 +1500,11 @@ stdout. This is the lossless first step of a port: file by file, before any refa
 - A repeated key in one section gets `_2`, `_3`, in order. A key that is a keyword in that
   position gets a final `_`, as Python does, so `## Details` prints `details_: "Details"`.
   Find out by parsing a small source with that key in that position, not from a word list,
-  plus `_RESERVED_AGENT_FIELD_KEYS` at the top of an agent.
+  plus `_RESERVED_AGENT_FIELD_KEYS` at the top of an agent. The sample uses the same kind, a
+  concrete `agent` for agents, a sibling before the key at the same depth, and a `paragraph` in
+  its body, because a keyword can read as a key in one position and a form in another.
+- A key that would start with a digit takes a leading `_`, so `## 1. Setup` is `_1_setup`. This
+  holds for `from` too, through one shared function, so `drop _1_setup` works.
 - `--kind agent` prints `abstract agent <Name>:`. `--kind workflow` prints
   `workflow <Name>: "<Title>"`. The title is the first-line `# Heading`, or the name when
   there is none, as `from` does. Headings below `###` stay text, as `from` keeps them.
