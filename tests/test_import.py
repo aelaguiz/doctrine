@@ -31,6 +31,9 @@ class ImportTests(HomeProject, unittest.TestCase):
             ("agent", "# Title\n\nRole.\n\n## Work\n\nText.\n"),
             ("agent", "# Title\n\n## Work\n\nText.\n"),
             ("workflow", "# Title\n\nIntro.\n\n## Work\n\nText.\n"),
+            ("workflow", "# Title\n\n**Lead-in.** Text.\n\n## Work\n\nText.\n"),
+            ("agent", ""),
+            ("agent", "# Title\n"),
         ):
             with self.subTest(kind=kind, markdown=markdown):
                 (self.root / "source.md").write_text(markdown)
@@ -70,8 +73,16 @@ class ImportTests(HomeProject, unittest.TestCase):
     def test_printed_source_parses(self):
         for kind in ("agent", "workflow"):
             with self.subTest(kind=kind):
-                source = self.convert("Intro.\n\n## Craft\n\n**Plan.** Start.\n", kind)
+                source = self.convert(
+                    "Intro.\n\n## 1. Setup\n\n**1. Plan.** Start.\n\n"
+                    "### Use\n\nUse it.\n\n## Route\n\nRoute it.\n\n"
+                    "## Home\n\nStay.\n\n## Skills\n\nLearn.\n", kind
+                )
                 self.assertTrue(parse_text(source).declarations)
+                self.assertIn('_1_setup: "1. Setup"', source)
+                self.assertIn('paragraph _1_plan: "1. Plan."', source)
+                if kind == "workflow":
+                    self.assertIn('skills_: "Skills"', source)
         markdown = 'Say "hello" at C:\\work and """end""".\n'
         source = self.convert(markdown)
         self.assertIn('Say "hello" at C:\\\\work', source)

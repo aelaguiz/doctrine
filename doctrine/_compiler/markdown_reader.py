@@ -7,6 +7,11 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 
 
+def heading_key(title):
+    key = re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")
+    return re.sub(r"^([0-9])", r"_\1", key)
+
+
 def fenced_lines(lines):
     fence = None
     for line in lines:
@@ -72,7 +77,7 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
                 level = len(match[1]) - 1
                 stack = stack[:level]
                 parent = stack[-1]
-                key = re.sub(r"[^a-z0-9]+", "_", match[2].lower()).strip("_")
+                key = heading_key(match[2])
                 if isinstance(declaration, model.Agent) and key in _RESERVED_AGENT_FIELD_KEYS:
                     key += "_"
                 if key in parent["keys"]:

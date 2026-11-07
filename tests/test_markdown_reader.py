@@ -20,6 +20,8 @@ class MarkdownReaderTests(unittest.TestCase):
     def test_slug_rules(self):
         session = self.markdown('# Craft\nRole.\n\n## The call: who & when?\nText.\n', '    drop the_call_who_when: "Other call."\n')
         self.assertEqual(render_markdown(session.compile_agent('A')), 'Role.\n')
+        session = self.markdown('Role.\n\n## 1. Setup\nText.\n', '    drop _1_setup: "Not needed."\n')
+        self.assertEqual(render_markdown(session.compile_agent('A')), 'Role.\n')
 
     def test_headings_in_fences_ignored(self):
         session = self.markdown('# Craft\nRole.\n\n## Work\n```md\n## Not a section\n### Not a child\n```\n')

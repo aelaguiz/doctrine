@@ -11,7 +11,9 @@ The release version for this major language move is 6.0.0.
 
 1. Account for inherited head prose with `inherit preamble` or
    `drop preamble: "Reason"`. Agent children must also keep, replace, or drop
-   each inherited typed field. Keep or replace the inherited role.
+   each inherited typed field. Keep or replace the inherited role. A receipt
+   child must also account for each inherited route. Add its key to
+   `inherit { ... }`, or use `drop <key>: "Reason"` to keep the old output.
 2. Each authored prose string now renders as one paragraph. Put a whole code
    fence in one `"""` string or a `code` block. A fence split across strings
    fails with `E605`. Put list items in `bullets` or one string to keep them
@@ -23,7 +25,8 @@ The release version for this major language move is 6.0.0.
    or `paragraph` key in a patchable body, while keeping its rendered title.
    `member` and `home` as agent slots, `values` in agent bodies, and `roster`
    in readable bodies, plus `budget` and `details`, are also reserved where
-   their forms can start.
+   their forms can start. If a workflow has head prose, rename any section
+   keyed `preamble` so a child can inherit it.
 5. `Message` is now a built-in output target, like `File`. Rename any
    project's own `output target Message` and update its references.
 
