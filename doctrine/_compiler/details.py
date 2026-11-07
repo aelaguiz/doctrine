@@ -7,7 +7,7 @@ from doctrine import model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledCodeBlock, CompiledGuardBlock
+from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -70,31 +70,24 @@ def render_companion(parts):
     return "\n\n".join(output) + "\n"
 
 
-def validate_shared_details(value):
-    def read(value, companion=None):
+def details_origin(block, body):
+    def reads(value):
         if isinstance(value, str):
-            match = LATE_ROOT.search(value) if companion else None
-            if match:
-                raise compile_error(
-                    code="E621", summary="Shared details read one agent's words",
-                    detail=f"`{companion}` serves every home that points at it, "
-                           f"so it can't read `{{{{{match[1]}:{match[2]}}}}}`.",
-                    hints=("Move this into the team or member, "
-                           "or write it in words that fit every reader.",),
-                )
-        elif isinstance(value, tuple):
-            for item in value:
-                read(item, companion)
-        elif is_dataclass(value):
-            if (isinstance(value, (CompiledSection, model.ReadableBlock)) and value.kind == "details"
-                    and value.origin):
-                companion = value.origin.companion or companion
-                read(value.origin.headings, companion)
-            for field in fields(value):
-                if field.name != "origin" and not (
-                    isinstance(value, CompiledCodeBlock) and field.name == "text"
-                    or isinstance(value, model.ReadableBlock) and value.kind == "code"
-                    and field.name == "payload"
-                ):
-                    read(getattr(value, field.name), companion)
-    read(value)
+            return bool(LATE_ROOT.search(value))
+        if isinstance(value, tuple):
+            return any(reads(item) for item in value)
+        if isinstance(value, model.ReadableBlock):
+            if value.kind == "roster":
+                return True
+            if value.kind == "code":
+                return reads(value.title)
+        if isinstance(value, CompiledCodeBlock):
+            return reads(value.title)
+        if is_dataclass(value):
+            return any(reads(getattr(value, field.name)) for field in fields(value)
+                       if field.name != "origin")
+        return False
+    origin = block.origin
+    if origin and origin.companion and (reads(origin.headings) or reads(block) or reads(body)):
+        return replace(origin, companion=None)
+    return origin

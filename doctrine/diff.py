@@ -123,7 +123,7 @@ def compare_homes(before, after, selectors):
              for runtime, values in loads[home]["runtimes"].items()} if home in loads else {}
             for loads in (old_loads, new_loads)
         ]
-        if not details_changed and signatures[0] == signatures[1]:
+        if not details_changed and not level_entries[home] and signatures[0] == signatures[1]:
             continue
         sizes = []
         for loads in (old_loads, new_loads):
@@ -171,7 +171,7 @@ def build_result(before, after, comparison, base):
             if any(
                 name in data["map"].deps and (
                     level in comparison["changed_levels"]
-                    or (level == path and path in comparison["details_changes"])
+                    or (level == path and (path in comparison["details_changes"] or comparison["level_entries"][level]))
                 )
                 for side in (before, after)
                 for level, data in loaded_levels(side["homes"], path)

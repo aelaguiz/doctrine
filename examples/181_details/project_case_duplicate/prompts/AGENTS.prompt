@@ -1,0 +1,10 @@
+abstract agent Qa:
+    role: "Test."
+    work: "Work"
+        details older: "Older"
+            "The first case."
+team T: "Team"
+    home: "team"
+    member qa[Qa]: "QA"
+        details work.older:
+            "A second case."

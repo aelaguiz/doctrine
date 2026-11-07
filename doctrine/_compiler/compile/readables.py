@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from doctrine._compiler.details import validate_shared_details
+from doctrine._compiler.details import details_origin
 from doctrine import model
 from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.diagnostics import compile_error
@@ -323,8 +323,9 @@ class CompileReadablesMixin:
         unit: IndexedUnit,
     ) -> CompiledReadableBlock:
         if block.kind == "details":
-            validate_shared_details(block)
-            return CompiledSection(kind="details", title=block.title, key=block.key, origin=block.origin, body=self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span))
+            unit = block.origin.scope_unit if block.origin else unit
+            body = self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span)
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block, body), body=body)
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None

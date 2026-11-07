@@ -1,0 +1,9 @@
+abstract agent Qa:
+    role: "Test."
+    work: "Work"
+        "Think."
+team T: "Team"
+    home: "team"
+    member qa[Qa]: "QA"
+        details work.absent.case:
+            "A case."

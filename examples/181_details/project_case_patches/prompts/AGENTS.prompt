@@ -1,0 +1,22 @@
+abstract agent Qa:
+    role: "Test."
+    work: "How to test"
+        paragraph plan: "Plan"
+            "Make a plan."
+            details older: "Earlier case"
+                "The older case."
+team T: "Team"
+    home: "team"
+    member kept[Qa]: "Kept"
+        override work.plan:
+            "Make a new plan."
+    member replaced[Qa]: "Replaced"
+        override work.plan.older: "New case"
+            "The new case."
+    member dropped[Qa]: "Dropped"
+        override work.plan:
+            "Make a new plan."
+        drop work.plan.older: "This case no longer fits."
+    member added[Qa]: "Added"
+        details work.plan.local: "Local case"
+            "This team owns the case."

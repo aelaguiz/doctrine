@@ -62,7 +62,7 @@ def source_origin(context, declaration, unit, path, span):
         else ()
     )
     line = span.line if span else declaration.source_span.line if declaration.source_span else 1
-    return model.Origin(name, path, f"{source}:{line}", companion, headings, line)
+    return model.Origin(name, path, f"{source}:{line}", companion, headings, line, scope_unit=unit)
 
 
 def child_origin(origin, key, span, title=None):

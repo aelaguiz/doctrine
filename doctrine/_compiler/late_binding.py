@@ -4,7 +4,6 @@ import re
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.details import validate_shared_details
 from doctrine._compiler.naming import map_model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
@@ -48,7 +47,6 @@ def value_reading_sites(context, root, key):
 
 
 def bind_home(context, compiled, agent, *, unit, _stack=None):
-    validate_shared_details(compiled)
     team_match = find_home_team(context, agent, unit=unit)
     team_unit, team = team_match if team_match else (None, None)
     missing = []

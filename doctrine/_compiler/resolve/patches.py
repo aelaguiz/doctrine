@@ -32,6 +32,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
     wildcard = None
     dropped = set()
     paths = {}
+    overlaps = {}
     for item in items:
         if isinstance(item, model.InheritAll):
             if wildcard is not None:
@@ -52,7 +53,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
             continue
         path = (
             item.path
-            if isinstance(item, (model.DropItem, model.OverridePath))
+            if isinstance(item, (model.DropItem, model.OverridePath, model.DetailsPath))
             else (patch_item_key(item),)
         )
         if path[0] is None:
@@ -70,8 +71,8 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
             )
         for previous, first in named.items():
             if path == previous:
-                if isinstance(item, (model.DropItem, model.OverridePath)) or isinstance(
-                    first, (model.DropItem, model.OverridePath)
+                if isinstance(item, (model.DropItem, model.OverridePath, model.DetailsPath)) or isinstance(
+                    first, (model.DropItem, model.OverridePath, model.DetailsPath)
                 ):
                     raise error(
                         "E612",
@@ -81,6 +82,14 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                     )
             elif path[: len(previous)] == previous or previous[: len(path)] == path:
                 short = path if len(path) < len(previous) else previous
+                long = previous if short == path else path
+                short_item, long_item = (item, first) if short == path else (first, item)
+                if isinstance(short_item, (model.AuthoredSlotOverride, model.OverrideSection,
+                                           model.ReadableOverrideBlock, model.OverridePath)) and isinstance(
+                    long_item, (model.DropItem, model.OverridePath, model.DetailsPath)
+                ):
+                    overlaps[long] = short
+                    continue
                 if isinstance(item, (model.InheritItem, model.AuthoredSlotInherit)) or isinstance(
                     first, (model.InheritItem, model.AuthoredSlotInherit)
                 ):
@@ -96,7 +105,7 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                     )
                 raise error("E612", "Conflicting patches", detail, item)
         named[path] = item
-        if isinstance(item, (model.DropItem, model.OverridePath)):
+        if isinstance(item, (model.DropItem, model.OverridePath, model.DetailsPath)):
             if path[0] not in parent_keys:
                 raise error(
                     "E610",
@@ -131,9 +140,10 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
                         )
                     )
             continue
-        if isinstance(item, (model.DropItem, model.OverridePath)):
+        if isinstance(item, (model.DropItem, model.OverridePath, model.DetailsPath)):
             key = item.path[0]
-            if len(item.path) > 1 and wildcard is None and key not in emitted_dotted:
+            if (len(item.path) > 1 and wildcard is None and key not in emitted_dotted
+                    and (key,) not in named):
                 result.append(inherit_type(key=key, source_span=item.source_span))
                 emitted_dotted.add(key)
             continue
@@ -141,7 +151,8 @@ def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchE
         if wildcard is not None and replacements.get(key) is item:
             continue
         result.append(item)
-    return PatchExpansion(tuple(result), dropped, paths)
+    return PatchExpansion(tuple(result), dropped,
+                          {path: (item, overlaps.get(path)) for path, item in paths.items()})
 
 
 def prepare_body_patches(body, parent, *, kind, owner_label, unit, source_span):
@@ -287,10 +298,12 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
             )
 
         if not tail:
+            if short and not (isinstance(node, model.ReadableBlock) and node.kind == "details"):
+                raise error("E612", "Conflicting patches", f"`{owner_label}` patches `{path}` under `{'.'.join(short)}`, which it already dropped or overrode.")
             if isinstance(patch, model.DropItem):
                 return None
             if not isinstance(node, (ResolvedSectionItem, model.LocalSection)) and not (
-                isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph"}
+                isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph", "details"}
             ):
                 kind = node.kind if isinstance(node, model.ReadableBlock) else "scalar"
                 raise error(
@@ -320,22 +333,29 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                     replacement_origin, headings=(*replacement_origin.headings[:-1], title)
                 )
             if isinstance(node, model.ReadableBlock):
-                return replace(node, title=title, payload=items, origin=replacement_origin)
-            return replace(
-                node,
-                title=title,
-                origin=replacement_origin,
-                items=items
-                if isinstance(node, model.LocalSection)
-                else context._resolve_section_body_items(items, unit=unit, owner_label=owner_label, origin=replacement_origin),
-            )
+                if node.kind != "details":
+                    items = keep_details(node.payload, items, owner_label, path, unit, patch.source_span, node.origin)
+                return replace(node, title=title, payload=items, origin=replacement_origin,
+                               patch=(path, ".".join(short)) if short else None)
+            if isinstance(node, ResolvedSectionItem):
+                items = context._resolve_section_body_items(items, unit=unit, owner_label=owner_label, origin=replacement_origin)
+            return replace(node, title=title, origin=replacement_origin,
+                items=keep_details(node.items, items, owner_label, path, unit, patch.source_span, node.origin))
+        if isinstance(patch, model.DetailsPath) and len(tail) == 1 and not (
+            isinstance(node, (ResolvedAgentSlot, ResolvedSectionItem, model.LocalSection)) or
+            isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph"}
+        ):
+            kind = node.kind if isinstance(node, model.ReadableBlock) else "scalar"
+            raise error("E611", "Invalid patch path", f"`{owner_label}`: `details {path}` attaches to a `{kind}`. Attach it to the section or paragraph that holds it.")
         if isinstance(node, ResolvedAgentSlot):
             children = node.body.items
         elif isinstance(node, (ResolvedSectionItem, model.LocalSection)):
             children = node.items
-        elif isinstance(node, model.ReadableBlock) and node.kind == "section":
+        elif isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph", "guard"}:
             children = node.payload
         else:
+            if short and not isinstance(patch, model.DetailsPath):
+                raise error("E612", "Conflicting patches", f"`{owner_label}` patches `{path}` under `{'.'.join(short)}`, which it already dropped or overrode.")
             raise error(
                 "E611",
                 "Invalid patch path",
@@ -347,7 +367,20 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
         matched = next(
             (child for child in children if getattr(child, "key", None) == tail[0]), None
         )
+        if isinstance(patch, model.DetailsPath) and len(tail) == 1:
+            if matched is not None:
+                raise error("E612", "Conflicting patches", f"`{owner_label}` adds the case `{path}`, which it already has. Write `override {path}` to replace it.")
+            children = (*children, replace(patch.value,
+                origin=child_origin(replacement_origin, tail[0], patch.source_span),
+                patch=(path, ".".join(short)) if short else None))
+            if isinstance(node, ResolvedAgentSlot):
+                return replace(node, body=replace(node.body, items=children))
+            return replace(node, **{"payload" if isinstance(node, model.ReadableBlock) else "items": children})
         if matched is None:
+            if short and not isinstance(patch, model.DetailsPath):
+                raise error("E612", "Conflicting patches", f"`{owner_label}` patches `{path}` under `{'.'.join(short)}`, which it already dropped or overrode.")
+            if isinstance(node, model.ReadableBlock) and node.kind == "paragraph" and not isinstance(patch, model.DetailsPath):
+                raise error("E611", "Invalid patch path", f"`{owner_label}`: `{path}` steps through `{'.'.join(prefix)}`, which has no keyed items.")
             raise error(
                 "E610",
                 "Missing patch target",
@@ -369,8 +402,12 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
         )
 
     result = dict(parent_items)
-    for path, patch in paths.items():
+    for path in sorted(paths, key=len, reverse=True):
+        patch, short = paths[path]
         if path[0] not in result:
+            if isinstance(patch, model.DetailsPath):
+                raise compile_error(code="E611", summary="Invalid patch path", path=unit.prompt_file.source_path,
+                    source_span=patch.source_span, detail=f"`{owner_label}`: `details {'.'.join(path)}` attaches to a `scalar`. Attach it to the section or paragraph that holds it.")
             raise compile_error(
                 code="E611",
                 summary="Invalid patch path",
@@ -382,10 +419,40 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                 source_span=patch.source_span,
             )
         item = result[path[0]]
-        title = item.body.title if isinstance(item, ResolvedAgentSlot) else None
+        title = item.body.title if isinstance(item, ResolvedAgentSlot) else item.title if isinstance(item, (ResolvedSectionItem, model.LocalSection)) else None
         result[path[0]] = walk(item, path[1:], (path[0],), patch,
                                child_origin(patch.origin or origin, path[0], patch.source_span, title))
     return result
+
+
+def keep_details(old, new, owner, path, unit, span, origin):
+    def cases(items, direct, origin):
+        for item in items:
+            if isinstance(item, model.ReadableBlock):
+                item_origin = item.origin or child_origin(origin, item.key, item.source_span,
+                                                          item.title if item.kind == "section" else None)
+                if item.kind == "details":
+                    yield replace(item, origin=item_origin), direct
+                elif item.kind in {"section", "paragraph", "guard"}:
+                    yield from cases(item.payload, False, item_origin)
+            elif isinstance(item, (ResolvedSectionItem, model.LocalSection)):
+                yield from cases(item.items, False, item.origin or child_origin(origin, item.key, item.source_span, item.title))
+    replaced = {item.key for item in new if isinstance(item, model.ReadableBlock) and item.kind == "details"}
+    keys = {patch_item_key(item) for item in new}
+    kept = []
+    for case, direct in cases(old, True, origin):
+        if case.key in keys and case.patch and case.patch[1] == path:
+            patched, short = case.patch
+            raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
+                source_span=span, detail=f"`{owner}` patches `{patched}`, and `override {short}` writes `{case.key}` too. Keep one.")
+        if direct and case.key in replaced:
+            continue
+        if case.key in keys:
+            raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
+                source_span=span, detail=f"`{owner}` overrides `{path}`, which would keep two cases keyed `{case.key}`. Drop one with a reason, or give them different keys.")
+        keys.add(case.key)
+        kept.append(case)
+    return (*new, *kept)
 
 
 def mark_wildcard(value):

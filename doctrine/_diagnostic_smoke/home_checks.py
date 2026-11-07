@@ -18,14 +18,6 @@ HOME_DIAGNOSTICS = {
         ),
         "",
     ),
-    "E621": (
-        (
-            'abstract agent R:\n    role: "Test."\n    work: "Work"\n        '
-            'details:\n            "{{agent:title}}"\nteam T: "Team"\n    home: '
-            '"t"\n    member qa[R]: "QA"\n'
-        ),
-        "",
-    ),
     "E630": (
         ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 1\n'),
         "",

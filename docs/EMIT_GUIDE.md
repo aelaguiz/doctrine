@@ -150,8 +150,9 @@ folder. `--out` keeps the same link bytes as the configured output root.
 
 `details` sends longer cases to a companion. A home ends with one line
 linking all its companions in first-use order. Team and member text goes to
-`DETAILS.md`. Shared declarations go once to `_details/<owner-slug>.md`.
-Shared words cannot read one home's values. Companions keep the headings
+`DETAILS.md`. Shared cases go once to `_details/<owner-slug>.md`. A shared
+case that reads a home value, or holds a roster, goes to each home's
+`DETAILS.md`. Companions keep the headings
 that hold details, at the same depth. Details never count toward load.
 Details are not allowed in skills, skill packages, input or output bodies,
 emitted documents, or documents used as output structures.

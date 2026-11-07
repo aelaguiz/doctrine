@@ -3,10 +3,17 @@ abstract agent Waiter:
     when: "When to wait"
         details:
             "The {{agent:unit}} waited."
-
+        details common: "A shared case"
+            "Wait for the result."
 
 team GrowthPod: "the growth pod"
     home: "pods/growth"
     values:
         unit: "bet"
+    member qa[Waiter]: "QA"
+
+team FeaturePod: "the feature pod"
+    home: "pods/feature"
+    values:
+        unit: "feature"
     member qa[Waiter]: "QA"

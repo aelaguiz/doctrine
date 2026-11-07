@@ -58,6 +58,7 @@ from doctrine._model.core import (
     InheritAll,
     DropItem,
     OverridePath,
+    DetailsPath,
     NameRef,
     ProseLine,
     RenderProfileDecl,

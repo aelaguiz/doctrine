@@ -125,7 +125,7 @@ agent PodQa[QaCraft]: "Pod QA"
                     "November 5: the long case."
 """
         "A team or member owns `DETAILS.md`. A concrete agent puts it beside its emitted file. An abstract agent, abstract team, workflow, or document owns one shared `_details` file, as in `examples/182_shared_details`."
-        "The owner is where the text was written. A shared companion keeps that owner's headings and order even when readers reorder or retitle them. It cannot read one agent's or team's values. Move such a case into the home that owns those words."
+        "The owner is where the text was written. A shared companion keeps that owner's headings and order even when readers reorder or retitle them. A shared case can read an agent or team value. It then goes to each home's `DETAILS.md`, as does a case with a roster."
         "A named `details` block gets a heading. A bare block stays under its section. Paragraphs can hold details too. One pointer line links a home's companions in first-use order. Skills, skill packages, input or output bodies, output structures, and emitted documents cannot use details."
 
     section budgets: "Measure What The Runtime Loads"
