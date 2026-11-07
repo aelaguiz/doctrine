@@ -1,30 +1,171 @@
 document TeamsAndHomes: "Teams And Homes"
-    "Load this when an author is sharing a role across teams, naming members, or porting a Markdown home. Roles carry the craft. Teams say where agents live. Values supply the words that differ."
-    section values: "One Role, Each Home's Words"
-        "In `examples/173_late_bound_values`, one QA role reads bet or feature from the concrete agent's values. Use the agent late root in shared prose. The compiler fills it after inheritance. It lists all missing values at once and names value cycles. Code stays literal. Skills, emitted documents, and machine output schemas have no home values."
-        "The agent's own values win. Next come its team and outer teams by folder, then parent agent defaults. A value may read another value or an ordinary checked ref. That ref keeps its source module. A sentence for one team belongs in an override; values add no logic."
-    section teams: "Folders Hold Shared Doctrine"
-        "`examples/174_team_members` and `examples/175_team_value_precedence` show team, home, and member. A team holds its own role and slots. That text stays out of each member's own render. The runtime reads the folder above, so the team lesson lands once. Paths form the tree; no declaration names an outer team."
-        "A member is Team.key. Its key changes underscores to hyphens in the folder name. Team.key also works in checked refs, routes, and rule targets. A member may take its role from an abstract agent, a concrete agent, or another member."
-        "Teams and members keep inherited items not named in their bodies. The role comes first, then own items, then the remaining craft. An explicit inherit * places the craft where it stands. Ordinary agent children still account for inherited items in full."
-    section assembly: "Reuse A Team's Member List"
-        "`examples/176_team_assembly` stamps one abstract team's members into several concrete teams. Add a new member, drop one with a reason, or replace one whole with override member. The inherited members keep their order and come before new members."
-        "The compiler supplies key, title, home, and folder facts. A team also supplies members and others as readable title lists. Do not set these names in values. A team file has no others, and an agent outside a team has no home or folder."
-    section roster: "Show Who Makes Each Call"
-        "`examples/177_roster` uses roster to make a table from direct members. Each column has a header and a cell template that reads agent values. The agent root means that row's member. A missing cell value skips that member's row. Static rows follow and fill every column. A roster needs a team."
-    section markdown: "Port One Markdown File First"
-        "`examples/179_markdown_backed_declarations` declares an abstract agent and a workflow from Markdown paths. Text before the first level-two heading becomes the role or preamble. Level-two and level-three headings become keys; deeper headings stay text. Fenced headings stay literal."
-        "A heading key is lower case, with runs of punctuation and spaces changed to underscores. Duplicate sibling keys fail with both line numbers. These sections take drop, override, dotted patches, and checked title refs. Text stays verbatim, including double braces. A runtime import line fails; declare that file too and compose it."
+    "Load this when sharing a role across teams, naming members, or porting a Markdown home. Roles carry the craft. Teams say where agents live. Values supply the words that differ."
 
-    section companions: "Keep The Idea Close And Longer Cases Nearby"
-        "`examples/181_details` and `examples/182_shared_details` keep the short idea in the home and route details to a companion. A team or member owns DETAILS.md. A concrete agent puts it beside its emitted file. An abstract agent, abstract team, workflow, or document owns one shared _details file."
+    section values: "Share A Role With Values"
+        "Values let one shared role use each home's words. In `examples/173_late_bound_values`, the role reads the concrete agent's values after inheritance."
+        code:
+            language: prompt
+            text: """abstract agent PodQa:
+    role: "You test each {{agent:unit}}."
+    values:
+        card: "pod's"
+
+agent GrowthQa[PodQa]: "QA"
+    values:
+        unit: "bet"
+        card: "opportunity's"
+        handle: "qa-{{agent:unit}}"
+    inherit *
+"""
+        "Use the `agent` late root in shared prose for the final agent's value. An agent's own values win, then its team, outer teams by folder, and role defaults. `examples/175_team_value_precedence` shows the order."
+        "A value may read another value or an ordinary checked ref. A checked ref keeps its source module. Values add no logic. Put a sentence for one team in that team's override."
+        "The compiler lists missing values together and names value cycles. Code stays literal. Skills, emitted documents, and machine output schemas have no home values."
+
+    section teams: "Put Teams And Members In Homes"
+        "A team holds shared doctrine in a folder. Its members live below it. This is from `examples/174_team_members`."
+        code:
+            language: prompt
+            text: """abstract agent PodMember:
+    role: "You are {{team:title}}'s {{agent:title}}. Your folder is `{{agent:home}}`. Your handle is `{{team:folder}}-{{agent:folder}}`."
+    team_note: "Your team"
+        "Your team: {{team:members}}. The others: {{team:others}}."
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "This file is for {{team:title}}, in `{{team:home}}`."
+    win: "What counts as a win"
+        "More users who pay."
+    member tech_lead[PodMember]: "technical lead"
+    member qa[PodMember]: "QA"
+        own: "Your own section"
+            "This comes before the craft."
+"""
+        "A team's role and slots stay in its own file, not each member's render. The runtime reads the folder above. Paths form the tree; no declaration names an outer team."
+        "A member is `Team.key`, such as `GrowthPod.qa`. The member key changes underscores to hyphens in its folder name. Use `Team.key` in checked refs, routes, and rule targets. A member may take its role from an abstract agent, a concrete agent, or another member."
+        "Teams and members keep inherited items they do not name. The role comes first, then their own items, then the remaining craft. Use `inherit *` to place the craft where it stands. Ordinary agent children still account for inherited items in full."
+        "The compiler supplies `key`, `title`, `home`, and `folder` facts. A team also supplies `members` and `others` as readable title lists. Do not set these names in `values`. A team file has no `others`; an agent outside a team has no `home` or `folder`."
+
+    section assembly: "Reuse A Team's Member List"
+        "An abstract team lets several teams share a member list. This is from `examples/176_team_assembly`."
+        code:
+            language: prompt
+            text: """abstract team CrossFunctional:
+    member lead[PodLeadRole]: "lead"
+    member qa[PodRole]: "QA"
+    member marketer[PodRole]: "marketer"
+
+team FeaturePod[CrossFunctional]: "the feature pod"
+    home: "pods/feature"
+    values:
+        unit: "feature"
+    drop marketer: "This pod has no marketing work."
+    member writer[PodRole]: "writer"
+
+team ProductPod[CrossFunctional]: "the product pod"
+    home: "pods/product"
+    values:
+        unit: "change"
+    override member lead[PodRole]: "pod lead"
+"""
+        "Add a member by declaring it. Use `drop` with a reason to remove one. `override member` replaces a member whole. Inherited members keep their order and come before new members."
+
+    section roster: "Show Who Makes Each Call"
+        "A `roster` builds a table from a team's direct members. This is from `examples/177_roster`."
+        code:
+            language: prompt
+            text: """team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    how: "How we work"
+        roster calls: "Who makes each call"
+            call: "The call" = "{{agent:calls}}"
+            who: "Who makes it" = "{{agent:title}}"
+            rows:
+                owner:
+                    call: "The goal and the money"
+                    who: "the owner"
+    member lead[Lead]: "lead"
+    member qa[Qa]: "QA"
+    member watcher[Watcher]: "watcher"
+"""
+        "Each column has a header and a cell template that reads agent values. `agent` means that row's member. If a member lacks a cell value, its row is skipped. Static rows follow and fill every column. A roster needs a team."
+
+    section markdown: "Port One Markdown File First"
+        "Use `from` to compose an existing Markdown file as an abstract agent or workflow. This is from `examples/179_markdown_backed_declarations`."
+        code:
+            language: prompt
+            text: """abstract agent QaCraft from "specialists/qa.md"
+workflow EveryAgent from "shared/every-agent.md"
+
+agent PodQa[QaCraft]: "Pod QA"
+    role: "You are the pod's QA."
+    drop which_pull_requests_are_yours: "A pod's QA works the pod's changes."
+    override your_craft.sending_it_back: "Sending it back"
+        "A failure goes to whoever built the change."
+    inherit *
+"""
+        "Text before the first level-two heading becomes the role or preamble. Level-two and level-three headings become keys. Deeper headings and fenced headings stay text."
+        "A heading key is lower case; runs of punctuation and spaces become underscores. Duplicate sibling keys fail with both line numbers. Use `drop`, `override`, dotted patches, and checked title refs on these sections. Text stays verbatim, including double braces. A runtime import line fails; declare that file too and compose it."
+
+    section companions: "Keep Longer Cases Nearby"
+        "Use `details` to keep the short idea in the home and put longer cases in a companion. This is from `examples/181_details`."
+        code:
+            language: prompt
+            text: """team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    wait: "When to wait"
+        "Wait only when what you wait for could change what you'd do."
+        details:
+            "On October 13 a watcher moved a member mid test pass."
+    member qa: "QA"
+        role: "You test."
+        how: "How you think"
+            paragraph plan: "A test plan."
+                "Grow it with the design."
+                details older: "Older cases"
+                    "November 5: the long case."
+"""
+        "A team or member owns `DETAILS.md`. A concrete agent puts it beside its emitted file. An abstract agent, abstract team, workflow, or document owns one shared `_details` file, as in `examples/182_shared_details`."
         "The owner is where the text was written. A shared companion keeps that owner's headings and order even when readers reorder or retitle them. It cannot read one agent's or team's values. Move such a case into the home that owns those words."
-        "A named details block gets a heading. A bare details block stays under its section. Paragraphs can hold details too. One pointer line links the home's companions in first-use order. Skills, skill packages, input or output bodies, output structures, and emitted documents cannot use details."
-    section budgets: "Judge What The Runtime Loads"
-        "`examples/183_load_budgets` counts externals first, then the runtime file at each folder level down to the home. Details never count. Claude counts UTF-16 units; Codex counts UTF-8 bytes. A budget takes a runtime name and a positive integer no larger than the runtime's limit."
-        "The nearest budget wins: the home, its team, outer teams, then the runtime limit. Check fails an over-budget home unless over is warn. Build only warns, so a launch can still start. At warn_at of the limit, W306 gives the author an early signal."
-        "Run doctrine load to see all team and member homes by headroom. Select one home for its file order, biggest source parts, and drop reasons. Sizes include externals and each loaded level. Details stay separate. Nested source entries never count text twice."
+        "A named `details` block gets a heading. A bare block stays under its section. Paragraphs can hold details too. One pointer line links a home's companions in first-use order. Skills, skill packages, input or output bodies, output structures, and emitted documents cannot use details."
+
+    section budgets: "Measure What The Runtime Loads"
+        "A `budget` sets a limit for a runtime. This is from `examples/183_load_budgets`."
+        code:
+            language: prompt
+            text: """team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    budget:
+        claude: 10
+    member qa: "QA"
+        role: "This line is longer than ten."
+"""
+        "A budget takes a runtime name and a positive integer no larger than the runtime's limit. The nearest budget wins: the home, its team, outer teams, then the runtime limit."
+        "Load counts externals first, then the runtime file at each folder level down to the home. Details never count. Claude counts UTF-16 units; Codex counts UTF-8 bytes."
+        "`doctrine check` fails an over-budget home unless `over` is `warn`. Build only warns, so a launch can still start. At `warn_at` of the limit, `W306` gives an early signal."
+        "Run `doctrine load` to see all team and member homes by headroom. Select one home for its file order, biggest source parts, and drop reasons. Sizes include externals and each loaded level. Details stay separate. Nested source entries never count text twice."
+
     section tree_and_tools: "Build And Inspect Homes"
-        "`examples/180_home_tree` builds the home tree: each team level has its own file, with member files below. The runtime reads the files along the path to a home. `examples/178_team_contract` shows the team contract."
+        "The home paths form a tree. `examples/180_home_tree` puts shared text at each level and a member below it."
+        code:
+            language: prompt
+            text: """abstract team Level:
+    role: "This file is for {{team:audience}}. If your session started in `{{team:home}}` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one."
+
+team Pods[Level]: "the pods"
+    home: "pods"
+    values:
+        audience: "every pod member"
+    pods_note: "How pods work"
+        "A pod works toward one goal."
+
+team GrowthPod[Level]: "the growth pod"
+    home: "pods/growth"
+    values:
+        audience: "every member of the growth pod"
+    win: "What counts as a win"
+        "More users who pay."
+    member qa[Member]: "QA"
+"""
+        "Each team level has its own file, with member files below. The runtime reads the files along the path to a home. `examples/178_team_contract` shows the team contract."
         "Use `doctrine where` to find a sentence and the homes it reaches. Use `doctrine diff` to see what changed and who receives it. See `examples/187_doctrine_diff`."
         "Use `doctrine import PATH --name DECL --kind agent` or `--kind workflow` to turn Markdown into source. Add `--check` to compare the render with the original. Links in imported text stay as written, so make them repo-root paths first. See `examples/192_doctrine_import`."
