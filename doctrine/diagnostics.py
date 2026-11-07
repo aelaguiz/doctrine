@@ -43,6 +43,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from lark import Token
 from lark.exceptions import (
     UnexpectedCharacters,
     UnexpectedEOF,
@@ -333,6 +334,17 @@ class ParseError(DoctrineError):
             code = "E199"
             hints = ("Check the surrounding syntax and indentation.",)
             cause = str(exc)
+
+        if isinstance(exc, UnexpectedCharacters):
+            previous = exc.token_history[-1] if exc.token_history else None
+        elif isinstance(exc, UnexpectedToken):
+            stack = exc.interactive_parser.parser_state.value_stack
+            previous = stack[-1] if stack else None
+        else:
+            previous = None
+        if (isinstance(previous, Token) and previous.type in {"ESCAPED_STRING", "MULTILINE_STRING"}
+                and previous.end_line == line):
+            hints = ('A `"` ended this string early. Use `\\"`, or wrap the text in `"""`.',)
 
         return cls.from_parts(
             code=code,

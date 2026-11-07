@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Parse errors point out a string ended by a stray quote and clip long source lines.
 - Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.
@@ -33,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Markdown import (6.0.0; language 6.0)
 
+- Import shortens keys and reports when `--check` matches.
 - `doctrine import` prints agent or workflow source from a Markdown file.
 
 ### Messages (6.0.0; language 6.0)

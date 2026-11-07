@@ -38,6 +38,9 @@ The release version for this major language move is 6.0.0.
 agent homes with a title. Root teams have no scope line. The line counts
 toward load. Remove authored scope lines that the build now supplies.
 
+`doctrine import` uses shorter keys. Check key paths if you import a file
+again and replace its earlier output.
+
 Overrides now keep cases written in inherited bodies. Use `drop` with a reason to remove one.
 A team or member can add a case by path. An override fails with `E612` if
 its kept cases would repeat a key; drop a case or give it a different key.

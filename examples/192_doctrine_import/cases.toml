@@ -30,3 +30,18 @@ kind = "cli_contract"
 project = "project"
 args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent", "--check"]
 expected_exit = 0
+stderr_contains = ["Render matches."]
+
+[[cases]]
+name = "import shortens long keys and keeps quoted prose"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/long_headings.md", "--name", "LongHeadings", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = [
+  "role: \"\"\"You can paste \"quoted words\" here.\"\"\"",
+  "what_the_pod_s_change: \"What the pod's change means for the people who will use this process every single day\"",
+  "what_the_pod_s_change_2: \"What the pod's change means for a second group\"",
+]
+stderr_contains = ["Render matches."]

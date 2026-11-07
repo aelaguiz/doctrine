@@ -64,8 +64,8 @@ Stability rules:
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `E101` | Unexpected token or newline | The parser saw a token or line break that does not fit the current grammar state. |
-| `E102` | Unexpected character | The parser hit a character that does not map to a valid token on this surface. |
+| `E101` | Unexpected token or newline | The parser saw a token or line break that does not fit the current grammar state. If a quote ends a string early, the hint shows how to fix it. |
+| `E102` | Unexpected character | The parser hit a character that does not map to a valid token on this surface. If a quote ends a string early, the hint shows how to fix it. |
 | `E103` | Unexpected end of file | The file ended before the current declaration or block was complete. |
 | `E104` | Indentation-sensitive parse failure | The parser saw an unexpected indent or dedent. |
 | `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body, or a titled slot has no body. Use a named workflow ref or a title with an indented body. |

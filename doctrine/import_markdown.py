@@ -19,7 +19,7 @@ def import_markdown(args):
     path = Path(args.path)
     lines, title, start = markdown_head(path, args.name, args.path)
     output = [f'abstract agent {args.name}:' if args.kind == 'agent'
-              else f'workflow {args.name}: {source_string(title)}']
+              else f'workflow {args.name}: {title_string(title)}']
     stack = [{"keys": {}, "keyed": False, "text": 0}]
     pending = []
     paragraph = False
@@ -45,7 +45,7 @@ def import_markdown(args):
             output.append(f'{indent}{source_string(text)}')
 
     def key_for(title, *, paragraph=False):
-        key = heading_key(title)
+        key = heading_key(" ".join(title.split()[:4]))
         sample = ('agent Probe:\n    role: "Role."\n' if args.kind == "agent"
                   else 'workflow Probe: "Probe"\n')
         for level in range(1, len(stack)):
@@ -74,7 +74,7 @@ def import_markdown(args):
                 stack = stack[:len(heading[1]) - 1]
                 node = stack[-1]
                 key = key_for(heading[2])
-                output.append(f'{"    " * len(stack)}{key}: {source_string(heading[2])}')
+                output.append(f'{"    " * len(stack)}{key}: {title_string(heading[2])}')
                 node["keyed"] = True
                 stack.append({"keys": {}, "keyed": False, "text": 0})
                 continue
@@ -83,7 +83,7 @@ def import_markdown(args):
                 flush()
                 key = key_for(bold[1], paragraph=True)
                 indent = "    " * len(stack)
-                output.append(f'{indent}paragraph {key}: {source_string(bold[1])}')
+                output.append(f'{indent}paragraph {key}: {title_string(bold[1])}')
                 pending.append(bold[2])
                 stack[-1]["keyed"] = True
                 paragraph = True
@@ -132,6 +132,7 @@ def check_render(args, output, lines, start):
         if before != after:
             print(f"Line {number} differs.\n  Markdown: {before}\n  Render: {after}", file=sys.stderr)
             return 1
+    print("Render matches.", file=sys.stderr)
     return 0
 
 
@@ -144,3 +145,9 @@ def source_string(text):
     if ending and len(ending[0]) % 3:
         text = text[:-1] + '\\"'
     return '"""' + text + '"""'
+
+
+def title_string(text):
+    if '"' in text:
+        return source_string(text)
+    return '"' + text.replace("\\", "\\\\") + '"'

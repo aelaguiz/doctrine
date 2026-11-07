@@ -335,7 +335,7 @@ any other keyed workflow item. See `examples/114_workflow_root_readable_blocks`.
 composition."""
 
     section prose_and_patches: "Prose And Patches"
-        "Each string is one paragraph. A triple-quoted string keeps its inner line breaks. Use paragraph for an addressable lead-in. See `examples/165_every_string_a_paragraph` and `examples/166_paragraph_blocks`."
+        "Each string is one paragraph. Use triple-quoted strings for prose. They keep ordinary quotes and inner line breaks. Use paragraph for an addressable lead-in. See `examples/165_every_string_a_paragraph` and `examples/166_paragraph_blocks`."
         "Head prose has the reserved key preamble. A child must write inherit preamble, or drop preamble with a reason. The parent head renders before the child's own head."
         "An agent child must also account for role and every inherited typed field. Write the field to replace it, or inherit it by key. A typed field may be dropped; role must be kept or replaced. See `examples/167_inherited_head_prose` and `examples/168_role_and_typed_field_accounting`."
         "Use inherit * once to keep all parent items not named elsewhere. Overrides take their parent positions under it. Plain roles and typed fields stay where written. An explicit inherit key moves that item to its line's position. See `examples/170_inherit_wildcard`."

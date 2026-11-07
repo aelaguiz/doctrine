@@ -726,7 +726,8 @@ Important rules:
 ### Prose And Paragraphs
 
 Each authored string is one paragraph. Adjacent strings have one blank line
-between them. A triple-quoted string keeps its own inner line breaks. List
+between them. Use triple-quoted strings for prose. They keep ordinary quotes
+and inner line breaks. List
 items, table cells, and definitions keep their own layout.
 
 A `paragraph` gives prose a key. Its optional title runs into the first string.
