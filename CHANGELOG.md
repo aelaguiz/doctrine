@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Shared files
+
+- Name shared files and link to them or ask a role to read them first. Files
+  without bodies stay on disk; files with bodies are written by the build.
+- Load reports list shared files and on-demand text. `doctrine where` and
+  `W301` read kept files.
+
 ### Super in overrides
 
 - Use `super` on its own line in an override to keep the parent's text and add

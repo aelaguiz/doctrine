@@ -353,15 +353,16 @@ shows the canonical formatted shape for one shipped compile error.
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
 | `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. |
 | `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
-| `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
+| `E652` | Missing Markdown source | A Markdown-backed declaration or kept file names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
+| `E655` | File ref can't go here | A load ref is not at the end of its line, its path has whitespace, or a skill package uses a file ref. |
 | `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
 
 ## Homes And Load
 
 | Code | Summary | When |
 | --- | --- | --- |
-| `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
+| `E607` | Two homes, one path | Two home owners or two built files share a path, or two team targets share an output folder. |
 | `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Retired | Shared details can read agent and team values. |
 | `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |

@@ -6,7 +6,7 @@ from collections import defaultdict
 from difflib import SequenceMatcher
 from itertools import combinations
 from os.path import relpath
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from lark import Token
 
@@ -58,6 +58,10 @@ def near_copy_warnings(session):
                     from_files.add(source.resolve())
                     name = ".".join((*unit.module_parts, declaration.name))
                     texts.append((name, source, 1, source.read_text()))
+            if isinstance(declaration, model.FileDecl) and declaration.body is None:
+                source = base / Path(declaration.path).expanduser()
+                name = ".".join((*unit.module_parts, declaration.name))
+                texts.append((name, source, 1, source.read_text()))
         for name, source, line, text in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):

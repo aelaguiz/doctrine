@@ -31,6 +31,7 @@ from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
+    padded_rows, text_size,
 )
 
 
@@ -196,6 +197,20 @@ def load(args):
                 for file in values["external"]:
                     file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
         loads = home_loads(target, homes, files, settings, selected)
+        shared = {}
+        generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
+                     if isinstance(content, bytes)}
+        for home in loads:
+            for _, level in loaded_levels(homes, home["home"]):
+                for ref, _ in level["file_refs"]:
+                    path = Path(ref[2])
+                    name = relpath(path, target.project_config.config_dir)
+                    if name not in shared:
+                        text = generated[path].decode() if path in generated else path.read_text()
+                        shared[name] = {"path": name, "size": text_size(text, "claude"), "homes": set()}
+                    shared[name]["homes"].add(home["home"])
+        shared_files = [{**row, "homes": sorted(row["homes"])} for row in
+                        sorted(shared.values(), key=lambda row: (-row["size"], row["path"]))]
         for home in loads:
             for runtime, load in home["runtimes"].items():
                 for file in load["files"]:
@@ -221,7 +236,7 @@ def load(args):
                         {key: value for key, value in file.items() if key != "text"}
                         for file in runtime["files"]
                     ]
-            print(json.dumps({"format_version": 1, "homes": loads}))
+            print(json.dumps({"format_version": 1, "homes": loads, "shared_files": shared_files}))
         elif args.full and len(selected) == 1:
             for runtime in loads[0]["runtimes"].values():
                 for file in runtime["files"]:
@@ -230,6 +245,11 @@ def load(args):
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))
+            if not args.selectors and shared_files:
+                print("\nShared files:\n" + padded_rows([
+                    ("  " + row["path"], f"{row['size']:,}",
+                     f"{len(row['homes'])} {'home' if len(row['homes']) == 1 else 'homes'}")
+                    for row in shared_files]))
         return 0
 
 
@@ -248,7 +268,7 @@ def where_source(args):
     with resolve_target(args) as (target, session, _):
         if target is None:
             return None
-        homes, _, selected, _ = compile_homes(
+        homes, files, selected, _ = compile_homes(
             target, session=session, selectors=[args.home] if args.home else ()
         )
         if args.home:
@@ -294,6 +314,23 @@ def where_source(args):
             {"origin": ".".join((origin, *path)), "site": site, "homes": sorted(reached)}
             for (origin, path, site), reached in matches.items()
         ]
+        generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
+                     if isinstance(content, bytes)}
+        for unit, declaration in declarations_in(session).values():
+            if not isinstance(declaration, model.FileDecl):
+                continue
+            base = target.output_dir if declaration.body is not None else target.project_config.config_dir
+            path = (base / Path(declaration.path).expanduser()).resolve()
+            reached = {home for home in selected for _, level in loaded_levels(homes, home)
+                       if any(ref[2] == str(path) for ref, _ in level["file_refs"])}
+            if (args.home and not reached) or (declaration.body is not None and path not in generated):
+                continue
+            text = generated[path].decode() if path in generated else path.read_text()
+            for line, value in enumerate(text.splitlines(), 1):
+                if needle in " ".join(value.casefold().split()):
+                    result.append({"origin": f"file {declaration.name}",
+                        "site": f"{relpath(path, target.project_config.config_dir)}:{line}",
+                        "homes": sorted(reached)})
         closest, best = None, 0.6
         if not result:
             for (origin, path, site, sentence), reached in sorted(

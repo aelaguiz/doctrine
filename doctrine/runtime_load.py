@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tomllib
+from os.path import relpath
 from pathlib import Path, PurePosixPath
 
 from doctrine import model
@@ -127,6 +128,10 @@ def loaded_levels(homes, home):
 
 def home_loads(target, homes, files, settings, selected):
     loads = []
+    generated = {(target.output_dir / path).resolve(): content for path, content in files.items()
+                 if isinstance(content, bytes)}
+    def file_text(path):
+        return generated[path].decode() if path in generated else path.read_text(encoding="utf-8")
     for home, data in homes.items():
         if home not in selected:
             continue
@@ -155,6 +160,7 @@ def home_loads(target, homes, files, settings, selected):
             setting = settings[runtime]
             loaded = list(setting["external"])
             parts = {}
+            on_demand = {}
             for level, item in levels:
                 path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
                 if path in files:
@@ -178,10 +184,23 @@ def home_loads(target, homes, files, settings, selected):
                             "on_disk": on_disk,
                         }
                     )
+                for pointer in item["pointers"]:
+                    path = (target.output_dir / pointer).resolve()
+                    on_demand[relpath(path, target.project_config.config_dir)] = text_size(file_text(path), runtime)
+                for ref, always_on in item["file_refs"]:
+                    path = Path(ref[2])
+                    name = relpath(path, target.project_config.config_dir)
+                    if ref[0] == "load" and always_on:
+                        if runtime == "codex" and not any(file["path"] == name for file in loaded):
+                            text = file_text(path)
+                            loaded.append({"path": name, "size": text_size(text, runtime),
+                                "kind": "read_first", "text": text, "on_disk": path.is_file()})
+                    else:
+                        on_demand[name] = text_size(file_text(path), runtime)
             limit = next(
                 (budget[runtime] for budget in budgets if runtime in budget), setting["limit"]
             )
-            total = sum(item["size"] for item in loaded)
+            total = sum(item["size"] for item in loaded if item["kind"] != "read_first")
             details_size = sum(
                 text_size(files[path].decode(), runtime) for path in data["pointers"]
             )
@@ -191,6 +210,8 @@ def home_loads(target, homes, files, settings, selected):
                 "limit": int(limit),
                 "headroom": int(limit) - total,
                 "files": loaded,
+                "on_demand": [{"path": path, "size": size} for path, size in
+                    sorted(on_demand.items(), key=lambda row: (-row[1], row[0]))],
                 "details_size": details_size,
                 "parts": [
                     {"origin": origin, "size": size}
@@ -311,7 +332,7 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "missing" if is_missing(file)
+                    "read first" if file["kind"] == "read_first" else "missing" if is_missing(file)
                     else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]
@@ -319,6 +340,9 @@ def render_load(loads):
             blocks.append("Files:\n" + padded_rows(rows))
         if load["parts"]:
             blocks.append(biggest_parts(load["parts"]))
+        if load["on_demand"]:
+            blocks.append("On demand:\n" + padded_rows([
+                ("  " + file["path"], f"{file['size']:,}") for file in load["on_demand"]]))
     if home["drops"]:
         blocks.append(
             "Dropped:\n"

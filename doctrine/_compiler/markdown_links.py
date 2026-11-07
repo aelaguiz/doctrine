@@ -3,9 +3,23 @@ from __future__ import annotations
 import os
 import posixpath
 import re
+import json
 
 from doctrine import model
 from doctrine._compiler.markdown_reader import fenced_lines
+
+
+def render_file_refs(text, folder):
+    def render(match):
+        mode, title, path, anchor = json.loads(match[1])
+        relative = os.path.relpath(path, folder).replace(os.sep, "/")
+        if anchor:
+            relative += "#" + anchor
+        if mode == "load":
+            return "@" + relative
+        destination = "<" + relative + ">" if any(c.isspace() for c in relative) else relative
+        return f"[{title}]({destination})"
+    return re.sub(r"\x1e([^\x1f]+)\x1f", render, text)
 
 
 def markdown_destinations(text):

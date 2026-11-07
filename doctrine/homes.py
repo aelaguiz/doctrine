@@ -9,9 +9,11 @@ from pathlib import Path, PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.details import split_details, render_companion
+from doctrine._compiler.details import split_details, render_companion, reject_details
 from doctrine._compiler.home_map import build_home_map
-from doctrine._compiler.late_binding import bind_home
+from doctrine._compiler.late_binding import bind_home, map_text, reject_late_roots
+from doctrine._compiler.markdown_links import render_file_refs
+from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
 from doctrine._compiler.teams import team_members, team_contract, member_home, find_home_team
@@ -23,7 +25,7 @@ from doctrine.emit_docs import (
 )
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
-from doctrine.renderer import render_markdown
+from doctrine.renderer import render_markdown, render_readable_block
 from doctrine.runtime_load import home_budgets, loaded_levels
 
 
@@ -106,8 +108,14 @@ def compile_home(target, session, context, home, owner, unit, plan):
         (compiled,) = session.compile_agents_from_units(
             roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots)
         )
-    home_map = build_home_map(compiled)
+    home_map = build_home_map(map_text(
+        compiled, lambda text: render_file_refs(text, target.output_dir / home)))
     compiled, parts, pointers = split_details(compiled, home)
+    refs = [(json.loads(match[1]), always_on)
+            for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
+            for text in model_walk(value) if isinstance(text, str)
+            for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
+    compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home))
     files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
     data = {
         "owner": owner,
@@ -117,17 +125,18 @@ def compile_home(target, session, context, home, owner, unit, plan):
         "files": list(files),
         "pointers": pointers,
         "budgets": home_budgets(owner, unit, context),
+        "file_refs": refs,
     }
     return data, files, parts
 
 
-def companion_files(homes, companions):
+def companion_files(homes, companions, output_dir):
     files = {}
     for path, parts in companions.items():
         if path.startswith("_details/"):
             parts.sort(key=lambda part: part[1].origin.line)
         source = parts[0][1].origin.site.rsplit(":", 1)[0]
-        text = render_companion(parts)
+        text = render_file_refs(render_companion(parts), (output_dir / path).parent)
         local = [
             data for home, data in homes.items() if str(PurePosixPath(home) / "DETAILS.md") == path
         ]
@@ -236,7 +245,47 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             contract = team_contract(context, owner, unit=data["unit"], compiled_members=compiled)
             files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
-    files.update(companion_files(homes, companions))
+    files.update(companion_files(homes, companions, target.output_dir))
+    declarations = [(unit, decl) for unit in session.units()
+                    for decl in unit.declarations.files_by_name.values()]
+    referenced = {Path(ref[2]) for data in homes.values() for ref, _ in data["file_refs"]}
+    for unit, decl in declarations:
+        path = (target.project_config.config_dir / Path(decl.path).expanduser()).resolve()
+        if (decl.body is None and (path in referenced or whole)
+                and not path.is_file()):
+            raise compile_error(code="E652", summary="Missing Markdown source",
+                detail=f"`{decl.name}` names `{decl.path}`, which doesn't exist.",
+                path=unit.prompt_file.source_path, source_span=decl.source_span)
+    written = {}
+    pending = [(unit, decl) for unit, decl in declarations if decl.body is not None and (
+        (whole and session.flow_for_unit(unit) is session.root_flow)
+        or (target.output_dir / decl.path).resolve() in referenced)]
+    while pending:
+        unit, decl = pending.pop(0)
+        path = str(PurePosixPath(decl.path))
+        if path in written:
+            if written[path] is not decl:
+                raise compile_error(code="E607", summary="Two homes, one path",
+                    detail=f"`{decl.name}` and `{written[path].name}` both land at `{path}`.")
+            continue
+        written[path] = decl
+        reject_details(decl.body, "a shared file")
+        reject_late_roots(decl.body, unit=unit, why="a shared file belongs to no home")
+        document = model.DocumentDecl(decl.name, decl.body, render_profile_ref=decl.render_profile_ref,
+                                      source_span=decl.source_span)
+        body = context._compile_document_decl(document, unit=unit)
+        raw = render_readable_block(body, depth=1) + "\n"
+        for match in re.finditer(r"\x1e([^\x1f]+)\x1f", raw):
+            referenced.add(Path(json.loads(match[1])[2]))
+        pending.extend((other_unit, other) for other_unit, other in declarations
+                       if other.body is not None and other.path not in written
+                       and (target.output_dir / other.path).resolve() in referenced)
+        source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
+        files[path] = with_header(render_file_refs(raw, (target.output_dir / path).parent), source).encode()
+    for data in homes.values():
+        data["shared_files"] = [str(Path(ref[2]).relative_to(target.output_dir))
+            for ref, _ in data["file_refs"] if Path(ref[2]).is_relative_to(target.output_dir)
+            and str(Path(ref[2]).relative_to(target.output_dir)) in written]
     return homes, files, selected, whole
 
 
@@ -362,6 +411,10 @@ def needed_files(root, homes, files, selected, wanted):
                          if path.startswith("_details/") else file_state(disk, files[path]))
                 if state != "unchanged":
                     yield home, "links to", path, state
+        for path in dict.fromkeys(path for _, data in levels for path in data["shared_files"]):
+            state = file_state(root / path, files[path])
+            if state != "unchanged":
+                yield home, "links to", path, state
 
 
 def build_homes(

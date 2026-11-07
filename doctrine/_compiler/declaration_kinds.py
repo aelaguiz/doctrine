@@ -72,6 +72,7 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         readable=True,
         addressable_root=True,
     ),
+    DeclarationKind("file", "file declaration", "files_by_name", model.FileDecl, False, True),
     DeclarationKind(
         name="input",
         label="input declaration",

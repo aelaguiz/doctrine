@@ -227,6 +227,16 @@ class DocumentDecl:
 
 
 @_dataclass(slots=True, frozen=True)
+class FileDecl:
+    name: str
+    title: str
+    path: str
+    body: DocumentBody | None = None
+    render_profile_ref: NameRef | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class TableDecl:
     name: str
     title: str

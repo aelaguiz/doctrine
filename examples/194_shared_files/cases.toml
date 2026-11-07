@@ -1,0 +1,23 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "shared files link from a home"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pod/qa/AGENTS.md" = [
+  "If your session started in this folder, you are Pod's QA. If not, this only describes that role.",
+  "",
+  "Before testing, read [Test design](../../shared/guide.md).",
+  "",
+  "## Work",
+  "",
+  "Use [Checklist](../../shared/checklist.md).",
+], "shared/checklist.md" = [
+  "# Checklist",
+  "",
+  "Check the result.",
+] }

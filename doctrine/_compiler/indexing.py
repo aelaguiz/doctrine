@@ -48,6 +48,7 @@ class UnitDeclarations:
     schemas_by_name: dict[str, model.SchemaDecl]
     tables_by_name: dict[str, model.TableDecl]
     documents_by_name: dict[str, model.DocumentDecl]
+    files_by_name: dict[str, model.FileDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
     route_onlys_by_name: dict[str, model.RouteOnlyDecl]
     groundings_by_name: dict[str, model.GroundingDecl]
@@ -123,6 +124,7 @@ class IndexedFlow:
     schemas_by_name: dict[str, model.SchemaDecl]
     tables_by_name: dict[str, model.TableDecl]
     documents_by_name: dict[str, model.DocumentDecl]
+    files_by_name: dict[str, model.FileDecl]
     workflows_by_name: dict[str, model.WorkflowDecl]
     route_onlys_by_name: dict[str, model.RouteOnlyDecl]
     groundings_by_name: dict[str, model.GroundingDecl]
@@ -725,6 +727,7 @@ def index_unit(
     schemas_by_name: dict[str, model.SchemaDecl] = {}
     tables_by_name: dict[str, model.TableDecl] = {}
     documents_by_name: dict[str, model.DocumentDecl] = {}
+    files_by_name: dict[str, model.FileDecl] = {}
     workflows_by_name: dict[str, model.WorkflowDecl] = {}
     route_onlys_by_name: dict[str, model.RouteOnlyDecl] = {}
     groundings_by_name: dict[str, model.GroundingDecl] = {}
@@ -829,6 +832,11 @@ def index_unit(
                 source_path=prompt_file.source_path,
             )
             tables_by_name[declaration.name] = declaration
+            continue
+        if isinstance(declaration, model.FileDecl):
+            _register_decl(files_by_name, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            files_by_name[declaration.name] = declaration
             continue
         if isinstance(declaration, model.DocumentDecl):
             _register_decl(
@@ -1115,6 +1123,7 @@ def index_unit(
         schemas_by_name=schemas_by_name,
         tables_by_name=tables_by_name,
         documents_by_name=documents_by_name,
+        files_by_name=files_by_name,
         workflows_by_name=workflows_by_name,
         route_onlys_by_name=route_onlys_by_name,
         groundings_by_name=groundings_by_name,
