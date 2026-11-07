@@ -274,22 +274,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- `SKILL.source.json` no longer records the absolute path of the machine that
-  compiled it. `source.root` is now written relative to the consuming project
-  root, and every `inputs[].path` is written relative to `source.root`, so one
-  path base covers both package-local and out-of-package inputs. A shared
-  prompt that lives beside the package now reads `../../shared/AGENTS.prompt`
-  instead of an absolute path. The receipt is committed proof, so the old
-  behaviour meant the same source emitted a different receipt in a second
-  checkout: a consumer that ran `emit_skill` from a git worktree saw tracked
-  manifests go dirty for no reason but the path they were compiled from.
-  Paths outside the consuming project, and targets built with no project
-  config, keep their previous rendering: a `../` chain to somewhere outside the
-  project would encode how deep the checkout sits on disk, and a cwd-relative
-  root would encode where the command was run from, so neither is portable.
-  `receipt_version` stays `1`; the keys and their meanings are unchanged, only
-  the path base is. Existing emitted receipts report `stale_source` until they
-  are re-emitted, which is the normal re-emit prompt, not a silent break.
+- A literal condition or arm no longer crashes the compiler. `active when true`
+  with no `current` line gives `E331`. A literal `route_from` arm, `match` arm,
+  or review `when` line gives the normal error for that spot, with a line number.
+- A titled agent slot with no body, such as `notes: "Notes"`, gives `E105`
+  instead of a crash.
+- `doctrine load` says when a home has no file for a runtime. A plain agent
+  writes only `AGENTS.md`, so the report no longer shows `0 of 150,000` for Claude.
+- `doctrine build` rejects `details` in a sibling `SOUL.prompt` with `E620`, as
+  `emit_docs` does. The text used to land in `SOUL.md` under a stray heading.
+- `make verify-skill-examples` builds the skills and checks their Markdown. It
+  used to scan folders with no Markdown and pass on nothing. It now fails if it
+  finds no blocks.
+- `SKILL.source.json` and `SKILL_GRAPH.source.json` no longer record where the
+  machine that built them keeps the project. Inside the project, their paths are
+  relative, so the same source gives the same receipt in any checkout. A path
+  outside the project stays absolute, and so does any path in a target with no
+  project config. `receipt_version` stays `1`. Existing receipts report as stale
+  until you emit them again.
+- `emit_skill` leaves generated cache files such as `__pycache__`,
+  `.pytest_cache`, `.pyc`, and `.pyo` out of skill packages and out of
+  `SKILL.source.json`. A `source.track:` entry that names one fails with `E556`.
 
 ### Verification
 
@@ -533,10 +538,6 @@ Support-surface version changes: Doctrine language 4.0 -> 5.3; package metadata 
   E500 behavior. That constraint is no longer part of the language.
 
 ### Fixed
-- `emit_skill` now ignores generated cache artifacts such as `__pycache__`,
-  `.pytest_cache`, `.pyc`, and `.pyo` when bundling package files and writing
-  `SKILL.source.json`. Explicit `source.track:` entries that name those cache
-  artifacts now fail with `E556`.
 - Output shape selector identity now compares the resolved
   `(owner_module_parts, enum_name)` pair instead of the enum basename. A
   selector on `mod_a.WriterRole` no longer accepts a binding or case on a

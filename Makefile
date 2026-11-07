@@ -46,6 +46,7 @@ verify-diagnostics:
 	$(UV_RUN) -m doctrine.diagnostic_smoke
 
 verify-skill-examples:
+	$(UV_RUN) -m doctrine.emit_skill --target doctrine_agent_linter_skill --target doctrine_learn_skill
 	$(UV_RUN) -m doctrine.verify_skill_examples
 
 verify: verify-examples verify-diagnostics verify-skill-examples

@@ -519,7 +519,7 @@ class SkillPackageHostCompileContext:
 
 @dataclass(slots=True, frozen=True)
 class LawBranch:
-    activation_exprs: tuple[model.Expr, ...] = ()
+    activations: tuple[model.ActiveWhenStmt, ...] = ()
     mode_bindings: tuple[model.ModeStmt, ...] = ()
     match_bindings: tuple[tuple[tuple[str, ...], str], ...] = ()
     current_subjects: tuple[model.CurrentArtifactStmt | model.CurrentNoneStmt, ...] = ()

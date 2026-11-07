@@ -1,0 +1,6 @@
+agent Worker:
+    role: "Stay calm."
+    craft: "Craft"
+        "Keep your head."
+        details:
+            "A long worked case."

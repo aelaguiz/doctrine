@@ -107,6 +107,9 @@ its home path. A path selects that home and every home below it.
 One target with teams can be inferred; otherwise pass `--target NAME`.
 Each command takes `--pyproject PATH`.
 
+`load` says when a home has no file for a runtime. A plain agent writes only
+`AGENTS.md`, so Claude loads nothing from it.
+
 `build` writes files and runs no rules. Near or over budget, it warns.
 Bad budgets, bad runtime settings, and missing externals print errors but
 skip the budget report and keep building. Budget warnings name only selected

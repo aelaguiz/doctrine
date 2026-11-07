@@ -1,0 +1,9 @@
+workflow AlwaysOn: "Always On"
+    law:
+        active when true
+        stop "Reply and stop."
+
+
+agent InvalidLiteralActiveWithoutCurrent:
+    role: "Show that a literal condition still needs a current subject."
+    workflow: AlwaysOn

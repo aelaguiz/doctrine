@@ -133,3 +133,13 @@ error_code = "E132"
 message_contains = [
   "Missing route target",
 ]
+
+[[cases]]
+name = "a literal active condition still needs one current subject"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_literal_active_without_current/AGENTS.prompt"
+agent = "InvalidLiteralActiveWithoutCurrent"
+exception_type = "CompileError"
+error_code = "E331"
+location_line = 4

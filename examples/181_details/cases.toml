@@ -36,3 +36,15 @@ expected_file_lines = { "pods/growth/AGENTS.md" = [
     "",
     "November 5: the long case.",
 ] }
+
+[[cases]]
+name = "a sibling SOUL.prompt cannot hold details"
+status = "active"
+kind = "cli_contract"
+project = "project_soul_details"
+args = ["build", "--target", "homes"]
+expected_exit = 1
+stderr_contains = [
+  "E620 compile error: Details not allowed here",
+  "`details` can't be used in `SOUL.prompt`.",
+]

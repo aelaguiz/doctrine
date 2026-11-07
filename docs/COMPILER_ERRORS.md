@@ -66,7 +66,7 @@ Stability rules:
 | `E102` | Unexpected character | The parser hit a character that does not map to a valid token on this surface. |
 | `E103` | Unexpected end of file | The file ended before the current declaration or block was complete. |
 | `E104` | Indentation-sensitive parse failure | The parser saw an unexpected indent or dedent. |
-| `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body instead of either a named workflow ref or an inline workflow body. |
+| `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body, or a titled slot has no body. Use a named workflow ref or a title with an indented body. |
 | `E106` | Invalid string literal | A quoted string token could not be decoded because its escapes or delimiters were invalid. |
 | `E131` | Missing route label | A route line reached `->` without a quoted label first. |
 | `E132` | Missing route target | A route line reached the end of the statement after `->` without an explicit agent target. |
@@ -360,7 +360,7 @@ shows the canonical formatted shape for one shipped compile error.
 | Code | Summary | When |
 | --- | --- | --- |
 | `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
-| `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, or `python -m doctrine.emit_docs`. |
+| `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Shared details read one agent's words | A shared companion reads an agent or team value, in text or a title. |
 | `E630` | Over load budget | A check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
