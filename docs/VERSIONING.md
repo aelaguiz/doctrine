@@ -47,6 +47,7 @@ Use `check --strict` when project warnings should fail an author's change.
 In diff JSON, each changed declaration's `homes` list holds a `home`, its total
 `delta`, and the declaration's `own` share, or `null` when it has no entries.
 Where JSON lists each match's `origin`, `site`, and `homes`.
+If the working source has errors, `where` searches `HEAD` instead.
 
 ## The Version Lines
 

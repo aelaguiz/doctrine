@@ -138,6 +138,10 @@ Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
 order, or `--json` for the versioned report. A `--full` header marks missing
 files. Companions have a separate size.
 
+`where` finds the source of words and the homes that read them. If the source
+has errors, it searches the last commit and says so on stderr. If that also
+fails, it reports the original error.
+
 The hand-edit report matches sections by title and then by order when titles
 repeat. A removed section says `no longer in source`. A companion names its
 source file without guessing which section owns an edit. Markdown-backed

@@ -4,6 +4,7 @@ import json
 import subprocess
 import tomllib
 import unittest
+from contextlib import chdir
 from pathlib import Path
 from unittest.mock import patch
 
@@ -211,6 +212,45 @@ rule AnalystWork: "Analyst work"
         result = self.cli(root, "where", "this shared sentence", "--home", "pod/qa")
         self.assertEqual(result[0], 0, result)
         self.assertIn("reaches 1 home: pod/qa", result[1])
+
+    def test_where_searches_head_when_source_has_syntax_error(self):
+        root = self.project(example="187_doctrine_diff")
+        self.git_project(root)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + "\nnot valid syntax\n")
+        code, output, error = self.cli(root, "where", "You follow the bet")
+        self.assertEqual(code, 0, error)
+        self.assertIn("PodQa.whom  prompts/AGENTS.prompt:3", output)
+        self.assertEqual(error, "Source has errors. Searching HEAD.\n")
+
+    def test_where_prints_original_error_when_head_is_missing(self):
+        root = self.project(example="187_doctrine_diff")
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + "\nnot valid syntax\n")
+        with chdir(root):
+            with self.assertRaises(DoctrineError) as caught:
+                parse_file(Path("prompts/AGENTS.prompt"))
+            original = str(caught.exception)
+        code, output, error = self.cli(root, "where", "You follow the bet")
+        self.assertEqual(code, 1)
+        self.assertEqual(output, "")
+        self.assertEqual(error, original + "\n")
+
+    def test_where_prints_original_error_when_head_is_broken(self):
+        root = self.project(example="187_doctrine_diff")
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + "\ninvalid committed syntax\n")
+        self.git_project(root)
+        source.write_text("invalid working syntax\n")
+        with chdir(root):
+            with self.assertRaises(DoctrineError) as caught:
+                parse_file(Path("prompts/AGENTS.prompt"))
+            original = str(caught.exception)
+        code, output, error = self.cli(root, "where", "You follow the bet")
+        self.assertEqual(code, 1)
+        self.assertEqual(output, "")
+        self.assertEqual(error, original + "\n")
 
     def test_exit_codes_for_diff_and_where(self):
         root = self.project(example="187_doctrine_diff")

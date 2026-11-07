@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import sys
 import subprocess
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, redirect_stderr
 from dataclasses import replace
 from pathlib import Path, PurePosixPath
 
@@ -218,10 +219,10 @@ def run_command(args, command):
         return 2
 
 
-def where(args):
+def where_source(args):
     with resolve_target(args) as (target, session, _):
         if target is None:
-            return 2
+            return None
         homes, _, selected, _ = compile_homes(
             target, session=session, selectors=[args.home] if args.home else ()
         )
@@ -240,14 +241,31 @@ def where(args):
             {"origin": ".".join((origin, *path)), "site": site, "homes": sorted(reached)}
             for (origin, path, site), reached in matches.items()
         ]
-        if args.json:
-            print(json.dumps({"format_version": 1, "matches": result}))
-        else:
-            for match in result:
-                count = len(match["homes"])
-                print(f"{match['origin']}  {match['site']}")
-                print(
-                    f"  reaches {count} {'home' if count == 1 else 'homes'}: "
-                    + ", ".join(match["homes"])
-                )
-        return 0 if matches else 1
+        return result
+
+
+def where(args):
+    try:
+        result = where_source(args)
+    except DoctrineError as original:
+        try:
+            with redirect_stderr(io.StringIO()):
+                result = where_source(argparse.Namespace(**{**vars(args), "rev": "HEAD"}))
+            if result is None:
+                raise original
+        except Exception:
+            raise original
+        print("Source has errors. Searching HEAD.", file=sys.stderr)
+    if result is None:
+        return 2
+    if args.json:
+        print(json.dumps({"format_version": 1, "matches": result}))
+    else:
+        for match in result:
+            count = len(match["homes"])
+            print(f"{match['origin']}  {match['site']}")
+            print(
+                f"  reaches {count} {'home' if count == 1 else 'homes'}: "
+                + ", ".join(match["homes"])
+            )
+    return 0 if result else 1

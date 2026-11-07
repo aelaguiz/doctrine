@@ -30,7 +30,8 @@ def revision_source(args):
     config = resolve_pyproject_path(args.pyproject)
     root = Path(
         subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"], cwd=config.parent, text=True
+            ["git", "rev-parse", "--show-toplevel"], cwd=config.parent, text=True,
+            stderr=subprocess.PIPE if args.command == "where" else None,
         ).strip()
     )
     for path in args.overlays:
