@@ -22,6 +22,8 @@ expected_file_lines = { "_details/waiter.md" = [
     "",
     "Long history of note keeping.",
 ], "pods/growth/qa/AGENTS.md" = [
+    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "",
     "You wait well.",
     "",
     "## Habits",
@@ -34,6 +36,8 @@ expected_file_lines = { "_details/waiter.md" = [
     "",
     "Fuller cases, under the same headings: [_details/habits.md](../../../_details/habits.md), [_details/waiter.md](../../../_details/waiter.md).",
 ], "pods/growth/analyst/AGENTS.md" = [
+    "If your session started in this folder, you are the growth pod's analyst. If not, this only describes that role.",
+    "",
     "You wait well.",
     "",
     "## When to wait",

@@ -79,7 +79,9 @@ A Claude-only target writes `CLAUDE.md`. With no runtimes set, the target
 writes `AGENTS.md`.
 
 Every Markdown file `doctrine build` writes has a source and body hash in
-its header, including plain agents. The `python -m doctrine.emit_*` commands
+its header, including plain agents. A team or member home begins with a line
+that says who it is for. A plain agent gets a line when it has a title. A root
+team has no line. These lines count toward load. The `python -m doctrine.emit_*` commands
 keep their current output. The build checks every file before any write. A hand edit fails with
 `E634`; move it to the source named by the error. `--force` overwrites it.
 Writes are atomic and use your umask. Equal bytes keep their file's mtime.

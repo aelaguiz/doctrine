@@ -21,6 +21,7 @@ because that slice was easy to open first."""
         "A useful lesson changes the judgment an agent will make. If the home already teaches that judgment, a second version leaves two places to fix next time. Change the text that already makes the call."
         "Ask whether the change restates an old lesson, adds a rule where a judgment already lives, or contradicts a parent. A distinct case may earn new text. Show what makes it distinct before calling it a copy."
         "Use `AL231`, `AL232`, or `AL233` when the evidence fits. These are judgment calls, not compiler checks."
+        "Use `AL234` for prose about how files load where the build owns that. Keep prose that does real work. This is a judgment call, not a compiler check."
 
     section read_full_frontier: "Read The Full Frontier First"
         """Read the whole honest surface family before you decide findings.

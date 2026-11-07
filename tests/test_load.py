@@ -250,7 +250,7 @@ team T: "Team"
         self.assertEqual(
             error.split("missing HOMES.contract.json")[0],
             "E630 compile error: Over load budget\n\nDetail:\n"
-            "- t loads 482 of 1 bytes on codex.\n"
+            "- t loads 619 of 1 bytes on codex.\n"
             "- Biggest parts:\n"
             "  - W7: 81\n  - W6: 71\n  - W5: 61\n  - W4: 51\n  - W3: 41\n"
             "  - And 2 smaller parts: 52\n",

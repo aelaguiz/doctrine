@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Scope lines
+
+- `doctrine build` writes who a team, member, or titled plain agent file is for.
+  The agent linter flags prose about how files load.
+
 ### Fixed
 
 - Plain agent homes now use the same runtime file names and links as team members.

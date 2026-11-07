@@ -19,6 +19,7 @@ document FindingCatalog: "Finding Catalog"
 | `AL231` | Lesson Restated Beside Old Text | A change repeats a lesson that the reached home already teaches. | Change the text that already makes the call. |
 | `AL232` | Rule Added Where A Judgment Lives | A change adds a fixed rule beside a judgment that already covers the case. | Fold it into the judgment, or show why it needs a rule. |
 | `AL233` | Change Contradicts A Parent | A change gives an answer that conflicts with its parent's guidance. | Change the parent, or say the departure plainly. |
+| `AL234` | Prose About How Files Load | Prose describes how files load or their order where the build owns that. | Delete the plumbing and keep any text that does real work. |
 | `AL240` | Skill Hardcodes Invocation Inputs | A skill hardcodes changing subject, dataset, or case facts. | Keep the method in the skill and move changing facts into inputs or source reads. |
 | `AL245` | Gate Declared As Inline Prose | Review gate IDs appear as free-form prose on the review or in an output field body instead of as typed `contract.NAME` identities. | Declare the gates once on the review contract and reference them by `contract.NAME` in the review body and the same identities through Doctrine interpolation in authored prose. |
 | `AL246` | Per-Case Gate Delta Split Into Parallel Contracts | Two or more review cases share one `review_family` and differ only in a small gate delta, yet each case binds its own near-duplicate `contract:` workflow or schema. | Keep one shared contract and express the per-case delta through `override gates:` inside the case block. |
@@ -157,6 +158,9 @@ document FindingCatalog: "Finding Catalog"
 
         section al233: "`AL233` Change Contradicts A Parent"
             "The changed declaration and a parent point to different actions in the same case. Show both spans. Change the parent, or state why this role departs from it."
+
+        section al234: "`AL234` Prose About How Files Load"
+            "Authored text says how files load, what loads when, or which file sits above or below, where the build owns that. Delete the plumbing. Keep generated scope lines and prose that does real work."
 
         section al240: "`AL240` Skill Hardcodes Invocation Inputs"
             "What it means: A skill hardcodes the changing subject, dataset, or case."

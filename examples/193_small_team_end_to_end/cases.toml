@@ -12,7 +12,9 @@ stdout_contains = [
   "built 7 homes",
 ]
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
-    "You are the growth pod's QA. If your session started anywhere else, this describes that member; it does not make you one.",
+    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "",
+    "Help the team ship its work.",
     "",
     "## Whom you work with",
     "",
@@ -20,7 +22,9 @@ expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
     "",
     "Fuller cases, under the same headings: [_details/qa.md](../../../_details/qa.md).",
 ], "pods/feature/qa/AGENTS.md" = [
-    "You are the feature pod's QA. If your session started anywhere else, this describes that member; it does not make you one.",
+    "If your session started in this folder, you are the feature pod's QA. If not, this only describes that role.",
+    "",
+    "Help the team ship its work.",
     "",
     "## Whom you work with",
     "",
