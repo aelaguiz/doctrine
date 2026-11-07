@@ -1464,8 +1464,10 @@ the string as written.
 scope lists it in `inputs:`. A string `to:` has no check, which covers a note to one's next
 session. One agent may list one `Message` in both `outputs:` and `inputs:`. An agent ref's
 scope is that agent. A team ref's scope is its members and the members of teams under its home.
-Inherited `inputs:` count, read through `_expand_agent_patches`. `W303` runs in
-`doctrine check` with the other project warnings.
+Inherited `inputs:` count. `W303` runs in `doctrine check` with the other project warnings.
+It reads the `Message` outputs that home agents send, from their compiled contracts, so a
+message nobody sends has no check, and one bad output nobody uses can't fail `check`. An
+abstract team or agent has no home to read from, so `W303` skips a `to:` that names one.
 
 `AGENT_IO_DESIGN_NOTES.md` keeps "a packet primitive" as a non-goal and gains this line:
 "`Message` is an ordinary `output`. Doctrine renders it on both sides and carries nothing
@@ -1784,7 +1786,8 @@ section, and one `_details/` file results).
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
 `test_string_to_has_no_reader_check`, `test_same_agent_sends_and_reads`,
 `test_e660_each_field`, `test_e660_bad_to_ref`, `test_w303_inherited_input_counts`,
-`test_w303_team_scope`, `test_message_input_in_flow_graph`.
+`test_w303_team_scope`, `test_message_input_in_flow_graph`, `test_w303_skips_abstract_scope`,
+`test_w303_unsent_message_has_no_check`, `test_w303_child_output_reads_as_itself`.
 
 **`tests/test_import.py`**: `test_lead_in_becomes_paragraph`, `test_check_passes_on_lossless`,
 `test_check_reports_first_difference`, `test_text_after_keyed_item_gets_untitled_paragraph`,
