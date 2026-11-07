@@ -10,6 +10,21 @@ from tests.home_support import HomeProject
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_file_refs_keep_authored_paragraphs_separate(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    how: "How"
+        "First {{Guide}}."
+        "Second {{Guide}}."
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        self.assertIn("First [Guide](../guide.md).\n\nSecond [Guide](../guide.md).",
+                      (root / "t/AGENTS.md").read_text())
+
     def test_diff_reports_kept_file_growth_and_readers(self):
         root = self.project('''file Guide: "Guide"
     path: "guide.md"

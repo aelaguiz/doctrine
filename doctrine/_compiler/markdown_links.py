@@ -19,7 +19,8 @@ def render_file_refs(text, folder):
             return "@" + relative
         destination = "<" + relative + ">" if any(c.isspace() for c in relative) else relative
         return f"[{title}]({destination})"
-    return re.sub(r"\x1e([^\x1f]+)\x1f", render, text)
+    result = re.sub(r"\x1e([^\x1f]+)\x1f", render, text)
+    return model.AuthoredProse(result) if isinstance(text, model.AuthoredProse) else result
 
 
 def markdown_destinations(text):
