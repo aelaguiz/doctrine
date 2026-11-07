@@ -27,10 +27,12 @@ def import_markdown(args):
     people = {}
     quote_originals = {}
     converted = set()
+    code_span = re.compile(r'(?<!`)(`+)(?!`)[^\n]*?(?<!`)\1(?!`)')
 
     def replace_quote(match):
         name, written_date, context, words = match.groups()
-        if lead and match.start() < lead.end(1):
+        if (lead and match.start() < lead.end(1)
+                or any(span.start() <= match.start(4) - 1 < span.end() for span in code_spans)):
             return match[0]
         try:
             day = datetime.strptime(written_date, "%B %d, %Y")
@@ -120,6 +122,7 @@ def import_markdown(args):
     for number, line, inside_fence, heading in markdown_lines(lines, path=args.path, start=start):
         if not inside_fence and not heading:
             lead = re.match(r'^\*\*(.+?)\*\*(?:\s|$)', line)
+            code_spans = tuple(code_span.finditer(line))
             line = re.sub(r'(?:^|(?<=\()|(?<=[.!?] )|(?<=[.!?][")] ))([A-Z][a-zA-Z0-9]*(?: [A-Z][a-zA-Z0-9]*){0,2}), '
                           r'([A-Z][a-z]+ \d{1,2}, \d{4})(?:, ([^\n{}]+?))?: "([^"{}]*)"(?=$|[\s).,;:!?])',
                           replace_quote, line)
@@ -150,8 +153,9 @@ def import_markdown(args):
     flush()
     original = "\n".join(([f"# {title}"] if start == 2 else []) + lines)
     for number, line in enumerate(original.splitlines(), 1):
-        for quote in re.finditer(r'"((?:[^"]|(?<=\s)"(?=\S)[^"]*")*)"', line):
-            if (number, quote.start()) not in converted and len(quote[1].split()) >= 6:
+        prose = code_span.sub(lambda span: " " * len(span[0]), line)
+        for quote in re.finditer(r'"((?:[^"]|(?<=\s)"(?=\S)[^"]*")*)"', prose):
+            if (number, quote.start()) not in converted and len(line[quote.start(1):quote.end(1)].split()) >= 6:
                 print(f"Quote left as prose at line {number}.", file=sys.stderr)
     output[:0] = [f'person {key}: {title_string(name)}' for key, name in people.items()]
     print("\n".join(output))

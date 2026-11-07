@@ -27,8 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Role paragraphs reject repeated keys and keep their author in `where`.
   An agent cannot drop every role paragraph.
-- Markdown import keeps extra space after bold leads, leaves quotes in bold leads,
-  and lists long quotes one line at a time.
+- Markdown import keeps extra space after bold leads, leaves quotes in bold leads
+  and code spans, and lists long quotes one line at a time outside code spans.
 - Parse errors point out a string ended by a stray quote and clip long source lines.
 - Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.

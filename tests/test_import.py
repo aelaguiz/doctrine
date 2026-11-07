@@ -189,6 +189,19 @@ class ImportTests(HomeProject, unittest.TestCase):
         self.assertNotIn('person JaneDoe:', source)
         self.assertEqual(error, 'Quote left as prose at line 1.\nRender matches.\n')
 
+    def test_quotes_in_code_spans_stay_prose_and_do_not_shift_warnings(self):
+        text = ('`(Jane Doe, November 5, 2026: "one two three four five six")` '
+                '"outside one two three four five six"\n'
+                '``(Jane Doe, November 5, 2026: "one ` two three four five six")``\n'
+                'Jane Doe, November 6, 2026: "A quote outside code."\n'
+                '"one two `three` four five six"\n')
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertIn('`(Jane Doe, November 5, 2026: "one two three four five six")`', source)
+        self.assertIn('{{JaneDoe, 2026-11-06: "A quote outside code."}}', source)
+        self.assertEqual(error, 'Quote left as prose at line 1.\nQuote left as prose at line 4.\nRender matches.\n')
+
     def test_check_with_quote_in_agent_without_opening(self):
         (self.root / 'source.md').write_text('## Work\n\nJane Doe, November 5, 2026: "Work carefully."\n')
         code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
