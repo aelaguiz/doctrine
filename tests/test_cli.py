@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tempfile
 import tomllib
 import unittest
 from contextlib import chdir
@@ -727,6 +728,23 @@ team T: "Team"
         self.assertEqual(code, 0, error)
         report = json.loads(output)["homes"][0]["runtimes"]["claude"]
         self.assertEqual(report["on_demand"], [{"path": "guide.md", "size": 16}])
+
+    def test_rev_reads_kept_file_outside_repository_from_disk(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            guide = Path(temporary) / "guide.md"
+            guide.write_text("Before.\n")
+            root = self.project(f'''file Guide: "Guide"
+    path: "{guide}"
+team T: "Team"
+    home: "t"
+    role: "Read {{{{Guide}}}}."
+''')
+            self.git_project(root)
+            guide.write_text("Changed on disk.\n")
+            code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            self.assertEqual(report["on_demand"][0]["size"], 17)
 
     def test_rev_reads_codex_limit_from_revision(self):
         root = self.project(example="183_load_budgets")
