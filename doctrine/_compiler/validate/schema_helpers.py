@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import re
-
 from doctrine import model
-from doctrine._compiler.provenance import inline_quote, render_quote
-from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
+from doctrine._compiler.provenance import render_inline_quotes
 from doctrine._compiler.readable_diagnostics import invalid_readable_block_error
 from doctrine._compiler.resolved_types import (
     IndexedUnit,
@@ -136,12 +133,7 @@ class ValidateSchemaHelpersMixin:
         if "{{" not in value and "}}" not in value:
             return value
 
-        for inline in re.finditer(r"\{\{([^,{}]+),.*?\}\}", value, re.S):
-            expression = inline.group(0)[2:-2]
-            if "{" in expression or "}" in expression:
-                raise compile_error(code="E650", summary="Invalid quote", detail="Inline quote: `{` and `}` can't appear inside one.", path=unit.prompt_file.source_path)
-            quote, data = inline_quote(self, unit, expression)
-            value = value.replace(inline.group(0), render_quote(quote, data), 1)
+        value = render_inline_quotes(self, unit, value)
         parts: list[str] = []
         cursor = 0
         for match in _INTERPOLATION_RE.finditer(value):

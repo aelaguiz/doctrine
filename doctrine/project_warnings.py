@@ -10,12 +10,13 @@ from os.path import relpath
 from lark import Token
 
 from doctrine import model
+from doctrine._compiler.provenance import collect_quotes
 from doctrine._compiler.source_graph import model_walk
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
 
 
-def project_warnings(session, homes, loads):
+def project_warnings(session, homes, loads, context, all_declarations):
     paragraphs, unused, units, from_files = [], {}, {}, set()
     base = session.project_config.config_dir
     for flow in session._flow_cache.values():
@@ -117,5 +118,10 @@ def project_warnings(session, homes, loads):
         if (path, line) not in session.value_reads:
             warnings.append({"code": "W304", "text": (
                 f"W304 unused value: {key} at {relpath(path, base)}:{line} is read by no home."
+            )})
+    for row in collect_quotes(context, all_declarations, base):
+        if row["quote"].name and not row["cited_in"]:
+            warnings.append({"code": "W305", "text": (
+                f"W305 unused quote: {row['key']} at {row['site']} is cited nowhere."
             )})
     return warnings

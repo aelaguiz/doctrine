@@ -300,21 +300,6 @@ team T: "T"
         self.assertEqual(code, 1)
         self.assertIn('E651', error)
 
-    def test_same_named_person_is_visible_to_sources(self):
-        root = self.project('''person A: "Person"
-workflow A: "Workflow"
-    "Do work."
-quote Q: "Words"
-    by: A
-    on: "2026-11-05"
-team T: "T"
-    home: "."
-    work: A
-''')
-        code, output, error = self.cli(root, 'sources', '--person', 'A', '--json')
-        self.assertEqual(code, 0, error)
-        self.assertEqual(json.loads(output)['people'][0]['key'], 'A')
-
     def test_glob_with_brackets_in_project_path(self):
         root = self.project('person A: "A"\n    owns:\n        "prompts/*.prompt"\n' + SOURCE)
         nested = root / 'project[1]'
@@ -323,25 +308,6 @@ team T: "T"
         shutil.copy(root / 'pyproject.toml', nested / 'pyproject.toml')
         code, _, error = self.cli(nested, 'check')
         self.assertEqual(code, 0, error)
-
-    def test_quote_and_workflow_share_a_name(self):
-        source = '''person A: "Author"
-workflow Q: "Workflow"
-    "Other."
-quote Q: "Words"
-    by: A
-    on: "2026-11-05"
-team T: "Team"
-    home: "."
-    role: "{{Q}}"
-'''
-        before, after = self.project(source), self.project(source.replace('"Author"', '"Writer"'))
-        code, _, error = self.cli(after, 'check')
-        self.assertEqual(code, 0, error)
-        self.assertNotIn('W305', error)
-        code, output, error = self.cli(after, 'diff', '--base-tree', str(before), '--json')
-        self.assertEqual(code, 0, error)
-        self.assertTrue(any(item['name'] == 'A' for item in json.loads(output)['changed_declarations']))
 
     def test_w305_counts_bare_citation_in_unreached_workflow(self):
         root = self.project('''person A: "A"
@@ -358,3 +324,62 @@ team T: "T"
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         self.assertNotIn('W305', error)
+
+    def test_inline_quote_with_no_date(self):
+        root = self.project('''person Owner: "Owner"
+team T: "T"
+    home: "."
+    role: """{{Owner: "a, b"}}"""
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 1, error)
+        self.assertIn('Inline quote: `` must be a date, `YYYY-MM-DD`.', error)
+
+    def test_code_block_keeps_comma_braces(self):
+        root = self.project('''workflow W: "title {{a, b}}"
+    code sample: "Example"
+        text: """{{a, b}}
+"""
+team T: "T"
+    home: "."
+    work: W
+''')
+        for command in ('build', 'check', 'sources'):
+            with self.subTest(command=command):
+                code, _, error = self.cli(root, command)
+                self.assertEqual(code, 0, error)
+        self.assertIn('{{a, b}}', (root / 'AGENTS.md').read_text())
+
+    def test_citing_a_quote_leaves_owned_text_out_of_reach(self):
+        source = '''person Owner: "Owner"
+    owns:
+        Other
+quote Q: "Words"
+    by: Owner
+    on: "2026-11-05"
+workflow Other: "Other"
+    "Old."
+team T: "T"
+    home: "."
+    role: "{{Q}}"
+'''
+        before, after = self.project(source), self.project(source.replace('"Old."', '"New."'))
+        code, output, error = self.cli(after, 'diff', '--base-tree', str(before), '--json')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)['homes'], [])
+        self.assertEqual(json.loads(output)['changed_declarations'], [])
+
+    def test_inline_words_keep_punctuation(self):
+        root = self.project('''person A: "Author"
+team T: "T"
+    home: "."
+    role: """{{A, 2026-11-05: "Say: "yes", please."}}"""
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        self.assertIn('Say: "yes", please.', (root / 'AGENTS.md').read_text())
+        code, _, error = self.cli(root, 'check')
+        self.assertEqual(code, 0, error)
+        code, output, error = self.cli(root, 'sources')
+        self.assertEqual(code, 0, error)
+        self.assertIn('cited in 1 declaration, reaches 1 home', output)

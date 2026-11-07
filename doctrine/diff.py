@@ -148,7 +148,7 @@ def compare_homes(before, after, selectors):
 
 def build_result(before, after, comparison, base):
     changed, owned = [], []
-    for key in sorted(before["hashes"].keys() | after["hashes"].keys(), key=lambda key: key[0]):
+    for key in sorted(before["hashes"].keys() | after["hashes"].keys(), key=lambda key: (key[0], key[1].__name__)):
         name = key[0]
         if before["hashes"].get(key) == after["hashes"].get(key):
             continue
