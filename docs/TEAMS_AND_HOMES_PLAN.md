@@ -1305,9 +1305,16 @@ pass to children, because a child is a different declaration. `doctrine diff` re
 change to an owned declaration, and any change to a `person` declaration, since that
 changes who owns what. A ref that doesn't resolve is `E651`, as is a glob matching no file.
 A ref to a member is `E651` too, because `owns:` takes top-level declarations. Own its team.
+A `person` counts only in a file the compile loads, so a separate flow nothing imports does
+nothing.
 
-A glob owns every declaration in a matching `.prompt` file, and every declaration that reads
-a matching `from` file, since that file's text is part of the declaration. `diff` reads
+Commands print a declaration or person by its full name, as a ref would write it:
+`shared.people.Amir`.
+
+A glob matches the files the compile loaded, relative to the pyproject folder, never the disk.
+So `check` and `diff` give one answer, and a base read from git sees the same files. A glob
+owns every declaration in a matching `.prompt` file, and every declaration that reads a
+matching `from` file, since that file's text is part of the declaration. `diff` reads
 owners from both sides and adds them up, so deleting an `owns:` line in the same change
 doesn't hide the change. The block lists every owned declaration whose hash changed,
 whether or not it reaches a home, a deleted one included, and every changed `person`,
@@ -1372,20 +1379,21 @@ named quote nothing cites. Inline quotes are never `W305`.
 
 **`doctrine sources [--person NAME] [--json]`** lists every quote by person, then date,
 oldest first. People sort by name, and a person with no quotes isn't listed. `--person` takes
-the person's name. A name that is no `person` is `E650`: `` `--person <name>` is not a
+the full name or the plain one, so `--person Amir` finds `shared.people.Amir`. A name that is
+no `person` is `E650`: `` `--person <name>` is not a
 `person`. `` Each `No source:` block closes its person. A quote prints a row for `to`, `about`,
 and `source` only when set. An inline quote's row shows its site once, as `<date>  <site>`.
 
 ```text
 Amir: 12 quotes, 1 with no source
 
-2026-11-05  ContractAllPods  prompts/shared/contract.prompt:4
+2026-11-05  shared.contract.ContractAllPods  prompts/shared/contract.prompt:4
   to the growth pod's lead
   source: session:abc123
   cited in 3 declarations, reaches 56 homes
 
 No source:
-  OneAdRemark  prompts/shared/ads.prompt:9
+  shared.ads.OneAdRemark  prompts/shared/ads.prompt:9
 ```
 
 JSON keys: `format_version`, `people[]` with `key`, `title`, `quotes[]` holding `key`,
@@ -1758,7 +1766,11 @@ section, and one `_details/` file results).
 `test_inline_person_title_reaches_home`, `test_w305_counts_unreached_citations`,
 `test_e651_member_ref`, `test_person_and_workflow_share_a_name`,
 `test_code_block_keeps_comma_braces`, `test_inline_words_keep_punctuation`,
-`test_inline_quote_with_no_date`, `test_citing_a_quote_leaves_owned_text_out_of_reach`.
+`test_inline_quote_with_no_date`, `test_citing_a_quote_leaves_owned_text_out_of_reach`,
+`test_self_line_passes_check`, `test_person_filter_takes_plain_name`,
+`test_glob_matches_only_sources`, `test_quote_path_form_counts_as_cited`,
+`test_inline_field_needs_text`, `test_inline_sites_ignore_walk_order`,
+`test_bare_quote_in_analysis_is_plain`.
 
 **`tests/test_messages.py`**: `test_both_homes_share_body`, `test_field_change_reaches_both`,
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
@@ -1921,8 +1933,8 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E634` | `Hand edit in a compiled file` | `` `<path>` was edited by hand. `` then, for a file the build would overwrite, one line per differing section, `` - <title>: <origin> at <site> ``; `` `<path>` was written by hand. ``; `` `<path>` is a link Doctrine didn't write. `` Hint: ``Move the edit to its source, then build. `--force` overwrites it.`` |
 | `E640` | `No home matches` | `` `<selector>` matches no home. `` |
 | `E641` | `Bad revision` | `` `<rev>` is not a revision in this repository. `` |
-| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` Quote `<name>` needs `on:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` `<field>` in `<name>` is set twice. ``; `` `--person <name>` is not a `person`. ``. Inline: `` Inline quote: `<ref>` is not a `person`. ``; `` Inline quote: `<text>` must be a date, `YYYY-MM-DD`. ``; `` Inline quote: `<field>` is not a field. Use `to`, `about`, or `source`. ``; `` Inline quote: `<field>` is set twice. ``; `` Inline quote: the words must come last, as `: "<words>"`. ``; `` Inline quote: `{` and `}` can't appear inside one. `` |
-| `E651` | `Invalid owner` | `` `<ref>` in `owns:` resolves to nothing. ``; `` Glob `<glob>` in `owns:` matches no file. `` |
+| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` Quote `<name>` needs `on:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` `<field>` in `<name>` is set twice. ``; `` `--person <name>` is not a `person`. ``. Inline: `` Inline quote: `<ref>` is not a `person`. ``; `` Inline quote: `<text>` must be a date, `YYYY-MM-DD`. ``; `` Inline quote: `<field>` is not a field. Use `to`, `about`, or `source`. ``; `` Inline quote: `<field>` is set twice. ``; `` Inline quote: `<field>` needs text. ``; `` Inline quote: the words must come last, as `: "<words>"`. ``; `` Inline quote: `{` and `}` can't appear inside one. `` |
+| `E651` | `Invalid owner` | `` `<ref>` in `owns:` resolves to nothing. ``; `` Glob `<glob>` in `owns:` matches no source file. `` |
 | `E652` | `Missing Markdown source` | `` `<decl>` reads `<path>`, which does not exist. `` |
 | `E653` | `Duplicate heading key` | `` `<path>` has two sibling headings with key `<key>`, at lines <a> and <b>. `` |
 | `E654` | `Import line in Markdown source` | `` `<path>` line <n> is a runtime import, and its path would break once inlined. Declare that file too and compose it. `` |
