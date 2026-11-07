@@ -50,6 +50,12 @@ class RoleScalar:
     text: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
     origin: Origin | None = _field(default=None, compare=False)
+    paragraphs: tuple = ()
+
+
+def role_text(paragraphs):
+    return "\n\n".join((f"**{p.title}** " if p.title else "") + "\n\n".join(p.payload)
+                       for p in paragraphs)
 
 
 @_dataclass(slots=True, frozen=True)

@@ -24,7 +24,7 @@ class ImportTests(HomeProject, unittest.TestCase):
 
     def test_lead_in_becomes_paragraph(self):
         source = self.convert("## Craft\n\n**Make a plan.** Start early.\n")
-        self.assertIn('paragraph make_a_plan: "Make a plan."\n            "Start early."', source)
+        self.assertIn('paragraph make_a_plan: "Make a plan."\n            """Start early."""', source)
 
     def test_check_passes_on_lossless(self):
         for kind, markdown in (
@@ -54,21 +54,47 @@ class ImportTests(HomeProject, unittest.TestCase):
 
     def test_text_after_keyed_item_gets_untitled_paragraph(self):
         source = self.convert("## Craft\n\n**Plan.** Start.\n\nThen work.\n")
-        self.assertIn('paragraph text_1:\n            "Then work."', source)
+        self.assertIn('paragraph text_1:\n            """Then work."""', source)
 
-    def test_one_line_text_uses_plain_string(self):
+    def test_one_line_text_uses_triple_quoted_string(self):
         source = self.convert("## Craft\n\nStart early.\n")
-        self.assertIn('        "Start early."', source)
+        self.assertIn('        """Start early."""', source)
 
     def test_bold_only_paragraph_stays_text(self):
         source = self.convert("## Craft\n\n**A heading.**\n")
-        self.assertIn('        "**A heading.**"', source)
+        self.assertIn('        """**A heading.**"""', source)
         self.assertNotIn("paragraph a_heading", source)
 
     def test_repeated_key_gets_suffix(self):
         source = self.convert("## Craft\n\nFirst.\n\n## Craft\n\nSecond.\n")
         self.assertIn('    craft: "Craft"', source)
         self.assertIn('    craft_2: "Craft"', source)
+
+    def test_agent_opening_gets_keyed_paragraphs(self):
+        text = '# Title\n\n**Who you are.** You test.\n\nPhones are nearby.\n'
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertIn('paragraph who_you_are: "Who you are."', source)
+        self.assertIn('paragraph phones_are_nearby:', source)
+        self.assertIn('Render matches.', error)
+
+    def test_opening_keeps_blank_lines_in_fences(self):
+        (self.root / 'source.md').write_text('Intro.\n\n```text\nfirst\n\nsecond\n```\n')
+        code, _, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertIn('Render matches.', error)
+
+    def test_opening_keeps_extra_blank_lines(self):
+        (self.root / 'source.md').write_text('First.\n\n\nSecond.\n')
+        code, _, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+
+    def test_bold_opening_keeps_its_line_break(self):
+        (self.root / 'source.md').write_text('**Who.**\nYou test.\n\nPhones are nearby.\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertIn('paragraph who:', source)
 
     def test_printed_source_parses(self):
         for kind in ("agent", "workflow"):

@@ -10,14 +10,14 @@ args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent"]
 expected_exit = 0
 expected_stdout_lines = [
   "abstract agent QaCraft:",
-  "    role: \"You are the QA specialist.\"",
+  "    role: \"\"\"You are the QA specialist.\"\"\"",
   "    how_you_think: \"How you think\"",
   "        paragraph a_test_plan: \"A test plan.\"",
-  "            \"Grow it with the design.\"",
+  "            \"\"\"Grow it with the design.\"\"\"",
   "        paragraph sending_it_back: \"Sending it back.\"",
-  "            \"Say what failed.\"",
+  "            \"\"\"Say what failed.\"\"\"",
   "        paragraph text_1:",
-  "            \"Plain text in the section.\"",
+  "            \"\"\"Plain text in the section.\"\"\"",
   "        testing: \"Testing\"",
   "            \"\"\"- Test on a real phone.",
   "- Test as a new user.\"\"\"",
@@ -30,6 +30,16 @@ kind = "cli_contract"
 project = "project"
 args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent", "--check"]
 expected_exit = 0
+stderr_contains = ["Render matches."]
+
+[[cases]]
+name = "import keys paragraphs in the opening"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/opening.md", "--name", "QaCraft", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = ["paragraph who_you_are: \"Who you are.\"", "paragraph phones_are_in_the:"]
 stderr_contains = ["Render matches."]
 
 [[cases]]

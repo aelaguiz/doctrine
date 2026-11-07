@@ -224,10 +224,30 @@ final_output:
   define them. Shared review comments therefore can still name local routed
   owners without moving the output declaration.
 
-`role` has two shipped shapes:
+`role` has three shipped shapes:
 
 - scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
+- a paragraph body emits keyed paragraphs without a heading
+
+A role can hold keyed paragraphs. A child or member can drop or override one:
+
+```prompt
+abstract agent Qa:
+    role:
+        paragraph who: "Who you are."
+            "You are on the core team."
+        paragraph phones:
+            "Phones are in the device guide."
+
+agent OtherQa[Qa]:
+    drop role.who: "This QA is on another team."
+    override role.phones:
+        "Phones are with the field guide."
+```
+
+A role paragraph override holds prose only. A missing key is `E610`. See
+`examples/194_role_paragraphs`.
 
 ## Details And Budgets
 

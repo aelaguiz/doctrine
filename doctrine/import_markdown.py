@@ -8,7 +8,7 @@ from pathlib import Path
 
 from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.markdown_reader import heading_key, markdown_head, markdown_lines
+from doctrine._compiler.markdown_reader import heading_key, markdown_head, markdown_lines, opening_paragraphs
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import ParseError
 from doctrine.parser import parse_file, parse_text
@@ -36,7 +36,16 @@ def import_markdown(args):
             output.append(f'{indent}    {source_string(text)}')
             paragraph = False
         elif len(stack) == 1 and args.kind == "agent":
-            output.append(f'{indent}role: {source_string(text)}')
+            parts = opening_paragraphs(text.splitlines())
+            if len(parts) == 1:
+                output.append(f'{indent}role: {source_string(text)}')
+            else:
+                output.append(f'{indent}role:')
+                for lead, body, key_text in parts:
+                    key = key_for(key_text, paragraph=True)
+                    title = f' {title_string(lead)}' if lead else ""
+                    output.append(f'{indent}    paragraph {key}:{title}')
+                    output.append(f'{indent}        {source_string(body)}')
         elif node["keyed"]:
             node["text"] += 1
             output.append(f'{indent}paragraph text_{node["text"]}:')
@@ -54,6 +63,8 @@ def import_markdown(args):
         sample += f'{indent}prior: "Prior"\n{indent}    paragraph probe: "Probe"\n{indent}        "Text"\n'
         if paragraph:
             sample += f'{indent}paragraph {key}: "Title"\n{indent}    "Text"\n'
+            if len(stack) == 1 and args.kind == "agent":
+                sample = f'agent Probe:\n    role:\n        paragraph {key}: "Title"\n            "Text"\n'
         else:
             sample += f'{indent}{key}: "Title"\n{indent}    paragraph probe: "Probe"\n{indent}        "Text"\n'
         try:
@@ -137,8 +148,6 @@ def check_render(args, output, lines, start):
 
 
 def source_string(text):
-    if "\n" not in text and '"' not in text and "\\" not in text:
-        return f'"{text}"'
     text = text.replace("\\", "\\\\")
     ending = re.search(r'"+$', text)
     text = text.replace('"""', '""\\"')

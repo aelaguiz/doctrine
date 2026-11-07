@@ -34,7 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Markdown import (6.0.0; language 6.0)
 
-- Import shortens keys and reports when `--check` matches.
+- Import writes prose in triple quotes, shortens keys, and reports when `--check` matches.
+- A role can hold keyed paragraphs that children and members can drop or override.
 - `doctrine import` prints agent or workflow source from a Markdown file.
 
 ### Messages (6.0.0; language 6.0)

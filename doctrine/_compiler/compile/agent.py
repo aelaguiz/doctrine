@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 
 from doctrine import model
+from doctrine._model.core import role_text
 from doctrine._compiler.teams import _message_target
 from doctrine._compiler.home_map import field_origin
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
@@ -656,6 +658,18 @@ class CompileAgentMixin:
         field = spec.field
 
         if isinstance(field, model.RoleScalar):
+            if field.paragraphs:
+                paragraphs = tuple(
+                    replace(p,
+                        title=self._interpolate_authored_prose_string(
+                            p.title, unit=unit, owner_label=f"agent {agent_name}",
+                            surface_label="role prose") if p.title else None,
+                        payload=tuple(self._interpolate_authored_prose_string(
+                            s, unit=unit, owner_label=f"agent {agent_name}",
+                            surface_label="role prose") for s in p.payload))
+                    for p in field.paragraphs
+                )
+                return model.RoleScalar(text=role_text(paragraphs))
             return model.RoleScalar(
                 text=self._interpolate_authored_prose_string(
                     field.text,

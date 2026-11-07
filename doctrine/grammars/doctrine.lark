@@ -161,6 +161,7 @@ team_body: team_item+
           | agent_slot_abstract
           | agent_slot_inherit
           | agent_slot_override
+          | role_override_path
           | override_path
           | details_path
           | agent_slot_field
@@ -175,6 +176,7 @@ inherit_all: "inherit" "*" _NL?
 drop_item: "drop" patch_path ":" string _NL?
 patch_path: CNAME ("." CNAME)*
 override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
+role_override_path: "override" "role" "." CNAME ":" _NL _INDENT role_prose _DEDENT
 details_path: "details" CNAME "." patch_path ":" string? _NL _INDENT shared_readable_body _DEDENT
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an
@@ -199,6 +201,7 @@ details_path: "details" CNAME "." patch_path ":" string? _NL _INDENT shared_read
             | agent_selectors_field
             | agent_slot_abstract
             | agent_slot_inherit
+            | role_override_path
             | override_path
             | details_path
             | agent_slot_override
@@ -208,6 +211,9 @@ agent_selectors_field: "selectors" ":" _NL _INDENT agent_selector_stmt+ _DEDENT
 agent_selector_stmt: CNAME ":" name_ref _NL
 
 role_field: "role" ":" string _NL role_body?
+          | "role" ":" _NL _INDENT role_paragraph+ _DEDENT -> role_paragraphs
+role_paragraph: "paragraph" CNAME ":" string? _NL _INDENT role_prose _DEDENT
+role_prose: string (_NL string)* _NL?
 role_body: _INDENT block_lines _DEDENT
 
 // Inputs and outputs reuse the record body so roles can mix prose, titled
