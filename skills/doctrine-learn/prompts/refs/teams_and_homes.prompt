@@ -114,15 +114,21 @@ agent PodQa[QaCraft]: "Pod QA"
         "A file without a body stays on disk, so agents can add notes to it. A file with a document body is written by the build. This is from `examples/194_shared_files`."
         code:
             language: prompt
-            text: """file Guide: "Test guide"
+            text: """file Guide: "Test design"
     path: "shared/guide.md"
+
+file Checklist: "Checklist"
+    path: "shared/checklist.md"
+    "Check the result."
 
 team Pod: "Pod"
     home: "pod"
     member qa: "QA"
-        role: "Read {{Guide}} before a test."
+        role: "Before testing, read {{Guide}}."
         work: "Work"
-            "Read first: {{load:Guide}}"
+            "Use {{Checklist}}."
+    member analyst: "analyst"
+        role: "Read first: {{load:Guide}}"
 """
         "A plain reference makes a link; the surrounding words say when to open it. A load reference ends its line and makes a runtime import. Add a title projection to use the title alone. Use `requires load` when a role must load the file."
 

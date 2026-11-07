@@ -20,4 +20,8 @@ expected_file_lines = { "pod/qa/AGENTS.md" = [
   "# Checklist",
   "",
   "Check the result.",
+], "pod/analyst/AGENTS.md" = [
+  "If your session started in this folder, you are Pod's analyst. If not, this only describes that role.",
+  "",
+  "Read first: @../../shared/guide.md",
 ] }
