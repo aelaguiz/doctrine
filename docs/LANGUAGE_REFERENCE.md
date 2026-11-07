@@ -38,7 +38,7 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `receipt`, `artifact`, `stage`, `skill_flow`, `skill_graph`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `output schema`
-- `enum`
+- `enum`, `person`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. The normal standalone graph
@@ -61,6 +61,24 @@ safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
+
+## People And Ownership
+
+A `person` names someone and can list what they own:
+
+```prompt
+person Owner: "The owner"
+    owns:
+        SharedRules
+        "prompts/roles/*.prompt"
+```
+
+Refs name declarations. Quoted globs name files relative to `pyproject.toml`.
+A file glob also owns declarations that read a matching `from` file. A team
+owner also owns its members. Owners add up; ownership does not pass to child
+declarations. `check` and `diff` validate these lists. `diff` reports changed
+owned declarations and changed people, even when they reach no home. It reads
+owners from both sides of the comparison. Builds do not read ownership lists.
 
 ## Agents
 

@@ -13,6 +13,24 @@ from doctrine._compiler.teams import (
 )
 
 
+def declarations_in(session):
+    declarations = {}
+    for flow in session._flow_cache.values():
+        for unit in flow.units_by_path.values():
+            for declaration in unit.prompt_file.declarations:
+                if isinstance(declaration, model.ImportDecl):
+                    continue
+                name = ".".join((*unit.module_parts, declaration.name))
+                declarations[name] = (unit, declaration)
+                if isinstance(declaration, model.Team):
+                    declarations.update(
+                        (f"{name}.{member.key}", (unit, member))
+                        for member in declaration.fields if isinstance(member, model.Member)
+                    )
+    return declarations
+
+
+
 def model_walk(value):
     yield value
     if is_dataclass(value):

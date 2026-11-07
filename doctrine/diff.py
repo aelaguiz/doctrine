@@ -12,7 +12,10 @@ from tempfile import TemporaryDirectory
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
-from doctrine._compiler.source_graph import build_home_deps, source_hash
+from doctrine._compiler.source_graph import (
+    build_home_deps, declarations_in, source_hash,
+)
+from doctrine._compiler.provenance import declaration_owners
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
@@ -26,22 +29,11 @@ def compile_side(args):
             return None
         homes, files, _, _ = compile_homes(target, session=session)
         build_home_deps(CompilationContext(session), homes)
-        declarations = {}
-        for flow in session._flow_cache.values():
-            for unit in flow.units_by_path.values():
-                for declaration in unit.prompt_file.declarations:
-                    if isinstance(declaration, model.ImportDecl):
-                        continue
-                    name = ".".join((*unit.module_parts, declaration.name))
-                    declarations[name] = (unit, declaration)
-                    if isinstance(declaration, model.Team):
-                        declarations.update(
-                            (f"{name}.{member.key}", (unit, member))
-                            for member in declaration.fields if isinstance(member, model.Member)
-                        )
+        declarations = declarations_in(session)
         base = target.project_config.config_dir
         return {
             "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
+            "owners": declaration_owners(CompilationContext(session), declarations, base),
             "loads": home_loads(target, homes, files, runtime_settings(target)),
             "hashes": {
                 name: source_hash(declaration, base)
@@ -155,10 +147,15 @@ def compare_homes(before, after, selectors):
 
 
 def build_result(before, after, comparison, base):
-    changed = []
+    changed, owned = [], []
     for name in sorted(before["hashes"].keys() | after["hashes"].keys()):
         if before["hashes"].get(name) == after["hashes"].get(name):
             continue
+        owners = sorted(before["owners"].get(name, set()) | after["owners"].get(name, set()))
+        side = after if name in after["declarations"] else before
+        unit, declaration = side["declarations"][name]
+        if owners or isinstance(declaration, model.Person):
+            owned.append({"name": name, "owners": owners})
         reached = []
         for home in comparison["homes"]:
             path = home["home"]
@@ -173,8 +170,6 @@ def build_result(before, after, comparison, base):
                 reached.append({"home": path, "delta": home["delta"]})
         if not reached:
             continue
-        side = after if name in after["declarations"] else before
-        unit, declaration = side["declarations"][name]
         kind = next(
             kind.name for kind in DECLARATION_KINDS if isinstance(declaration, kind.decl_type)
         )
@@ -183,12 +178,12 @@ def build_result(before, after, comparison, base):
         source = relpath(unit.prompt_file.source_path, side["base_dir"])
         changed.append({
             "name": name, "kind": kind, "site": f"{source}:{declaration.source_span.line}",
-            "owners": [], "homes": reached,
+            "owners": owners, "homes": reached,
         })
     return {
         "format_version": 1, "base": base, "changed_declarations": changed,
         "homes": comparison["homes"], "new_sections": comparison["new_sections"],
-        "outputs": comparison["outputs"], "owned": [],
+        "outputs": comparison["outputs"], "owned": owned,
         "over_budget": [
             {"home": load["home"], "runtime": runtime,
              "total": values["total"], "limit": values["limit"]}
@@ -221,6 +216,11 @@ def render_diff(result):
         if a or b:
             line += " (details " + (f"{a:+,}" if a == b else f"{a:+,} to {b:+,}") + ")"
         blocks.append(line + ":\n  " + ", ".join(home["home"] for home in declaration["homes"]))
+    if result["owned"]:
+        blocks.append("Owned declarations changed:\n" + "\n".join(
+            f"  {entry['name']}" + (f", owned by {', '.join(entry['owners'])}" if entry['owners'] else "")
+            for entry in result["owned"]
+        ))
     if result["new_sections"]:
         blocks.append("New sections that arrive through inherit *:\n" + "\n".join(
             f"  {entry['origin']}.{'.'.join(entry['path'])} reaches {', '.join(entry['homes'])}"

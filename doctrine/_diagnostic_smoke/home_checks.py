@@ -44,6 +44,7 @@ HOME_DIAGNOSTICS = {
     ),
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E651": ('person P: "Person"\n    owns:\n        Missing\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "W306": (
         'team T: "Team"\n    home: "t"\n    role: "Test."\n',

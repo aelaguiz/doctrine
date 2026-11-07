@@ -52,6 +52,16 @@ class AgentTransformerMixin:
     def team_home_stmt(self, items):
         return ("home", items[0])
 
+    def person_owned_item(self, items):
+        return items[0]
+
+    def person_body(self, items):
+        return tuple(items)
+
+    @v_args(meta=True)
+    def person_decl(self, meta, items):
+        return _with_source_span(model.Person(items[0], items[1], items[2] if len(items) > 2 else ()), meta)
+
     @v_args(meta=True)
     def team_decl(self, meta, items):
         return self._team(items, abstract=False, source_span=_source_span_from_meta(meta))

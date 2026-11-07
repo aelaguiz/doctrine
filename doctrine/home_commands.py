@@ -11,7 +11,9 @@ from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
 from doctrine._compiler.home_map import home_entries
+from doctrine._compiler.source_graph import declarations_in
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.provenance import declaration_owners
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
 from doctrine.homes import compile_homes, build_homes
@@ -136,6 +138,7 @@ def check(args):
                 return 2
             settings = runtime_settings(target)
             homes, files, _, _ = compile_homes(target, evaluate_rules=True, session=session)
+            declaration_owners(CompilationContext(session), declarations_in(session), target.project_config.config_dir)
             validate_load_rules(CompilationContext(session), homes)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Ownership (6.0.0; language 6.0)
+
+- `person` names owners with declaration refs or file globs. `check` validates
+  ownership lists. `diff` reports changed owned declarations and people, using
+  owners from both sides of the comparison.
+
 ### Reach (6.0.0; language 6.0)
 
 - Rules can select teams, member keys, and home paths. `requires load` and

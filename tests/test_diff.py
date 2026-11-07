@@ -26,6 +26,16 @@ class DiffTests(HomeProject, unittest.TestCase):
         self.assertEqual(result[0], 0, result)
         return result[1]
 
+    def test_owned_change_reported(self):
+        source = 'person Owner: "Owner"\n    owns:\n        Craft\n' + SOURCE
+        output = self.compare(source, source.replace('Read the change.', 'Read it all.'))
+        self.assertIn('Owned declarations changed:\n  Craft, owned by Owner', output)
+
+    def test_person_change_reported(self):
+        source = 'person Owner: "Owner"\n' + SOURCE
+        result = json.loads(self.compare(source, source.replace('"Owner"', '"Lead"'), '--json'))
+        self.assertEqual(result['owned'], [{'name': 'Owner', 'owners': []}])
+
     def test_moving_a_declaration_changes_no_hash(self):
         result = json.loads(self.compare(SOURCE, "\n\n" + SOURCE, "--json"))
         self.assertEqual(result["changed_declarations"], [])

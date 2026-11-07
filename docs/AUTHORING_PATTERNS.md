@@ -34,6 +34,13 @@ Write the plan while the design settles, and ask "what could fail?"."""
 When a child no longer needs inherited text, write `drop key: "Reason"`.
 Removing an `inherit` line leaves an item unaccounted for and fails the build.
 
+## Name Owners In One Place
+
+Use a `person` and its `owns:` list to name who owns shared declarations.
+Several people can own the same declaration. A file glob can cover declarations
+in that file and declarations that read it with `from`. See
+[example 189](../examples/189_person_and_ownership).
+
 ## What To Preserve When You Port
 
 Doctrine works best when you preserve five things:

@@ -48,6 +48,7 @@ prompt_file: _NL* declaration+ _NL*
                        | rule_decl
                        | abstract_agent
                        | agent
+                       | person_decl
                        | team_decl
                        | abstract_team_decl
                        | abstract_agent_markdown
@@ -133,6 +134,9 @@ abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_fiel
 
 abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
 workflow_markdown: "workflow" CNAME "from" string _NL
+person_decl: "person" CNAME ":" string _NL (_INDENT person_body _DEDENT)?
+person_body: "owns" ":" _NL _INDENT person_owned_item+ _DEDENT
+person_owned_item: (name_ref | string) _NL?
 values_block: "values" ":" _NL _INDENT value_item+ _DEDENT
 budget_block: "budget" ":" _NL _INDENT budget_item+ _DEDENT
 budget_item: CNAME ":" SIGNED_NUMBER _NL?
