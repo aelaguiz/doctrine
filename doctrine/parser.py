@@ -115,6 +115,14 @@ class ToAst(
             )), meta,
         )
 
+    @v_args(meta=True, inline=True)
+    def details_path(self, meta, key, path, *parts):
+        title = parts[0] if isinstance(parts[0], str) else None
+        return _with_source_span(model.DetailsPath(
+            path=(key, *path), value=model.ReadableBlock(
+                kind="details", key=path[-1], title=title, payload=parts[-1],
+            )), meta)
+
     def grouped_inherit_keys(self, items):
         return tuple(items)
 

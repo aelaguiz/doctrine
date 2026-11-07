@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches,
+    mark_wildcard, prepare_body_patches, apply_path_patches, keep_details,
 )
 from dataclasses import replace
 
@@ -239,8 +239,7 @@ class ResolveDocumentsMixin:
                     ),
                 )
             accounted_keys.add(key)
-            resolved_items.append(
-                self._resolve_document_block(
+            resolved = self._resolve_document_block(
                     model.DocumentBlock(
                         kind=item.kind,
                         origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None),
@@ -274,7 +273,10 @@ class ResolveDocumentsMixin:
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
                 )
-            )
+            if item.kind in {"section", "paragraph"}:
+                resolved = replace(resolved, payload=keep_details(parent_item.payload, resolved.payload,
+                                                                   owner_label, key, unit, item.source_span, parent_item.origin))
+            resolved_items.append(resolved)
 
         missing_keys = tuple(
             parent_item.key for parent_item in parent_document.items if parent_item.key not in accounted_keys

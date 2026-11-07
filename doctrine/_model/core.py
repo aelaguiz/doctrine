@@ -41,6 +41,7 @@ class Origin:
     companion: str | None
     headings: tuple[str, ...]
     line: int
+    scope_unit: object = _field(compare=False)
     wildcard: bool = _field(default=False, compare=False)
 
 
@@ -170,6 +171,14 @@ class DropItem:
 
 @_dataclass(slots=True, frozen=True)
 class OverridePath:
+    path: tuple[str, ...]
+    value: object
+    origin: Origin | None = _field(default=None, compare=False)
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class DetailsPath:
     path: tuple[str, ...]
     value: object
     origin: Origin | None = _field(default=None, compare=False)

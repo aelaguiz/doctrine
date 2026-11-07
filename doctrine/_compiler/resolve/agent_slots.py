@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches
+from dataclasses import replace
+from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, keep_details
 from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -416,18 +417,14 @@ class ResolveAgentSlotsMixin:
                             hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
-                    resolved_slots.append(
-                        ResolvedAgentSlot(
-                            key=field.key,
-                            body=self._resolve_slot_value(
-                                field.value,
-                                origin=field.origin,
-                                unit=unit,
-                                owner_label=f"agent {agent.name} slot {field.key}",
-                                owner_source_span=field.source_span,
-                            ),
-                        )
+                    body = self._resolve_slot_value(
+                        field.value, origin=field.origin, unit=unit,
+                        owner_label=f"agent {agent.name} slot {field.key}",
+                        owner_source_span=field.source_span,
                     )
+                    resolved_slots.append(ResolvedAgentSlot(key=field.key, body=replace(
+                        body, items=keep_details(parent_slot.body.items, body.items,
+                                                agent.name, field.key, unit, field.source_span, parent_slot.body.origin))))
 
             missing_parent_keys = [
                 parent_slot.key

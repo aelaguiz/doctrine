@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Overrides keep cases written in inherited bodies. A team or member can add a case by path,
+  replace one with `override`, or remove one with `drop` and a reason.
 - Shared cases can use agent and team values. Cases that read those words or
   hold a roster go to each home's `DETAILS.md`. `E621` is retired.
 - `W302` compares rendered text, so different words from a shared declaration

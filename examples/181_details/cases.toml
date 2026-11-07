@@ -103,3 +103,56 @@ expected_file_lines = { "alpha/qa/DETAILS.md" = [
     "",
     "Every team can use this.",
 ] }
+
+[[cases]]
+name = "a member adds replaces keeps and drops cases"
+status = "active"
+kind = "cli_contract"
+project = "project_case_patches"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = ["built 4 homes"]
+expected_file_lines = { "team/added/DETAILS.md" = [
+  "## How to test", "", "### Local case", "", "This team owns the case.",
+], "team/replaced/DETAILS.md" = [
+  "## How to test", "", "### New case", "", "The new case.",
+], "_details/qa.md" = [
+  "## How to test", "", "### Earlier case", "", "The older case.",
+] }
+absent_files = ["team/dropped/DETAILS.md"]
+
+[[cases]]
+name = "load gives the reason a case was dropped"
+status = "active"
+kind = "cli_contract"
+project = "project_case_patches"
+args = ["load", "T.dropped"]
+expected_exit = 0
+stdout_contains = ["work.plan.older from T.dropped: This case no longer fits."]
+
+[[cases]]
+name = "diff shows a dropped case"
+status = "active"
+kind = "cli_contract"
+project = "project_case_patches"
+args = ["diff", "--base-tree", "base", "--json"]
+expected_exit = 0
+stdout_contains = ['"T.dropped"', '"team/dropped"', '"path": ["work", "plan", "older"]', '"status": "removed"']
+
+[[cases]]
+name = "a case path needs a parent"
+status = "active"
+kind = "cli_contract"
+project = "project_case_missing"
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E610", "`T.qa` patches `work.absent.case`, but its parent has no such key."]
+
+[[cases]]
+name = "a case path cannot repeat a key"
+status = "active"
+kind = "cli_contract"
+project = "project_case_duplicate"
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E612", "`T.qa` adds the case `work.older`, which it already has. Write `override work.older` to replace it."]

@@ -6,7 +6,7 @@ from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
     Origin,
-    InheritAll, DropItem, OverridePath, NameRef, RoleBlock, RoleScalar, SourceSpan,
+    InheritAll, DropItem, OverridePath, DetailsPath, NameRef, RoleBlock, RoleScalar, SourceSpan,
 )
 from doctrine._model.io import IoFieldValue
 from doctrine._model.review import ReviewFieldsConfig
@@ -133,6 +133,7 @@ Field: _TypeAlias = (
     | InheritAll
     | DropItem
     | OverridePath
+    | DetailsPath
     | AuthoredSlotOverride
     | InputsField
     | OutputsField

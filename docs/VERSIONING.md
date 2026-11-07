@@ -34,6 +34,10 @@ The release version for this major language move is 6.0.0.
    fails when files are missing or out of date, so a tree that does not commit
    built files needs a build first.
 
+Overrides now keep cases written in inherited bodies. Use `drop` with a reason to remove one.
+A team or member can add a case by path. An override fails with `E612` if
+its kept cases would repeat a key; drop a case or give it a different key.
+
 Shared cases can read agent and team values. Those cases, and cases with a
 roster, go to each home's `DETAILS.md`. `E621` is retired.
 

@@ -190,9 +190,9 @@ Stability rules:
 | `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
 | `E384` | Cannot override undefined law subsection | `override <section_key>:` targeted a law subsection the parent workflow does not define. |
 | `E605` | Code fence split across strings | A prose string opens a code fence it does not close. Put the whole fence in one triple-quoted string or a `code` block. |
-| `E610` | Missing patch target | A drop or dotted override names a key the parent lacks, or `inherit *` has nothing to inherit. |
-| `E611` | Invalid patch path | A path steps through an item with no keyed children, or an override targets the wrong block kind or gives a paragraph a nested block. |
-| `E612` | Conflicting patches | Two patches account for one item, a whole-item account conflicts with a deeper patch, or a child drops `role`. |
+| `E610` | Missing patch target | A drop, dotted override, or case path names a key the parent lacks, or `inherit *` has nothing to inherit. |
+| `E611` | Invalid patch path | A path steps through an item with no keyed children, an override targets the wrong block kind or gives a paragraph a nested block, or a case attaches to a block that cannot hold it. |
+| `E612` | Conflicting patches | Two patches account for one item, a case key already exists, kept cases would repeat a key, a whole-item account conflicts with a deeper patch, or a child drops `role`. |
 | `E613` | Duplicate inherit * | A body writes `inherit *` twice. |
 
 ### Review codes

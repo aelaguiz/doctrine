@@ -4,7 +4,7 @@ from doctrine import model
 from dataclasses import replace
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches,
+    mark_wildcard, prepare_body_patches, apply_path_patches, keep_details,
 )
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
@@ -422,12 +422,12 @@ class ResolveWorkflowsMixin:
                         key=key,
                         origin=section_origin,
                         title=item.title if item.title is not None else parent_item.title,
-                        items=self._resolve_section_body_items(
+                        items=keep_details(parent_item.items, self._resolve_section_body_items(
                             item.items,
                             origin=section_origin,
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
-                        ),
+                        ), owner_label, key, unit, item.source_span, parent_item.origin),
                         source_span=item.source_span,
                     )
                 )
@@ -1263,7 +1263,8 @@ class ResolveWorkflowsMixin:
             origin=origin,
             key=item.key,
             title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
-            payload=item.payload,
+            payload=keep_details(parent_item.payload, item.payload, owner_label, key, unit, item.source_span, parent_item.origin)
+            if item.kind in {"section", "paragraph"} else item.payload,
             requirement=(
                 item.requirement
                 if item.requirement is not None

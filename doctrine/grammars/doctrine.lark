@@ -162,6 +162,7 @@ team_body: team_item+
           | agent_slot_inherit
           | agent_slot_override
           | override_path
+          | details_path
           | agent_slot_field
           | inherit_all
           | drop_item
@@ -174,6 +175,7 @@ inherit_all: "inherit" "*" _NL?
 drop_item: "drop" patch_path ":" string _NL?
 patch_path: CNAME ("." CNAME)*
 override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
+details_path: "details" CNAME "." patch_path ":" string? _NL _INDENT shared_readable_body _DEDENT
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an
 // authored workflow slot, which keeps the grammar open without making typed
@@ -198,6 +200,7 @@ override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_
             | agent_slot_abstract
             | agent_slot_inherit
             | override_path
+            | details_path
             | agent_slot_override
             | agent_slot_field
 

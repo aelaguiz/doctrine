@@ -246,8 +246,25 @@ team Core: "the core team"
             "Keep the longer case here."
 ```
 
-A `paragraph` body can also hold `details`. Use `override details key:` to
-replace a named block in an inherited readable body.
+A `paragraph` body can also hold `details`. A team or member can add a case
+to an inherited slot, section, or paragraph by path:
+
+```doctrine
+member qa[Qa]: "QA"
+    details work.plan.local: "This team's case"
+        "A case only this team has."
+```
+
+The last path part is the new case key. The parent must exist (`E610`), and
+the key must be new (`E612`). Use `override work.plan.local:` to replace a
+case. Use `drop work.plan.local: "Reason"` to remove one.
+
+An override keeps cases written in the old body, even inside nested sections. They
+move to the end of the new body. A new case with the same key replaces a
+direct child case. If kept cases would share a key with another kept case or
+with a block in the new body, the override fails with `E612`. Drop one case
+with a reason or give the cases different keys. A case patch can sit beside an
+override of its parent. It uses the case's inherited path.
 
 The lexical owner chooses the companion. Teams and members use their own
 `DETAILS.md`. A concrete agent uses `DETAILS.md` beside its emitted file.

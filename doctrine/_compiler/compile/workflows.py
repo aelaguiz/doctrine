@@ -173,6 +173,8 @@ class CompileWorkflowsMixin:
         unit: IndexedUnit,
         owner_label: str,
     ):
+        if block.kind == "details" and block.origin:
+            unit = block.origin.scope_unit
         return self._compile_authored_readable_block(
             block,
             unit=unit,
@@ -393,20 +395,21 @@ class CompileWorkflowsMixin:
                         path=unit.prompt_file.source_path if unit is not None else None,
                         source_span=item.source_span,
                     )
+                block_unit = item.origin.scope_unit if item.kind == "details" and item.origin else unit
                 body.append(
                     self._compile_authored_readable_block(
                         item,
-                        unit=unit,
+                        unit=block_unit,
                         owner_label=owner_label,
                         surface_label="workflow section bodies",
                         section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
                             self._resolve_section_body_items(
                                 payload,
                                 origin=item.origin,
-                                unit=unit,
+                                unit=block_unit,
                                 owner_label=nested_owner_label,
                             ),
-                            unit=unit,
+                            unit=block_unit,
                             owner_label=nested_owner_label,
                         ),
                     )
