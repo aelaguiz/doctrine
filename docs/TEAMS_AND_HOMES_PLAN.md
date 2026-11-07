@@ -1353,12 +1353,18 @@ So a quote can be written where it stands, in nearly the words it renders as:
 The form is `{{<PersonRef>, <YYYY-MM-DD>[, to <text>][, about <text>][, source <text>]: "<words>"}}`.
 `to`, `about`, and `source` may come in any order. A comma after the first name marks an
 inline quote, since no other interpolation holds a comma. It renders exactly as a named
-quote does. `{`, `}`, or a bad field inside one is `E650`. Inline quotes appear in
+quote does. `{`, `}`, or a bad field inside one is `E650`. The words start after the first
+`: "` and end at the last `"`, so they may hold `:` and `"`. Inline quotes appear in
 `doctrine sources` with their site as their key. Inside a one-line string the inner quotes
 need escaping, so authors use `"""` strings, which take them as written. An inline quote's
 person counts in `deps`, so a title change reaches the homes that print it. Its site is the
 source line it stands on, found by reading the file from the first line of its declaration.
-Two alike in one declaration take successive matches.
+Two alike in one declaration take successive matches. A `person` in `deps` brings nothing
+with it, because `owns:` has no effect on what a home says.
+
+`doctrine check` and `doctrine sources` walk every string in a declaration, and some of those
+aren't prose. Code stays literal. So the walk reads an inline quote only where it opens with a
+name and a date, `{{Name, YYYY-MM-DD`. Any other comma form is only an error where it renders.
 
 A named quote is cited when a string reads `{{Name}}` or a bare line names it, in any
 declaration in the loaded files, whether or not a home reaches that declaration. `W305` is a
@@ -1750,7 +1756,9 @@ section, and one `_details/` file results).
 `test_e650_repeated_field`, `test_e650_unknown_person_filter`, `test_glob_owns_from_file_readers`,
 `test_owners_read_from_both_sides`, `test_bad_quote_stops_only_its_home`,
 `test_inline_person_title_reaches_home`, `test_w305_counts_unreached_citations`,
-`test_e651_member_ref`, `test_person_and_workflow_share_a_name`.
+`test_e651_member_ref`, `test_person_and_workflow_share_a_name`,
+`test_code_block_keeps_comma_braces`, `test_inline_words_keep_punctuation`,
+`test_inline_quote_with_no_date`, `test_citing_a_quote_leaves_owned_text_out_of_reach`.
 
 **`tests/test_messages.py`**: `test_both_homes_share_body`, `test_field_change_reaches_both`,
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
