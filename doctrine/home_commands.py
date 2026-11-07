@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
+import subprocess
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
-from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.home_map import home_entries
-from doctrine._compiler.load_rules import validate_load_rules
-from doctrine._compiler.provenance import declaration_owners
 from doctrine._compiler.session import CompilationSession
+from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.load_rules import validate_load_rules
+from doctrine._compiler.home_map import home_entries
+from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.provenance import declaration_owners
 from doctrine._compiler.source_graph import declarations_in
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
@@ -141,7 +141,7 @@ def check(args):
             context = CompilationContext(session)
             declarations = declarations_in(session)
             declaration_owners(context, declarations, target.project_config.config_dir)
-            validate_load_rules(CompilationContext(session), homes)
+            validate_load_rules(context, homes)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)
             warnings = project_warnings(session, homes, loads, context, declarations) + [

@@ -28,12 +28,13 @@ def compile_side(args):
         if target is None:
             return None
         homes, files, _, _ = compile_homes(target, session=session)
-        build_home_deps(CompilationContext(session), homes)
+        context = CompilationContext(session)
+        build_home_deps(context, homes)
         declarations = declarations_in(session)
         base = target.project_config.config_dir
         return {
             "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
-            "owners": declaration_owners(CompilationContext(session), declarations, base),
+            "owners": declaration_owners(context, declarations, base),
             "loads": home_loads(target, homes, files, runtime_settings(target)),
             "hashes": {
                 name: source_hash(declaration, base)

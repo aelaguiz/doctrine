@@ -23,7 +23,7 @@ def sources(args):
         build_home_deps(context, homes)
         declarations = declarations_in(session)
         base = target.project_config.config_dir
-        if args.person and not any(name == args.person and isinstance(decl, model.Person)
+        if args.person and not any(args.person in (name, decl.name) and isinstance(decl, model.Person)
                                    for (name, _), (_, decl) in declarations.items()):
             raise quote_error(f"`--person {args.person}` is not a `person`.")
         entries = collect_quotes(context, declarations, base)
@@ -32,7 +32,7 @@ def sources(args):
             person_match, fields, day = entry["data"]
             unit, person = person_match
             person_key = '.'.join((*unit.module_parts, person.name))
-            if args.person and person_key != args.person:
+            if args.person and args.person not in (person_key, person.name):
                 continue
             row = {"key": entry["key"], "on": day.isoformat(), "to": fields.get("to"),
                    "about": fields.get("about"), "source": fields.get("source"),

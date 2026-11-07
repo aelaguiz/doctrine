@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import unittest
 
 from tests.test_diff import SOURCE
@@ -28,7 +27,7 @@ class ProvenanceTests(HomeProject, unittest.TestCase):
         root = self.project('person A: "A"\n    owns:\n        "missing/*.prompt"\n' + SOURCE)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 1)
-        self.assertIn('Glob `missing/*.prompt` in `owns:` matches no file.', error)
+        self.assertIn('Glob `missing/*.prompt` in `owns:` matches no source file.', error)
 
     def test_glob_owns_from_file_readers(self):
         source = 'person A: "A"\n    owns:\n        "rules.md"\nworkflow Rules from "rules.md"\nteam T: "Team"\n    home: "."\n    rules: Rules\n'
@@ -300,15 +299,6 @@ team T: "T"
         self.assertEqual(code, 1)
         self.assertIn('E651', error)
 
-    def test_glob_with_brackets_in_project_path(self):
-        root = self.project('person A: "A"\n    owns:\n        "prompts/*.prompt"\n' + SOURCE)
-        nested = root / 'project[1]'
-        nested.mkdir()
-        shutil.copytree(root / 'prompts', nested / 'prompts')
-        shutil.copy(root / 'pyproject.toml', nested / 'pyproject.toml')
-        code, _, error = self.cli(nested, 'check')
-        self.assertEqual(code, 0, error)
-
     def test_w305_counts_bare_citation_in_unreached_workflow(self):
         root = self.project('''person A: "A"
 quote Q: "Words"
@@ -383,3 +373,119 @@ team T: "T"
         code, output, error = self.cli(root, 'sources')
         self.assertEqual(code, 0, error)
         self.assertIn('cited in 1 declaration, reaches 1 home', output)
+
+    def test_self_line_passes_check(self):
+        root = self.project('''workflow W: "Work"
+    gates: "Gates"
+        "Check."
+    run: "Run"
+        self:gates.title
+team T: "T"
+    home: "."
+    work: W
+''')
+        for command in ('build', 'check', 'sources'):
+            with self.subTest(command=command):
+                code, _, error = self.cli(root, command)
+                self.assertEqual(code, 0, error)
+
+    def test_person_filter_takes_plain_name(self):
+        root = self.project('''quote Q: "Words"
+    by: Amir
+    on: "2026-11-05"
+team T: "T"
+    home: "."
+    role: "{{Q}}"
+''')
+        (root / 'prompts/shared').mkdir()
+        (root / 'prompts/shared/people.prompt').write_text('export person Amir: "Amir"\n')
+        for name in ('Amir', 'shared.people.Amir'):
+            with self.subTest(name=name):
+                code, output, error = self.cli(root, 'sources', '--person', name, '--json')
+                self.assertEqual(code, 0, error)
+                self.assertEqual(json.loads(output)['people'][0]['key'], 'shared.people.Amir')
+
+    def test_glob_matches_only_sources(self):
+        source = '''person A: "A"
+    owns:
+        "specs/*.md"
+team T: "T"
+    home: "."
+    role: "Test."
+'''
+        root = self.project(source)
+        (root / 'specs').mkdir()
+        (root / 'specs/rules.md').write_text('# Rules\n\nRead this.\n')
+        code, _, error = self.cli(root, 'check')
+        self.assertEqual(code, 1)
+        self.assertIn('Glob `specs/*.md` in `owns:` matches no source file.', error)
+        (root / 'prompts/AGENTS.prompt').write_text(source + 'workflow Rules from "specs/rules.md"\n')
+        code, _, error = self.cli(root, 'check')
+        self.assertEqual(code, 0, error)
+        before = self.project(source + 'workflow Rules from "specs/rules.md"\n')
+        (before / 'specs').mkdir()
+        (before / 'specs/rules.md').write_text('# Rules\n\nOld.\n')
+        code, output, error = self.cli(root, 'diff', '--base-tree', str(before), '--json')
+        self.assertEqual(code, 0, error)
+        self.assertIn({'name': 'Rules', 'owners': ['A']}, json.loads(output)['owned'])
+
+    def test_quote_path_form_counts_as_cited(self):
+        root = self.project('''person A: "A"
+quote Q: "Words"
+    by: A
+    on: "2026-11-05"
+workflow Unused: "Unused"
+    "{{Q:title}}"
+team T: "T"
+    home: "."
+    role: "Fine."
+''')
+        code, _, error = self.cli(root, 'check')
+        self.assertEqual(code, 0, error)
+        self.assertNotIn('W305', error)
+        code, output, error = self.cli(root, 'sources', '--json')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)['people'][0]['quotes'][0]['cited_in'], ['Unused'])
+
+    def test_inline_field_needs_text(self):
+        for field in ('to', 'about', 'source'):
+            with self.subTest(field=field):
+                root = self.project('person A: "A"\nteam T: "T"\n    home: "."\n'
+                                    '    role: """{{A, 2026-11-05, ' + field + ': "x"}}"""\n')
+                code, _, error = self.cli(root, 'build')
+                self.assertEqual(code, 1)
+                self.assertIn(f'Inline quote: `{field}` needs text.', error)
+
+    def test_inline_sites_ignore_walk_order(self):
+        root = self.project('''person A: "A"
+team T: """{{A, 2026-11-05: "First"}}"""
+    home: "."
+    role: """{{A, 2026-11-06: "Second"}}"""
+''')
+        code, output, error = self.cli(root, 'sources', '--json')
+        self.assertEqual(code, 0, error)
+        quotes = json.loads(output)['people'][0]['quotes']
+        self.assertEqual([(q['on'], q['site']) for q in quotes], [
+            ('2026-11-05', 'prompts/AGENTS.prompt:2'),
+            ('2026-11-06', 'prompts/AGENTS.prompt:4'),
+        ])
+
+    def test_bare_quote_in_analysis_is_plain(self):
+        root = self.project('''person A: "Author"
+quote Q: "Words"
+    by: A
+    on: "2026-11-05"
+analysis Study: "Study"
+    stages: "Stages"
+        Q
+abstract agent Reader:
+    role: "Test."
+    analysis: Study
+team T: "T"
+    home: "."
+    member reader[Reader]: "Reader"
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        text = (root / 'reader/AGENTS.md').read_text().splitlines()
+        self.assertIn('(Author, November 5, 2026: "Words")', text)

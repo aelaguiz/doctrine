@@ -120,7 +120,7 @@ def project_warnings(session, homes, loads, context, all_declarations):
                 f"W304 unused value: {key} at {relpath(path, base)}:{line} is read by no home."
             )})
     for row in collect_quotes(context, all_declarations, base):
-        if row["quote"].name and not row["cited_in"]:
+        if not row["cited_in"]:
             warnings.append({"code": "W305", "text": (
                 f"W305 unused quote: {row['key']} at {row['site']} is cited nowhere."
             )})

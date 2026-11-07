@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from datetime import date
 from os.path import relpath
+from pathlib import PurePath
 
 from doctrine import model
 from doctrine._compiler.constants import _INTERPOLATION_RE
@@ -18,16 +19,15 @@ def declaration_owners(context, declarations, base):
             continue
         for item in person.owns:
             if isinstance(item, str):
-                paths = {path.resolve() for path in base.glob(item) if path.is_file()}
-                if not paths:
-                    raise compile_error(code="E651", summary="Invalid owner",
-                        detail=f"Glob `{item}` in `owns:` matches no file.",
-                        path=unit.prompt_file.source_path, source_span=person.source_span)
                 owned = [key for key, (owner, declaration) in declarations.items()
-                         if owner.prompt_file.source_path.resolve() in paths or (
-                             isinstance(declaration, (model.Agent, model.WorkflowDecl))
-                             and declaration.markdown_path and
-                             (base / declaration.markdown_path).resolve() in paths)]
+                         if PurePath(relpath(owner.prompt_file.source_path, base)).full_match(item)
+                         or (isinstance(declaration, (model.Agent, model.WorkflowDecl))
+                             and declaration.markdown_path
+                             and PurePath(declaration.markdown_path).full_match(item))]
+                if not owned:
+                    raise compile_error(code="E651", summary="Invalid owner",
+                        detail=f"Glob `{item}` in `owns:` matches no source file.",
+                        path=unit.prompt_file.source_path, source_span=person.source_span)
             else:
                 match = declaration_match(context, item, unit)
                 if match is None or isinstance(match[1], model.Member):
@@ -38,8 +38,8 @@ def declaration_owners(context, declarations, base):
                 target = ".".join((*match[0].module_parts, match[1].name))
                 owned = [(target, type(match[1]))]
                 if isinstance(match[1], model.Team):
-                    owned.extend(key for key, (_, decl) in declarations.items()
-                                 if isinstance(decl, model.Member) and key[0].startswith(target + "."))
+                    owned.extend((f"{target}.{member.key}", type(member))
+                                 for member in match[1].fields if isinstance(member, model.Member))
             for key in owned:
                 owners[key].add(name)
     return owners
@@ -94,6 +94,8 @@ def inline_quote(context, unit, expression):
         if key not in {"to", "about", "source"}:
             raise quote_error(f"Inline quote: `{key}` is not a field. "
                               "Use `to`, `about`, or `source`.", unit.prompt_file.source_path)
+        if not value.strip():
+            raise quote_error(f"Inline quote: `{key}` needs text.", unit.prompt_file.source_path)
         fields.append((key, value))
     quote = model.Quote("", match[2], tuple(fields))
     return quote, quote_data(context, unit, quote)
@@ -125,10 +127,11 @@ def collect_quotes(context, declarations, base):
         path = unit.prompt_file.source_path
         if isinstance(declaration, model.Quote):
             site = f"{relpath(path, base)}:{declaration.source_span.line}"
-            rows.append({"key": name, "site": site, "quote": declaration,
+            rows.append({"key": name, "site": site,
                          "data": quote_data(context, unit, declaration),
                          "cited_in": cited.setdefault(name, set()), "dependency": name})
         source = None
+        cursors = {}
         for value in model_walk(declaration):
             refs = []
             if isinstance(value, model.SectionBodyRef):
@@ -136,23 +139,28 @@ def collect_quotes(context, declarations, base):
             elif isinstance(value, str):
                 for match in _INTERPOLATION_RE.finditer(value):
                     expression = match[1]
-                    if re.match(r"\s*\w+(?:\.\w+)*\s*,\s*\d{4}-\d{2}-\d{2}", expression):
-                        quote, data = inline_quote(context, unit, expression)
+                    start = re.match(r"\s*(\w+(?:\.\w+)*)\s*,\s*(\d{4}-\d{2}-\d{2})", expression)
+                    if start:
+                        _, data = inline_quote(context, unit, expression)
                         if source is None:
                             source = path.read_text()
-                            offset = sum(len(line) for line in source.splitlines(keepends=True)
-                                         [:declaration.source_span.line - 1])
-                        pos = offset + re.search(r"\{\{\s*" + re.escape(
-                            expression.split(",", 1)[0].strip()) + r"\s*,", source[offset:]).start()
-                        offset = pos + 2
+                            declaration_start = sum(len(line) for line in source.splitlines(
+                                keepends=True)[:declaration.source_span.line - 1])
+                        key = start.group(1, 2)
+                        cursor = cursors.get(key, declaration_start)
+                        pos = cursor + re.search(r"\{\{\s*" + re.escape(key[0]) + r"\s*,\s*"
+                                                 + re.escape(key[1]), source[cursor:]).start()
+                        cursors[key] = pos + 2
                         site = f"{relpath(path, base)}:{source.count(chr(10), 0, pos) + 1}"
-                        rows.append({"key": site, "site": site, "quote": quote, "data": data,
+                        rows.append({"key": site, "site": site, "data": data,
                                      "cited_in": {name}, "dependency": name})
                     elif ',' not in expression:
                         parsed = context._parse_interpolation_expr_ref(expression)
-                        if parsed is not None and not parsed.path:
+                        if parsed is not None:
                             refs.append(parsed.root)
             for ref in refs:
+                if ref is None:
+                    continue
                 match = declaration_match(context, ref, unit)
                 if match and isinstance(match[1], model.Quote):
                     key = '.'.join((*match[0].module_parts, match[1].name))

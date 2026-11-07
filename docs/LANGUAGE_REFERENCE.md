@@ -74,6 +74,8 @@ person Owner: "The owner"
 ```
 
 Refs name declarations. Quoted globs name files relative to `pyproject.toml`.
+A glob matches only source files the compile loads. A person counts only when
+the compile loads the file that declares them.
 A file glob also owns declarations that read a matching `from` file. A team
 owner also owns its members. Owners add up; ownership does not pass to child
 declarations. `check` and `diff` validate these lists. `diff` reports changed

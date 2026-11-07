@@ -349,7 +349,8 @@ class ResolveAnalysisMixin:
                     ambiguous_label="analysis ref",
                     missing_local_label="analysis",
                 )
-                resolved.append(ResolvedSectionRef(label=display.text))
+                resolved.append(model.AuthoredProse(display.text) if display.kind == "quote"
+                                else ResolvedSectionRef(label=display.text))
                 continue
             if isinstance(item, (model.ProveStmt, model.DeriveStmt, model.CompareStmt, model.DefendStmt)):
                 basis = self._coerce_path_set(item.basis)
