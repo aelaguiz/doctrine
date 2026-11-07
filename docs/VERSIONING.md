@@ -109,7 +109,6 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Restoring a broken stable surface such as routed previous-turn emit facts is
   still a patch fix. It is not a new additive feature when the public shape
   stays the same.
-- Fixing plain agent home file names to match the target's runtimes is a patch fix.
 - The same patch rule applies when previous-turn predecessor analysis missed an
   already-shipped route-bearing surface such as `review.on_accept` or
   `review.on_reject`.
