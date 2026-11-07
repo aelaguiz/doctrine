@@ -27,10 +27,10 @@ args = ["sources"]
 expected_exit = 0
 stdout_contains = [
   "The owner: 3 quotes, 1 with no source",
-  "2026-11-05  SharedContract  prompts/AGENTS.prompt:8",
+  "2026-11-05  SharedContract  prompts/AGENTS.prompt:7",
   "  source: session:abc123",
   "No source:",
-  "  OneAdRemark  prompts/AGENTS.prompt:15",
+  "  OneAdRemark  prompts/AGENTS.prompt:14",
 ]
 
 [[cases]]

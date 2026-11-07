@@ -1305,6 +1305,19 @@ pass to children, because a child is a different declaration. `doctrine diff` re
 change to an owned declaration, and any change to a `person` declaration, since that
 changes who owns what. A ref that doesn't resolve is `E651`, as is a glob matching no file.
 
+A glob owns every declaration in a matching `.prompt` file, and every declaration that reads
+a matching `from` file, since that file's text is part of the declaration. `diff` reads
+owners from both sides and adds them up, so deleting an `owns:` line in the same change
+doesn't hide the change. The block lists every owned declaration whose hash changed,
+whether or not it reaches a home, a deleted one included, and every changed `person`,
+sorted by name. Owners print as person names, joined with `, `. A changed `person` nobody
+owns prints its name alone, and its JSON `owners` is `[]`.
+
+`doctrine check` and `doctrine diff` read `owns:` on every `person` in the loaded files.
+`build` and `emit_docs` never read it. They raise `E650` only for a quote a home they compile
+cites, because one bad quote elsewhere must not stop a launch. `doctrine check` and
+`doctrine sources` read every `quote` in the loaded files.
+
 The list is central on purpose. An agent editing a declaration can't quietly delete an
 attribute on it, because the attribute isn't there.
 
@@ -1314,7 +1327,8 @@ attribute on it, because the attribute isn't there.
 - `on:` is required and must be an ISO date, `YYYY-MM-DD`.
 - `to:` and `about:` are optional, and both may be set.
 - `source:` is optional. A harness link such as a session id. Doctrine only stores it.
-- A missing or bad field is `E650`.
+- A missing or bad field is `E650`, and so is a field set twice. An ISO date is exactly four
+  digits, two, and two, and a real day: `2026-1-5`, `20261105`, and `2026-02-30` are `E650`.
 
 `{{Name}}` in prose renders one form:
 
@@ -1340,9 +1354,20 @@ The form is `{{<PersonRef>, <YYYY-MM-DD>[, to <text>][, about <text>][, source <
 inline quote, since no other interpolation holds a comma. It renders exactly as a named
 quote does. `{`, `}`, or a bad field inside one is `E650`. Inline quotes appear in
 `doctrine sources` with their site as their key. Inside a one-line string the inner quotes
-need escaping, so authors use `"""` strings, which take them as written.
+need escaping, so authors use `"""` strings, which take them as written. An inline quote's
+person counts in `deps`, so a title change reaches the homes that print it. Its site is the
+source line it stands on, found by reading the file from the first line of its declaration.
+Two alike in one declaration take successive matches.
 
-**`doctrine sources [--person NAME] [--json]`** lists every quote by person, then date.
+A named quote is cited when a string reads `{{Name}}` or a bare line names it, in any
+declaration in the loaded files, whether or not a home reaches that declaration. `W305` is a
+named quote nothing cites. Inline quotes are never `W305`.
+
+**`doctrine sources [--person NAME] [--json]`** lists every quote by person, then date,
+oldest first. People sort by name, and a person with no quotes isn't listed. `--person` takes
+the person's name. A name that is no `person` is `E650`: `` `--person <name>` is not a
+`person`. `` Each `No source:` block closes its person. A quote prints a row for `to`, `about`,
+and `source` only when set. An inline quote's row shows its site once, as `<date>  <site>`.
 
 ```text
 Amir: 12 quotes, 1 with no source
@@ -1357,7 +1382,10 @@ No source:
 ```
 
 JSON keys: `format_version`, `people[]` with `key`, `title`, `quotes[]` holding `key`,
-`on`, `to`, `about`, `source`, `site`, `cited_in`, `homes`. A harness checks `source` itself.
+`on`, `to`, `about`, `source`, `site`, `cited_in`, `homes`. An unset field is `null`.
+`cited_in` is a sorted list of declaration names, and `homes` a sorted list of home paths.
+A named quote's homes are those whose `deps` hold it. An inline quote's are those whose `deps`
+hold its declaration, and `cited_in` holds that one declaration. A harness checks `source` itself.
 Doctrine ships no hook, because the JSON is the hook. Exit is 0 unless compile fails.
 
 ## 10. WS6: Messages (#102)
@@ -1717,7 +1745,10 @@ section, and one `_details/` file results).
 **`tests/test_provenance.py`**: `test_quote_render_forms` (bare, `to`, `about`, both),
 `test_inline_quote_matches_named_render`, `test_inline_quote_field_order_free`,
 `test_e650_bad_date`, `test_e650_unknown_person`, `test_sources_flags_missing_source`,
-`test_sources_lists_inline_by_site`, `test_owners_add_up`, `test_e651_glob_matches_nothing`.
+`test_sources_lists_inline_by_site`, `test_owners_add_up`, `test_e651_glob_matches_nothing`,
+`test_e650_repeated_field`, `test_e650_unknown_person_filter`, `test_glob_owns_from_file_readers`,
+`test_owners_read_from_both_sides`, `test_bad_quote_stops_only_its_home`,
+`test_inline_person_title_reaches_home`, `test_w305_counts_unreached_citations`.
 
 **`tests/test_messages.py`**: `test_both_homes_share_body`, `test_field_change_reaches_both`,
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
@@ -1749,7 +1780,7 @@ about a 7th grade reading level applies to all of it.
 | 2 | `LANGUAGE_REFERENCE` (values, teams, roster, `from`, interpolation), `LANGUAGE_DESIGN_NOTES` (late binding, teams are folders), `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `agents_and_workflows`, new `teams_and_homes` |
 | 3 | `EMIT_GUIDE` (home tree, runtimes, `DETAILS.md`, CLI), `LANGUAGE_REFERENCE` (`details`, `budget`), `WARNINGS`, `COMPILER_ERRORS`, `WHY_DOCTRINE`, `README` quick start | `emit_targets`, `verify_and_ship`, `teams_and_homes` |
 | 4 | `LANGUAGE_REFERENCE` (Project Rules), `WARNINGS` (Project Warnings; remove the candidates now shipped), `AGENT_LINTER`, `COMPILER_ERRORS` | `rules`; linter `audit_method`, `finding_catalog`, `report_contract` |
-| 5 | `LANGUAGE_REFERENCE`, `COMPILER_ERRORS`, `AUTHORING_PATTERNS` | `language_overview` |
+| 5 | `LANGUAGE_REFERENCE`, `COMPILER_ERRORS`, `AUTHORING_PATTERNS`, `WARNINGS` | `language_overview` |
 | 6 | `LANGUAGE_REFERENCE` (Outputs), `AGENT_IO_DESIGN_NOTES`, `COMPILER_ERRORS` | `outputs_and_schemas` |
 | 7 | `README`, `CHANGELOG`, `VERSIONING`, `docs/README`, `examples/README`, root `AGENTS.md` (corpus range), `CONTRIBUTING` | All skills rebuilt with `make skills` |
 | 8 | `DOCTRINE_LEARN`, `AUTHORING_PATTERNS` | Section 12 |
@@ -1880,7 +1911,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E634` | `Hand edit in a compiled file` | `` `<path>` was edited by hand. `` then, for a file the build would overwrite, one line per differing section, `` - <title>: <origin> at <site> ``; `` `<path>` was written by hand. ``; `` `<path>` is a link Doctrine didn't write. `` Hint: ``Move the edit to its source, then build. `--force` overwrites it.`` |
 | `E640` | `No home matches` | `` `<selector>` matches no home. `` |
 | `E641` | `Bad revision` | `` `<rev>` is not a revision in this repository. `` |
-| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` Inline quote: <what's wrong>. `` |
+| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` `<field>` in `<name>` is set twice. ``; `` Inline quote: <what's wrong>. ``; `` `--person <name>` is not a `person`. `` |
 | `E651` | `Invalid owner` | `` `<ref>` in `owns:` resolves to nothing. ``; `` Glob `<glob>` in `owns:` matches no file. `` |
 | `E652` | `Missing Markdown source` | `` `<decl>` reads `<path>`, which does not exist. `` |
 | `E653` | `Duplicate heading key` | `` `<path>` has two sibling headings with key `<key>`, at lines <a> and <b>. `` |
