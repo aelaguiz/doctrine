@@ -904,7 +904,8 @@ told otherwise:
   revision doesn't hold is left out, so it counts as absent. A `~` path reads this machine.
   A bad revision is `E641`.
 - `--with PATH` (repeatable, needs `--rev`) overlays that working-tree file on the
-  revision. So one author's change compiles without another session's unfinished edits.
+  revision, and a path the working tree no longer has is removed from it. So one author's
+  change compiles without another session's unfinished edits, renames and deletes included.
 
 **`doctrine build [SELECTOR...] [--out DIR] [--check] [--force] [--rev REV] [--with PATH]`**
 
@@ -1039,7 +1040,7 @@ landed where, and from whom". A linker map file is the model.
 ```python
 @dataclass(frozen=True, slots=True)
 class MapEntry:
-    path: tuple[str, ...]   # slot key, then nested keys down to depth 2
+    path: tuple[str, ...]   # slot key, then nested keys at any depth
     title: str | None
     origin: str             # declaration that authored this text, as "Decl" or "Team.key"
     origin_path: tuple[str, ...]  # the same text's path inside `origin`, () at its top
@@ -1066,20 +1067,22 @@ class HomeMap:
 ```
 
 `entries` partition a home's always-on text and its details. `role` is an entry with the path
-`("role",)`. An entry holds its own rendered text and leaves out its keyed children down to
-depth 2, each of which is an entry of its own, and anything deeper rolls up into its depth-2
-ancestor. Its sizes and `text_hash` cover that text, with no surrounding blank lines. So
-origin totals never count a line twice, and the generated header, pointer line, and joining
-blank lines belong to no entry.
+`("role",)`. An entry holds its own rendered text and leaves out its keyed children, each of
+which is an entry of its own at any depth. Its sizes and `text_hash` cover that text, with no
+surrounding blank lines. So origin totals never count a line twice, a rule sees text however
+deep it lands, and the generated header, pointer line, and joining blank lines belong to no
+entry.
 
 `origin` is the declaration whose source wrote the text, not the one that inherited it.
 `deps` comes from a dataclass-reflection walk over the model that collects every name ref,
-addressable ref, and `{{Ref}}` in strings, closed over parents, slots, `use`, and values.
-It does not need per-kind code.
+addressable ref, and `{{Ref}}` in strings, closed over parents, slots, `use`, and values. A
+member's `deps` hold its team but not its siblings. A `roster` in a home does read its team's
+members, so that home's `deps` hold them. It does not need per-kind code.
 
 A declaration's **source hash** is sha256 over its model, with all `source_span` values
 removed, via one dataclass-reflection walk. Moving a declaration within a file does not
-change its hash.
+change its hash. A team's hash leaves out its members, which hash on their own, so one
+member's edit is one changed declaration.
 
 ## 8. WS4: Reach (#98, #99, #101 Report)
 
@@ -1097,7 +1100,10 @@ home_predicate: "home" ":" string _NL
 - `member: qa` matches any team's member with that key.
 - `home: "pods/**"` matches a home path. `*` stays in one segment, and `**` crosses segments.
 - Predicates still combine with OR, as shipped.
-- An unknown team is `RULE001`.
+- An unknown team is `RULE001`, and so is an abstract team or one from another flow, because
+  neither can ever match a home.
+- `team:`, `member:`, and `home:` scopes select teams and members for load assertions. The
+  shipped assertions keep judging agents and members, and a `team` is not an agent to them.
 
 New assertions:
 
@@ -1170,7 +1176,8 @@ Rules:
   `(details +300)`.
 - Lines sort by declaration name, then home path.
 - New sections: an entry present now and absent in the base, whose path is in
-  `wildcard_keys`.
+  `wildcard_keys`. It lists every home whose load holds it, so a section added at a level
+  names the homes under that level.
 
 JSON shape:
 
@@ -1219,7 +1226,7 @@ disable = ["W301"]
 | `W301` | near_copy | Two source paragraphs are copies or differ by a few words |
 | `W302` | double_load | One declaration's text reaches a home from two files in its load |
 | `W303` | message_without_reader | A `Message` output no `inputs:` reads (section 10) |
-| `W304` | unused_value | A `values:` key no text in any home reads |
+| `W304` | unused_value | A `values:` key no text in any home reads. A key text reads counts as read everywhere it is set, including a default a team overrides |
 | `W305` | unused_quote | A `quote` nothing cites |
 | `W306` | near_budget | A home is at or past `warn_at`, or over budget during `build` |
 | `W307` | stale_level | A level a selected home loads differs from this build |
@@ -1684,12 +1691,19 @@ section, and one `_details/` file results).
 `test_outputs_list_exact_paths`, `test_outputs_hold_only_changed_files`,
 `test_outputs_list_removed_paths`, `test_with_ignores_other_uncommitted_edits`,
 `test_text_blocks_for_new_sections_and_over_budget`, `test_declaration_homes_carry_each_delta`,
-`test_failed_base_exits_2`,
+`test_failed_base_exits_2`, `test_bad_base_is_e641`, `test_two_role_edit_reports_true_reach`,
+`test_team_name_selects_its_members_in_diff`, `test_removals_name_their_cause`,
+`test_with_deleted_file`, `test_prompt_root_outside_the_project`,
+`test_one_member_edit_is_one_declaration`, `test_new_section_at_a_level_lists_homes_under_it`,
+`test_stamped_member_keeps_its_team_module`, `test_roster_home_depends_on_members`,
+`test_team_scope_on_abstract_team_is_rule001`, `test_shipped_assertions_skip_teams`,
+`test_forbids_load_sees_any_depth`,
 `test_json_format_version`.
 
 **`tests/test_project_warnings.py`**: `test_w301_type_1_and_near`,
 `test_w301_short_paragraph_skipped`, `test_w301_shared_section_not_a_copy`,
-`test_w301_groups_by_declaration_pair`, `test_w301_reads_from_files`, `test_w302_double_load`,
+`test_w301_groups_by_declaration_pair`, `test_w301_reads_from_files`,
+`test_w301_reads_each_from_file_once`, `test_w302_double_load`, `test_w304_default_counts_as_read`,
 `test_w302_groups_across_slot_keys`, `test_w304_unused_value`,
 `test_check_disable_list`, `test_strict_fails_on_warning`.
 
