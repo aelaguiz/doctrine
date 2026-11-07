@@ -78,18 +78,15 @@ def build(args):
         homes, files, selected, whole = compile_homes(
             target, session=session, selectors=args.selectors
         )
-        try:
-            settings = runtime_settings(target)
-            loads = home_loads(target, homes, files, settings)
-            findings, _ = budget_findings(
-                [load for load in loads if load["home"] in selected], settings, build=True
-            )
-            for finding in findings:
-                print(finding, file=sys.stderr)
-        except DoctrineError as exc:
-            if exc.code not in {"E631", "E632", "E633"}:
-                raise
-            print(exc, file=sys.stderr)
+        settings = runtime_settings(target)
+        loads = home_loads(target, homes, files, settings)
+        findings, failed = budget_findings(
+            [load for load in loads if load["home"] in selected], settings
+        )
+        for finding in findings:
+            print(finding, file=sys.stderr)
+        if failed:
+            return 1
         output = (
             Path(args.out).resolve()
             if args.out

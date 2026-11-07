@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Builds fail for over-budget homes, invalid budgets or runtime settings, and
+  missing external files.
+
+- A selected build stops when a loaded parent fails to compile.
+
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
 - `doctrine diff` shows each declaration's share of a home's change. JSON

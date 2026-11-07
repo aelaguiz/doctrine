@@ -202,14 +202,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     homes = {home: data for home, data in homes.items() if home in needed}
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
-        try:
-            data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
-        except DoctrineError as exc:
-            if home in selected:
-                raise
-            print(exc, file=sys.stderr)
-            del homes[home]
-            continue
+        data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
         compiled[owner.name] = data["compiled"]

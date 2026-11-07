@@ -110,12 +110,12 @@ Each command takes `--pyproject PATH`.
 `load` says when a home has no file for a runtime. A plain agent writes only
 `AGENTS.md`, so Claude loads nothing from it.
 
-`build` writes files and runs no rules. Near or over budget, it warns.
-Bad budgets, bad runtime settings, and missing externals print errors but
-skip the budget report and keep building. Budget warnings name only selected
-homes. A selected build compiles those homes and the levels they load, then
-writes only those homes' folders. Errors in other homes cannot stop it. A
-broken shared level prints its error and is left alone. Shared levels that
+`build` writes files and runs no rules. It warns near the budget. Over budget,
+it fails unless `over = "warn"`. Bad budgets, bad runtime settings, and
+missing externals fail the build. Budget warnings name only selected homes. A selected build compiles those homes and the levels they load, then
+writes only those homes' folders. A semantic error in another home cannot stop
+it. A parse error anywhere in the flow stops it. Use `--rev HEAD` to build
+without another session's uncommitted edits. A broken shared level stops the build. Shared levels that
 differ print `W307`. A selected build does not compare shared companions; only
 a whole-tree build writes them. Selected homes and files with no Doctrine
 header are never stale levels.

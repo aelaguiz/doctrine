@@ -92,6 +92,7 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
+- A selected build now fails if a loaded parent fails to compile.
 - Refreshing a first-party emitted skill bundle while keeping its stable code
   catalog, install layout, and machine-readable proof shape unchanged is still
   a patch-level public fix.

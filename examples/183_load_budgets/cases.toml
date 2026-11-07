@@ -5,7 +5,7 @@ default_prompt = "prompts/AGENTS.prompt"
 name = "load lists homes by headroom"
 status = "active"
 kind = "cli_contract"
-project = "project"
+project = "project_warn"
 args = ["load"]
 expected_exit = 0
 setup = [["build", "."]]
@@ -23,7 +23,7 @@ expected_stdout_lines = [
 name = "one home prints its files and its biggest parts"
 status = "active"
 kind = "cli_contract"
-project = "project"
+project = "project_warn"
 args = ["load", "pods/growth/small"]
 expected_exit = 0
 setup = [["build", "."]]
@@ -51,17 +51,15 @@ expected_stdout_lines = [
 ]
 
 [[cases]]
-name = "build writes an over-budget home and warns"
+name = "build rejects an over-budget home"
 status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["build", "."]
-expected_exit = 0
-stdout_contains = [
-  "built 3 homes",
-]
+expected_exit = 1
+absent_files = ["pods/growth/AGENTS.md"]
 stderr_contains = [
-  "W306",
+  "E630",
 ]
 
 [[cases]]
@@ -71,7 +69,6 @@ kind = "cli_contract"
 project = "project"
 args = ["check"]
 expected_exit = 1
-setup = [["build", "."]]
 stderr_contains = [
   "E630",
   "Over load budget",
@@ -141,3 +138,13 @@ stderr_contains = [
   "W306 over budget: pods/growth/big loads 1,035 of 1,000 on claude.",
   "W306 over budget: pods/growth/big loads 935 of 800 on codex.",
 ]
+
+[[cases]]
+name = "warn lets an over-budget home build"
+status = "active"
+kind = "cli_contract"
+project = "project_warn"
+args = ["build", "."]
+expected_exit = 0
+stderr_contains = ["W306 over budget:"]
+stdout_contains = ["built 3 homes"]

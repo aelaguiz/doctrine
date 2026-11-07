@@ -50,7 +50,7 @@ HOME_DIAGNOSTICS = {
     "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "W306": (
         'team T: "Team"\n    home: "t"\n    role: "Test."\n',
-        "[tool.doctrine.runtimes.codex]\nlimit = 100\n",
+        "[tool.doctrine.runtimes.codex]\nlimit = 100\nover = \"warn\"\n",
     ),
     "W307": (
         (

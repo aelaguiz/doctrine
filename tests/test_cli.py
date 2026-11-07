@@ -242,6 +242,27 @@ rule R: "Rule"
         self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
         self.assertFalse((root / "HOMES.contract.json").exists())
 
+    def test_selected_build_fails_when_a_loaded_parent_fails(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        parent = root / "pods/growth/AGENTS.md"
+        member = root / "pods/growth/qa/AGENTS.md"
+        before = parent.read_bytes(), member.read_bytes()
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Team text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("E601", error)
+        self.assertEqual((parent.read_bytes(), member.read_bytes()), before)
+
+    def test_selected_build_survives_an_unrelated_semantic_error(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Analyst text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+
     def test_build_prints_w307_for_stale_level(self):
         root = self.project()
         result = self.cli(root, "build", "GrowthPod.qa")
@@ -385,25 +406,21 @@ rule R: "Rule"
         self.assertEqual(scripts["doctrine"], "doctrine.cli:main")
         self.assertEqual(scripts["doctrine-agents"], "doctrine.cli:main")
 
-    def test_build_never_fails_on_budget_or_rule(self):
-        root = self.project("""rule HasWork: "Has Work"
-    scope:
-        agent_tag: A
-    assertions:
-        requires declare work
-    message: "Keep work."
-agent A:
-    role: "Ordinary agent."
-team T: "Team"
+    def test_build_fails_on_budget(self):
+        root = self.project("""team T: "Team"
     home: "t"
     role: "Team text."
     budget:
         codex: 1
 """)
         code, _, error = self.cli(root, "build", ".")
-        self.assertEqual(code, 0, error)
-        self.assertIn("W306 over budget:", error)
-        self.assertTrue((root / "t/AGENTS.md").is_file())
+        self.assertEqual(code, 1, error)
+        self.assertIn("E630", error)
+        self.assertFalse((root / "t/AGENTS.md").exists())
+        code, _, error = self.cli(root, "build", ".", "--force")
+        self.assertEqual(code, 1, error)
+        self.assertIn("E630", error)
+        self.assertFalse((root / "t/AGENTS.md").exists())
 
     def test_check_fails_on_budget_and_rule(self):
         for source, error_code in (
@@ -624,11 +641,11 @@ team T: "Team"
         self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
         path.write_text(path.read_text().replace("Team text.", "{{agent:missing}}"))
         code, _, error = self.cli(root, "build", "pods/growth/qa")
-        self.assertEqual(code, 0, error)
+        self.assertEqual(code, 1, error)
         self.assertIn("E601", error)
         self.assertFalse((root / "pods/growth/AGENTS.md").exists())
 
-    def test_bad_budget_or_external_cannot_stop_build(self):
+    def test_bad_budget_or_external_stops_build(self):
         for budget, settings, diagnostic in (
             ("        codex: 0\n", "", "E631"),
             ("", "[tool.doctrine.runtimes.codex]\nlimt = 10\n", "E632"),
@@ -640,10 +657,9 @@ team T: "Team"
                     source + ("    budget:\n" + budget if budget else ""), settings=settings
                 )
                 code, output, error = self.cli(root, "build", ".")
-                self.assertEqual(code, 0, error)
+                self.assertEqual(code, 1, error)
                 self.assertIn(diagnostic, error)
-                self.assertIn("built 1 home", output)
-                self.assertTrue((root / "t/AGENTS.md").is_file())
+                self.assertFalse((root / "t/AGENTS.md").exists())
                 self.assertNotIn("W306", error)
         root = self.project(
             'team T: "Team"\n    home: "t"\n    role: "Test."\n',
@@ -657,7 +673,7 @@ team T: "Team"
     def test_build_warns_only_for_selected_homes(self):
         root = self.project()
         path = root / "pyproject.toml"
-        path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\n")
+        path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\nover = \"warn\"\n")
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
         self.assertIn("W306 over budget: pods/growth/qa loads", error)
@@ -770,12 +786,10 @@ agent A:
                     (root / ".codex/config.toml").write_bytes(config)
                 for verb in ("check", "load", "build"):
                     code, output, error = self.cli(root, verb)
-                    self.assertEqual(code, 0 if verb == "build" else 1, error)
+                    self.assertEqual(code, 1, error)
                     self.assertIn("E632 compile error: Invalid runtime settings", error)
                     self.assertNotIn("W306", error)
-                    if verb == "build":
-                        self.assertIn("built 3 homes", output)
-                        self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+                    self.assertFalse((root / "pods/growth/qa/AGENTS.md").exists())
 
     def test_binary_level_file_cannot_stop_build(self):
         root = self.project()

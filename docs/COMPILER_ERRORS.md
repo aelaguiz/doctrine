@@ -364,7 +364,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
 | `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Shared details read one agent's words | A shared companion reads an agent or team value, in text or a title. |
-| `E630` | Over load budget | A check finds a home past its runtime's limit and lists its biggest source parts. |
+| `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
 | `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
 | `E633` | External file missing | A listed external is absent and has no reserve. |

@@ -204,12 +204,12 @@ def home_loads(target, homes, files, settings):
     return loads
 
 
-def budget_findings(loads, settings, *, build=False):
+def budget_findings(loads, settings):
     findings = []
     failed = False
     for home in loads:
         for runtime, load in home["runtimes"].items():
-            if load["total"] > load["limit"] and not build and settings[runtime]["over"] == "error":
+            if load["total"] > load["limit"] and settings[runtime]["over"] == "error":
                 unit = "characters" if runtime == "claude" else "bytes"
                 findings.append(
                     "E630 compile error: Over load budget\n\nDetail:\n"
