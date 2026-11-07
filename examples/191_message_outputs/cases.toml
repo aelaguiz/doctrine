@@ -92,3 +92,34 @@ agent = "A"
 exception_type = "CompileError"
 error_code = "E301"
 location_line = 9
+
+[[cases]]
+name = "a message in a sibling file reads the same way"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/two_files/AGENTS.prompt"
+agent = "Reader"
+assertion = "exact_lines"
+expected_lines = [
+  "You read.",
+  "",
+  "## Inputs",
+  "",
+  "### Note",
+  "",
+  "You receive this message.",
+  "",
+  "A short note.",
+]
+
+[[cases]]
+name = "a message with no reader warns"
+status = "active"
+kind = "cli_contract"
+project = "project_no_reader"
+args = ["check"]
+expected_exit = 0
+stderr_contains = [
+  "W303",
+  "CodeReady goes to CoreDev.lead",
+]

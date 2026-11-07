@@ -1414,8 +1414,12 @@ Two additions:
 1. A new built-in output target, `Message`. It takes one required key, `to:`, an agent ref,
    a team ref, or a string. A `Message` output has no `shape`, `requirement`, `schema`,
    `structure`, or `files`, because a message is prose written to be acted on cold, not a
-   form. Writing one is `E660`. A `to:` ref that isn't an agent, member, or team is `E660`
-   too. A missing `to:` is the shipped error for a missing target key.
+   form. Writing one is `E660`. A `to:` ref resolves as a route's agent does, or as a team
+   ref, so a missing, unexported, or wrong-kind name gets the shipped error, and an abstract
+   template member is `E276`. A `to:` that is no ref at all, such as `self:foo`, is `E660`.
+   A missing `to:` is the shipped error for a missing target key. A child output that inherits
+   `to:` from another module reads it in the parent's module. A message that crosses flows
+   is declared in the receiver's flow, because imports run one way.
 
 ```prompt
 output CodeReady: "Code is ready"
@@ -1463,7 +1467,8 @@ the string as written.
 `W303` fires when a `Message` output's `to:` is an agent or team ref and no agent in that
 scope lists it in `inputs:`. A string `to:` has no check, which covers a note to one's next
 session. One agent may list one `Message` in both `outputs:` and `inputs:`. An agent ref's
-scope is that agent. A team ref's scope is its members and the members of teams under its home.
+scope is that agent. A team ref's scope is its members and the members of the concrete teams
+under its home, in that team's own flow, which may not be the flow this target builds.
 Inherited `inputs:` count. `W303` runs in `doctrine check` with the other project warnings.
 It reads the `Message` outputs that home agents send, from their compiled contracts, so a
 message nobody sends has no check, and one bad output nobody uses can't fail `check`. An
@@ -1787,7 +1792,10 @@ section, and one `_details/` file results).
 `test_string_to_has_no_reader_check`, `test_same_agent_sends_and_reads`,
 `test_e660_each_field`, `test_e660_bad_to_ref`, `test_w303_inherited_input_counts`,
 `test_w303_team_scope`, `test_message_input_in_flow_graph`, `test_w303_skips_abstract_scope`,
-`test_w303_unsent_message_has_no_check`, `test_w303_child_output_reads_as_itself`.
+`test_w303_unsent_message_has_no_check`, `test_w303_child_output_reads_as_itself`,
+`test_message_in_sibling_file`, `test_child_output_keeps_parent_to`,
+`test_w303_team_in_another_flow`, `test_review_comment_message`,
+`test_sidecar_names_message_target`, `test_to_follows_export_rule`.
 
 **`tests/test_import.py`**: `test_lead_in_becomes_paragraph`, `test_check_passes_on_lossless`,
 `test_check_reports_first_difference`, `test_text_after_keyed_item_gets_untitled_paragraph`,
