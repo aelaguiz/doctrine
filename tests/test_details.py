@@ -9,7 +9,7 @@ from doctrine.diagnostics import CompileError
 from doctrine.emit_common import load_emit_targets
 from doctrine.homes import HEADER, compile_homes
 from doctrine.parser import parse_file
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class DetailsTests(HomeProject, unittest.TestCase):

@@ -11,7 +11,7 @@ from doctrine.compiler import CompilationSession
 from doctrine.parser import parse_file
 from doctrine.homes import compile_homes
 
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 SOURCE = (

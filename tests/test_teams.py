@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 import json
 
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 from doctrine.compiler import CompilationSession
 from doctrine.parser import parse_file
 from doctrine.homes import compile_homes

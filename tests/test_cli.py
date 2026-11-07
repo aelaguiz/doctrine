@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
@@ -610,7 +610,7 @@ team T: "Team"
                                 )
                             except DoctrineError:
                                 continue
-                            build_home_map(compiled, ".")
+                            build_home_map(compiled)
                             count += 1
         self.assertGreater(count, 350)
 

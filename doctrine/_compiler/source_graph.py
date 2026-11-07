@@ -5,6 +5,7 @@ import json
 from dataclasses import fields, is_dataclass, replace
 
 from doctrine import model
+from doctrine._compiler.naming import model_walk
 from doctrine._compiler.constants import _INTERPOLATION_RE, LATE_ROOT
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
 from doctrine._compiler.indexing import unit_loaded_imports, lookup_flow_registry_decl
@@ -15,33 +16,18 @@ from doctrine._compiler.teams import (
 
 def declarations_in(session):
     declarations = {}
-    for flow in session._flow_cache.values():
-        for unit in flow.units_by_path.values():
-            for declaration in unit.prompt_file.declarations:
-                if isinstance(declaration, model.ImportDecl):
-                    continue
-                name = ".".join((*unit.module_parts, declaration.name))
-                declarations[name, type(declaration)] = (unit, declaration)
-                if isinstance(declaration, model.Team):
-                    declarations.update(
-                        ((f"{name}.{member.key}", type(member)), (unit, member))
-                        for member in declaration.fields if isinstance(member, model.Member)
-                    )
+    for unit in session.units():
+        for declaration in unit.prompt_file.declarations:
+            if isinstance(declaration, model.ImportDecl):
+                continue
+            name = ".".join((*unit.module_parts, declaration.name))
+            declarations[name, type(declaration)] = (unit, declaration)
+            if isinstance(declaration, model.Team):
+                declarations.update(
+                    ((f"{name}.{member.key}", type(member)), (unit, member))
+                    for member in declaration.fields if isinstance(member, model.Member)
+                )
     return declarations
-
-
-def model_walk(value):
-    yield value
-    if is_dataclass(value):
-        for field in fields(value):
-            if field.compare:
-                child = getattr(value, field.name)
-                if isinstance(value, model.Team) and field.name == "fields":
-                    child = tuple(item for item in child if not isinstance(item, model.Member))
-                yield from model_walk(child)
-    elif isinstance(value, (tuple, list)):
-        for item in value:
-            yield from model_walk(item)
 
 
 def source_hash(declaration, base):
@@ -50,8 +36,6 @@ def source_hash(declaration, base):
             field for field in declaration.fields if not isinstance(field, model.Member)
         ))
     def data(value):
-        if isinstance(value, model.SourceSpan):
-            return None
         if is_dataclass(value):
             result = {
                 "type": type(value).__qualname__,

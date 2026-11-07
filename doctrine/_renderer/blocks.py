@@ -586,8 +586,6 @@ def _render_metadata_line(
         parts.append(extra)
     if when_text is not None:
         parts.append(f"when {when_text}")
-    if not parts:
-        return None
     return "_" + " · ".join(parts) + "_"
 
 

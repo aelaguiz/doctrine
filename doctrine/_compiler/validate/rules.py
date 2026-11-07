@@ -7,7 +7,7 @@ import re
 
 from doctrine import model
 from doctrine._compiler.source_graph import declaration_match
-from doctrine._compiler.teams import team_members, find_home_team
+from doctrine._compiler.teams import member_home, team_members, find_home_team
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.resolved_types import CompileError, IndexedUnit
 
@@ -148,7 +148,7 @@ class ValidateRulesMixin:
                 if match is not None:
                     home = match[1].home
                     if isinstance(agent, model.Member):
-                        home = str(PurePosixPath(home) / agent.key.replace("_", "-"))
+                        home = member_home(match[1], agent)
                 if home is not None and re.fullmatch(
                     glob.translate(predicate.glob, recursive=True), home
                 ):

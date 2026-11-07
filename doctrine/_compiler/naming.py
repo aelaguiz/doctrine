@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+from dataclasses import fields, is_dataclass
+
+from doctrine import model
 
 from doctrine._model.agent import (
     AnalysisField,
@@ -123,3 +126,53 @@ def _parse_interpolated_addressable_ref(
         path=tuple(match.group(2).split(".")) if match.group(2) is not None else (),
         source_span=source_span,
     )
+
+
+def model_walk(value):
+    yield value
+    if is_dataclass(value):
+        for field in fields(value):
+            if field.compare:
+                child = getattr(value, field.name)
+                if isinstance(value, model.Team) and field.name == "fields":
+                    child = tuple(item for item in child if not isinstance(item, model.Member))
+                yield from model_walk(child)
+    elif isinstance(value, (tuple, list)):
+        for item in value:
+            yield from model_walk(item)
+
+
+
+
+TYPED_FIELDS = (
+    model.RoleScalar,
+    model.RoleBlock,
+    model.InputsField,
+    model.OutputsField,
+    model.AnalysisField,
+    model.DecisionField,
+    model.SkillsField,
+    model.ReviewField,
+    model.FinalOutputField,
+    model.SelectorsField,
+)
+
+
+def patch_item_key(item):
+    if isinstance(item, (model.RoleScalar, model.RoleBlock)):
+        return "role"
+    if isinstance(item, TYPED_FIELDS):
+        return _agent_typed_field_key(item).split(":", 1)[0]
+    if isinstance(item, (model.ReviewFieldsConfig, model.ReviewOverrideFields)):
+        return "fields"
+    if isinstance(item, (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock)):
+        return "sections"
+    if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock)):
+        return "gates"
+    if isinstance(item, (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock)):
+        return "artifacts"
+    if isinstance(item, (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock)):
+        return "groups"
+    return getattr(item, "key", None)
+
+

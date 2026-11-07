@@ -19,6 +19,7 @@ from doctrine._compiler.provenance import declaration_owners
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
+from doctrine.revision_source import copy_overlay
 from doctrine.homes import compile_homes, home_selectors, select_homes
 from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, text_size
 
@@ -47,7 +48,7 @@ def compare_homes(before, after, selectors):
     old_homes, new_homes = before["homes"], after["homes"]
     old_files, new_files = before["files"], after["files"]
     selected = select_homes(
-        [(home, data["owner"], data["unit"], None)
+        [(home, data["owner"])
          for home, data in {**old_homes, **new_homes}.items()],
         home_selectors(
             [data["owner"] for data in {**old_homes, **new_homes}.values()
@@ -267,11 +268,7 @@ def diff(args):
             for path in args.overlays:
                 source = (Path.cwd() / path).resolve()
                 destination = root / source.relative_to(config.parent)
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                if source.exists():
-                    shutil.copy2(source, destination)
-                else:
-                    destination.unlink(missing_ok=True)
+                copy_overlay(source, destination)
             new_args.pyproject, new_args.rev = str(root / "pyproject.toml"), None
         after = compile_side(new_args)
         if after is None:

@@ -198,9 +198,7 @@ def emit_target(
         plan.markdown_path.parent.relative_to(output_root).as_posix(): {
             "owner": session.flow_for_unit(plan.root.unit).agents_by_name[plan.root.agent_name],
             "unit": plan.root.unit,
-            "map": build_home_map(
-                compiled, plan.markdown_path.parent.relative_to(output_root).as_posix()
-            ),
+            "map": build_home_map(compiled),
         }
         for plan, compiled in zip(planned_emits, compiled_agents, strict=True)
     })

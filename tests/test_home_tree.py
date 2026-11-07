@@ -11,7 +11,7 @@ from pathlib import Path
 from doctrine.homes import HEADER
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_docs import emit_target
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class HomeTreeTests(HomeProject, unittest.TestCase):

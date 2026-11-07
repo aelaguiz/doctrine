@@ -18,7 +18,7 @@ def compile_roster(context, block, *, unit):
             path=unit.prompt_file.source_path, source_span=item.source_span,
         )
 
-    active = context._active_skill_bind_agent_context
+    active = context._active_home_agent_context
     match = find_home_team(context, active.agent, unit=active.unit) if active is not None else None
     if match is None:
         raise error(f"`roster {block.key}` needs a team, and this home has none.", block)
@@ -39,7 +39,7 @@ def compile_roster(context, block, *, unit):
                 for column in columns
             ), member, unit=owner)
         except CompileError as exc:
-            if exc.code != "E601" or "\n- `team:" in exc.diagnostic.detail:
+            if exc.code != "E601" or any(root == "team" for root, _ in exc.missing_values):
                 raise
             skipped = exc
             continue

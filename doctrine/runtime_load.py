@@ -16,35 +16,27 @@ def text_size(text, runtime):
 
 
 def runtime_settings(target):
+    def bad(detail):
+        raise compile_error(code="E632", summary="Invalid runtime settings", detail=detail)
+
     settings = {}
     raw = target.project_config.raw_runtimes
     raw = {} if raw is None else raw
     base = target.project_config.config_dir
     for runtime in (*target.runtimes, *raw):
         if runtime not in RUNTIMES:
-            raise compile_error(
-                code="E632",
-                summary="Invalid runtime settings",
-                detail=f"Unknown runtime `{runtime}`.",
-            )
-    for runtime in target.runtimes or ("codex",):
+            bad(f"Unknown runtime `{runtime}`.")
+    for runtime in target.runtimes:
         values = raw.get(runtime, {})
         for key in values.keys() - {"limit", "warn_at", "over", "external"}:
-            raise compile_error(
-                code="E632",
-                summary="Invalid runtime settings",
-                detail=f"`{key}` for `{runtime}`: unknown setting.",
-            )
+            bad(f"`{key}` for `{runtime}`: unknown setting.")
         limit = RUNTIMES[runtime][2]
         config = base / ".codex/config.toml"
         if runtime == "codex" and "limit" not in values and config.is_file():
             try:
                 limit = tomllib.loads(config.read_text()).get("project_doc_max_bytes", limit)
             except (tomllib.TOMLDecodeError, UnicodeDecodeError):
-                raise compile_error(
-                    code="E632", summary="Invalid runtime settings",
-                    detail="`.codex/config.toml` for `codex`: invalid TOML.",
-                )
+                bad("`.codex/config.toml` for `codex`: invalid TOML.")
         values = {"limit": limit, "warn_at": 0.95, "over": "error", "external": [], **values}
         for key, valid, detail in (
             (
@@ -60,37 +52,23 @@ def runtime_settings(target):
             ("over", values["over"] in ("error", "warn"), "must be error or warn"),
         ):
             if not valid:
-                raise compile_error(
-                    code="E632",
-                    summary="Invalid runtime settings",
-                    detail=f"`{key}` for `{runtime}`: {detail}.",
-                )
+                bad(f"`{key}` for `{runtime}`: {detail}.")
         external = []
         if not isinstance(values["external"], list) or any(
             not isinstance(item, dict) or not isinstance(item.get("path"), str)
             for item in values["external"]
         ):
-            raise compile_error(
-                code="E632", summary="Invalid runtime settings",
-                detail=f"`external` for `{runtime}`: each entry needs a string `path`.",
-            )
+            bad(f"`external` for `{runtime}`: each entry needs a string `path`.")
         for item in values["external"]:
             if "reserve" in item and type(item["reserve"]) is not int:
-                raise compile_error(
-                    code="E632",
-                    summary="Invalid runtime settings",
-                    detail=f"`reserve` for `{runtime}`: must be an integer.",
-                )
+                bad(f"`reserve` for `{runtime}`: must be an integer.")
             path = Path(item["path"]).expanduser()
             path = path if path.is_absolute() else base / path
             if path.is_file():
                 try:
                     text = path.read_bytes().decode("utf-8")
                 except UnicodeDecodeError:
-                    raise compile_error(
-                        code="E632", summary="Invalid runtime settings",
-                        detail=f"`external` for `{runtime}`: `{item['path']}` is not UTF-8.",
-                    )
+                    bad(f"`external` for `{runtime}`: `{item['path']}` is not UTF-8.")
                 size = text_size(text, runtime)
             elif "reserve" in item:
                 text, size = "", item["reserve"]
@@ -170,7 +148,7 @@ def home_loads(target, homes, files, settings):
                 validate_budget(field, settings)
                 budgets.append(dict(field.items))
         runtimes = {}
-        for runtime in target.runtimes or ("codex",):
+        for runtime in target.runtimes:
             setting = settings[runtime]
             loaded = list(setting["external"])
             parts = {}

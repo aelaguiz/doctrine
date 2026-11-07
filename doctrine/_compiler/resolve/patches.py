@@ -5,23 +5,9 @@ from dataclasses import dataclass, replace, fields as dataclass_fields, is_datac
 from doctrine import model
 from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.naming import _agent_typed_field_key
+from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedSectionItem, IndexedUnit
-
-
-TYPED_FIELDS = (
-    model.RoleScalar,
-    model.RoleBlock,
-    model.InputsField,
-    model.OutputsField,
-    model.AnalysisField,
-    model.DecisionField,
-    model.SkillsField,
-    model.ReviewField,
-    model.FinalOutputField,
-    model.SelectorsField,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,24 +15,6 @@ class PatchExpansion:
     items: tuple
     dropped_keys: set[str]
     path_overrides: dict[tuple[str, ...], object]
-
-
-def patch_item_key(item):
-    if isinstance(item, (model.RoleScalar, model.RoleBlock)):
-        return "role"
-    if isinstance(item, TYPED_FIELDS):
-        return _agent_typed_field_key(item).split(":", 1)[0]
-    if isinstance(item, (model.ReviewFieldsConfig, model.ReviewOverrideFields)):
-        return "fields"
-    if isinstance(item, (model.SchemaSectionsBlock, model.SchemaOverrideSectionsBlock)):
-        return "sections"
-    if isinstance(item, (model.SchemaGatesBlock, model.SchemaOverrideGatesBlock)):
-        return "gates"
-    if isinstance(item, (model.SchemaArtifactsBlock, model.SchemaOverrideArtifactsBlock)):
-        return "artifacts"
-    if isinstance(item, (model.SchemaGroupsBlock, model.SchemaOverrideGroupsBlock)):
-        return "groups"
-    return getattr(item, "key", None)
 
 
 def expand_patch_items(items, *, parent_keys, kind, owner_label, unit) -> PatchExpansion:

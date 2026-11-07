@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from doctrine.parser import parse_text
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class ImportTests(HomeProject, unittest.TestCase):

@@ -4,7 +4,7 @@ import re
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.constants import _message_target
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.teams import find_home_team, resolve_message_recipient
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.naming import _humanize_key
@@ -278,8 +278,8 @@ class CompileOutputsMixin:
                     from doctrine._compiler.late_binding import bind_home
                     title = bind_home(self, agent.title or agent.name, agent, unit=owner)
                     if isinstance(agent, model.Member):
-                        team_unit, team = find_home_team(self, agent, unit=owner)
-                        team_title = bind_home(self, team.title, team, unit=team_unit)
+                        _, team = find_home_team(self, agent, unit=owner)
+                        team_title = bind_home(self, team.title, agent, unit=owner)
                         title = f"{team_title}'s {title}"
                 body.append(f"Send this to {title}.")
             elif files_section is not None:

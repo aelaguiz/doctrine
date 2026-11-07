@@ -9,7 +9,8 @@ from doctrine import model
 from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _name_ref_from_dotted_name
-from doctrine._compiler.source_graph import declaration_match, model_walk
+from doctrine._compiler.source_graph import declaration_match
+from doctrine._compiler.naming import model_walk
 
 
 def declaration_owners(context, declarations, base):

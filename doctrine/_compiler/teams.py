@@ -7,7 +7,17 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 
 
+def _message_target(decl):
+    return next((item for item in decl.items if isinstance(item, model.RecordScalar)
+                 and item.key == "target" and isinstance(item.value, model.NameRef)
+                 and not item.value.module_parts and item.value.declaration_name == "Message"), None)
+
+
 FACT_KEYS = frozenset({"key", "title", "home", "folder", "members", "others"})
+
+
+def member_home(team, member):
+    return str(PurePosixPath(team.home) / member.key.replace("_", "-"))
 
 
 def resolve_message_recipient(context, ref, *, unit):
@@ -172,7 +182,7 @@ def team_contract(context, team, *, unit, compiled_members):
         "team": {"key": team.name, "title": team.title, "home": team.home},
         "members": [
             {"key": member.key, "agent": member.name, "title": member.title,
-             "home": str(PurePosixPath(team.home) / member.key.replace("_", "-")),
+             "home": member_home(team, member),
              "parent": None if member.parent_ref is None else ".".join((*member.parent_ref.module_parts, member.parent_ref.declaration_name)),
              "sections": [field.title for field in compiled_members[member.name].fields
                           if not isinstance(field, model.RoleScalar) and field.title]}

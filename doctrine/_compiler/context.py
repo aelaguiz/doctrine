@@ -150,7 +150,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
             tuple[tuple[str, ...], str],
             CompiledSkillPackage,
         ] = {}
-        self._active_skill_bind_agent_context: ActiveSkillBindAgentContext | None = None
+        self._active_home_agent_context: ActiveSkillBindAgentContext | None = None
         # Mutable resolution stacks and caches remain local to one compile task.
         self.root_flow = session.root_flow
         self.root_entrypoint_unit = session.root_flow.entrypoint_unit

@@ -11,9 +11,10 @@ from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
+from doctrine._compiler.late_binding import bind_home
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
-from doctrine._compiler.teams import team_members, team_contract
+from doctrine._compiler.teams import team_members, team_contract, member_home
 from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
     _build_runtime_emit_plan,
@@ -67,7 +68,7 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
     if text.strip():
         source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
         source = os.path.relpath(source_unit.prompt_file.source_path, target.project_config.config_dir)
-        runtimes = target.runtimes or ("codex",)
+        runtimes = target.runtimes
         filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
         files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
         if "claude" in runtimes and "codex" in runtimes:
@@ -84,19 +85,24 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
     return files
 
 
-def compile_home(target, session, context, home, owner, unit, compiled, plan):
+def compile_home(target, session, context, home, owner, unit, plan):
+    if isinstance(owner, (model.Team, model.Member)):
+        bind_home(context, owner.title, owner, unit=unit)
     session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
     if plan is None:
         compiled = session.compile_agent(owner.name)
-    home_map = build_home_map(compiled, home)
-    source_compiled = compiled
+    else:
+        roots = ((unit, owner.name),)
+        (compiled,) = session.compile_agents_from_units(
+            roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots)
+        )
+    home_map = build_home_map(compiled)
     compiled, parts, pointers = split_details(compiled, home)
     files = home_files(target, home, owner, unit, compiled, pointers, plan, session.evaluate_rules)
     data = {
         "owner": owner,
         "unit": unit,
         "compiled": compiled,
-        "source_compiled": source_compiled,
         "map": home_map,
         "files": list(files),
         "pointers": pointers,
@@ -172,14 +178,14 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 continue
             owners.append((team.home, team, unit, None))
             owners.extend(
-                (str(PurePosixPath(team.home) / member.key.replace("_", "-")), member, unit, None)
+                (member_home(team, member), member, unit, None)
                 for member in members
             )
     for home, owner, unit, plan in owners:
         homes.setdefault(home, {"owner": owner, "unit": unit, "plan": plan})
         session.home_paths[owner.name] = home
     try:
-        selected = select_homes(owners, selectors)
+        selected = select_homes(((home, owner) for home, owner, _, _ in owners), selectors)
     except DoctrineError:
         if failures:
             raise failures[0]
@@ -202,17 +208,8 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
         try:
-            result = None
-            if plan is not None:
-                roots = ((unit, owner.name),)
-                (result,) = session.compile_agents_from_units(
-                    roots,
-                    previous_turn_contexts=_build_previous_turn_contexts(
-                        session, agent_roots=roots
-                    ),
-                )
             data, content, parts = compile_home(
-                target, session, context, home, owner, unit, result, plan
+                target, session, context, home, owner, unit, plan
             )
         except DoctrineError as exc:
             if home in selected:
@@ -248,11 +245,12 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
 
 
 def select_homes(owners, selectors):
+    owners = tuple(owners)
     selected = set()
     for selector in selectors or ["."]:
         matches = {
             home
-            for home, owner, unit, plan in owners
+            for home, owner in owners
             if selector == "."
             or owner.name == selector
             or home == selector

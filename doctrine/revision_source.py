@@ -17,6 +17,14 @@ from doctrine.emit_common import resolve_pyproject_path
 from doctrine.parser import parse_file
 
 
+def copy_overlay(source, destination):
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if source.exists():
+        shutil.copy2(source, destination)
+    else:
+        destination.unlink(missing_ok=True)
+
+
 @contextmanager
 def revision_source(args):
     config = resolve_pyproject_path(args.pyproject)
@@ -62,11 +70,7 @@ def revision_source(args):
                 name = source.relative_to(root)
                 if name in paths or any(parent in paths for parent in name.parents):
                     destination = scratch / name
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    if source.exists():
-                        shutil.copy2(source, destination)
-                    else:
-                        destination.unlink(missing_ok=True)
+                    copy_overlay(source, destination)
 
         extract([relative])
         project = scratch / relative

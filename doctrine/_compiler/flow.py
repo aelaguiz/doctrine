@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.indexing import unit_declarations
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_INPUT_SOURCES,
@@ -10,7 +11,6 @@ from doctrine._compiler.constants import (
     _BUILTIN_RENDER_PROFILE_NAMES,
     _INTERPOLATION_EXPR_RE,
     _INTERPOLATION_RE,
-    _message_target,
     _READABLE_DECL_REGISTRIES,
     _RESERVED_AGENT_FIELD_KEYS,
     _REVIEW_CONTRACT_FACT_KEYS,

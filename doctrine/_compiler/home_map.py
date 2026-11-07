@@ -6,7 +6,8 @@ from os.path import relpath
 
 from doctrine import model
 from doctrine.emit_common import agent_slug
-from doctrine._compiler.naming import _agent_typed_field_key
+from doctrine.runtime_load import text_size
+from doctrine._compiler.naming import patch_item_key
 from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledRuleBlock
 from doctrine._renderer.blocks import _render_block
 from doctrine._renderer.semantic import DEFAULT_PROFILE
@@ -34,10 +35,9 @@ class DropRecord:
 
 @dataclass(frozen=True, slots=True)
 class HomeMap:
-    home: str
-    agent: str
     entries: tuple[MapEntry, ...]
     drops: tuple[DropRecord, ...]
+    texts: dict[MapEntry, str]
     wildcard_keys: frozenset[tuple[str, ...]] = frozenset()
     deps: frozenset[str] = frozenset()
 
@@ -83,33 +83,9 @@ def stamp_agent(context, agent, unit):
     for field in agent.fields:
         if isinstance(field, model.Member):
             field = stamp_agent(context, replace(field, name=f"{agent.name}.{field.key}"), unit)
-        if isinstance(
-            field,
-            (
-                model.RoleScalar,
-                model.RoleBlock,
-                model.AuthoredSlotField,
-                model.AuthoredSlotOverride,
-                model.InputsField,
-                model.OutputsField,
-                model.AnalysisField,
-                model.DecisionField,
-                model.SkillsField,
-                model.ReviewField,
-                model.FinalOutputField,
-                model.SelectorsField,
-                model.DropItem,
-                model.OverridePath,
-            ),
-        ):
-            if isinstance(field, (model.RoleScalar, model.RoleBlock)):
-                path = ("role",)
-            elif isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)):
-                path = (field.key,)
-            elif isinstance(field, (model.DropItem, model.OverridePath)):
-                path = ()
-            else:
-                path = (_agent_typed_field_key(field).split(":", 1)[0],)
+        if hasattr(field, "origin") and not isinstance(field, model.Member):
+            key = patch_item_key(field)
+            path = (key,) if key is not None else ()
             origin = field.origin or source_origin(context, agent, unit, path, field.source_span)
             if (
                 isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride))
@@ -124,14 +100,7 @@ def stamp_agent(context, agent, unit):
 
 
 def field_origin(spec, compiled):
-    if isinstance(
-        spec.field, (model.AuthoredSlotField, model.AuthoredSlotInherit, model.AuthoredSlotOverride)
-    ):
-        key = spec.field.key
-    elif isinstance(spec.field, (model.RoleScalar, model.RoleBlock)):
-        key = "role"
-    else:
-        key = _agent_typed_field_key(spec.field).split(":", 1)[0]
+    key = patch_item_key(spec.field)
     origin = spec.slot_body.origin if spec.slot_body is not None else spec.field.origin
     return (
         replace(compiled, origin=origin)
@@ -148,7 +117,7 @@ def drop_records(items, origin):
     )
 
 
-def home_entries(compiled):
+def build_home_map(compiled):
     entries, texts, drops, wildcard_keys = [], {}, list(compiled.drops), set()
 
     def visit(item, path, depth, profile, always_on, entry, origin):
@@ -194,7 +163,7 @@ def home_entries(compiled):
                 entry = MapEntry(
                     path, title, origin.declaration, origin.path, origin.site, always_on,
                     hashlib.sha256(text.encode()).hexdigest(),
-                    len(text.encode("utf-16-le")) // 2, len(text.encode()),
+                    text_size(text, "claude"), text_size(text, "codex"),
                 )
                 entries.insert(position, entry)
                 texts[entry] = text
@@ -204,9 +173,4 @@ def home_entries(compiled):
     for field in compiled.fields:
         path = ("role",) if isinstance(field, model.RoleScalar) else (field.key,)
         visit(field, path, 2, DEFAULT_PROFILE, True, True, field.origin)
-    return tuple(entries), tuple(drops), frozenset(wildcard_keys), texts
-
-
-def build_home_map(compiled, home):
-    entries, drops, wildcard_keys, _ = home_entries(compiled)
-    return HomeMap(home, compiled.name, entries, drops, wildcard_keys)
+    return HomeMap(tuple(entries), tuple(drops), texts, frozenset(wildcard_keys))

@@ -334,12 +334,10 @@ def _collect_source_inputs(
 
 def _session_prompt_paths(session: "CompilationSession") -> tuple[Path, ...]:
     paths: set[Path] = set()
-    for flow in session._flow_cache.values():
-        units: tuple[IndexedUnit, ...] = tuple(flow.units_by_path.values())
-        for unit in units:
-            source_path = unit.prompt_file.source_path
-            if source_path is not None and source_path.is_file():
-                paths.add(source_path.resolve())
+    for unit in session.units():
+        source_path = unit.prompt_file.source_path
+        if source_path is not None and source_path.is_file():
+            paths.add(source_path.resolve())
     return tuple(sorted(paths))
 
 

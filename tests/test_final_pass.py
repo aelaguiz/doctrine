@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class FinalPassTests(HomeProject, unittest.TestCase):
@@ -108,9 +108,9 @@ output_dir = "."
             self.assertIn('source=../shared/prompts/lib/base.prompt', (root / 'mine/lead/AGENTS.md').read_text())
 
     def test_self_reading_title_is_e603(self):
-        for title, role in (('Alpha {{team:title}}', '{{team:title}}'), ('Alpha', '{{team:members}}')):
+        for title, role in (('Alpha {{team:title}}', 'Lead.'), ('Alpha', 'Lead.')):
             with self.subTest(title=title):
-                member = 'Ann of {{team:members}}' if role == '{{team:members}}' else 'Ann'
+                member = 'Ann of {{team:members}}' if title == 'Alpha' else 'Ann'
                 root = self.project(f'''team Alpha: "{title}"
     home: "alpha"
     role: "{role}"

@@ -11,10 +11,10 @@ from pathlib import PurePosixPath
 from lark import Token
 
 from doctrine import model
-from doctrine._compiler.constants import _message_target
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.provenance import collect_quotes
-from doctrine._compiler.source_graph import model_walk
+from doctrine._compiler.naming import model_walk
 from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
@@ -23,9 +23,8 @@ from doctrine.runtime_load import loaded_levels
 def project_warnings(session, homes, loads, context, all_declarations):
     paragraphs, unused, units, from_files = [], {}, {}, set()
     base = session.project_config.config_dir
-    for flow in session._flow_cache.values():
-        for unit in flow.units_by_path.values():
-            units[unit.prompt_file.source_path] = unit
+    for unit in session.units():
+        units[unit.prompt_file.source_path] = unit
     for path, unit in units.items():
         declarations = [
             declaration for declaration in unit.prompt_file.declarations

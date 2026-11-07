@@ -10,7 +10,6 @@ from pathlib import Path
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
-from doctrine._compiler.home_map import home_entries
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.provenance import declaration_owners
 from doctrine._compiler.source_graph import declarations_in
@@ -246,8 +245,7 @@ def where(args):
         matches = {}
         for home in sorted(selected):
             for level, data in loaded_levels(homes, home):
-                _, _, _, texts = home_entries(data["source_compiled"])
-                for entry, text in texts.items():
+                for entry, text in data["map"].texts.items():
                     if (level != home and not entry.always_on) or needle not in " ".join(
                         text.casefold().split()
                     ):

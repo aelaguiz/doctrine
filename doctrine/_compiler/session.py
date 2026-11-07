@@ -195,6 +195,9 @@ class CompilationSession:
             )
         ] = self.root_flow
 
+    def units(self):
+        return (unit for flow in self._flow_cache.values() for unit in flow.units_by_path.values())
+
     def _new_flow_ready_event(self) -> threading.Event:
         return threading.Event()
 
@@ -380,7 +383,7 @@ class CompilationSession:
             previous_turn_contexts=previous_turn_contexts,
         )
         context._active_agent_key = active_agent_key
-        context._active_skill_bind_agent_context = active_skill_bind_agent_context
+        context._active_home_agent_context = active_skill_bind_agent_context
         context._active_previous_turn_input_specs = active_previous_turn_input_specs or {}
         return context._compile_agent_field(
             spec,

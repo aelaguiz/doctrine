@@ -81,7 +81,7 @@ class EmitTarget:
     source_id: str | None = None
     source_root: Path | None = None
     lock_file: Path | None = None
-    runtimes: tuple[str, ...] = ()
+    runtimes: tuple[str, ...] = ("codex",)
 
 
 @dataclass(slots=True, frozen=True)
@@ -331,7 +331,7 @@ def load_emit_targets(
             source_id=source_id,
             source_root=source_root,
             lock_file=lock_file,
-            runtimes=tuple(raw_target.get("runtimes", ())),
+            runtimes=tuple(raw_target.get("runtimes", ())) or ("codex",),
         )
 
     return targets

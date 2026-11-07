@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class ProjectWarningTests(HomeProject, unittest.TestCase):

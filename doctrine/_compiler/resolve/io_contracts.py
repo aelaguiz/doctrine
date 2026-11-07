@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.constants import _message_target
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,

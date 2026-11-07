@@ -4,7 +4,7 @@ import json
 import unittest
 
 from tests.test_diff import SOURCE
-from tests.ws3_support import HomeProject
+from tests.home_support import HomeProject
 
 
 class ProvenanceTests(HomeProject, unittest.TestCase):

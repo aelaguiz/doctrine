@@ -781,7 +781,7 @@ class ResolveSkillsMixin:
                 package_unit=package_unit,
                 package_decl=package_decl,
             )
-            active_agent_context = self._active_skill_bind_agent_context
+            active_agent_context = self._active_home_agent_context
             if active_agent_context is None and (
                 entry.binds or package_contract.host_contract
             ):
@@ -803,7 +803,7 @@ class ResolveSkillsMixin:
                 )
         resolved_binds_for_mode: dict[str, ResolvedSkillBindTarget] | None = None
         if entry.mode is not None:
-            active_agent_context = self._active_skill_bind_agent_context
+            active_agent_context = self._active_home_agent_context
             if active_agent_context is not None and entry.binds:
                 resolved_binds_for_mode = {
                     bind.key: self._resolve_skill_entry_bind_target(

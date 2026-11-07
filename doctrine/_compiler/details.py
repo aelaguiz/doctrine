@@ -5,24 +5,19 @@ from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.constants import LATE_ROOT
+from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledCodeBlock, CompiledGuardBlock
 from doctrine.renderer import render_readable_block
 
 
 def reject_details(value, surface):
-    if isinstance(value, (CompiledSection, model.ReadableBlock)) and value.kind == "details":
+    if any(isinstance(item, (CompiledSection, model.ReadableBlock)) and item.kind == "details"
+           for item in model_walk(value)):
         raise compile_error(
             code="E620", summary="Details not allowed here",
             detail=f"`details` can't be used in {surface}.",
         )
-    if isinstance(value, tuple):
-        for item in value:
-            reject_details(item, surface)
-    elif is_dataclass(value):
-        for field in fields(value):
-            if field.name != "origin":
-                reject_details(getattr(value, field.name), surface)
 
 
 def split_details(compiled, home):
@@ -98,6 +93,8 @@ def validate_shared_details(value):
             for field in fields(value):
                 if field.name != "origin" and not (
                     isinstance(value, CompiledCodeBlock) and field.name == "text"
+                    or isinstance(value, model.ReadableBlock) and value.kind == "code"
+                    and field.name == "payload"
                 ):
                     read(getattr(value, field.name), companion)
     read(value)

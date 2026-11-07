@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import fields, is_dataclass, replace
-from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.details import validate_shared_details
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.teams import find_home_team, team_members, home_value_sources
+from doctrine._compiler.teams import find_home_team, team_members, home_value_sources, member_home
 from doctrine._compiler.types import CompiledCodeBlock
 from doctrine._compiler.markdown_links import rebase_markdown
 
@@ -45,12 +44,11 @@ def reject_late_roots(value, *, unit, why):
 def value_reading_sites(context, root, key):
     token = re.compile(r"\{\{\s*" + root + ":" + key + r"\s*\}\}")
     readings = []
-    for flow in context.session._flow_cache.values():
-        for unit in flow.units_by_path.values():
-            path = unit.prompt_file.source_path
-            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                if token.search(line) and (path, number) not in readings:
-                    readings.append((path, number))
+    for unit in context.session.units():
+        path = unit.prompt_file.source_path
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if token.search(line) and (path, number) not in readings:
+                readings.append((path, number))
     return readings
 
 
@@ -113,7 +111,7 @@ def bind_home(context, compiled, agent, *, unit, _stack=None):
                 no_owner(root, key, "this agent is outside any team")
             home = team.home
             if root == "agent" and isinstance(agent, model.Member):
-                home = str(PurePosixPath(home) / agent.key.replace("_", "-"))
+                home = member_home(team, agent)
             return home if key == "home" else home.rsplit("/", 1)[-1]
         if root == "team" and key in {"members", "others"}:
             if key == "others" and isinstance(agent, model.Team):
@@ -150,11 +148,13 @@ def bind_home(context, compiled, agent, *, unit, _stack=None):
     if missing:
         home = agent.name
         if team is not None:
-            home = str(PurePosixPath(team.home) / agent.key.replace("_", "-")) if isinstance(agent, model.Member) else team.home
+            home = member_home(team, agent) if isinstance(agent, model.Member) else team.home
         lines = [f"Home `{home}` reads values nothing fills:"]
         for root, key in missing:
             lines.extend(f"- `{root}:{key}` at {path}:{line}"
                          for path, line in value_reading_sites(context, root, key))
-        raise compile_error(code="E601", summary="Unfilled value", detail="\n".join(lines),
+        error = compile_error(code="E601", summary="Unfilled value", detail="\n".join(lines),
             path=unit.prompt_file.source_path, source_span=agent.source_span)
+        error.missing_values = tuple(missing)
+        raise error
     return result
