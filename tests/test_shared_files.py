@@ -2,11 +2,35 @@ from __future__ import annotations
 
 import unittest
 import json
+import shutil
+import tempfile
+from pathlib import Path
 
 from tests.home_support import HomeProject
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_diff_reports_kept_file_growth_and_readers(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    member qa: "QA"
+        role: "Read {{Guide}}."
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary) / "base"
+            shutil.copytree(root, base)
+            (root / "guide.md").write_text("Guide.\nMore.\n")
+            code, output, error = self.cli(root, "diff", "--base-tree", str(base), "--json")
+            self.assertEqual(code, 0, error)
+            self.assertEqual(json.loads(output)["shared_files"], [
+                {"path": "guide.md", "delta": 6, "homes": ["t/qa"]}])
+            code, output, error = self.cli(root, "diff", "--base-tree", str(base))
+            self.assertEqual(code, 0, error)
+            self.assertIn("guide.md  +6 characters, read by 1 home", output)
+
     def test_where_searches_the_kept_file_and_lists_its_readers(self):
         root = self.project('''file Guide: "Guide"
     path: "guide.md"

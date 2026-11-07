@@ -31,7 +31,7 @@ from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
-    padded_rows, text_size,
+    padded_rows, shared_file_data, text_size,
 )
 
 
@@ -197,20 +197,10 @@ def load(args):
                 for file in values["external"]:
                     file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
         loads = home_loads(target, homes, files, settings, selected)
-        shared = {}
-        generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
-                     if isinstance(content, bytes)}
-        for home in loads:
-            for _, level in loaded_levels(homes, home["home"]):
-                for ref, _ in level["file_refs"]:
-                    path = Path(ref[2])
-                    name = relpath(path, target.project_config.config_dir)
-                    if name not in shared:
-                        text = generated[path].decode() if path in generated else path.read_text()
-                        shared[name] = {"path": name, "size": text_size(text, "claude"), "homes": set()}
-                    shared[name]["homes"].add(home["home"])
-        shared_files = [{**row, "homes": sorted(row["homes"])} for row in
-                        sorted(shared.values(), key=lambda row: (-row["size"], row["path"]))]
+        shared = shared_file_data(target, homes, files, selected)
+        shared_files = sorted(({"path": path, "size": text_size(row["text"], "claude"),
+                                "homes": sorted(row["homes"])} for path, row in shared.items()),
+                              key=lambda row: (-row["size"], row["path"]))
         for home in loads:
             for runtime, load in home["runtimes"].items():
                 for file in load["files"]:

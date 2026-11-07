@@ -21,7 +21,7 @@ from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
 from doctrine.revision_source import copy_overlay
 from doctrine.homes import compile_homes, home_selectors, select_homes
-from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, text_size
+from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, shared_file_data, text_size
 
 
 def compile_side(args):
@@ -36,6 +36,7 @@ def compile_side(args):
         return {
             "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
             "owners": declaration_owners(context, declarations, base),
+            "shared_files": shared_file_data(target, homes, files, homes),
             "loads": home_loads(target, homes, files, runtime_settings(target), homes),
             "hashes": {
                 name: source_hash(declaration, base)
@@ -156,6 +157,18 @@ def compare_homes(before, after, selectors):
 
 def build_result(before, after, comparison, base):
     changed, owned = [], []
+    old_files, new_files = before["shared_files"], after["shared_files"]
+    shared = []
+    for path in sorted(old_files.keys() | new_files.keys()):
+        old, new = old_files.get(path), new_files.get(path)
+        if old and new and old["text"] == new["text"]:
+            continue
+        homes = ((old["homes"] if old else set()) | (new["homes"] if new else set())) & comparison["selected"]
+        if homes:
+            shared.append({"path": path,
+                "delta": (text_size(new["text"], "claude") if new else 0)
+                         - (text_size(old["text"], "claude") if old else 0),
+                "homes": sorted(homes)})
     for key in sorted(before["hashes"].keys() | after["hashes"].keys(), key=lambda key: (key[0], key[1].__name__)):
         name = key[0]
         if before["hashes"].get(key) == after["hashes"].get(key):
@@ -199,7 +212,7 @@ def build_result(before, after, comparison, base):
     return {
         "format_version": 1, "base": base, "changed_declarations": changed,
         "homes": comparison["homes"], "new_sections": comparison["new_sections"],
-        "outputs": comparison["outputs"], "owned": owned,
+        "outputs": comparison["outputs"], "owned": owned, "shared_files": shared,
         "over_budget": [
             {"home": load["home"], "runtime": runtime,
              "total": values["total"], "limit": values["limit"]}
@@ -242,6 +255,11 @@ def render_diff(result):
         deltas = [home["delta"]["always_on"] for home in homes]
         a, b = min(deltas), max(deltas)
         blocks.append("Each home: " + (f"{a:+,}" if a == b else f"{a:+,} to {b:+,}") + " characters")
+    if result["shared_files"]:
+        blocks.append("Shared files changed:\n" + "\n".join(
+            f"  {entry['path']}  {entry['delta']:+,} characters, read by {len(entry['homes'])} "
+            f"{'home' if len(entry['homes']) == 1 else 'homes'}" for entry in result["shared_files"]
+        ))
     if result["owned"]:
         blocks.append("Owned declarations changed:\n" + "\n".join(
             f"  {entry['name']}" + (f", owned by {', '.join(entry['owners'])}" if entry['owners'] else "")

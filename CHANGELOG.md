@@ -12,8 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Name shared files and link to them or ask a role to read them first. Files
   without bodies stay on disk; files with bodies are written by the build.
-- Load reports list shared files and on-demand text. `doctrine where` and
-  `W301` read kept files.
+- Load reports list shared files and on-demand text. `doctrine diff` reports
+  changes to shared files. `doctrine where` and `W301` read kept files.
 
 ### Super in overrides
 
