@@ -4,6 +4,7 @@ from lark import v_args
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._model.core import role_text
 from doctrine._parser.parts import (
     FinalOutputBodyParts,
     FinalOutputOutputPart,
@@ -57,6 +58,7 @@ class AgentTransformerMixin:
     def quote_to(self, items): return "to", items[0]
     def quote_about(self, items): return "about", items[0]
     def quote_source(self, items): return "source", items[0]
+    def quote_context(self, items): return "context", items[0]
 
     @v_args(meta=True)
     def quote_decl(self, meta, items):
@@ -114,6 +116,18 @@ class AgentTransformerMixin:
 
     def role_body(self, items):
         return items[0]
+
+    def role_prose(self, items):
+        return tuple(items)
+
+    @v_args(meta=True, inline=True)
+    def role_paragraph(self, meta, key, *parts):
+        title = parts[0] if len(parts) == 2 else None
+        return _with_source_span(model.ReadableBlock("paragraph", key, title, tuple(parts[-1])), meta)
+
+    @v_args(meta=True)
+    def role_paragraphs(self, meta, items):
+        return _with_source_span(model.RoleScalar(text=role_text(items), paragraphs=tuple(items)), meta)
 
     @v_args(meta=True, inline=True)
     def role_field(self, meta, title_or_text, body=None):

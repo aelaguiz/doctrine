@@ -64,8 +64,8 @@ Stability rules:
 
 | Code | Summary | Notes |
 | --- | --- | --- |
-| `E101` | Unexpected token or newline | The parser saw a token or line break that does not fit the current grammar state. |
-| `E102` | Unexpected character | The parser hit a character that does not map to a valid token on this surface. |
+| `E101` | Unexpected token or newline | The parser saw a token or line break that does not fit the current grammar state. If a quote ends a string early, the hint shows how to fix it. |
+| `E102` | Unexpected character | The parser hit a character that does not map to a valid token on this surface. If a quote ends a string early, the hint shows how to fix it. |
 | `E103` | Unexpected end of file | The file ended before the current declaration or block was complete. |
 | `E104` | Indentation-sensitive parse failure | The parser saw an unexpected indent or dedent. |
 | `E105` | Invalid authored slot body | A referenced authored workflow slot was given an inline body, or a titled slot has no body. Use a named workflow ref or a title with an indented body. |
@@ -84,7 +84,7 @@ Stability rules:
 | `E202` | Abstract agent does not render | The target agent exists, but it is marked `abstract`. |
 | `E203` | Duplicate role field | One agent defines `role` more than once. |
 | `E204` | Duplicate typed field | One agent defines the same typed field more than once. |
-| `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field. |
+| `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field or has dropped every role paragraph. |
 | `E206` | Retired | Retired in language 6.0. A role keeps its authored position. Slots may come before it. |
 | `E207` | Cyclic agent inheritance | Agent inheritance forms a cycle. |
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
@@ -136,7 +136,7 @@ Stability rules:
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
-| `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a document block, properties entry, inline schema entry, footnote, or table child. |
+| `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a role paragraph, document block, properties entry, inline schema entry, footnote, or table child. |
 | `E296` | Readable guard reads disallowed source | A readable `when` guard reads emitted output fields or other disallowed sources instead of only declared inputs and enum members. |
 | `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty inline or named table, or a multiline inline table cell. |
 | `E298` | Invalid render_profile declaration | A `render_profile` declares an unknown target, unsupported mode, or duplicate target rule. |
@@ -190,8 +190,8 @@ Stability rules:
 | `E383` | Missing inherited law subsection | An inherited workflow-law block omitted one or more required parent subsections. |
 | `E384` | Cannot override undefined law subsection | `override <section_key>:` targeted a law subsection the parent workflow does not define. |
 | `E605` | Code fence split across strings | A prose string opens a code fence it does not close. Put the whole fence in one triple-quoted string or a `code` block. |
-| `E610` | Missing patch target | A drop, dotted override, or case path names a key the parent lacks, or `inherit *` has nothing to inherit. |
-| `E611` | Invalid patch path | A path steps through an item with no keyed children, an override targets the wrong block kind or gives a paragraph a nested block, a case attaches to a block that cannot hold it, or a list override has a body that is not a list. |
+| `E610` | Missing patch target | A drop, dotted override, role paragraph, or case path names a key the parent lacks, or `inherit *` has nothing to inherit. |
+| `E611` | Invalid patch path | A path steps through an item with no keyed children or a role with no keyed paragraphs, an override targets the wrong block kind or gives a paragraph a nested block, a case attaches to a block that cannot hold it, or a list override has a body that is not a list. |
 | `E612` | Conflicting patches | Two patches account for one item, a case key already exists, a case patch conflicts with a case in an override, kept cases would repeat a key, a whole-item account conflicts with a deeper patch, a child drops `role`, `super` is repeated or brings a key also written in the override, or a member overlay inherits a member with its own body. |
 | `E613` | Duplicate inherit * | A body writes `inherit *` twice. |
 | `E614` | Super outside an override | `super` appears outside an override body. |
@@ -351,7 +351,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |
 | `E608` | Value set twice | `values:` sets one key twice in the same body, in one block or across two. |
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
-| `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. |
+| `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. Free words after an inline date are allowed. |
 | `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
 | `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |

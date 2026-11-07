@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Use `super` on its own line in an override to keep the parent's text and add
   to it. `E614` reports a `super` outside an override.
 
+### Quotes
+
+- Quotes keep free words after the date and render without added parentheses.
+- Markdown import turns matching dated quotes into typed quotes and lists long quotes left as prose.
+
 ### Scope lines
 
 - `doctrine build` writes who a team, member, or titled plain agent file is for.
@@ -20,6 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Role paragraphs reject repeated keys and keep their author in `where`.
+  An agent cannot drop every role paragraph.
+- Markdown import keeps extra space after bold leads, leaves quotes in bold leads
+  and code spans, and lists long quotes one line at a time outside code spans.
+- Parse errors point out a string ended by a stray quote and clip long source lines.
 - A member override without a role keeps the inherited class and title. It can
   patch the class and set a new title. A replacement with a role keeps the
   inherited title when no new title is given.
@@ -41,6 +51,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Markdown import (6.0.0; language 6.0)
 
+- Import writes prose in triple quotes, shortens keys, and reports when `--check` matches.
+- A role can hold keyed paragraphs that children and members can drop or override.
 - `doctrine import` prints agent or workflow source from a Markdown file.
 
 ### Messages (6.0.0; language 6.0)

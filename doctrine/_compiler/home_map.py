@@ -8,6 +8,7 @@ from doctrine import model
 from doctrine.emit_common import agent_slug
 from doctrine.runtime_load import text_size
 from doctrine._compiler.naming import patch_item_key
+from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledRuleBlock
 from doctrine._renderer.blocks import _render_block
 from doctrine._renderer.semantic import DEFAULT_PROFILE
@@ -81,6 +82,14 @@ def child_origin(origin, key, span, title=None):
 def stamp_agent(context, agent, unit):
     fields = []
     for field in agent.fields:
+        if isinstance(field, model.RoleScalar):
+            keys = set()
+            for paragraph in field.paragraphs:
+                if paragraph.key in keys:
+                    raise compile_error(code="E295", summary="Duplicate readable key",
+                        detail=f"`{agent.name}` repeats role paragraph key `{paragraph.key}`.",
+                        path=unit.prompt_file.source_path, source_span=paragraph.source_span)
+                keys.add(paragraph.key)
         if isinstance(field, model.Member):
             field = stamp_agent(context, replace(field, name=f"{agent.name}.{field.key}"), unit)
         if hasattr(field, "origin") and not isinstance(field, model.Member):
@@ -122,6 +131,13 @@ def build_home_map(compiled):
 
     def visit(item, path, depth, profile, always_on, entry, origin):
         origin = item.origin or origin
+        if isinstance(item, model.RoleScalar) and item.paragraphs:
+            for paragraph in item.paragraphs:
+                paragraph_origin = paragraph.origin or child_origin(origin, paragraph.key, paragraph.source_span)
+                block = CompiledSection(title=paragraph.title, body=paragraph.payload, kind="paragraph",
+                                        key=paragraph.key, origin=paragraph_origin)
+                visit(block, (*path, paragraph.key), depth, profile, always_on, True, paragraph_origin)
+            return None
         if origin and origin.wildcard:
             wildcard_keys.add(path)
         position = len(entries)

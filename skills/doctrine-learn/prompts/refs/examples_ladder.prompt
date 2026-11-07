@@ -1,7 +1,7 @@
 document ExamplesLadder: "Examples Ladder"
     """Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `193_small_team_end_to_end`. It is
+from `01_hello_world` through `195_role_paragraphs`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -262,6 +262,8 @@ Markdown registries."""
             "`examples/191_message_outputs` — shared message outputs."
             "`examples/192_doctrine_import` — port Markdown to source."
             "`examples/193_small_team_end_to_end` — put the pieces together."
+            "`examples/194_super` — keep the parent's text in an override."
+            "`examples/195_role_paragraphs` — patch one part of a role."
 
     section pick_next: "How To Pick Your Next Example"
         "Use this short rule-set."

@@ -134,7 +134,8 @@ class ResolveAgentSlotsMixin:
 
             agent, patches = self._expand_agent_patches(agent, unit=unit)
             parent_slots_by_key = apply_path_patches(
-                self, {slot.key: slot for slot in parent_slots}, patches.path_overrides,
+                self, {slot.key: slot for slot in parent_slots},
+                {path: patch for path, patch in patches.path_overrides.items() if path[0] != "role"},
                 owner_label=agent.name, unit=unit, origin=source_origin(self, agent, unit, (), agent.source_span),
             )
             resolved_slots: list[ResolvedAgentSlotState] = []

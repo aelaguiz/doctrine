@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._model.core import role_text
 
 
 def heading_key(title):
@@ -25,6 +26,30 @@ def fenced_lines(lines):
             fence = marker[1][0], len(marker[1])
             inside = True
         yield line, inside
+
+
+def opening_paragraphs(lines):
+    groups, pending = [], []
+    for line, inside in fenced_lines(lines):
+        if not inside and not line.strip():
+            if pending:
+                groups.append("\n".join(pending))
+                pending = []
+            elif groups:
+                groups[-1] += "\n"
+        else:
+            pending.append(line)
+    if pending:
+        groups.append("\n".join(pending))
+    elif groups:
+        groups[-1] = groups[-1].rstrip("\n")
+    result = []
+    for text in groups:
+        bold = re.match(r"^\*\*(.+?)\*\*(?: (?=[^ \t\n])|\n)", text)
+        inline = bold and not bold[0].endswith("\n")
+        result.append((bold[1] if inline else None, text[bold.end():] if inline else text,
+                       bold[1] if bold else text))
+    return result
 
 
 def markdown_lines(lines, *, path, start, source_path=None, source_span=None):
@@ -124,6 +149,20 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
             for section in sections
         )
         if preamble:
-            fields = (model.RoleScalar(text=preamble[0]), *fields)
+            parts = opening_paragraphs(root["lines"])
+            if len(parts) > 1:
+                keys = {}
+                paragraphs = []
+                for lead, text, key_text in parts:
+                    key = heading_key(" ".join(key_text.split()[:4]))
+                    base, count = key, 1
+                    while key in keys:
+                        count += 1
+                        key = f"{base}_{count}"
+                    keys[key] = True
+                    paragraphs.append(model.ReadableBlock("paragraph", key, literal(lead) if lead else None, (literal(text),)))
+                fields = (model.RoleScalar(text=literal(role_text(paragraphs)), paragraphs=tuple(paragraphs)), *fields)
+            else:
+                fields = (model.RoleScalar(text=preamble[0]), *fields)
         return replace(declaration, fields=fields)
     return replace(declaration, body=model.WorkflowBody(title=title, preamble=preamble, items=sections))

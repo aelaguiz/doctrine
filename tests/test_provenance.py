@@ -116,7 +116,7 @@ team Growth[Pod]: "Growth"
                 root = self.project(source)
                 code, _, error = self.cli(root, 'build')
                 self.assertEqual(code, 0, error)
-                self.assertIn(f'(Author, November 5, 2026{suffix}: "Words")', (root / 'AGENTS.md').read_text().splitlines())
+                self.assertIn(f'Author, November 5, 2026{suffix}: "Words"', (root / 'AGENTS.md').read_text().splitlines())
 
     def test_inline_quote_matches_named_render(self):
         root = self.project('''person A: "Author"
@@ -129,7 +129,7 @@ team T: "Team"
 ''')
         code, _, error = self.cli(root, 'build')
         self.assertEqual(code, 0, error)
-        self.assertEqual((root / 'AGENTS.md').read_text().count('(Author, November 5, 2026: "Words")'), 2)
+        self.assertEqual((root / 'AGENTS.md').read_text().count('Author, November 5, 2026: "Words"'), 2)
 
     def test_inline_quote_field_order_free(self):
         root = self.project('''person A: "Author"
@@ -139,7 +139,32 @@ team T: "Team"
 ''')
         code, _, error = self.cli(root, 'build')
         self.assertEqual(code, 0, error)
-        self.assertIn('to Lee, about code: "Words"', (root / 'AGENTS.md').read_text())
+        self.assertIn('about code, to Lee: "Words"', (root / 'AGENTS.md').read_text())
+
+    def test_free_words_and_parentheses(self):
+        root = self.project('''person A: "Author"
+quote Q: "Words"
+    by: A
+    on: "2026-11-05"
+    context: "for Lee"
+team T: "Team"
+    home: "."
+    role: """({{Q}}) ({{A, 2026-11-05, for Lee: "Words"}})"""
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        self.assertEqual((root / 'AGENTS.md').read_text().count('(Author, November 5, 2026, for Lee: "Words")'), 2)
+
+    def test_inline_free_words_keep_field_order(self):
+        root = self.project('''person A: "Author"
+team T: "Team"
+    home: "."
+    role: """{{A, 2026-11-05, for Lee, about code, asking for you: "Words"}}"""
+''')
+        code, _, error = self.cli(root, 'build')
+        self.assertEqual(code, 0, error)
+        self.assertIn('Author, November 5, 2026, for Lee, about code, asking for you: "Words"',
+                      (root / 'AGENTS.md').read_text())
 
     def test_e650_bad_date(self):
         for date in ('2026-1-5', '20261105', '2026-02-30'):
@@ -228,7 +253,6 @@ team T: "T"
         for expression, expected in (
             ('Missing, 2026-11-05: "Words"', '`Missing` is not a `person`'),
             ('A, 20261105: "Words"', '`20261105` must be a date'),
-            ('A, 2026-11-05, for Lee: "Words"', '`for` is not a field'),
             ('A, 2026-11-05, to Lee, to Bob: "Words"', '`to` is set twice'),
             ('A, 2026-11-05: words', 'the words must come last'),
             ('A, 2026-11-05: "{Words}"', "`{` and `}` can't appear"),
@@ -495,4 +519,4 @@ team T: "T"
         code, _, error = self.cli(root, 'build')
         self.assertEqual(code, 0, error)
         text = (root / 'reader/AGENTS.md').read_text().splitlines()
-        self.assertIn('(Author, November 5, 2026: "Words")', text)
+        self.assertIn('Author, November 5, 2026: "Words"', text)

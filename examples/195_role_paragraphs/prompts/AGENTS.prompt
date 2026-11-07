@@ -1,0 +1,24 @@
+abstract agent Qa:
+    role:
+        paragraph who: "Who you are."
+            "You are on the core team."
+        paragraph phones:
+            "Phones are in the device guide."
+
+agent OtherQa[Qa]:
+    drop role.who: "This QA is on another team."
+    override role.phones:
+        "Phones are with the field guide."
+
+agent AllQa[Qa]:
+    inherit role
+
+agent NewQa[Qa]:
+    role: "You test the app."
+
+team Pod: "Pod"
+    home: "pod"
+    member qa[Qa]: "QA"
+        drop role.who: "This QA is on another team."
+        override role.phones:
+            "Phones are with the field guide."

@@ -10,6 +10,27 @@ from doctrine.parser import parse_text
 
 
 class ParseDiagnosticsTests(unittest.TestCase):
+    def test_unescaped_quote_has_hint_and_clipped_excerpt(self):
+        from doctrine.diagnostics import ParseError
+
+        source = 'agent A:\n    role: "' + 'a' * 2000 + '"stray"' + 'b' * 2000 + '"\n'
+        with self.assertRaises(ParseError) as caught:
+            parse_text(source)
+        error = caught.exception
+        self.assertEqual(error.diagnostic.hints,
+                         ('A `"` ended this string early. Use `\\"`, or wrap the text in `"""`.',))
+        rendered = str(error)
+        excerpt = next(line for line in rendered.splitlines() if ' | ...' in line)
+        self.assertLessEqual(len(excerpt.split(' | ', 1)[1]), 120)
+        self.assertIn('stray', excerpt)
+        self.assertTrue(excerpt.endswith('...'))
+        with self.assertRaises(ParseError) as caught:
+            parse_text('agent A:\n    role: "Words" @\n')
+        self.assertEqual(caught.exception.diagnostic.hints, error.diagnostic.hints)
+        with self.assertRaises(ParseError) as caught:
+            parse_text('agent A:\n    role: """Words""" @\n')
+        self.assertNotIn('ended this string early', ' '.join(caught.exception.diagnostic.hints))
+
     def test_e132_only_after_arrow(self):
         from doctrine.diagnostics import ParseError
 
