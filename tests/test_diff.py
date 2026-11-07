@@ -20,6 +20,14 @@ team T: "Team"
 
 
 class DiffTests(HomeProject, unittest.TestCase):
+    def test_built_tree_has_no_changes_from_head(self):
+        root = self.project(SOURCE)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        code, output, error = self.cli(root, "diff", "--base", "HEAD")
+        self.assertEqual(code, 0, error)
+        self.assertIn("0 homes changed.", output)
+
     def compare(self, old, new, *args):
         before, after = self.project(old), self.project(new)
         result = self.cli(after, "diff", "--base-tree", str(before), *args)
@@ -521,6 +529,7 @@ team T: "Team"
         unused: "No reader."
 ''')
         self.git_project(root)
+        self.assertEqual(self.cli(app, "build", ".")[0], 0)
         code, _, error = self.cli(app, "check")
         self.assertEqual(code, 0, error)
         self.assertIn("../shared/prompts/shared.prompt:5", error)
@@ -629,7 +638,7 @@ export abstract team Pod: "Pod"
         )
 
     def test_team_scope_on_abstract_team_is_rule001(self):
-        for target in ("Pod", "roles.Foreign"):
+        for target in ("Pod", "roles.Foreign", "Missing"):
             with self.subTest(target=target):
                 root = self.project('''import roles
 abstract team Pod: "Pod"
@@ -655,6 +664,9 @@ rule R: "Rule"
                 code, _, error = self.cli(root, "check")
                 self.assertEqual(code, 1, error)
                 self.assertIn("RULE001", error)
+                code, _, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 1, error)
+                self.assertIn("RULE001", error)
                 self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
 
     def test_shipped_assertions_skip_teams(self):
@@ -667,7 +679,9 @@ rule R: "Rule"
         requires inherit Craft
     message: "Inherit the shared role."
 '''
-                result = self.cli(self.project(source), "check")
+                root = self.project(source)
+                self.assertEqual(self.cli(root, "build", ".")[0], 0)
+                result = self.cli(root, "check")
                 self.assertEqual(result[0], 0, result)
 
     def test_forbids_load_sees_any_depth(self):
@@ -712,6 +726,7 @@ agent Worker[T.qa]:
     inherit *
 '''
         root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         result = self.cli(root, "check", "--target", "homes")
         self.assertEqual(result[0], 0, result)
         result = json.loads(self.compare(

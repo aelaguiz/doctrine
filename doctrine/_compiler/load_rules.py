@@ -8,7 +8,7 @@ from doctrine._compiler.source_graph import build_home_deps, declaration_match
 from doctrine.runtime_load import loaded_levels
 
 
-def validate_load_rules(context, homes):
+def validate_load_rules(context, homes, selected, whole):
     build_home_deps(context, homes)
     for rule_unit in tuple(context.session.units()):
         flow = context.session.flow_for_unit(rule_unit)
@@ -17,6 +17,14 @@ def validate_load_rules(context, homes):
                 if not isinstance(
                     assertion, (model.RequiresLoadAssertion, model.ForbidsLoadAssertion)
                 ):
+                    continue
+                scoped = [(home, data) for home, data in homes.items()
+                          if home in selected
+                          and context.session.flow_for_unit(data["unit"]) is flow
+                          and context._agent_matches_rule_scope(
+                              data["owner"], agent_unit=data["unit"], rule=rule, flow=flow
+                          )]
+                if not scoped and not whole:
                     continue
                 match = declaration_match(context, assertion.target, rule_unit)
                 if match is None:
@@ -29,13 +37,7 @@ def validate_load_rules(context, homes):
                 unit, declaration = match
                 name_unit = declaration.team_unit if isinstance(declaration, model.Member) else unit
                 target = ".".join((*name_unit.module_parts, declaration.name))
-                for home, data in homes.items():
-                    if context.session.flow_for_unit(data["unit"]) is not flow:
-                        continue
-                    if not context._agent_matches_rule_scope(
-                        data["owner"], agent_unit=data["unit"], rule=rule, flow=flow
-                    ):
-                        continue
+                for home, data in scoped:
                     levels = loaded_levels(homes, home)
                     present = any(
                         entry.always_on and entry.origin == target

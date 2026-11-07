@@ -46,10 +46,11 @@ class ProvenanceTests(HomeProject, unittest.TestCase):
         self.assertEqual(code, 0, error)
         self.assertIn({'name': 'T.qa', 'owners': ['A']}, json.loads(output)['owned'])
 
-    def test_build_does_not_read_ownership(self):
+    def test_build_checks_ownership(self):
         root = self.project('person A: "A"\n    owns:\n        Missing\n' + SOURCE)
         code, _, error = self.cli(root, 'build')
-        self.assertEqual(code, 0, error)
+        self.assertEqual(code, 1, error)
+        self.assertIn("E651", error)
 
     def test_unreached_owned_declaration_is_reported(self):
         source = 'person A: "A"\n    owns:\n        Free\nworkflow Free: "Free"\n    "Old."\n' + SOURCE
@@ -64,6 +65,7 @@ class ProvenanceTests(HomeProject, unittest.TestCase):
         root = self.project('from common import Owner\n' + SOURCE)
         (root / 'prompts/common').mkdir()
         (root / 'prompts/common/AGENTS.prompt').write_text('export person Owner: "Owner"\n')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
 
@@ -217,6 +219,7 @@ team T: "T"
     home: "."
     role: "Fine."
 ''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         self.assertNotIn('W305', error)
@@ -240,6 +243,7 @@ team T: "T"
         root = self.project(example='190_quotes', fixture='project_unused')
         with (root / 'pyproject.toml').open('a') as config:
             config.write('\n[tool.doctrine.check]\ndisable = ["W305"]\n')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         self.assertNotIn('W305', error)
@@ -311,6 +315,7 @@ team T: "T"
     home: "."
     role: "Fine."
 ''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         self.assertNotIn('W305', error)
@@ -420,6 +425,7 @@ team T: "T"
         self.assertEqual(code, 1)
         self.assertIn('Glob `specs/*.md` in `owns:` matches no source file.', error)
         (root / 'prompts/AGENTS.prompt').write_text(source + 'workflow Rules from "specs/rules.md"\n')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         before = self.project(source + 'workflow Rules from "specs/rules.md"\n')
@@ -440,6 +446,7 @@ team T: "T"
     home: "."
     role: "Fine."
 ''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         code, _, error = self.cli(root, 'check')
         self.assertEqual(code, 0, error)
         self.assertNotIn('W305', error)

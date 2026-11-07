@@ -40,6 +40,7 @@ status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["check"]
+setup = [["build", "."]]
 expected_exit = 0
 stdout_contains = [
   "ok",
@@ -51,4 +52,5 @@ status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["check", "--strict"]
+setup = [["build", "."]]
 expected_exit = 0

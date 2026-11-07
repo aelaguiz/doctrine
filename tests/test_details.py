@@ -13,6 +13,25 @@ from tests.home_support import HomeProject
 
 
 class DetailsTests(HomeProject, unittest.TestCase):
+    def test_selected_build_compares_parent_local_companion(self):
+        root = self.project('''team GrowthPod: "Growth"
+    home: "pods/growth"
+    work: "Work"
+        details:
+            "Old detail."
+    member qa: "QA"
+        role: "Test."
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Old detail.", "New detail."))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 1, error)
+        self.assertIn("links to `pods/growth/DETAILS.md`, which is out of date.", error)
+        code, _, error = self.cli(root, "check", "GrowthPod.qa")
+        self.assertEqual(code, 1, error)
+        self.assertIn("stale pods/growth/DETAILS.md", error)
+
     def test_details_override_keeps_its_lexical_owner(self):
         source = """workflow Parent: "Parent"
     details cases: "Cases"
@@ -148,6 +167,24 @@ team T: "Team"
             text[HEADER.match(text).end() :], "## Work\n\n### Step\n\n#### Old case\n\nLong case.\n"
         )
 
+    def test_selected_build_needs_a_loaded_level_companion(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    work: "Work"
+        details:
+            "Long case."
+    member qa: "QA"
+        role: "Test."
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "t/DETAILS.md").unlink()
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("`t/qa` links to `t/DETAILS.md`, which is missing.", error)
+        code, _, error = self.cli(root, "check", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("missing t/DETAILS.md", error)
+
     def test_repeat_headings_get_suffix_anchors(self):
         root = self.project("""team T: "Team"
     home: "t"
@@ -254,8 +291,8 @@ team T: "Team"
         drop first: "QA owns this case."
 """)
         code, _, error = self.cli(root, "build", "T.qa")
-        self.assertEqual(code, 0, error)
-        self.assertNotIn("W307 stale level: _details/", error)
+        self.assertEqual(code, 1, error)
+        self.assertIn("E635", error)
         companion = root / "_details/r.md"
         self.assertFalse(companion.exists())
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
@@ -264,8 +301,20 @@ team T: "Team"
         self.assertIn(b"Second case.", original)
         code, _, error = self.cli(root, "build", "T.qa")
         self.assertEqual(code, 0, error)
-        self.assertNotIn("W307", error)
         self.assertEqual(companion.read_bytes(), original)
+
+    def test_selected_build_writes_its_first_local_companion(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace(
+            '        role: "QA text."',
+            '        role: "QA text."\n        work: "Work"\n'
+            '            details:\n                "Long case."',
+        ))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertTrue((root / "pods/growth/qa/DETAILS.md").is_file())
 
     def test_details_in_document_section(self):
         root = self.project("""document D: "Document"

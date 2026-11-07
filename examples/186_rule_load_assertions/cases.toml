@@ -8,6 +8,7 @@ kind = "cli_contract"
 project = "project"
 args = ["check"]
 expected_exit = 0
+setup = [["build", "."]]
 
 [[cases]]
 name = "a rule that never lands fails check"
@@ -23,15 +24,14 @@ stderr_contains = [
 ]
 
 [[cases]]
-name = "build evaluates no rules"
+name = "a forbidden load stops the build"
 status = "active"
 kind = "cli_contract"
-project = "project_missing"
+project = "project_forbidden"
 args = ["build", "."]
-expected_exit = 0
-stdout_contains = [
-  "built 1 home",
-]
+expected_exit = 1
+stderr_contains = ["RULE007"]
+absent_files = ["pods/growth/qa/AGENTS.md"]
 
 [[cases]]
 name = "a forbidden lesson prints the path it arrived by"

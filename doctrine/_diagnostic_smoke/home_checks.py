@@ -50,9 +50,9 @@ HOME_DIAGNOSTICS = {
     "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "W306": (
         'team T: "Team"\n    home: "t"\n    role: "Test."\n',
-        "[tool.doctrine.runtimes.codex]\nlimit = 100\n",
+        "[tool.doctrine.runtimes.codex]\nlimit = 100\nover = \"warn\"\n",
     ),
-    "W307": (
+    "E635": (
         (
             'team T: "Team"\n    home: "."\n    role: "Shared."\n    member qa: '
             '"QA"\n        role: "Test."\n'
@@ -129,11 +129,15 @@ def run_home_checks():
                 args += ["--pyproject", str(Path(__file__).resolve().parents[2] / "pyproject.toml")]
             elif code == "W306":
                 args = ["build"]
-            elif code == "W307":
+            elif code == "E635":
                 args = ["build", "T.qa"]
             error = StringIO()
-            with chdir(root), redirect_stderr(error), redirect_stdout(StringIO()):
-                result = main(args)
+            with chdir(root), redirect_stdout(StringIO()):
+                if code.startswith("W") and code != "W306":
+                    with redirect_stderr(StringIO()):
+                        main(["build"])
+                with redirect_stderr(error):
+                    result = main(args)
             _expect(
                 result == (0 if code.startswith("W") else 1) and code in error.getvalue(),
                 f"expected {code}, got {result}: {error.getvalue()}",

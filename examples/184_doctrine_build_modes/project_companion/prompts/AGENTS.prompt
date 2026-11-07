@@ -1,0 +1,8 @@
+abstract agent R:
+    role: "Test."
+    work: "Work"
+        details:
+            "A case."
+team T: "Team"
+    home: "t"
+    member qa[R]: "QA"

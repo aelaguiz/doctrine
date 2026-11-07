@@ -5,7 +5,8 @@ import json
 import sys
 import subprocess
 from contextlib import contextmanager, nullcontext
-from pathlib import Path
+from dataclasses import replace
+from pathlib import Path, PurePosixPath
 
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
@@ -21,7 +22,7 @@ from doctrine.project_config import load_project_config
 from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
-    runtime_settings, home_loads, budget_findings, render_load, loaded_levels,
+    RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
 )
 
 
@@ -71,132 +72,115 @@ def resolve_target(args):
         yield target, sessions[target.name], live_root
 
 
+def check_homes(target, session, selectors):
+    homes, files, selected, whole = compile_homes(
+        target, session=session, selectors=selectors, evaluate_rules=True
+    )
+    settings = runtime_settings(target)
+    context = CompilationContext(session)
+    validate_load_rules(context, homes, selected, whole)
+    loads = home_loads(target, homes, files, settings, selected)
+    findings, failed = budget_findings(loads, settings)
+    warnings = []
+    if whole:
+        declarations = declarations_in(session)
+        declaration_owners(context, declarations, target.project_config.config_dir)
+        warnings = project_warnings(session, homes, loads, context, declarations)
+    warnings += [{"code": finding.split()[0], "text": finding}
+                 for finding in findings if finding.startswith("W")]
+    disabled = (target.project_config.raw_check or {}).get("disable", [])
+    warnings = [warning for warning in warnings if warning["code"] not in disabled]
+    findings = [finding for finding in findings if not finding.startswith("W")]
+    return homes, files, selected, whole, findings, warnings, failed
+
+
 def build(args):
     with resolve_target(args) as (target, session, live_root):
         if target is None:
             return 2
-        homes, files, selected, whole = compile_homes(
-            target, session=session, selectors=args.selectors
+        homes, files, selected, whole, findings, warnings, failed = check_homes(
+            target, session, args.selectors
         )
-        try:
-            settings = runtime_settings(target)
-            loads = home_loads(target, homes, files, settings)
-            findings, _ = budget_findings(
-                [load for load in loads if load["home"] in selected], settings, build=True
-            )
-            for finding in findings:
-                print(finding, file=sys.stderr)
-        except DoctrineError as exc:
-            if exc.code not in {"E631", "E632", "E633"}:
-                raise
-            print(exc, file=sys.stderr)
-        output = (
-            Path(args.out).resolve()
-            if args.out
-            else (
-                live_root / target.output_dir.relative_to(target.project_config.config_dir)
-                if live_root
-                else None
-            )
-        )
-        result, changed = build_homes(
-            target,
-            homes,
-            files,
-            selected=selected,
-            whole=whole,
-            output_dir=output,
-            check=args.check,
-            force=args.force,
-        )
-        for level in result["stale_levels"]:
-            print(f"W307 stale level: {level} differs from this build.", file=sys.stderr)
+        for finding in (*findings, *(warning["text"] for warning in warnings)):
+            print(finding, file=sys.stderr)
+        if failed:
+            return 1
+        output = (Path(args.out).resolve() if args.out else
+                  live_root / target.output_dir.relative_to(target.project_config.config_dir)
+                  if live_root else None)
+        result = build_homes(target, homes, files, selected=selected, whole=whole,
+                             output_dir=output, force=args.force)
         if args.json:
-            print(
-                json.dumps(
-                    {"format_version": 1, "paths": result["paths"]} if args.check else result
-                )
-            )
-        elif args.check:
-            for path in result["paths"]:
-                print(f"{path['state']} {path['path']}")
+            print(json.dumps(result))
         else:
-            count = sum(
-                any(path.endswith(".md") for path in homes[home]["files"]) for home in selected
-            )
-            changed_files = len(result["written"]) + len(result["removed"])
-            print(
-                f"built {count} {'home' if count == 1 else 'homes'}, "
-                f"{changed_files} {'file' if changed_files == 1 else 'files'} changed"
-            )
-        return int(args.check and changed)
+            count = sum(any(path.endswith(".md") for path in homes[home]["files"])
+                        for home in selected)
+            changed = len(result["written"]) + len(result["removed"])
+            print(f"built {count} {'home' if count == 1 else 'homes'}, "
+                  f"{changed} {'file' if changed == 1 else 'files'} changed")
+        return 0
 
 
 def check(args):
-    homes, warnings = {}, []
+    homes, warnings, paths = {}, [], []
     try:
-        with resolve_target(args) as (target, session, _):
+        with resolve_target(args) as (target, session, live_root):
             if target is None:
                 return 2
-            settings = runtime_settings(target)
-            homes, files, _, _ = compile_homes(target, evaluate_rules=True, session=session)
-            context = CompilationContext(session)
-            declarations = declarations_in(session)
-            declaration_owners(context, declarations, target.project_config.config_dir)
-            validate_load_rules(context, homes)
-            loads = home_loads(target, homes, files, settings)
-            findings, failed = budget_findings(loads, settings)
-            warnings = project_warnings(session, homes, loads, context, declarations) + [
-                {"code": finding.split()[0], "text": finding}
-                for finding in findings if finding.startswith("W")
-            ]
-            disabled = (target.project_config.raw_check or {}).get("disable", [])
-            warnings = [warning for warning in warnings if warning["code"] not in disabled]
-            findings = [finding for finding in findings if not finding.startswith("W")]
-            ok = not failed and not (args.strict and (findings or warnings))
+            homes, files, selected, whole, findings, warnings, failed = check_homes(
+                target, session, args.selectors
+            )
+            output = (live_root / target.output_dir.relative_to(target.project_config.config_dir)
+                      if live_root else None)
+            result = build_homes(target, homes, files, selected=selected, whole=whole,
+                                 output_dir=output, read_only=True)
+            paths = result["paths"]
+            ok = not failed and not paths and not (args.strict and warnings)
     except DoctrineError as exc:
         if not args.json:
             raise
         findings, ok = [str(exc)], False
     if args.json:
-        print(
-            json.dumps(
-                {
-                    "format_version": 1,
-                    "ok": ok,
-                    "homes": len(homes),
-                    "errors": [
-                        {"code": finding.split()[0], "text": finding}
-                        for finding in findings
-                    ],
-                    "warnings": warnings,
-                }
-            )
-        )
+        print(json.dumps({"format_version": 1, "ok": ok, "homes": len(selected) if homes else 0,
+                          "errors": [{"code": finding.split()[0], "text": finding}
+                                     for finding in findings],
+                          "warnings": warnings, "paths": paths}))
     else:
         for finding in (*findings, *(warning["text"] for warning in warnings)):
             print(finding, file=sys.stderr)
+        for path in paths:
+            print(f"{path['state']} {path['path']}", file=sys.stderr)
         if ok:
-            print(f"ok: {len(homes)} homes checked")
+            print(f"ok: {len(selected)} homes checked")
     return int(not ok)
 
 
 def load(args):
-    with resolve_target(args) as (target, session, _):
+    with resolve_target(args) as (target, session, live_root):
         if target is None:
             return 2
         settings = runtime_settings(target)
         homes, files, selected, _ = compile_homes(
             target, session=session, selectors=args.selectors
         )
-        loads = home_loads(target, homes, files, settings)
+        if live_root:
+            output = live_root / target.output_dir.relative_to(target.project_config.config_dir)
+            target = replace(target, output_dir=output)
+            for values in settings.values():
+                for file in values["external"]:
+                    file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
+        loads = home_loads(target, homes, files, settings, selected)
+        for home in loads:
+            for runtime, load in home["runtimes"].items():
+                for file in load["files"]:
+                    if file["kind"] == "home" and not file["on_disk"]:
+                        file["path"] = str(PurePosixPath(file["path"]).parent / RUNTIMES[runtime][0])
         if args.runtime and args.runtime not in settings:
             raise compile_error(
                 code="E632",
                 summary="Invalid runtime settings",
                 detail=f"Unknown runtime `{args.runtime}`.",
             )
-        loads = [home for home in loads if home["home"] in selected]
         if args.runtime:
             for home in loads:
                 home["runtimes"] = {
@@ -215,7 +199,8 @@ def load(args):
         elif args.full and len(selected) == 1:
             for runtime in loads[0]["runtimes"].values():
                 for file in runtime["files"]:
-                    print(f"===== {file['path']} ({file['size']:,}) =====")
+                    missing = " missing" if is_missing(file) else ""
+                    print(f"===== {file['path']} ({file['size']:,}){missing} =====")
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))

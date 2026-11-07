@@ -86,6 +86,7 @@ def runtime_settings(target):
                     "size": size,
                     "kind": "external" if path.is_file() else "reserved",
                     "text": text,
+                    "on_disk": path.is_file(),
                 }
             )
         settings[runtime] = {**values, "external": external}
@@ -123,9 +124,11 @@ def loaded_levels(homes, home):
     return sorted(levels, key=lambda pair: len(PurePosixPath(pair[0]).parts))
 
 
-def home_loads(target, homes, files, settings):
+def home_loads(target, homes, files, settings, selected):
     loads = []
     for home, data in homes.items():
+        if home not in selected:
+            continue
         levels = loaded_levels(homes, home)
         budgets = []
         declarations = [
@@ -154,10 +157,12 @@ def home_loads(target, homes, files, settings):
             for level, item in levels:
                 path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
                 if path in files:
+                    on_disk = (target.output_dir / path).is_file()
                     content = files[path]
                     if isinstance(content, Path):
-                        path = str(PurePosixPath(level) / str(content))
-                        content = files[path]
+                        target_path = str(PurePosixPath(level) / str(content))
+                        content = files[target_path]
+                        path = target_path
                     for entry in item["map"].entries:
                         if entry.always_on:
                             size = entry.size_utf16 if runtime == "claude" else entry.size_bytes
@@ -169,6 +174,7 @@ def home_loads(target, homes, files, settings):
                             "size": text_size(text, runtime),
                             "kind": "home",
                             "text": text,
+                            "on_disk": on_disk,
                         }
                     )
             limit = next(
@@ -204,12 +210,12 @@ def home_loads(target, homes, files, settings):
     return loads
 
 
-def budget_findings(loads, settings, *, build=False):
+def budget_findings(loads, settings):
     findings = []
     failed = False
     for home in loads:
         for runtime, load in home["runtimes"].items():
-            if load["total"] > load["limit"] and not build and settings[runtime]["over"] == "error":
+            if load["total"] > load["limit"] and settings[runtime]["over"] == "error":
                 unit = "characters" if runtime == "claude" else "bytes"
                 findings.append(
                     "E630 compile error: Over load budget\n\nDetail:\n"
@@ -246,6 +252,10 @@ def padded_rows(rows):
 
 def has_home_file(load):
     return any(file["kind"] == "home" for file in load["files"])
+
+
+def is_missing(file):
+    return not file["on_disk"] and file["kind"] != "reserved"
 
 
 def render_load(loads):
@@ -289,7 +299,8 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "" if file["kind"] == "home" else file["kind"],
+                    "missing" if is_missing(file)
+                    else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]
             ]

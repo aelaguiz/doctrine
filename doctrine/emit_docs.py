@@ -191,14 +191,15 @@ def emit_target(
             location=path_location(target.entrypoint),
         )
 
-    validate_load_rules(CompilationContext(session), {
+    homes = {
         plan.markdown_path.parent.relative_to(output_root).as_posix(): {
             "owner": session.flow_for_unit(plan.root.unit).agents_by_name[plan.root.agent_name],
             "unit": plan.root.unit,
             "map": build_home_map(compiled),
         }
         for plan, compiled in zip(planned_emits, compiled_agents, strict=True)
-    })
+    }
+    validate_load_rules(CompilationContext(session), homes, homes, True)
 
     emitted_paths: list[Path] = []
     for plan, compiled in zip(

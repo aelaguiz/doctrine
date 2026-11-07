@@ -21,6 +21,22 @@ SOURCE = (
 
 
 class LoadTests(HomeProject, unittest.TestCase):
+    def test_selected_build_ignores_another_homes_budget(self):
+        source = '''team T: "Team"
+    home: "t"
+    member qa: "QA"
+        role: "Test."
+    member analyst: "Analyst"
+        role: "Read."
+        budget:
+            codex: 1000
+'''
+        root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "prompts/AGENTS.prompt").write_text(source.replace("codex: 1000", "codex: 999999"))
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 0, error)
+
     def test_full_prints_every_file_in_order(self):
         root = self.project(
             SOURCE, settings='[tool.doctrine.runtimes.codex]\nexternal = [{path="outside.md"}]\n'
@@ -84,6 +100,13 @@ class LoadTests(HomeProject, unittest.TestCase):
             ),
         )
         self.assertEqual(self.loads(root)[1]["runtimes"]["claude"]["files"][0]["size"], 99)
+        code, output, error = self.cli(root, "load", "T.qa", "--runtime", "claude")
+        self.assertEqual(code, 0, error)
+        self.assertIn("outside.md", output)
+        self.assertIn("reserved", output)
+        code, output, error = self.cli(root, "load", "T.qa", "--runtime", "claude", "--full")
+        self.assertEqual(code, 0, error)
+        self.assertIn("===== outside.md (99) =====", output)
 
     def test_e633_absent_no_reserve(self):
         root = self.project(
@@ -132,7 +155,8 @@ class LoadTests(HomeProject, unittest.TestCase):
         )
 
     def test_single_home_load_report(self):
-        root = self.project(example="183_load_budgets")
+        root = self.project(example="183_load_budgets", fixture="project_warn")
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         cases = tomllib.loads(
             (
                 Path(__file__).resolve().parents[1] / "examples/183_load_budgets/cases.toml"
@@ -224,7 +248,7 @@ team T: "Team"
         code, _, error = self.cli(root, "check")
         self.assertEqual(code, 1)
         self.assertEqual(
-            error,
+            error.split("missing HOMES.contract.json")[0],
             "E630 compile error: Over load budget\n\nDetail:\n"
             "- t loads 482 of 1 bytes on codex.\n"
             "- Biggest parts:\n"

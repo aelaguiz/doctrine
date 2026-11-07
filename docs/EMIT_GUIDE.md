@@ -95,7 +95,7 @@ proves this contract. Machine contracts have no header or hand-edit guard.
 ```bash
 doctrine build .
 doctrine build Core.qa
-doctrine build . --check
+doctrine check .
 doctrine check --strict
 doctrine load
 doctrine load Core.qa --runtime codex
@@ -110,34 +110,33 @@ Each command takes `--pyproject PATH`.
 `load` says when a home has no file for a runtime. A plain agent writes only
 `AGENTS.md`, so Claude loads nothing from it.
 
-`build` writes files and runs no rules. Near or over budget, it warns.
-Bad budgets, bad runtime settings, and missing externals print errors but
-skip the budget report and keep building. Budget warnings name only selected
-homes. A selected build compiles those homes and the levels they load, then
-writes only those homes' folders. Errors in other homes cannot stop it. A
-broken shared level prints its error and is left alone. Shared levels that
-differ print `W307`. A selected build does not compare shared companions; only
-a whole-tree build writes them. Selected homes and files with no Doctrine
-header are never stale levels.
-`--out DIR` uses a separate output root. `--check` writes nothing and lists
-`stale`, `edited`, `missing`, or `obsolete` paths. `--json` returns the build's
-written, unchanged, removed, and stale-level paths with `format_version: 1`.
-`--check --json` prints only `format_version` and `paths`; each path has
-`path` and `state`.
+`build` and `check` compile the selected homes and check rules, budgets,
+and hand edits. A build writes nothing if a check fails. `--force` allows hand
+edits only. A warning fails `check` only with `--strict`.
 
-`check` writes nothing. It checks rules and budgets. A warning fails only
-with `--strict`. Exit 0 means no failing findings, 1 means findings, and 2
-means usage or a tool failure. Diagnostics go to stderr. `--json` prints
-`format_version`, `ok`, `homes`, `errors`, and `warnings`. Each finding has
-its code and the same text as the plain report.
+A selected build writes only the homes it selects. First run `doctrine build .`.
+Loaded levels and their local companions must be current. A selected build
+checks shared `_details/` files exist without comparing their bytes. A whole check compares
+them. A semantic error in another home cannot stop a selected build. A rule
+that reaches no selected home doesn't run. A parse
+error anywhere in the flow stops it. Use `--rev HEAD` to leave uncommitted edits
+out. `--out DIR` uses a separate output root.
 
-`load` shows every home, including teams, sorted by headroom. Select one
+`check` writes nothing. It reports `stale`, `edited`, `missing`, and `obsolete`
+paths on stderr. It compares the live output folder even with `--rev`. Exit 0
+means the homes are current and checks pass; 1 means a failure; 2 means a usage
+or tool error. `--json` prints `format_version`, `ok`, `homes`, `errors`,
+`warnings`, and `paths`. Each path has `path` and `state`.
+
+`load` shows every home, including teams, sorted by headroom. Missing files
+are marked `missing`; JSON reports `on_disk` for each file. Select one
 home to see its loaded files, five biggest source declarations, and drop
 reasons. Any smaller parts share one last row. A missing external with a
 reserve is marked `reserved`. Headers and joining blank lines count toward
 load, but belong to no source entry. Nested entries never count text twice.
 Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
-order, or `--json` for the versioned report. Companions have a separate size.
+order, or `--json` for the versioned report. A `--full` header marks missing
+files. Companions have a separate size.
 
 The hand-edit report matches sections by title and then by order when titles
 repeat. A removed section says `no longer in source`. A companion names its

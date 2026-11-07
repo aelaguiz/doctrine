@@ -29,8 +29,12 @@ The release version for this major language move is 6.0.0.
    keyed `preamble` so a child can inherit it.
 5. `Message` is now a built-in output target, like `File`. Rename any
    project's own `output target Message` and update its references.
+6. Replace `doctrine build --check` with `doctrine check`. Builds now fail on
+   rule and budget errors. Run a whole build before a selected build. `check`
+   fails when files are missing or out of date, so a tree that does not commit
+   built files needs a build first.
 
-Load rules run in `doctrine check` and `emit_docs`. Builds run no rules.
+Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.
 In diff JSON, each changed declaration's `homes` list holds a `home`, its total

@@ -8,6 +8,7 @@ kind = "cli_contract"
 project = "project"
 args = ["check"]
 expected_exit = 0
+setup = [["build", "."]]
 stderr_contains = [
   "W301",
   "GrowthQa and FeatureQa",
@@ -26,6 +27,7 @@ kind = "cli_contract"
 project = "project"
 args = ["check", "--strict"]
 expected_exit = 1
+setup = [["build", "."]]
 stderr_contains = [
   "W301",
 ]
@@ -37,6 +39,7 @@ kind = "cli_contract"
 project = "project_disabled"
 args = ["check", "--strict"]
 expected_exit = 0
+setup = [["build", "."]]
 
 [[cases]]
 name = "different rendered text is not a double load"
@@ -45,3 +48,4 @@ kind = "cli_contract"
 project = "project_rendered"
 args = ["check", "--strict"]
 expected_exit = 0
+setup = [["build", "."]]

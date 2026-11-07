@@ -38,8 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Reach (6.0.0; language 6.0)
 
 - Rules can select teams, member keys, and home paths. `requires load` and
-  `forbids load` check the full always-on load in `check` and `emit_docs`.
-  `RULE006` and `RULE007` name missing and forbidden text. Builds run no rules.
+  `forbids load` check the full always-on load in `build`, `check`, and
+  `emit_docs`. `RULE006` and `RULE007` name missing and forbidden text.
 - `diff` compares source hashes and home loads against a revision or project
   tree. It lists changed files, details sizes, reach, and new wildcard sections.
   JSON lists each reached home's size change. A base that cannot compile
@@ -79,12 +79,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `load` reports team and member homes, loaded files, source sizes, and drop
   reasons. Nested entries count each line once. `check --json` returns findings.
 - The `doctrine` and `doctrine-agents` scripts share the CLI. Build selectors,
-  `--check`, `--force`, `--out`, `--rev`, and `--with` control home builds.
+  `--force`, `--out`, `--rev`, and `--with` control home builds.
   A team name selects the team and its members; a member build writes no contract.
 - Relative links from Markdown-backed declarations follow their text into
   each home. Footnotes and prose keep their text. Hand-edit reports name
-  Markdown sources and heading lines. `build --check --json` prints only JSON.
+  Markdown sources and heading lines.
   Rename `budget` and `details` keys where their new forms start.
+- `build` checks rules, budgets, and hand edits before writing. It fails for
+  over-budget homes, bad settings, and missing externals. A selected build
+  requires current loaded levels and linked files, and fails if a parent fails.
+- `check` takes selectors and reports files that are not current. It replaces
+  `build --check`. `load` marks missing runtime files and reports `on_disk` in JSON.
 
 
 ### Values and teams (6.0.0; language 6.0)

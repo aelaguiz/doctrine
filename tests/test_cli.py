@@ -19,10 +19,96 @@ from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_selected_build_checks_only_its_members_rules(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + '''rule AnalystWork: "Analyst work"
+    scope:
+        member: analyst
+    assertions:
+        requires declare work
+    message: "Add work."
+''')
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        code, _, error = self.cli(root, "build", "GrowthPod.analyst")
+        self.assertEqual(code, 1, error)
+        self.assertIn("RULE005", error)
+
+    def test_selected_build_with_rule_ignores_broken_sibling_team(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + '''team Other[Nope]: "Other"
+    home: "pods/feature"
+rule AnalystWork: "Analyst work"
+    scope:
+        member: analyst
+    assertions:
+        requires declare work
+    message: "Add work."
+''')
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertIn("E299", error)
+
+    def test_broken_parent_team_stops_selected_build_and_check(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        original = source.read_text()
+        for home, expected in ((".", 1), ("pods/feature", 0)):
+            source.write_text(original + f'team Other[Nope]: "Other"\n    home: "{home}"\n')
+            for command in ("build", "check"):
+                with self.subTest(home=home, command=command):
+                    code, _, error = self.cli(root, command, "GrowthPod.qa")
+                    self.assertEqual(code, expected, error)
+                    self.assertIn("E299", error)
+
+    def test_check_handles_record_missing_files_key(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "HOMES.contract.json").write_text("{}")
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1, error)
+        self.assertIn("stale HOMES.contract.json", error)
+        code, output, error = self.cli(root, "check", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertIn({"path": "HOMES.contract.json", "state": "stale"}, json.loads(output)["paths"])
+
+    def test_check_does_not_report_already_deleted_obsolete_file(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().split('    member analyst:')[0])
+        (root / "pods/growth/analyst/AGENTS.md").unlink()
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1, error)
+        self.assertNotIn("obsolete pods/growth/analyst/AGENTS.md", error)
+
+    def test_load_revision_marks_deleted_external_in_rows_and_full_headers(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Test."\n',
+            settings='[tool.doctrine.runtimes.codex]\nexternal = [{path="outside.md"}]\n',
+        )
+        (root / "outside.md").write_text("External.\n")
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        (root / "outside.md").unlink()
+        for extra in ((), ("--full",)):
+            code, output, error = self.cli(root, "load", "T.qa", "--runtime", "codex", "--rev", "HEAD", *extra)
+            self.assertEqual(code, 0, error)
+            if extra:
+                self.assertIn("===== outside.md (10) missing =====", output)
+            else:
+                self.assertRegex(output, r"outside\.md\s+10\s+missing")
+
     def test_exit_codes_for_build_check_and_load(self):
         for command in (("build",), ("check",), ("load", "GrowthPod.qa", "--full")):
             with self.subTest(command=command):
                 root = self.project()
+                self.assertEqual(self.cli(root, "build", ".")[0], 0)
                 self.assertEqual(self.cli(root, *command)[0], 0)
                 self.assertEqual(self.cli(root, *command, "--target", "absent")[0], 2)
                 source = root / "prompts/AGENTS.prompt"
@@ -30,6 +116,62 @@ class CliTests(HomeProject, unittest.TestCase):
                 code, _, error = self.cli(root, *command)
                 self.assertEqual(code, 1)
                 self.assertIn("E601", error)
+
+    def test_load_marks_a_missing_runtime_link(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "pods/growth/qa/CLAUDE.md").unlink()
+        code, output, error = self.cli(root, "load", "GrowthPod.qa", "--runtime", "claude", "--json")
+        self.assertEqual(code, 0, error)
+        files = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        self.assertEqual(files[-1]["path"], "pods/growth/qa/CLAUDE.md")
+        self.assertFalse(files[-1]["on_disk"])
+        self.assertTrue(files[0]["on_disk"])
+        code, output, error = self.cli(root, "load", "GrowthPod.qa", "--runtime", "claude")
+        self.assertEqual(code, 0, error)
+        self.assertIn("pods/growth/qa/CLAUDE.md", output)
+        self.assertIn("missing", output)
+        code, output, error = self.cli(
+            root, "load", "GrowthPod.qa", "--runtime", "claude", "--full"
+        )
+        self.assertEqual(code, 0, error)
+        self.assertRegex(output, r"===== pods/growth/qa/CLAUDE\.md \(\d+\) missing =====")
+
+    def test_load_revision_checks_the_live_runtime_link(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        (root / "pods/growth/qa/CLAUDE.md").unlink()
+        code, output, error = self.cli(
+            root, "load", "GrowthPod.qa", "--runtime", "claude", "--rev", "HEAD", "--json"
+        )
+        self.assertEqual(code, 0, error)
+        row = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"][-1]
+        self.assertEqual(row["path"], "pods/growth/qa/CLAUDE.md")
+        self.assertFalse(row["on_disk"])
+
+    def test_rule_failure_preserves_every_built_file(self):
+        root = self.project(example="186_rule_load_assertions", fixture="project_forbidden")
+        source = root / "prompts/AGENTS.prompt"
+        full = source.read_text()
+        source.write_text(full.split('rule PodsSkipSpecialistsLesson:')[0])
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source.write_text(full)
+        before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1, error)
+        self.assertIn("RULE007", error)
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
+
+    def test_check_revision_compares_live_files(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        (root / "pods/growth/qa/AGENTS.md").write_text("Hand edit.\n")
+        code, _, error = self.cli(root, "check", "GrowthPod.qa", "--rev", "HEAD")
+        self.assertEqual(code, 1, error)
+        self.assertIn("edited pods/growth/qa/AGENTS.md", error)
+        self.assertNotIn("analyst", error)
 
     def test_where_finds_value_text(self):
         root = self.project(example="187_doctrine_diff")
@@ -102,7 +244,27 @@ rule R: "Rule"
                 result = self.cli(root, "check")
                 self.assertEqual(result[0], 1, result)
                 self.assertIn("RULE002", result[2])
-                self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
+                self.assertEqual(self.cli(root, "build", "T.qa")[0], 1)
+
+    def test_whole_build_checks_unknown_load_target_outside_all_homes(self):
+        root = self.project('''team T: "Team"
+    home: "pod"
+    member qa: "QA"
+        role: "Test."
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + '''rule R: "Rule"
+    scope:
+        member: absent
+    assertions:
+        requires load Missing
+    message: "Read the lesson."
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("RULE002", error)
+        self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
 
     def test_home_scope_matches_agent_outside_a_team(self):
         root = self.project('''workflow Lesson: "Lesson"
@@ -140,7 +302,9 @@ rule R: "Rule"
         requires load Lesson
     message: "Read the lesson."
 '''
-        self.assertEqual(self.cli(self.project(source), "check")[0], 0)
+        root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertEqual(self.cli(root, "check")[0], 0)
         result = self.cli(self.project(source.replace('team: A', 'team: B')), "check")
         self.assertEqual(result[0], 1, result)
         self.assertIn("RULE006", result[2])
@@ -173,14 +337,15 @@ rule R: "Local rule"
         requires load Local
     message: "Read the local lesson."
 ''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         result = self.cli(root, "check")
         self.assertEqual(result[0], 0, result)
 
-    def test_build_does_not_walk_dependencies(self):
-        root = self.project(example="186_rule_load_assertions")
-        with patch("doctrine._compiler.source_graph.model_walk", side_effect=AssertionError):
-            result = self.cli(root, "build", ".")
-        self.assertEqual(result[0], 0, result)
+    def test_build_checks_load_rules(self):
+        root = self.project(example="186_rule_load_assertions", fixture="project_forbidden")
+        result = self.cli(root, "build", ".")
+        self.assertEqual(result[0], 1, result)
+        self.assertIn("RULE007", result[2])
 
     def test_home_glob_star_stays_in_one_segment(self):
         source = '''workflow Lesson: "Lesson"
@@ -197,7 +362,9 @@ rule R: "Rule"
         forbids load Lesson
     message: "No lesson."
 '''
-        self.assertEqual(self.cli(self.project(source), "check")[0], 0)
+        root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertEqual(self.cli(root, "check")[0], 0)
         result = self.cli(self.project(source.replace("pods/*", "pods/**")), "check")
         self.assertEqual(result[0], 1, result)
         self.assertIn("RULE007", result[2])
@@ -236,17 +403,43 @@ rule R: "Rule"
 
     def test_build_writes_only_selected_folders(self):
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        before = (root / "pods/growth/analyst/AGENTS.md").read_bytes()
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("QA text.", "New QA text."))
         self.assertEqual(self.cli(root, "build", "GrowthPod.qa")[0], 0)
-        self.assertTrue((root / "pods/growth/qa/AGENTS.md").exists())
-        self.assertFalse((root / "pods/growth/AGENTS.md").exists())
-        self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
-        self.assertFalse((root / "HOMES.contract.json").exists())
+        self.assertIn("New QA text.", (root / "pods/growth/qa/AGENTS.md").read_text())
+        self.assertEqual((root / "pods/growth/analyst/AGENTS.md").read_bytes(), before)
 
-    def test_build_prints_w307_for_stale_level(self):
+    def test_selected_build_fails_when_a_loaded_parent_fails(self):
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        parent = root / "pods/growth/AGENTS.md"
+        member = root / "pods/growth/qa/AGENTS.md"
+        before = parent.read_bytes(), member.read_bytes()
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Team text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("E601", error)
+        self.assertEqual((parent.read_bytes(), member.read_bytes()), before)
+
+    def test_selected_build_survives_an_unrelated_semantic_error(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Analyst text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+
+    def test_selected_build_fails_for_stale_level(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        path = root / "prompts/AGENTS.prompt"
+        path.write_text(path.read_text().replace("Team text.", "New team text."))
         result = self.cli(root, "build", "GrowthPod.qa")
-        self.assertEqual(result[0], 0)
-        self.assertIn("W307 stale level: pods/growth/AGENTS.md differs from this build.", result[2])
+        self.assertEqual(result[0], 1)
+        self.assertIn("`pods/growth/qa` loads `pods/growth/AGENTS.md`, which is out of date.", result[2])
 
     def test_check_mode_reports_stale_edited_missing(self):
         root = self.project()
@@ -256,14 +449,14 @@ rule R: "Rule"
         (root / "pods/growth/qa/AGENTS.md").write_text("Hand edit.\n")
         (root / "pods/growth/analyst/CLAUDE.md").unlink()
         before = (root / "pods/growth/AGENTS.md").read_bytes()
-        code, output, error = self.cli(root, "build", ".", "--check")
+        code, output, error = self.cli(root, "check", ".")
         self.assertEqual(code, 1, error)
         for line in (
             "stale pods/growth/AGENTS.md",
             "edited pods/growth/qa/AGENTS.md",
             "missing pods/growth/analyst/CLAUDE.md",
         ):
-            self.assertIn(line, output)
+            self.assertIn(line, error)
         self.assertEqual((root / "pods/growth/AGENTS.md").read_bytes(), before)
 
     def test_e634_names_section_and_origin(self):
@@ -347,17 +540,21 @@ rule R: "Rule"
         self.assertEqual(result[0], 1, result)
         self.assertIn("of 800 bytes on codex", result[2])
 
-    def test_w307_for_level_no_longer_emitted(self):
+    def test_level_no_longer_emitted_needs_full_build(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         source = root / "prompts/AGENTS.prompt"
         source.write_text(source.read_text().replace('    role: "Team text."\n', ""))
         result = self.cli(root, "build", "GrowthPod.qa")
-        self.assertEqual(result[0], 0)
-        self.assertIn("W307 stale level: pods/growth/AGENTS.md", result[2])
+        self.assertEqual(result[0], 1)
+        self.assertIn("E635", result[2])
+        result = self.cli(root, "check", "GrowthPod.qa")
+        self.assertEqual(result[0], 1)
+        self.assertIn("stale pods/growth/AGENTS.md", result[2])
 
     def test_with_overlays_one_file(self):
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.git_project(root)
         source = root / "prompts/AGENTS.prompt"
         source.write_text(source.read_text().replace("QA text.", "Changed QA."))
@@ -385,25 +582,21 @@ rule R: "Rule"
         self.assertEqual(scripts["doctrine"], "doctrine.cli:main")
         self.assertEqual(scripts["doctrine-agents"], "doctrine.cli:main")
 
-    def test_build_never_fails_on_budget_or_rule(self):
-        root = self.project("""rule HasWork: "Has Work"
-    scope:
-        agent_tag: A
-    assertions:
-        requires declare work
-    message: "Keep work."
-agent A:
-    role: "Ordinary agent."
-team T: "Team"
+    def test_build_fails_on_budget(self):
+        root = self.project("""team T: "Team"
     home: "t"
     role: "Team text."
     budget:
         codex: 1
 """)
         code, _, error = self.cli(root, "build", ".")
-        self.assertEqual(code, 0, error)
-        self.assertIn("W306 over budget:", error)
-        self.assertTrue((root / "t/AGENTS.md").is_file())
+        self.assertEqual(code, 1, error)
+        self.assertIn("E630", error)
+        self.assertFalse((root / "t/AGENTS.md").exists())
+        code, _, error = self.cli(root, "build", ".", "--force")
+        self.assertEqual(code, 1, error)
+        self.assertIn("E630", error)
+        self.assertFalse((root / "t/AGENTS.md").exists())
 
     def test_check_fails_on_budget_and_rule(self):
         for source, error_code in (
@@ -447,7 +640,7 @@ team T: "Team"
                 self.assertEqual(error, "")
                 result = json.loads(output)
                 self.assertEqual(
-                    set(result), {"format_version", "ok", "homes", "errors", "warnings"}
+                    set(result), {"format_version", "ok", "homes", "errors", "warnings", "paths"}
                 )
                 self.assertEqual(result["format_version"], 1)
                 self.assertEqual(result["homes"], 1)
@@ -547,7 +740,7 @@ team T: "Team"
         self.assertEqual(code, 0, error)
         result = json.loads(output)
         self.assertEqual(
-            set(result), {"format_version", "written", "unchanged", "removed", "stale_levels"}
+            set(result), {"format_version", "written", "unchanged", "removed"}
         )
         self.assertEqual(result["format_version"], 1)
         expected = sorted(
@@ -559,7 +752,7 @@ team T: "Team"
             ]
         )
         self.assertEqual(result["written"], expected)
-        for key in ("unchanged", "removed", "stale_levels"):
+        for key in ("unchanged", "removed"):
             self.assertEqual(result[key], [])
 
     def test_e634_file_written_by_hand(self):
@@ -573,6 +766,16 @@ team T: "Team"
         self.assertIn("`pods/growth/AGENTS.md` was written by hand.", error)
         self.assertEqual(path.read_text(), "Hand text.\n")
         self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())
+
+    def test_e634_binary_file_written_by_hand(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "pods/growth/qa/AGENTS.md").write_bytes(b"Hand written: \xff\n")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("E634", error)
+        self.assertIn("was written by hand.", error)
+        self.assertNotIn("Traceback", error)
 
     def test_every_compiling_corpus_agent_builds(self):
         examples = Path(__file__).resolve().parents[1] / "examples"
@@ -616,19 +819,20 @@ team T: "Team"
 
     def test_error_in_unselected_home_cannot_stop_build(self):
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         path = root / "prompts/AGENTS.prompt"
         path.write_text(path.read_text().replace("Analyst text.", "{{agent:missing}}"))
         code, _, error = self.cli(root, "build", "pods/growth/qa")
         self.assertEqual(code, 0, error)
         self.assertTrue((root / "pods/growth/qa/AGENTS.md").exists())
-        self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
+        self.assertTrue((root / "pods/growth/analyst/AGENTS.md").exists())
         path.write_text(path.read_text().replace("Team text.", "{{agent:missing}}"))
         code, _, error = self.cli(root, "build", "pods/growth/qa")
-        self.assertEqual(code, 0, error)
+        self.assertEqual(code, 1, error)
         self.assertIn("E601", error)
-        self.assertFalse((root / "pods/growth/AGENTS.md").exists())
+        self.assertTrue((root / "pods/growth/AGENTS.md").exists())
 
-    def test_bad_budget_or_external_cannot_stop_build(self):
+    def test_bad_budget_or_external_stops_build(self):
         for budget, settings, diagnostic in (
             ("        codex: 0\n", "", "E631"),
             ("", "[tool.doctrine.runtimes.codex]\nlimt = 10\n", "E632"),
@@ -640,10 +844,9 @@ team T: "Team"
                     source + ("    budget:\n" + budget if budget else ""), settings=settings
                 )
                 code, output, error = self.cli(root, "build", ".")
-                self.assertEqual(code, 0, error)
+                self.assertEqual(code, 1, error)
                 self.assertIn(diagnostic, error)
-                self.assertIn("built 1 home", output)
-                self.assertTrue((root / "t/AGENTS.md").is_file())
+                self.assertFalse((root / "t/AGENTS.md").exists())
                 self.assertNotIn("W306", error)
         root = self.project(
             'team T: "Team"\n    home: "t"\n    role: "Test."\n',
@@ -656,8 +859,9 @@ team T: "Team"
 
     def test_build_warns_only_for_selected_homes(self):
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
         path = root / "pyproject.toml"
-        path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\n")
+        path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\nover = \"warn\"\n")
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
         self.assertIn("W306 over budget: pods/growth/qa loads", error)
@@ -692,25 +896,26 @@ agent A:
     role: "Soul."
 """)
         code, _, error = self.cli(root, "build", "--target", "homes")
-        self.assertEqual(code, 0, error)
-        self.assertIn("Soul.", (root / "worker/SOUL.md").read_text())
+        self.assertEqual(code, 1, error)
+        self.assertIn("RULE005", error)
+        self.assertFalse((root / "worker/SOUL.md").exists())
         code, _, error = self.cli(root, "check", "--target", "homes")
         self.assertEqual(code, 1)
         self.assertIn("RULE005", error)
 
-    def test_w307_skips_selected_and_hand_written_files(self):
+    def test_selected_build_skips_hand_written_files(self):
         root = self.project()
         path = root / "AGENTS.md"
         path.write_text("Hand written.\n")
         code, _, error = self.cli(root, "build", "pods/growth", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
-        self.assertNotIn("W307", error)
         self.assertEqual(path.read_text(), "Hand written.\n")
 
     def test_broken_team_elsewhere_cannot_stop_build(self):
         for problem, diagnostic in (("parent", "Missing"), ("plan", "E299"), ("collision", "E607")):
             with self.subTest(problem=problem):
                 root = self.project()
+                self.assertEqual(self.cli(root, "build", ".")[0], 0)
                 source = root / "prompts/AGENTS.prompt"
                 if problem == "parent":
                     source.write_text(source.read_text() +
@@ -731,7 +936,7 @@ agent A:
                 code, _, error = self.cli(root, "build", "pods/growth/qa")
                 self.assertEqual(code, 0, error)
                 self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
-                self.assertFalse((root / "pods/growth/AGENTS.md").exists())
+                self.assertTrue((root / "pods/growth/AGENTS.md").exists())
                 selectors = [".", broken]
                 if problem == "parent":
                     selectors.append("pods")
@@ -770,14 +975,12 @@ agent A:
                     (root / ".codex/config.toml").write_bytes(config)
                 for verb in ("check", "load", "build"):
                     code, output, error = self.cli(root, verb)
-                    self.assertEqual(code, 0 if verb == "build" else 1, error)
+                    self.assertEqual(code, 1, error)
                     self.assertIn("E632 compile error: Invalid runtime settings", error)
                     self.assertNotIn("W306", error)
-                    if verb == "build":
-                        self.assertIn("built 3 homes", output)
-                        self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+                    self.assertFalse((root / "pods/growth/qa/AGENTS.md").exists())
 
-    def test_binary_level_file_cannot_stop_build(self):
+    def test_binary_level_file_needs_full_build(self):
         root = self.project()
         paths = [
             str(Path(folder) / filename)
@@ -789,9 +992,9 @@ agent A:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"Hand written: \xff\n")
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
-        self.assertEqual(code, 0, error)
-        self.assertNotIn("W307", error)
-        self.assertTrue((root / "pods/growth/qa/AGENTS.md").is_file())
+        self.assertEqual(code, 1, error)
+        self.assertIn("E635", error)
+        self.assertFalse((root / "pods/growth/qa/AGENTS.md").exists())
         for name in paths:
             self.assertEqual((root / name).read_bytes(), b"Hand written: \xff\n")
 
@@ -805,10 +1008,10 @@ agent A:
 
     def test_check_json_is_only_json(self):
         root = self.project()
-        code, output, error = self.cli(root, "build", ".", "--check", "--json")
+        code, output, error = self.cli(root, "check", ".", "--json")
         self.assertEqual(code, 1, error)
         result = json.loads(output)
-        self.assertEqual(set(result), {"format_version", "paths"})
+        self.assertEqual(set(result), {"format_version", "ok", "homes", "errors", "warnings", "paths"})
         self.assertEqual(result["format_version"], 1)
         self.assertTrue(result["paths"])
         for path in result["paths"]:
@@ -869,9 +1072,11 @@ agent A:
                 self.assertEqual([item["key"] for item in contract["members"]], ["qa", "analyst"])
                 self.assertFalse((root / "HOMES.contract.json").exists())
         root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        contract = (root / "pods/growth/TEAM.contract.json").read_bytes()
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
-        self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())
+        self.assertEqual((root / "pods/growth/TEAM.contract.json").read_bytes(), contract)
 
     def test_skill_target_is_usage_error(self):
         root = self.project('agent A:\n    role: "A."\n')

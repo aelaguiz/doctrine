@@ -4,7 +4,7 @@ Doctrine treats fail-loud errors as the default.
 Some valid authoring shapes still signal likely drift. Doctrine uses warnings
 for those cases when a hard error would be too strict.
 
-Doctrine ships project warnings in `doctrine check`, plus graph warnings
+Doctrine ships project warnings in whole builds and `doctrine check`, plus graph warnings
 for `skill_graph` policy lines. Project warnings are listed below.
 Graph warnings follow their graph's policy.
 Graph warnings are emitted into graph contracts and graph Markdown. They do not fail
@@ -16,18 +16,17 @@ judgment-first authoring review.
 
 | Code | Meaning |
 | --- | --- |
-| `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. The warning says when the home is over budget. |
-| `W307` | A selected home's shared level differs from the fresh build. The selected build compares it and leaves it alone. |
+| `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Over budget, it warns only when `over = "warn"`. |
 
-`doctrine check` fails an over-budget home with `E630`, unless the runtime
+`doctrine build` and `doctrine check` fail an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.
 `check --json` keeps the plain finding text in each warning's `text` field.
 Examples 183 and 184 prove these cases.
 
 ## Project Warnings
 
-`doctrine check` runs these checks. A warning prints to stderr and fails only
-with `--strict`. `doctrine build` runs none of these three checks.
+A whole `doctrine build` or `doctrine check` runs these checks. A warning
+prints to stderr and fails a check only with `--strict`.
 
 | Code | Key | Meaning |
 | --- | --- | --- |

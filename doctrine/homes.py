@@ -24,7 +24,7 @@ from doctrine.emit_docs import (
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown
-from doctrine.runtime_load import home_budgets
+from doctrine.runtime_load import home_budgets, loaded_levels
 
 
 HEADER = re.compile(
@@ -131,6 +131,10 @@ def home_selectors(teams, selectors):
     return tuple(homes.get(selector, selector) for selector in selectors)
 
 
+def is_level(home, selected):
+    return home in selected or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
+
+
 def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     selectors = home_selectors(session.root_flow.teams_by_name.values(), selectors)
     whole = not selectors or "." in selectors
@@ -152,23 +156,17 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             owners.append((home, owner, unit, plan))
         except DoctrineError as exc:
             home = entrypoint_relative_dir(root.unit.prompt_file.source_path).as_posix()
-            if whole or any(matches_home(home, root.agent_name, selector) for selector in selectors):
-                raise
-            failures.append(exc)
+            owner = session.flow_for_unit(root.unit).agents_by_name[root.agent_name]
+            owners.append((home, owner, root.unit, None))
+            failures.append((home, exc))
     for team in session.root_flow.teams_by_name.values():
         if not team.abstract:
             unit = session.root_flow.declaration_owner_units_by_id[id(team)]
             try:
                 members = team_members(context, team, unit=unit)
             except DoctrineError as exc:
-                if whole or any(
-                    matches_home(team.home, team.name, selector)
-                    or matches_home(selector, "", team.home)
-                    or selector.startswith(team.name + ".")
-                    for selector in selectors
-                ):
-                    raise
-                failures.append(exc)
+                owners.append((team.home, team, unit, None))
+                failures.append((team.home, exc))
                 continue
             owners.append((team.home, team, unit, None))
             owners.extend(
@@ -183,16 +181,17 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         selected = select_homes(((home, owner) for home, owner, _, _ in owners), selectors)
     except DoctrineError:
         if failures:
-            raise failures[0]
+            raise failures[0][1]
         raise
-    for failure in failures:
+    for home, failure in failures:
+        if whole or is_level(home, selected):
+            raise failure
         print(failure, file=sys.stderr)
-    needed = {
-        home
-        for home in homes
-        if home in selected
-        or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
-    }
+    session.rule_agents = None if whole else [
+        (data["unit"], data["owner"]) for home, data in homes.items()
+        if home in selected and not isinstance(data["owner"], model.Team)
+    ]
+    needed = {home for home in homes if is_level(home, selected)}
     for home, owner, unit, plan in owners:
         if home in needed and homes[home]["owner"] is not owner:
             raise compile_error(
@@ -202,14 +201,8 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     homes = {home: data for home, data in homes.items() if home in needed}
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
-        try:
-            data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
-        except DoctrineError as exc:
-            if home in selected:
-                raise
-            print(exc, file=sys.stderr)
-            del homes[home]
-            continue
+        session.evaluate_rules = evaluate_rules and home in selected
+        data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
         compiled[owner.name] = data["compiled"]
@@ -261,7 +254,10 @@ def file_state(path, fresh):
         return "missing"
     content = path.read_bytes()
     if path.suffix == ".md":
-        text = content.decode()
+        try:
+            text = content.decode()
+        except UnicodeDecodeError:
+            return "edited"
         match = HEADER.match(text)
         if (
             match is None
@@ -302,7 +298,7 @@ def hand_edit_detail(root, name, files, homes):
     path = root / name
     if path.is_symlink():
         return f"`{name}` is a link Doctrine didn't write."
-    old = path.read_text()
+    old = path.read_bytes().decode(errors="replace")
     header = HEADER.match(old)
     if header is None:
         return f"`{name}` was written by hand."
@@ -333,30 +329,30 @@ def hand_edit_detail(root, name, files, homes):
     return detail
 
 
-def stale_levels(root, selected, files):
-    stale = []
-    for home in selected:
-        for level in PurePosixPath(home).parents:
-            if str(level) in selected:
+def needed_files(root, homes, files, selected, wanted):
+    for home in sorted(selected):
+        levels = loaded_levels(homes, home)
+        for level, _ in levels:
+            if level in selected:
                 continue
             for filename in ("AGENTS.md", "CLAUDE.md"):
-                path = str(level / filename)
-                if (root / path).is_file() and not (root / path).read_bytes().startswith(
-                    b"<!-- doctrine sha256="
-                ):
-                    continue
-                if (
-                    path in files
-                    and file_state(root / path, files[path]) != "unchanged"
-                    or path not in files
-                    and (root / path).exists()
-                ):
-                    stale.append(path)
-    return sorted(set(stale))
+                path = str(PurePosixPath(level) / filename)
+                disk = root / path
+                if path in files or disk.is_file() and disk.read_bytes().startswith(b"<!-- doctrine sha256="):
+                    state = file_state(disk, files.get(path))
+                    if state != "unchanged":
+                        yield home, "loads", path, state
+        for path in dict.fromkeys(path for _, data in levels for path in data["pointers"]):
+            if path not in wanted:
+                disk = root / path
+                state = ("missing" if not disk.is_file() else "unchanged"
+                         if path.startswith("_details/") else file_state(disk, files[path]))
+                if state != "unchanged":
+                    yield home, "links to", path, state
 
 
 def build_homes(
-    target, homes, files, *, selected, whole, output_dir=None, check=False, force=False
+    target, homes, files, *, selected, whole, output_dir=None, read_only=False, force=False
 ):
     root = output_dir or target.output_dir
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
@@ -365,8 +361,11 @@ def build_homes(
     if whole:
         if record.exists():
             try:
-                obsolete = set(json.loads(record.read_bytes())["files"]) - set(files)
-            except json.JSONDecodeError:
+                obsolete = {
+                    name for name in set(json.loads(record.read_bytes())["files"]) - set(files)
+                    if (root / name).exists() or (root / name).is_symlink()
+                }
+            except (json.JSONDecodeError, KeyError):
                 pass
         files = {
             **files,
@@ -376,7 +375,17 @@ def build_homes(
         }
         wanted.add("HOMES.contract.json")
     states = {name: file_state(root / name, files.get(name)) for name in sorted(wanted | obsolete)}
-    if not check and not force:
+    if not whole:
+        needed = needed_files(root, homes, files, selected, wanted)
+        if not read_only:
+            for home, action, path, state in needed:
+                detail = "missing" if state == "missing" else "out of date"
+                raise compile_error(
+                    code="E635", summary="Home needs a full build",
+                    detail=f"`{home}` {action} `{path}`, which is {detail}.",
+                    hints=("Run `doctrine build .`, then build this home.",),
+                )
+    if not read_only and not force:
         for name, state in states.items():
             if state == "edited":
                 raise compile_error(
@@ -390,25 +399,28 @@ def build_homes(
         "written": [],
         "unchanged": [],
         "removed": [],
-        "stale_levels": [] if whole else stale_levels(root, selected, files),
     }
-    if check:
+    if read_only:
         result["paths"] = [
             {"path": name, "state": "obsolete" if name in obsolete else state}
             for name, state in states.items()
             if name in obsolete or state != "unchanged"
         ]
+        if not whole:
+            seen = {item["path"] for item in result["paths"]}
+            for _, _, path, state in needed:
+                if path not in seen:
+                    result["paths"].append({"path": path, "state": state})
+                    seen.add(path)
     for name, state in states.items():
-        if check:
+        if read_only:
             continue
         if name in obsolete:
-            if (root / name).exists() or (root / name).is_symlink():
-                (root / name).unlink()
-                result["removed"].append(name)
+            (root / name).unlink()
+            result["removed"].append(name)
         elif state == "unchanged":
             result["unchanged"].append(name)
         else:
             atomic_write(root / name, files[name])
             result["written"].append(name)
-    changed = any(state != "unchanged" or name in obsolete for name, state in states.items())
-    return result, changed
+    return result
