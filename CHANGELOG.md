@@ -286,6 +286,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `make verify-skill-examples` builds the skills and checks their Markdown. It
   used to scan folders with no Markdown and pass on nothing. It now fails if it
   finds no blocks.
+- `SKILL.source.json` and `SKILL_GRAPH.source.json` no longer record where the
+  machine that built them keeps the project. Inside the project, their paths are
+  relative, so the same source gives the same receipt in any checkout. A path
+  outside the project stays absolute, and so does any path in a target with no
+  project config. `receipt_version` stays `1`. Existing receipts report as stale
+  until you emit them again.
+- `emit_skill` leaves generated cache files such as `__pycache__`,
+  `.pytest_cache`, `.pyc`, and `.pyo` out of skill packages and out of
+  `SKILL.source.json`. A `source.track:` entry that names one fails with `E556`.
 
 ### Verification
 

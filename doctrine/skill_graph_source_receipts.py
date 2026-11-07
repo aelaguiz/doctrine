@@ -62,6 +62,11 @@ def receipt_path_for_target(
     return receipt_path
 
 
+def receipt_project_root(target: EmitTarget) -> Path:
+    """Graph receipt paths are written against the consuming project."""
+    return (target.project_config.config_dir or REPO_ROOT).resolve()
+
+
 def output_dir_for_target(
     target: EmitTarget,
     *,
@@ -82,7 +87,8 @@ def build_graph_source_receipt_payload(
     linked_package_receipts: tuple[dict[str, Any], ...],
     selected_view_keys: frozenset[str] | None = None,
 ) -> dict[str, Any]:
-    inputs = _input_entries(input_paths)
+    project_root = receipt_project_root(target)
+    inputs = _input_entries(input_paths, project_root=project_root)
     outputs = _output_entries(emitted_dir=emitted_dir, emitted_paths=emitted_paths)
     output_hashes = {entry["path"]: entry["sha256"] for entry in outputs}
     payload = {
@@ -98,7 +104,7 @@ def build_graph_source_receipt_payload(
         },
         "target": {
             "name": target.name,
-            "entrypoint": display_path(target.entrypoint.resolve()),
+            "entrypoint": display_path(target.entrypoint.resolve(), project_root),
         },
         "inputs": inputs,
         "outputs": outputs,
@@ -219,7 +225,7 @@ def verify_linked_package_receipts(
         expected_hash = entry.get("sha256")
         if not isinstance(path_value, str) or not isinstance(expected_hash, str):
             continue
-        receipt_path = _payload_path(path_value)
+        receipt_path = _payload_path(path_value, receipt_project_root(target))
         if not receipt_path.is_file():
             return GraphReceiptCheckResult(
                 target.name,
@@ -338,7 +344,11 @@ def read_receipt_payload(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _input_entries(paths: tuple[Path, ...]) -> tuple[dict[str, Any], ...]:
+def _input_entries(
+    paths: tuple[Path, ...],
+    *,
+    project_root: Path,
+) -> tuple[dict[str, Any], ...]:
     unique = []
     seen: set[Path] = set()
     for path in sorted(path.resolve() for path in paths):
@@ -347,7 +357,7 @@ def _input_entries(paths: tuple[Path, ...]) -> tuple[dict[str, Any], ...]:
         seen.add(path)
         unique.append(
             {
-                "path": display_path(path),
+                "path": display_path(path, project_root),
                 "kind": "prompt",
                 "sha256": _sha256_file(path),
             }
@@ -416,11 +426,11 @@ def _output_hash_for_path(
     return output_hashes.get(path.resolve().relative_to(emitted_dir.resolve()).as_posix())
 
 
-def _payload_path(path_value: str) -> Path:
+def _payload_path(path_value: str, project_root: Path) -> Path:
     candidate = Path(path_value)
     if candidate.is_absolute():
         return candidate.resolve()
-    return (REPO_ROOT / candidate).resolve()
+    return (project_root / candidate).resolve()
 
 
 def _package_version() -> str:

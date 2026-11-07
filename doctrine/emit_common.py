@@ -747,9 +747,9 @@ def optional_str(raw: dict[str, object], key: str, *, label: str) -> str | None:
     return value
 
 
-def display_path(path: Path) -> str:
+def display_path(path: Path, root: Path = REPO_ROOT) -> str:
     try:
-        return str(path.relative_to(REPO_ROOT))
+        return str(path.relative_to(root))
     except ValueError:
         return str(path)
 

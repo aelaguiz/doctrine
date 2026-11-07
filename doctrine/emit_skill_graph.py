@@ -33,6 +33,7 @@ from doctrine.skill_graph_source_receipts import (
     SOURCE_RECEIPT_FILE_NAME,
     build_graph_source_receipt_payload,
     receipt_path_for_target as graph_receipt_path_for_target,
+    receipt_project_root,
     render_graph_source_receipt_json,
 )
 from doctrine.skill_source_receipts import receipt_path_for_target as skill_receipt_path_for_target
@@ -895,7 +896,9 @@ def _linked_package_receipts(
             {
                 "package_id": package.package_id,
                 "target_name": match.name,
-                "receipt_path": display_path(receipt_path.resolve()),
+                "receipt_path": display_path(
+                    receipt_path.resolve(), receipt_project_root(target)
+                ),
                 "sha256": _sha256_file(receipt_path),
             }
         )
