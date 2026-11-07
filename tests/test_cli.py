@@ -712,6 +712,22 @@ rule R: "Rule"
         self.assertEqual(set(archive_paths), {"pyproject.toml", "prompts", "craft.md"})
         self.assertIn("Role from revision.", (root / "pod/qa/AGENTS.md").read_text())
 
+    def test_rev_reads_relative_kept_file_from_revision(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        guide = root / "guide.md"
+        guide.write_text("Revision guide.\n")
+        self.git_project(root)
+        guide.write_text("Changed guide.\n")
+        code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(report["on_demand"], [{"path": "guide.md", "size": 16}])
+
     def test_rev_reads_codex_limit_from_revision(self):
         root = self.project(example="183_load_budgets")
         project = root / "pyproject.toml"
