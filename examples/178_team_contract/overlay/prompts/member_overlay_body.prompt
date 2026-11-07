@@ -1,0 +1,9 @@
+abstract agent QA:
+    role: "Test."
+abstract team Base:
+    member qa[QA]: "QA"
+        extra: "Extra"
+            "Text."
+team Product[Base]: "Product"
+    home: "product"
+    override member qa:

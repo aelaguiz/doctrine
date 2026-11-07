@@ -1,5 +1,5 @@
 schema_version = 1
-default_prompt = "prompts/AGENTS.prompt"
+default_prompt = "project/prompts/AGENTS.prompt"
 
 [[cases]]
 name = "the contract lists members in order with their sections"
@@ -12,3 +12,52 @@ stdout_contains = [
   "built 2 homes",
 ]
 expected_files = { "pods/growth/TEAM.contract.json" = "expected/team_contract.json" }
+
+[[cases]]
+name = "an overlay keeps the class and adds to its section"
+status = "active"
+kind = "render_contract"
+prompt = "overlay/prompts/member_overlay.prompt"
+agent = "Product.qa"
+assertion = "exact_lines"
+expected_lines = [
+  "QA uses recordings.", "", "## Report", "", "Share the result.", "",
+  "## Testing", "", "Test the change.", "", "Start from recordings.",
+]
+
+[[cases]]
+name = "the template picks the class for an overlay"
+status = "active"
+kind = "render_contract"
+prompt = "overlay/prompts/member_overlay.prompt"
+agent = "Updated.qa"
+assertion = "exact_lines"
+expected_lines = ["New QA uses recordings.", "", "## Testing", "", "Test the change."]
+
+[[cases]]
+name = "an overlay can change just the title"
+status = "active"
+kind = "render_contract"
+prompt = "overlay/prompts/member_overlay.prompt"
+agent = "Renamed.qa"
+assertion = "exact_lines"
+expected_lines = ["Reviewer uses team.", "", "## Testing", "", "Test the change."]
+
+[[cases]]
+name = "a new class keeps the title on a concrete team"
+status = "active"
+kind = "render_contract"
+prompt = "overlay/prompts/member_overlay.prompt"
+agent = "Replaced.qa"
+assertion = "exact_lines"
+expected_lines = ["New QA uses replacement.", "", "## Testing", "", "Test the change."]
+
+[[cases]]
+name = "an overlay cannot inherit a member body"
+status = "active"
+kind = "compile_fail"
+prompt = "overlay/prompts/member_overlay_body.prompt"
+agent = "Product.qa"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 9
