@@ -1,0 +1,19 @@
+[tool.doctrine.emit]
+
+[[tool.doctrine.emit.targets]]
+name = "homes"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "."
+runtimes = ["claude", "codex"]
+
+[tool.doctrine.runtimes.claude]
+limit = 1000
+over = "warn"
+external = [
+  { path = "not-here.md", reserve = 100 },
+]
+
+[tool.doctrine.runtimes.codex]
+limit = 800
+
+over = "warn"

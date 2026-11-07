@@ -402,7 +402,7 @@ team T: "Team"
 """)
         code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 0, error)
-        self.assertIn("W306 near budget:", error)
+        self.assertIn("W306 over budget:", error)
         self.assertTrue((root / "t/AGENTS.md").is_file())
 
     def test_check_fails_on_budget_and_rule(self):
@@ -660,9 +660,9 @@ team T: "Team"
         path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\n")
         code, _, error = self.cli(root, "build", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
-        self.assertIn("W306 near budget: pods/growth/qa loads", error)
-        self.assertNotIn("W306 near budget: pods/growth loads", error)
-        self.assertNotIn("W306 near budget: pods/growth/analyst loads", error)
+        self.assertIn("W306 over budget: pods/growth/qa loads", error)
+        self.assertNotIn("budget: pods/growth loads", error)
+        self.assertNotIn("budget: pods/growth/analyst loads", error)
 
     def test_broken_unrelated_target_cannot_stop_build(self):
         root = self.project()

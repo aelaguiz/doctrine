@@ -220,7 +220,8 @@ def budget_findings(loads, settings, *, build=False):
                 failed = True
             elif load["total"] >= settings[runtime]["warn_at"] * load["limit"]:
                 findings.append(
-                    f"W306 near budget: {home['home']} loads {load['total']:,} "
+                    f"W306 {'over' if load['total'] > load['limit'] else 'near'} budget: "
+                    f"{home['home']} loads {load['total']:,} "
                     f"of {load['limit']:,} on {runtime}."
                 )
     return findings, failed

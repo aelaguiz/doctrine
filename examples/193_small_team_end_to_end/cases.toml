@@ -44,3 +44,11 @@ expected_exit = 0
 stdout_contains = [
   "ok",
 ]
+
+[[cases]]
+name = "the whole team passes strict check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check", "--strict"]
+expected_exit = 0

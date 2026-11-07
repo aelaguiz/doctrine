@@ -1,0 +1,10 @@
+abstract team Level:
+    role: "This is for {{team:audience}}."
+team Root[Level]: "Root"
+    home: "."
+    values:
+        audience: "everyone"
+team Child[Level]: "Child"
+    home: "child"
+    values:
+        audience: "the child team"
