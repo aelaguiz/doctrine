@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A member override without a role keeps the inherited class and title. It can
+  patch the class and set a new title. A replacement with a role keeps the
+  inherited title when no new title is given.
 - Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.

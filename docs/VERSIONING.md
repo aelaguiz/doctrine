@@ -42,6 +42,10 @@ Overrides now keep cases written in inherited bodies. Use `drop` with a reason t
 A team or member can add a case by path. An override fails with `E612` if
 its kept cases would repeat a key; drop a case or give it a different key.
 
+`override member` without a role now keeps the inherited member's class and
+patches it. An inherited member with its own body fails with `E612`; move the
+body into its class, or name a role in the override to replace the member.
+
 Shared cases can read agent and team values. Those cases, and cases with a
 roster, go to each home's `DETAILS.md`. `E621` is retired.
 
