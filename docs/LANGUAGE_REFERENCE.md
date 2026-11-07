@@ -95,9 +95,11 @@ quote Shared: "Keep it plain"
 ```
 
 Use `{{Shared}}` in prose or put `Shared` on a section body line. Both render
-the words with the speaker and date. A quote may also have `to:` and `about:`.
-For a quote used once, write `{{Speaker, 2026-11-05: "Keep it plain"}}` inside
-a triple-quoted string. `doctrine sources` lists quotes and where they reach.
+the words with the speaker and date. A quote may also have `to:`, `about:`,
+and `context:` for free words. They render in the order written. Put parentheses
+in the prose where you want them. For a quote used once, write
+`{{Speaker, 2026-11-05, asking for you: "Keep it plain"}}` inside a
+triple-quoted string. `doctrine sources` lists quotes and where they reach.
 Use `--person` to filter or `--json` for the full source record.
 
 ## Agents
@@ -247,7 +249,7 @@ agent OtherQa[Qa]:
 ```
 
 A role paragraph override holds prose only. A missing key is `E610`. See
-`examples/194_role_paragraphs`.
+`examples/195_role_paragraphs`.
 
 ## Details And Budgets
 

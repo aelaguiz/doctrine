@@ -8,6 +8,7 @@ quote SharedContract: "There needs to be a shared contract"
     by: Owner
     on: "2026-11-05"
     to: "the growth pod's lead"
+    context: "asking for you"
     source: "session:abc123"
 
 
@@ -20,6 +21,7 @@ quote OneAdRemark: "This one ad is too long"
 team Root: "the repository"
     home: "."
     how: "How code gets out"
-        "Every pod's code goes out by one contract {{SharedContract}}."
-        """Check the length of each ad {{OneAdRemark}}."""
-        """Keep what you make plain {{Owner, 2026-11-04, source 53dcb019: "Plain words win"}}."""
+        "Every pod's code goes out by one contract ({{SharedContract}})."
+        """Check the length of each ad ({{OneAdRemark}})."""
+        """Keep what you make plain ({{Owner, 2026-11-04, source 53dcb019: "Plain words win"}})."""
+        """{{Owner, 2026-11-05, to the growth pod's lead, asking for you, source session:abc123: "There needs to be a shared contract"}}"""

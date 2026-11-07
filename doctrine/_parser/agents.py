@@ -58,6 +58,7 @@ class AgentTransformerMixin:
     def quote_to(self, items): return "to", items[0]
     def quote_about(self, items): return "about", items[0]
     def quote_source(self, items): return "source", items[0]
+    def quote_context(self, items): return "context", items[0]
 
     @v_args(meta=True)
     def quote_decl(self, meta, items):

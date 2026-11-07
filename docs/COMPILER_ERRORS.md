@@ -351,7 +351,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |
 | `E608` | Value set twice | `values:` sets one key twice in the same body, in one block or across two. |
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
-| `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. |
+| `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. Free words after an inline date are allowed. |
 | `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
 | `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |

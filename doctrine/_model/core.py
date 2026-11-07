@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
+from dataclasses import replace as _replace
 from typing import TypeAlias as _TypeAlias
 
 
@@ -61,6 +62,13 @@ class RoleScalar:
 def role_text(paragraphs):
     return "\n\n".join((f"**{p.title}** " if p.title else "") + "\n\n".join(p.payload)
                        for p in paragraphs)
+
+
+def interpolate_role_paragraphs(paragraphs, interpolate, *, unit, owner_label):
+    def prose(text):
+        return interpolate(text, unit=unit, owner_label=owner_label, surface_label="role prose")
+    return tuple(_replace(p, title=prose(p.title) if p.title else None,
+                          payload=tuple(prose(s) for s in p.payload)) for p in paragraphs)
 
 
 @_dataclass(slots=True, frozen=True)

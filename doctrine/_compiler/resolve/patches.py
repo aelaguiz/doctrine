@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from doctrine import model
-from doctrine._model.core import role_text
+from doctrine._model.core import role_text, interpolate_role_paragraphs
 from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model, model_walk
@@ -258,16 +258,9 @@ def expand_agent_patches(context, agent, *, unit):
                         ),
                     )
                     if inherited.paragraphs:
-                        paragraphs = tuple(
-                            replace(p,
-                                title=context._interpolate_authored_prose_string(
-                                    p.title, unit=parent_unit, owner_label=f"agent {parent.name}",
-                                    surface_label="role prose") if p.title else None,
-                                payload=tuple(context._interpolate_authored_prose_string(
-                                    s, unit=parent_unit, owner_label=f"agent {parent.name}",
-                                    surface_label="role prose") for s in p.payload))
-                            for p in inherited.paragraphs
-                        )
+                        paragraphs = interpolate_role_paragraphs(
+                            inherited.paragraphs, context._interpolate_authored_prose_string,
+                            unit=parent_unit, owner_label=f"agent {parent.name}")
                         inherited = replace(inherited, paragraphs=paragraphs)
                     role_paths = {path: patch for path, patch in expansion.path_overrides.items() if path[0] == "role"}
                     if role_paths:

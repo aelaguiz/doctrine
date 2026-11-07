@@ -136,12 +136,13 @@ abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_fiel
 abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
 workflow_markdown: "workflow" CNAME "from" string _NL
 quote_decl: "quote" CNAME ":" string _NL _INDENT quote_field+ _DEDENT
-?quote_field: quote_by | quote_on | quote_to | quote_about | quote_source
+?quote_field: quote_by | quote_on | quote_to | quote_about | quote_source | quote_context
 quote_by: "by" ":" name_ref _NL?
 quote_on: "on" ":" string _NL?
 quote_to: "to" ":" string _NL?
 quote_about: "about" ":" string _NL?
 quote_source: "source" ":" string _NL?
+quote_context: "context" ":" string _NL?
 person_decl: "person" CNAME ":" string _NL (_INDENT person_body _DEDENT)?
 person_body: "owns" ":" _NL _INDENT person_owned_item+ _DEDENT
 person_owned_item: (name_ref | string) _NL?

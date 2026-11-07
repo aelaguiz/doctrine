@@ -54,7 +54,7 @@ def quote_error(detail, path=None, source_span=None):
 def quote_data(context, unit, quote):
     fields = {}
     for key, value in quote.fields:
-        if key in fields:
+        if key in fields and (key != "context" or quote.name):
             detail = (f"Inline quote: `{key}` is set twice." if not quote.name
                       else f"`{key}:` in `{quote.name}` is set twice.")
             raise quote_error(detail, unit.prompt_file.source_path, quote.source_span)
@@ -93,8 +93,8 @@ def inline_quote(context, unit, expression):
     for part in parts[2:]:
         key, _, value = part.partition(' ')
         if key not in {"to", "about", "source"}:
-            raise quote_error(f"Inline quote: `{key}` is not a field. "
-                              "Use `to`, `about`, or `source`.", unit.prompt_file.source_path)
+            fields.append(("context", part))
+            continue
         if not value.strip():
             raise quote_error(f"Inline quote: `{key}` needs text.", unit.prompt_file.source_path)
         fields.append((key, value))
@@ -104,11 +104,11 @@ def inline_quote(context, unit, expression):
 
 def render_quote(quote, data):
     (_, person), fields, day = data
-    text = f"({person.title}, {day.strftime('%B')} {day.day}, {day.year}"
-    for key in ("to", "about"):
-        if key in fields:
-            text += f", {key} {fields[key]}"
-    return text + f': "{quote.title}")'
+    text = f"{person.title}, {day.strftime('%B')} {day.day}, {day.year}"
+    for key, value in quote.fields:
+        if key in ("to", "about", "context"):
+            text += f", {key + ' ' if key != 'context' else ''}{value}"
+    return text + f': "{quote.title}"'
 
 
 def render_inline_quotes(context, unit, value):

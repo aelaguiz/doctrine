@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Use `super` on its own line in an override to keep the parent's text and add
   to it. `E614` reports a `super` outside an override.
 
+### Quotes
+
+- Quotes keep free words after the date and render without added parentheses.
+
 ### Scope lines
 
 - `doctrine build` writes who a team, member, or titled plain agent file is for.

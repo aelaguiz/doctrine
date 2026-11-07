@@ -41,6 +41,8 @@ toward load. Remove authored scope lines that the build now supplies.
 `doctrine import` writes prose in triple quotes and uses shorter keys. Check
 key paths if you import a file again and replace its earlier output.
 
+Quotes no longer add parentheses. Put them in prose where you want them.
+
 Overrides now keep cases written in inherited bodies. Use `drop` with a reason to remove one.
 A team or member can add a case by path. An override fails with `E612` if
 its kept cases would repeat a key; drop a case or give it a different key.
