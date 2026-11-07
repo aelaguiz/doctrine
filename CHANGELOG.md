@@ -103,6 +103,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   values name every blank and reading site. Cycles and fact assignments fail.
 - `team` and `member` add shared folders, member refs, and overlays with an
   implied `inherit *`. Team doctrine stays in the team's own file.
+- A team reads its parent teams before the teams above it by folder, so a
+  class's default beats a folder's value.
 - `roster` builds tables from direct members, then adds static rows.
 - Markdown-backed abstract agents and workflows read keyed headings from
   `from "path.md"`. Both support the shared patch language. Workflow keys

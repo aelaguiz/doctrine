@@ -311,8 +311,10 @@ A member key changes `_` to `-` in its folder name.
 
 An agent reads a value from its own body first. Next come its team and the
 teams above it by folder, nearest first. Parent agents supply the defaults.
-A team reads its own values, then teams above it by folder, then its parent
-teams. A value may read another value or an ordinary declaration ref.
+A team reads its own values, then its parent teams, then the next team up by
+folder and that team's parents, and so on. So a class's default beats a
+folder's value, as a Python class reads its parents before any outer scope.
+A value may read another value or an ordinary declaration ref.
 Ordinary refs keep the meaning they had where the value was written.
 Values have no logic, filters, loops, or case changes.
 
