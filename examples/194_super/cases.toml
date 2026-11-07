@@ -1,0 +1,98 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "super keeps parent prose and blocks in order"
+status = "active"
+kind = "render_contract"
+agent = "Lead"
+assertion = "exact_lines"
+expected_lines = [
+  "You lead the work.",
+  "",
+  "## Components",
+  "",
+  "Start here.",
+  "",
+  "The engineer picks the component.",
+  "",
+  "Keep the current look.",
+  "",
+  "### Checks",
+  "",
+  "Check it fits.",
+  "",
+  "### Notes",
+  "",
+  "Write down the choice.",
+]
+
+[[cases]]
+name = "super twice fails"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/duplicate/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 6
+
+[[cases]]
+name = "a repeated key fails"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/collision/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E612"
+location_line = 7
+
+[[cases]]
+name = "super outside an override fails"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/outside/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E614"
+location_line = 4
+
+[[cases]]
+name = "super first in a section"
+status = "active"
+kind = "render_contract"
+agent = "WithFirst"
+assertion = "exact_lines"
+expected_lines = ["Role.", "", "## First", "", "### Steps", "", "Parent step.", "", "Child step."]
+
+[[cases]]
+name = "super in the middle of a section"
+status = "active"
+kind = "render_contract"
+agent = "WithMiddle"
+assertion = "exact_lines"
+expected_lines = ["Role.", "", "## Middle", "", "### Steps", "", "Before.", "", "Parent step.", "", "After."]
+
+[[cases]]
+name = "super last in a section"
+status = "active"
+kind = "render_contract"
+agent = "WithLast"
+assertion = "exact_lines"
+expected_lines = ["Role.", "", "## Last", "", "### Steps", "", "Child step.", "", "Parent step."]
+
+[[cases]]
+name = "a nested override patches the parent before super"
+status = "active"
+kind = "render_contract"
+agent = "Patched"
+assertion = "exact_lines"
+expected_lines = ["You lead the work.", "", "## Components", "", "The engineer picks the component.", "", "Child text.", "", "### Checks", "", "Updated check."]
+
+[[cases]]
+name = "a list patch and drop apply before super"
+status = "active"
+kind = "render_contract"
+agent = "WithList"
+assertion = "exact_lines"
+expected_lines = ["Role.", "", "## Work", "", "Child text.", "", "- Parent item.", "- Child item."]

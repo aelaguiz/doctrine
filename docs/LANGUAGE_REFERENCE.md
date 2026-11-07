@@ -259,8 +259,16 @@ The last path part is the new case key. The parent must exist (`E610`), and
 the key must be new (`E612`). Use `override work.plan.local:` to replace a
 case. Use `drop work.plan.local: "Reason"` to remove one.
 
-An override keeps cases written in the old body, even inside nested sections. They
-move to the end of the new body. A new case with the same key replaces a
+Use `super` on its own line inside an override to keep the parent's text and
+add your own. It works in slots, sections, paragraphs, and lists. You can put
+text before or after it. A slot override can leave out the title to keep the
+parent's title. In a slot, parent blocks come before new blocks. In a section,
+paragraph, or list, parent items appear where `super` stands. You can patch a
+parent block by path beside an override that uses `super`. A dotted list
+override accepts unkeyed items.
+
+An override without `super` keeps cases written in the old body, even inside
+nested sections. They move to the end of the new body. A new case with the same key replaces a
 direct child case. If kept cases would share a key with another kept case or
 with a block in the new body, the override fails with `E612`. Drop one case
 with a reason or give the cases different keys. A case patch can sit beside an

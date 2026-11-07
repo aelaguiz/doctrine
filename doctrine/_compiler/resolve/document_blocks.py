@@ -75,6 +75,9 @@ class ResolveDocumentBlocksMixin:
                 unit=unit,
                 source_span=item.source_span,
             ):
+                if isinstance(list_item, model.SuperItem):
+                    resolved_items.append(list_item)
+                    continue
                 if not isinstance(list_item, model.ReadableListItem):
                     raise invalid_readable_block_error(
                         detail=(
@@ -386,6 +389,9 @@ class ResolveDocumentBlocksMixin:
             unit=unit,
             source_span=owner_source_span,
         ):
+            if isinstance(child, model.SuperItem):
+                resolved.append(child)
+                continue
             if isinstance(child, (str, model.EmphasizedLine)):
                 resolved.append(
                     self._interpolate_authored_prose_line(

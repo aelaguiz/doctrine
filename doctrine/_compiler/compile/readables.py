@@ -4,6 +4,7 @@ from doctrine._compiler.details import details_origin
 from doctrine import model
 from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.resolve.patches import reject_super
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.readable_diagnostics import (
@@ -274,6 +275,7 @@ class CompileReadablesMixin:
         unit: IndexedUnit,
     ) -> CompiledSection:
         resolved = self._resolve_document_decl(decl, unit=unit)
+        reject_super(resolved, decl.name, unit)
         return CompiledSection(
             title=resolved.title, origin=resolved.origin,
             drops=resolved.drops,

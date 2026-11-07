@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches, keep_details,
+    mark_wildcard, prepare_body_patches, apply_path_patches, merge_override,
 )
 from dataclasses import replace
 
@@ -273,8 +273,8 @@ class ResolveDocumentsMixin:
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
                 )
-            if item.kind in {"section", "paragraph", "guard"}:
-                resolved = replace(resolved, payload=keep_details(parent_item.payload, resolved.payload,
+            if item.kind in {"section", "paragraph", "guard", "sequence", "bullets", "checklist"}:
+                resolved = replace(resolved, payload=merge_override(parent_item.payload, resolved.payload,
                                                                    owner_label, key, unit, item.source_span, parent_item.origin))
             resolved_items.append(resolved)
 

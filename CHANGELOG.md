@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Super in overrides
+
+- Use `super` to keep a parent's text and add to it in an override.
+
 ### Fixed
 
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.

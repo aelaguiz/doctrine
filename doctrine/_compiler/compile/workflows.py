@@ -4,6 +4,7 @@ from dataclasses import replace
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.resolve.patches import reject_super
 from doctrine._compiler.naming import _authored_slot_allows_law
 from doctrine._compiler.resolved_types import (
     AgentContract,
@@ -69,6 +70,7 @@ class CompileWorkflowsMixin:
         owner_label: str | None = None,
         slot_key: str = "workflow",
     ) -> CompiledSection:
+        reject_super(workflow_body.preamble, owner_label, unit)
         body: list[CompiledBodyItem] = list(workflow_body.preamble)
         if workflow_body.law is not None:
             if unit is None or agent_contract is None or owner_label is None:
@@ -358,6 +360,7 @@ class CompileWorkflowsMixin:
         unit: IndexedUnit | None = None,
         owner_label: str | None = None,
     ) -> tuple[CompiledBodyItem, ...]:
+        reject_super(items, owner_label, unit)
         body: list[CompiledBodyItem] = []
         previous_kind: str | None = None
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from dataclasses import replace
-from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, keep_details
+from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, merge_override
 from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -422,9 +422,12 @@ class ResolveAgentSlotsMixin:
                         owner_label=f"agent {agent.name} slot {field.key}",
                         owner_source_span=field.source_span,
                     )
+                    preamble, items = merge_override(parent_slot.body.items, body.items,
+                        agent.name, field.key, unit, field.source_span, parent_slot.body.origin,
+                        parent_slot.body.preamble, body.preamble)
                     resolved_slots.append(ResolvedAgentSlot(key=field.key, body=replace(
-                        body, items=keep_details(parent_slot.body.items, body.items,
-                                                agent.name, field.key, unit, field.source_span, parent_slot.body.origin))))
+                        body, title=body.title if body.title is not None else parent_slot.body.title,
+                        preamble=preamble, items=items)))
 
             missing_parent_keys = [
                 parent_slot.key

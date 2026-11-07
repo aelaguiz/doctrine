@@ -34,6 +34,11 @@ class SourceSpan:
 
 
 @_dataclass(slots=True, frozen=True)
+class SuperItem:
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class Origin:
     declaration: str
     path: tuple[str, ...]

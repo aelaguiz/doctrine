@@ -185,6 +185,8 @@ class ValidateSchemaHelpersMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
+        if isinstance(value, model.SuperItem):
+            return value
         if isinstance(value, str):
             if isinstance(value, model.MarkdownProse):
                 return value
