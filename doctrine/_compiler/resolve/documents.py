@@ -249,7 +249,7 @@ class ResolveDocumentsMixin:
                             item.title
                             if item.title is not None
                             else None
-                            if item.kind in {"sequence", "bullets", "checklist"}
+                            if item.kind in {"sequence", "bullets", "checklist"} and not any(isinstance(part, model.SuperItem) for part in item.payload)
                             else parent_item.title
                         ),
                         payload=item.payload,

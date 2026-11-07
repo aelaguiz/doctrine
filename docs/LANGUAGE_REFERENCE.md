@@ -261,8 +261,8 @@ case. Use `drop work.plan.local: "Reason"` to remove one.
 
 Use `super` on its own line inside an override to keep the parent's text and
 add your own. It works in slots, sections, paragraphs, and lists. You can put
-text before or after it. A slot override can leave out the title to keep the
-parent's title. In a slot, parent blocks come before new blocks. In a section,
+text before or after it. An override with no title keeps the parent's title,
+and a list override does when it holds `super`. In a slot, parent blocks come before new blocks. In a section,
 paragraph, or list, parent items appear where `super` stands. You can patch a
 parent block by path beside an override that uses `super`. A dotted list
 override accepts unkeyed items.
@@ -453,7 +453,7 @@ Important rules:
   title string is optional. If the title is missing, Doctrine renders the
   list directly inside the current section instead of adding a nested heading.
 - The same title-optional rule applies to `override sequence`, `override
-  bullets`, and `override checklist`.
+  bullets`, and `override checklist`, unless the override holds `super`.
 - Inherited workflow-root readable blocks use the same explicit patch model as
   other keyed workflow items. Use `inherit key` or `override <kind> key`.
 - Workflow law may use `route_from` to pick one route from a typed input or

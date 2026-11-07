@@ -1286,6 +1286,6 @@ class ResolveWorkflowsMixin:
     ) -> str | None:
         if item.title is not None:
             return item.title
-        if item.kind in {"sequence", "bullets", "checklist"}:
+        if item.kind in {"sequence", "bullets", "checklist"} and not any(isinstance(part, model.SuperItem) for part in item.payload):
             return None
         return parent_item.title

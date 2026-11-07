@@ -48,6 +48,25 @@ agent Child:
                 result = test_super.SuperTests().compile(source)
                 self.assertLess(result.index('Parent.'), result.index('Child.'))
 
+    def test_untitled_list_override_with_super_keeps_parent_title(self):
+        for kind in ('bullets', 'checklist', 'sequence'):
+            for surface in ('document', 'workflow'):
+                with self.subTest(kind=kind, surface=surface):
+                    source = f'''{surface} Base: "Base"
+    {kind} steps: "Steps"
+        "Parent."
+{surface} Child[Base]: "Child"
+    override {kind} steps:
+        super
+        "Child."
+'''
+                    if surface == 'workflow':
+                        source = source.replace('workflow Child[Base]', 'workflow Patched[Base]')
+                        source += 'agent Child:\n    role: "Role."\n    work: Patched\n'
+                    result = test_super.SuperTests().compile(source, surface if surface == 'document' else 'agent')
+                    self.assertIn('### Steps', result)
+                    self.assertLess(result.index('Parent.'), result.index('Child.'))
+
     def test_dotted_list_explicit_title(self):
         result = test_super.SuperTests().compile('''abstract agent Base:
     role: "Role."
