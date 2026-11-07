@@ -1053,6 +1053,17 @@ team T: "Team"
         self.assertNotIn("budget: pods/growth loads", error)
         self.assertNotIn("budget: pods/growth/analyst loads", error)
 
+    def test_long_compiled_file_warns_with_runtime_file_limit(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+            settings="[tool.doctrine.runtimes.claude]\nfile_limit = 10\n",
+        )
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        size = len((root / "t/AGENTS.md").read_text().encode("utf-16-le")) // 2
+        self.assertIn(f"W309 long file: t/AGENTS.md is {size:,} of 10 on claude.", error)
+        self.assertNotIn("on codex", error)
+
     def test_broken_unrelated_target_cannot_stop_build(self):
         root = self.project()
         path = root / "pyproject.toml"

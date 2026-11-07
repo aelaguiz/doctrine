@@ -29,7 +29,7 @@ def runtime_settings(target):
             bad(f"Unknown runtime `{runtime}`.")
     for runtime in target.runtimes:
         values = raw.get(runtime, {})
-        for key in values.keys() - {"limit", "warn_at", "over", "external"}:
+        for key in values.keys() - {"limit", "warn_at", "over", "external", "file_limit"}:
             bad(f"`{key}` for `{runtime}`: unknown setting.")
         limit = RUNTIMES[runtime][2]
         config = base / ".codex/config.toml"
@@ -38,7 +38,8 @@ def runtime_settings(target):
                 limit = tomllib.loads(config.read_text()).get("project_doc_max_bytes", limit)
             except (tomllib.TOMLDecodeError, UnicodeDecodeError):
                 bad("`.codex/config.toml` for `codex`: invalid TOML.")
-        values = {"limit": limit, "warn_at": 0.95, "over": "error", "external": [], **values}
+        values = {"limit": limit, "warn_at": 0.95, "over": "error", "external": [],
+                  "file_limit": 150000 if runtime == "claude" else None, **values}
         for key, valid, detail in (
             (
                 "limit",
@@ -213,8 +214,19 @@ def home_loads(target, homes, files, settings, selected):
 def budget_findings(loads, settings):
     findings = []
     failed = False
+    warned = set()
     for home in loads:
         for runtime, load in home["runtimes"].items():
+            file_limit = settings[runtime]["file_limit"]
+            for file in load["files"]:
+                key = (runtime, file["path"])
+                if (file["kind"] == "home" and file_limit is not None
+                        and file["size"] > file_limit and key not in warned):
+                    warned.add(key)
+                    findings.append(
+                        f"W309 long file: {file['path']} is {file['size']:,} "
+                        f"of {file_limit:,} on {runtime}."
+                    )
             if load["total"] > load["limit"] and settings[runtime]["over"] == "error":
                 unit = "characters" if runtime == "claude" else "bytes"
                 findings.append(

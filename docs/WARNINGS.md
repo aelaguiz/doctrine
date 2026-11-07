@@ -17,6 +17,7 @@ judgment-first authoring review.
 | Code | Meaning |
 | --- | --- |
 | `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Over budget, it warns only when `over = "warn"`. |
+| `W309` | A compiled level file is over the runtime's `file_limit`. |
 
 `doctrine build` and `doctrine check` fail an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.

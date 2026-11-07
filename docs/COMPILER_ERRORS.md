@@ -373,3 +373,4 @@ shows the canonical formatted shape for one shipped compile error.
 | `E636` | Dead link | A compiled file links to a path that does not exist. Fix the link or add the file. |
 | `E640` | No home matches | A selector matches no home path or agent name. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
+| `W309` | Long file | A compiled level file is over the runtime's per-file limit. |
