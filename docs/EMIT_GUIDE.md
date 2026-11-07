@@ -93,6 +93,8 @@ doctrine build .
 doctrine build Core.qa
 doctrine build . --check
 doctrine check --strict
+doctrine load
+doctrine load Core.qa --runtime codex
 doctrine build . --rev HEAD --with prompts/core.prompt
 ```
 
@@ -109,7 +111,21 @@ written, unchanged, removed, and stale-level paths with `format_version: 1`.
 
 `check` writes nothing. It checks rules and budgets. A warning fails only
 with `--strict`. Exit 0 means no failing findings, 1 means findings, and 2
-means usage or a tool failure. Diagnostics go to stderr.
+means usage or a tool failure. Diagnostics go to stderr. `--json` prints
+`format_version`, `ok`, `homes`, `errors`, and `warnings`. Each finding has
+its code and the same text as the plain report.
+
+`load` shows every home, including teams, sorted by headroom. Select one
+home to see its loaded files, five biggest source declarations, and drop
+reasons. Any smaller parts share one last row. A missing external with a
+reserve is marked `reserved`. Headers and joining blank lines count toward
+load, but belong to no source entry. Nested entries never count text twice.
+Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
+order, or `--json` for the versioned report. Companions have a separate size.
+
+The hand-edit report matches sections by title and then by order when titles
+repeat. A removed section says `no longer in source`. A companion names its
+source file without guessing which section owns an edit.
 
 `--rev REV` extracts only source inputs from git. Repeat `--with PATH` to
 overlay individual working-tree files; it needs `--rev`. Markdown `from`

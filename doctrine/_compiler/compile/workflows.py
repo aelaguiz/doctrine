@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _authored_slot_allows_law
@@ -154,15 +156,15 @@ class CompileWorkflowsMixin:
                 continue
 
             body.append(
-                self._compile_workflow_decl(
+                replace(self._compile_workflow_decl(
                     item.workflow_decl,
                     unit=item.target_unit,
                     agent_contract=agent_contract,
                     slot_key=slot_key,
-                )
+                ), key=item.key)
             )
 
-        return CompiledSection(title=workflow_body.title, body=tuple(body), origin=workflow_body.origin)
+        return CompiledSection(title=workflow_body.title, body=tuple(body), origin=workflow_body.origin, drops=workflow_body.drops)
 
     def _compile_workflow_root_readable_block(
         self,

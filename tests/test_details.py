@@ -151,3 +151,27 @@ team T: "Team"
         source.write_text(source.read_text().replace('inherit second\n        inherit first', 'inherit first\n        inherit second'))
         self.assertEqual(self.cli(root, 'build', '.')[0], 0)
         self.assertEqual(path.read_bytes(), original)
+
+    def test_dotted_details_replacement_keeps_its_owner_and_headings(self):
+        root = self.project('''abstract agent Base:
+    role: "Test."
+    work: "Work"
+        child: "Child"
+            section inner: "Inner"
+                paragraph lead:
+                    "Old."
+abstract agent Child[Base]:
+    inherit *
+    override work.child.inner.lead:
+        "New."
+        details:
+            "Long case."
+team T: "Team"
+    home: "t"
+    member qa[Child]: "QA"
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        text = (root / "_details/child.md").read_text()
+        self.assertIn("## Work\n\n### Child\n\n#### Inner\n\nLong case.", text)
+        self.assertFalse((root / "_details/base.md").exists())

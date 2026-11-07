@@ -26,7 +26,7 @@ def map_text(value, substitute, markdown=None):
         validate_shared_details(value)
         return replace(value, **{
             field.name: map_text(getattr(value, field.name), substitute, markdown)
-            for field in fields(value) if field.name != "origin"
+            for field in fields(value) if field.name not in {"origin", "drops"}
         })
     return value
 

@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   can hold details. Shared companions keep their owner's words and headings.
 - Runtime settings and `budget:` measure externals plus each loaded level.
   `build` writes without running rules or failing budgets; `check` judges them.
+- `load` reports team and member homes, loaded files, source sizes, and drop
+  reasons. Nested entries count each line once. `check --json` returns findings.
 - The `doctrine` and `doctrine-agents` scripts share the CLI. Build selectors,
   `--check`, `--force`, `--out`, `--rev`, and `--with` control home builds.
 - Relative links from Markdown-backed declarations follow their text into

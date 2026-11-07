@@ -275,6 +275,7 @@ class CompileReadablesMixin:
         resolved = self._resolve_document_decl(decl, unit=unit)
         return CompiledSection(
             title=resolved.title, origin=resolved.origin,
+            drops=resolved.drops,
             body=self._compile_document_body(resolved, unit=unit),
             render_profile=resolved.render_profile or ResolvedRenderProfile(name="ContractMarkdown"),
         )

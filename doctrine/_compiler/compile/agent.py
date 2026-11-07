@@ -349,6 +349,7 @@ class CompileAgentMixin:
             return CompiledAgent(
                 name=agent.name,
                 fields=compiled_fields,
+                drops=agent.drops,
                 final_output=final_output,
                 review=review_contract,
                 route=route_contract,

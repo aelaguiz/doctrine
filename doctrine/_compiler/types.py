@@ -27,6 +27,7 @@ class CompiledSection:
     kind: str = "section"
     origin: tuple | None = None
     key: str = ""
+    drops: tuple = ()
     requirement: str | None = None
     when_text: str | None = None
     emit_metadata: bool = False
@@ -362,6 +363,7 @@ class CompiledIoContractSpec:
 class CompiledAgent:
     name: str
     fields: tuple[CompiledField, ...]
+    drops: tuple = ()
     final_output: CompiledFinalOutputSpec | None = None
     review: CompiledReviewSpec | None = None
     route: CompiledRouteContractSpec | None = None

@@ -296,6 +296,7 @@ class ResolvedDocumentBody:
     items: tuple[model.DocumentBlock, ...]
     render_profile: ResolvedRenderProfile | None = None
     origin: tuple | None = None
+    drops: tuple = ()
 
 
 @dataclass(slots=True, frozen=True)
@@ -344,6 +345,7 @@ class ResolvedWorkflowBody:
     items: tuple[ResolvedWorkflowItem, ...]
     law: model.LawBody | None = None
     origin: tuple | None = None
+    drops: tuple = ()
 
 
 @dataclass(slots=True, frozen=True)

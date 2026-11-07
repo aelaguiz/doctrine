@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.resolve.patches import apply_path_patches
+from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -132,7 +133,7 @@ class ResolveAgentSlotsMixin:
             agent, patches = self._expand_agent_patches(agent, unit=unit)
             parent_slots_by_key = apply_path_patches(
                 self, {slot.key: slot for slot in parent_slots}, patches.path_overrides,
-                owner_label=agent.name, unit=unit,
+                owner_label=agent.name, unit=unit, origin=source_origin(self, agent, unit, (), agent.source_span),
             )
             resolved_slots: list[ResolvedAgentSlotState] = []
             seen_slot_fields: dict[

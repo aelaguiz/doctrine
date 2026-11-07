@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.teams import team_members, team_contract
@@ -18,7 +19,7 @@ from doctrine.details import split_details, render_companion
 from doctrine.emit_docs import _runtime_emit_roots_for_target, _build_runtime_emit_plan, _build_previous_turn_contexts, runtime_files
 
 
-HEADER = re.compile(r'^<!-- doctrine sha256=([a-f0-9]{12}) source=.* -->\n\n')
+HEADER = re.compile(r'^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. Run: doctrine where "<words>" -->\n\n')
 
 
 def with_header(text, source):
@@ -58,6 +59,7 @@ def compile_homes(target, *, evaluate_rules=False):
         session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
         if plan is None:
             result = session.compile_agent(owner.name)
+        home_map = build_home_map(result, home)
         result, parts, pointers = split_details(result, home)
         for companion, content in parts.items():
             companions.setdefault(companion, []).extend(content if not companion.startswith("_details/") else [part for part in content if part not in companions.get(companion, [])])
@@ -90,7 +92,7 @@ def compile_homes(target, *, evaluate_rules=False):
         while isinstance(budget_owner, model.Team) and budget_owner.parent_ref:
             budget_unit, budget_owner = context._resolve_parent_agent_decl(budget_owner, unit=budget_unit)
             budget_fields.extend(field for field in budget_owner.fields if isinstance(field, model.BudgetField))
-        homes[home] = {"owner": owner, "unit": unit, "compiled": result, "files": paths, "pointers": pointers, "budgets": budget_fields}
+        homes[home] = {"owner": owner, "unit": unit, "compiled": result, "map": home_map, "files": paths, "pointers": pointers, "budgets": budget_fields}
     for home, data in homes.items():
         owner = data["owner"]
         if isinstance(owner, model.Team) and team_members(context, owner, unit=data["unit"]):
@@ -151,6 +153,28 @@ def atomic_write(path, content):
     os.replace(temporary, path)
 
 
+def home_sections(text):
+    sections, counts = {}, {}
+    key, fence = None, None
+    for line in text.splitlines(keepends=True):
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line.rstrip("\n"))
+        if fence is not None:
+            if marker and marker[1][0] == fence[0] and len(marker[1]) >= fence[1] and not marker[2].strip():
+                fence = None
+        elif marker and (marker[1][0] == "~" or "`" not in marker[2]):
+            fence = marker[1][0], len(marker[1])
+        else:
+            heading = re.match(r"^ {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$", line.rstrip("\n"))
+            if heading:
+                title = heading[1]
+                key = title, counts.get(title, 0)
+                counts[title] = key[1] + 1
+                sections[key] = ""
+        if key is not None:
+            sections[key] += line
+    return {key: text.strip("\n") for key, text in sections.items()}
+
+
 def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=False, force=False):
     root = output_dir or target.output_dir
     selected = select_homes(homes, selectors)
@@ -172,14 +196,28 @@ def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=Fa
                     detail = f"`{name}` was written by hand."
                 else:
                     detail = f"`{name}` was edited by hand."
-                    if name in files and isinstance(files[name], bytes):
-                        old_sections = {section.split("\n", 1)[0][3:]: section for section in re.split(r"(?m)(?=^## )", path.read_text()) if section.startswith("## ")}
-                        fresh_sections = {section.split("\n", 1)[0][3:]: section for section in re.split(r"(?m)(?=^## )", files[name].decode()) if section.startswith("## ")}
+                    if path.name == "DETAILS.md" or path.parent.name == "_details":
+                        detail += f"\nsource={HEADER.match(path.read_text())[2]}"
+                    elif name in files:
+                        fresh = files[name]
+                        if isinstance(fresh, Path):
+                            fresh = files[str(PurePosixPath(name).parent / str(fresh))]
+                        old_sections = home_sections(path.read_text())
+                        fresh_sections = home_sections(fresh.decode())
+                        origins = {}
                         for data in homes.values():
                             if name in data["files"]:
-                                for section in data["compiled"].fields:
-                                    if not isinstance(section, model.RoleScalar) and section.origin and old_sections.get(section.title) != fresh_sections.get(section.title):
-                                        detail += f"\n- {section.title}: {section.origin[0]} at {section.origin[2]}"
+                                for entry in data["map"].entries:
+                                    if len(entry.path) == 1 and entry.title is not None and entry.always_on:
+                                        key = (entry.title, sum(title == entry.title for title, _ in origins))
+                                        origins[key] = entry
+                        for key in dict.fromkeys((*old_sections, *fresh_sections)):
+                            if old_sections.get(key) != fresh_sections.get(key):
+                                if key not in fresh_sections:
+                                    detail += f"\n- {key[0]}: no longer in source"
+                                else:
+                                    entry = origins[key]
+                                    detail += f"\n- {key[0]}: {entry.origin} at {entry.site}"
                 raise compile_error(code="E634", summary="Hand edit in a compiled file", detail=detail,
                     hints=("Move the edit to its source, then build. `--force` overwrites it.",))
     stale_levels = []

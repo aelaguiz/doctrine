@@ -152,6 +152,7 @@ class InheritAll:
 class DropItem:
     path: tuple[str, ...]
     reason: str
+    origin: tuple | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -159,4 +160,5 @@ class DropItem:
 class OverridePath:
     path: tuple[str, ...]
     value: object
+    origin: tuple | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)

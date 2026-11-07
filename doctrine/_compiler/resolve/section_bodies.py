@@ -42,11 +42,11 @@ class ResolveSectionBodiesMixin:
                 resolved.append(
                     ResolvedSectionItem(
                         key=item.key,
-                        origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None),
+                        origin=item.origin or child_origin(origin, item.key, item.source_span, item.title),
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
-                            origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None),
+                            origin=item.origin or child_origin(origin, item.key, item.source_span, item.title),
                             unit=unit,
                             owner_label=f"{owner_label}.{item.key}",
                         ),
@@ -55,7 +55,7 @@ class ResolveSectionBodiesMixin:
                 )
                 continue
             if isinstance(item, model.ReadableBlock):
-                resolved.append(replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if isinstance(item, model.LocalSection) else None)))
+                resolved.append(replace(item, origin=item.origin or child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None)))
                 continue
             if isinstance(item, model.SectionBodyRef):
                 resolved.append(

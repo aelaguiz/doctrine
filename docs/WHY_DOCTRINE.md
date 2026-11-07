@@ -135,6 +135,7 @@ A team puts shared text at the folder level that needs it. Members load
 that level once, then their own file. A long case can stay in `details`,
 with one pointer from the home. It does not take always-on space.
 
-A budget makes that space visible during `doctrine check`. A launch uses
+`doctrine load` shows which sources take that space, across all loaded
+levels. A budget checks that space during `doctrine check`. A launch uses
 `doctrine build`, which writes files without failing on a rule or budget.
 Examples 180 through 184 show the tree, companions, and this build/check split.

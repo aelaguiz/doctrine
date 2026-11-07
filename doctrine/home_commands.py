@@ -13,10 +13,11 @@ from doctrine.emit_common import load_emit_targets
 from doctrine.homes import compile_homes, build_homes, select_homes
 from doctrine.parser import parse_file
 from doctrine.revision_source import revision_source
-from doctrine.runtime_load import runtime_settings, home_loads, budget_findings
+from doctrine.runtime_load import runtime_settings, home_loads, budget_findings, render_load
 
 
 def run_command(args):
+    homes = {}
     try:
         source = revision_source(args) if args.rev else nullcontext((args.pyproject, None, None))
         with source as (project_path, target_names, live_root):
@@ -41,13 +42,20 @@ def run_command(args):
             loads = home_loads(target, homes, files, settings)
             if args.command in ("build", "check"):
                 findings, failed = budget_findings(loads, settings, build=args.command == "build")
+                if args.command == "check":
+                    ok = not failed and not (args.strict and findings)
+                    if args.json:
+                        print(json.dumps({"format_version": 1, "ok": ok, "homes": len(homes),
+                            "errors": [{"code": finding.split()[0], "text": finding} for finding in findings if finding.startswith("E")],
+                            "warnings": [{"code": finding.split()[0], "text": finding} for finding in findings if finding.startswith("W")]}))
+                    else:
+                        for finding in findings:
+                            print(finding, file=sys.stderr)
+                        if ok:
+                            print(f"ok: {len(homes)} homes checked")
+                    return int(not ok)
                 for finding in findings:
                     print(finding, file=sys.stderr)
-                if args.command == "check":
-                    if not failed and not (args.strict and findings):
-                        print(f"ok: {sum(bool(home['files']) for home in homes.values())} homes checked")
-                        return 0
-                    return 1
             if args.command == "build":
                 selected, result, changed = build_homes(target, homes, files,
                     selectors=args.selectors, output_dir=Path(args.out).resolve() if args.out else live_root / target.output_dir.relative_to(target.project_config.config_dir) if live_root else None,
@@ -64,17 +72,29 @@ def run_command(args):
             selected = select_homes(homes, args.selectors)
             if args.runtime and args.runtime not in settings:
                 raise compile_error(code="E632", summary="Invalid runtime settings", detail=f"Unknown runtime `{args.runtime}`.")
-            if args.full and len(selected) == 1:
+            loads = [home for home in loads if home["home"] in selected]
+            if args.runtime:
                 for home in loads:
-                    if home["home"] in selected:
-                        for runtime, load in home["runtimes"].items():
-                            if args.runtime is None or runtime == args.runtime:
-                                for file in load["files"]:
-                                    print(f"===== {file['path']} ({file['size']:,}) =====")
-                                    print(file["text"], end="" if file["text"].endswith("\n") else "\n")
+                    home["runtimes"] = {runtime: load for runtime, load in home["runtimes"].items() if runtime == args.runtime}
+            if args.json:
+                for home in loads:
+                    for load in home["runtimes"].values():
+                        load["files"] = [{key: value for key, value in file.items() if key != "text"} for file in load["files"]]
+                print(json.dumps({"format_version": 1, "homes": loads}))
+            elif args.full and len(selected) == 1:
+                for load in loads[0]["runtimes"].values():
+                    for file in load["files"]:
+                        print(f"===== {file['path']} ({file['size']:,}) =====")
+                        print(file["text"], end="" if file["text"].endswith("\n") else "\n")
+            else:
+                print(render_load(loads))
             return 0
     except DoctrineError as exc:
-        print(exc, file=sys.stderr)
+        if args.command == "check" and args.json:
+            print(json.dumps({"format_version": 1, "ok": False, "homes": len(homes),
+                "errors": [{"code": exc.code, "text": str(exc)}], "warnings": []}))
+        else:
+            print(exc, file=sys.stderr)
         return 1
     except (OSError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)

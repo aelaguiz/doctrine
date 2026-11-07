@@ -48,7 +48,7 @@ def runtime_settings(target):
                 text, size = "", item["reserve"]
             else:
                 raise compile_error(code="E633", summary="External file missing", detail=f"`{item['path']}` is listed for {runtime}, but it is absent and has no `reserve`.")
-            external.append({"path": item["path"], "size": size, "kind": "external", "text": text})
+            external.append({"path": item["path"], "size": size, "kind": "external" if path.is_file() else "reserved", "text": text})
         settings[runtime] = {**values, "external": external}
     return settings
 
@@ -70,7 +70,7 @@ def home_loads(target, homes, files, settings):
     loads = []
     for home, data in homes.items():
         budgets = []
-        owner, unit = data["owner"], data["unit"]
+        owner = data["owner"]
         team = homes[str(PurePosixPath(home).parent)]["owner"] if isinstance(owner, model.Member) else owner
         chain = [data]
         if team is not owner:
@@ -85,21 +85,28 @@ def home_loads(target, homes, files, settings):
         for runtime in target.runtimes or ("codex",):
             setting = settings[runtime]
             loaded = list(setting["external"])
+            parts = {}
             for level, item in sorted(homes.items(), key=lambda pair: len(PurePosixPath(pair[0]).parts)):
                 if level == home or PurePosixPath(level) in PurePosixPath(home).parents:
                     path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
                     if path in files:
                         content = files[path]
                         if isinstance(content, Path):
-                            content = files[str(PurePosixPath(level) / str(content))]
+                            path = str(PurePosixPath(level) / str(content))
+                            content = files[path]
+                        for entry in item["map"].entries:
+                            if entry.always_on:
+                                parts[entry.origin] = parts.get(entry.origin, 0) + (entry.size_utf16 if runtime == "claude" else entry.size_bytes)
                         text = content.decode()
                         loaded.append({"path": path, "size": text_size(text, runtime), "kind": "home", "text": text})
             limit = next((budget[runtime] for budget in budgets if runtime in budget), setting["limit"])
             total = sum(item["size"] for item in loaded)
             details_size = sum(text_size(files[path].decode(), runtime) for path in data["pointers"])
             runtimes[runtime] = {"unit": RUNTIMES[runtime][1], "total": total, "limit": int(limit),
-                "headroom": int(limit) - total, "files": loaded, "details_size": details_size}
-        loads.append({"home": home, "agent": owner.name, "runtimes": runtimes})
+                "headroom": int(limit) - total, "files": loaded, "details_size": details_size,
+                "parts": [{"origin": origin, "size": size} for origin, size in sorted(parts.items(), key=lambda part: (-part[1], part[0]))]}
+        loads.append({"home": home, "agent": owner.name, "runtimes": runtimes,
+            "drops": [{"path": list(drop.path), "origin": drop.origin, "reason": drop.reason} for drop in data["map"].drops]})
     return loads
 
 
@@ -109,9 +116,44 @@ def budget_findings(loads, settings, *, build=False):
     for home in loads:
         for runtime, load in home["runtimes"].items():
             if load["total"] > load["limit"] and not build and settings[runtime]["over"] == "error":
-                findings.append(compile_error(code="E630", summary="Over load budget",
-                    detail=f"{home['home']} loads {load['total']:,} of {load['limit']:,} {'characters' if runtime == 'claude' else 'bytes'} on {runtime}.\nBiggest parts:"))
+                findings.append("E630 compile error: Over load budget\n\nDetail:\n"
+                    f"- {home['home']} loads {load['total']:,} of {load['limit']:,} {'characters' if runtime == 'claude' else 'bytes'} on {runtime}.\n- "
+                    + biggest_parts(load["parts"]).replace("\n  ", "\n  - "))
                 failed = True
             elif load["total"] >= settings[runtime]["warn_at"] * load["limit"]:
                 findings.append(f"W306 near budget: {home['home']} loads {load['total']:,} of {load['limit']:,} on {runtime}.")
     return findings, failed
+
+
+def biggest_parts(parts):
+    lines = ["Biggest parts:", *(f"  {part['origin']}: {part['size']:,}" for part in parts[:5])]
+    if len(parts) > 5:
+        lines.append(f"  And {len(parts) - 5} smaller parts: {sum(part['size'] for part in parts[5:]):,}")
+    return "\n".join(lines)
+
+
+def padded_rows(rows):
+    widths = [max(len(row[column]) for row in rows) for column in range(len(rows[0]))]
+    return "\n".join("".join(value.ljust(width + 2) for value, width in zip(row, widths)).rstrip() for row in rows)
+
+
+def render_load(loads):
+    if len(loads) != 1:
+        rows = [("Home", "Runtime", "Load", "Limit", "Headroom")]
+        rows.extend((home["home"], runtime, f"{load['total']:,}", f"{load['limit']:,}", f"{load['headroom']:,}")
+                    for home, runtime, load in sorted(
+                        ((home, runtime, load) for home in loads for runtime, load in home["runtimes"].items()),
+                        key=lambda row: (row[2]["headroom"], row[0]["home"], row[1])))
+        return padded_rows(rows)
+    home = loads[0]
+    blocks = []
+    for runtime, load in home["runtimes"].items():
+        headroom = load["headroom"]
+        blocks.append(f"{home['home']} on {runtime}: {load['total']:,} of {load['limit']:,} {'characters' if runtime == 'claude' else 'bytes'}, {abs(headroom):,} {'left' if headroom >= 0 else 'over'}")
+        if load["files"]:
+            blocks.append("Files:\n" + padded_rows([("  " + file["path"], f"{file['size']:,}", "" if file["kind"] == "home" else file["kind"]) for file in load["files"]]))
+        if load["parts"]:
+            blocks.append(biggest_parts(load["parts"]))
+    if home["drops"]:
+        blocks.append("Dropped:\n" + "\n".join(f"  {'.'.join(drop['path'])} from {drop['origin']}: {drop['reason']}" for drop in home["drops"]))
+    return "\n\n".join(blocks)

@@ -31,6 +31,7 @@ class LocalSection:
     key: str
     title: str
     items: tuple[SectionBodyItem, ...]
+    origin: tuple | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

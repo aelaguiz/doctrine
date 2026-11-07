@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import tomllib
 import unittest
@@ -189,3 +190,74 @@ team T: "Team"
                 self.assertEqual(code, 1)
                 self.assertIn(error_code, error)
                 self.assertFalse((root / 't/AGENTS.md').exists())
+
+    def test_check_json_shape(self):
+        for settings in ("", '[tool.doctrine.runtimes.codex]\nlimit = 1\n', '[tool.doctrine.runtimes.codex]\nlimit = 1\nover = "warn"\n'):
+            with self.subTest(settings=settings):
+                root = self.project('team T: "Team"\n    home: "t"\n    role: "Team text."\n', settings=settings)
+                plain_code, _, plain_error = self.cli(root, "check")
+                code, output, error = self.cli(root, "check", "--json")
+                self.assertEqual(code, plain_code)
+                self.assertEqual(error, "")
+                result = json.loads(output)
+                self.assertEqual(set(result), {"format_version", "ok", "homes", "errors", "warnings"})
+                self.assertEqual(result["format_version"], 1)
+                self.assertEqual(result["homes"], 1)
+                self.assertEqual(result["ok"], code == 0)
+                for finding in result["errors"] + result["warnings"]:
+                    self.assertEqual(set(finding), {"code", "text"})
+                    self.assertIn(finding["text"], plain_error)
+                    self.assertTrue(finding["text"].startswith(finding["code"]))
+                if settings:
+                    self.assertEqual(len(result["warnings"] if 'over = "warn"' in settings else result["errors"]), 1)
+        root = self.project('team T: "Team"\n    home: "t"\n    role: "{{agent:missing}}"\n')
+        code, output, error = self.cli(root, "check", "--json")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertEqual(json.loads(output)["errors"][0]["code"], "E601")
+
+    def test_e634_section_gone_from_source(self):
+        source = 'team T: "Team"\n    home: "t"\n    work: "Old work"\n        "Do the work."\n'
+        root = self.project(source)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        path = root / "t/AGENTS.md"
+        path.write_text(path.read_text().replace("Do the work.", "Hand edit."))
+        (root / "prompts/AGENTS.prompt").write_text('team T: "Team"\n    home: "t"\n    role: "New work."\n')
+        before = path.read_bytes()
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("- Old work: no longer in source", error)
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_e634_matches_repeated_titles_in_order(self):
+        root = self.project('''abstract agent Base:
+    role: "Test."
+    first: "Same"
+        "First."
+    second: "Same"
+        "Second."
+team T: "Team"
+    home: "t"
+    member qa[Base]: "QA"
+        override second: "Same"
+            "Changed."
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        path = root / "t/qa/AGENTS.md"
+        path.write_text(path.read_text().replace("Changed.", "Hand edit."))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("- Same: T.qa at prompts/AGENTS.prompt:10", error)
+        self.assertNotIn("- Same: Base", error)
+
+    def test_e634_companion_names_only_its_source(self):
+        root = self.project('team T: "Team"\n    home: "t"\n    work: "Work"\n        details:\n            "Long case."\n')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        path = root / "t/DETAILS.md"
+        path.write_text(path.read_text().replace("Long case.", "Hand edit."))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("`t/DETAILS.md` was edited by hand.", error)
+        self.assertIn("source=prompts/AGENTS.prompt", error)
+        self.assertNotIn("- Work:", error)

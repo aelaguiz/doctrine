@@ -19,6 +19,7 @@ judgment-first authoring review.
 
 `doctrine check` fails an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.
+`check --json` keeps the plain finding text in each warning's `text` field.
 Examples 183 and 184 prove these cases.
 
 ## Shipped Graph Warnings

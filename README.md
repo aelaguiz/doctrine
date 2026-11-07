@@ -129,6 +129,7 @@ For a configured team target, build its home tree and check its rules and budget
 ```bash
 doctrine build .
 doctrine check
+doctrine load
 ```
 
 Teams keep shared text in their own folders. Members load those levels

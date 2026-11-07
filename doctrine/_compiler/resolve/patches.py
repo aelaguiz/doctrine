@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace, fields as dataclass_fields, is_dataclass
 
 from doctrine import model
-from doctrine._compiler.home_map import stamp_agent
+from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _agent_typed_field_key
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
@@ -312,11 +312,11 @@ def expand_agent_patches(context, agent, *, unit):
             source_span=agent.source_span,
         )
     fields = order_team_fields(agent, fields, keys=keys, parent_fields=parent_fields, unit=unit)
-    return replace(agent, fields=tuple(fields)), expansion
+    return replace(agent, fields=tuple(fields), drops=(*(parent.drops if agent.parent_ref else ()), *drop_records(agent.fields, ".".join((*unit.module_parts, agent.name))))), expansion
 
 
-def apply_path_patches(context, parent_items, paths, *, owner_label, unit):
-    def walk(node, tail, prefix, patch):
+def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origin=None):
+    def walk(node, tail, prefix, patch, replacement_origin):
         path = ".".join(patch.path)
 
         def error(code, summary, detail):
@@ -357,14 +357,17 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit):
                         ),
                     )
             title = value.title if value.title is not None else node.title
+            if replacement_origin and value.title is not None and (not isinstance(node, model.ReadableBlock) or node.kind == "section"):
+                replacement_origin = (*replacement_origin[:4], (*replacement_origin[4][:-1], title))
             if isinstance(node, model.ReadableBlock):
-                return replace(node, title=title, payload=items)
+                return replace(node, title=title, payload=items, origin=replacement_origin)
             return replace(
                 node,
                 title=title,
+                origin=replacement_origin,
                 items=items
                 if isinstance(node, model.LocalSection)
-                else context._resolve_section_body_items(items, unit=unit, owner_label=owner_label),
+                else context._resolve_section_body_items(items, unit=unit, owner_label=owner_label, origin=replacement_origin),
             )
         if isinstance(node, ResolvedAgentSlot):
             children = node.body.items
@@ -390,7 +393,7 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit):
                 "Missing patch target",
                 f"`{owner_label}` patches `{path}`, but its parent has no such key.",
             )
-        replacement = walk(matched, tail[1:], (*prefix, tail[0]), patch)
+        replacement = walk(matched, tail[1:], (*prefix, tail[0]), patch, child_origin(replacement_origin, tail[0], patch.source_span, matched.title if isinstance(matched, (ResolvedSectionItem, model.LocalSection)) or isinstance(matched, model.ReadableBlock) and matched.kind == "section" else None))
         children = tuple(
             replacement if child is matched else child
             for child in children
@@ -415,5 +418,5 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit):
                 path=unit.prompt_file.source_path,
                 source_span=patch.source_span,
             )
-        result[path[0]] = walk(result[path[0]], path[1:], (path[0],), patch)
+        result[path[0]] = walk(result[path[0]], path[1:], (path[0],), patch, child_origin(patch.origin or origin, path[0], patch.source_span, result[path[0]].body.title if isinstance(result[path[0]], ResolvedAgentSlot) else None))
     return result

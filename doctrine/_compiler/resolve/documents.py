@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine._compiler.home_map import source_origin, child_origin
+from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from dataclasses import replace
 
@@ -130,6 +130,7 @@ class ResolveDocumentsMixin:
         parent_label: str | None = None,
         origin: tuple | None = None,
     ) -> ResolvedDocumentBody:
+        drops = (*(parent_document.drops if parent_document else ()), *drop_records(document_body.items, origin[0] if origin else owner_label))
         document_body, patches = prepare_body_patches(
             document_body, parent_document, kind="document", owner_label=owner_label,
             unit=unit, source_span=owner_source_span,
@@ -146,7 +147,7 @@ class ResolveDocumentsMixin:
         )
         if parent_document is None:
             return ResolvedDocumentBody(
-                title=document_body.title, origin=origin,
+                title=document_body.title, origin=origin, drops=drops,
                 preamble=resolved_preamble,
                 items=self._resolve_non_inherited_document_items(
                     document_body.items, origin=origin,
@@ -294,7 +295,7 @@ class ResolveDocumentsMixin:
             )
 
         return ResolvedDocumentBody(
-            title=document_body.title, origin=origin,
+            title=document_body.title, origin=origin, drops=drops,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
         )
