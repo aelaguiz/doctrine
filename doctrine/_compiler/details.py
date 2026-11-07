@@ -70,7 +70,7 @@ def render_companion(parts):
     return "\n\n".join(output) + "\n"
 
 
-def details_origin(block, body, title):
+def details_origin(block, body):
     def reads(value):
         if isinstance(value, str):
             return bool(LATE_ROOT.search(value))
@@ -88,6 +88,6 @@ def details_origin(block, body, title):
                        if field.name != "origin")
         return False
     origin = block.origin
-    if origin and origin.companion and (reads(origin.headings) or reads(block) or reads(body) or reads(title)):
+    if origin and origin.companion and (reads(origin.headings) or reads(block) or reads(body)):
         return replace(origin, companion=None)
     return origin
