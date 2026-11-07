@@ -83,3 +83,20 @@ expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
     "",
     "[more]: ../../../specialists/qa/more.md",
 ] }
+
+[[cases]]
+name = "a class's default beats a folder's value"
+status = "active"
+kind = "cli_contract"
+project = "project_class_default"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "AGENTS.md" = [
+    "This file is for every agent here.",
+], "pods/growth/AGENTS.md" = [
+    "This file is for every member of the growth pod.",
+], "pods/feature/AGENTS.md" = [
+    "This file is for the people building features.",
+], "pods/outside/AGENTS.md" = [
+    "We work for the company.",
+] }

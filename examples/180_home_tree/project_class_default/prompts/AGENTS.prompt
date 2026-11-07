@@ -1,0 +1,36 @@
+# A team reads its own values, then its parent teams, then the folders above.
+
+abstract team Company:
+    values:
+        company: "the company"
+
+
+abstract team Level[Company]:
+    role: "This file is for {{team:audience}}."
+
+
+team Root[Level]: "the repository"
+    home: "."
+    values:
+        audience: "every agent here"
+
+
+abstract team Pod[Level]:
+    values:
+        audience: "every member of {{team:title}}"
+
+
+team GrowthPod[Pod]: "the growth pod"
+    home: "pods/growth"
+
+
+team FeaturePod[Pod]: "the feature pod"
+    home: "pods/feature"
+    values:
+        audience: "the people building features"
+
+
+# This team has no parent. It reads the root team's class on the way out.
+team OutsidePod: "the outside pod"
+    home: "pods/outside"
+    role: "We work for {{team:company}}."
