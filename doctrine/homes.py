@@ -14,7 +14,7 @@ from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.late_binding import bind_home
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
-from doctrine._compiler.teams import team_members, team_contract, member_home
+from doctrine._compiler.teams import team_members, team_contract, member_home, find_home_team
 from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
     _build_runtime_emit_plan,
@@ -41,7 +41,7 @@ def with_header(text, source):
     )
 
 
-def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rules):
+def home_files(target, home, owner, unit, compiled, pointers, plan, context):
     text = render_markdown(compiled)
     if pointers:
         links = (
@@ -56,7 +56,7 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
     filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
     files = {}
     if plan is not None:
-        files = runtime_files(plan, compiled, target, evaluate_rules=evaluate_rules)
+        files = runtime_files(plan, compiled, target, evaluate_rules=context.session.evaluate_rules)
         del files[plan.markdown_path]
         source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
         files = {
@@ -68,6 +68,17 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
             for path, content in files.items()
         }
     if plan is not None or text.strip():
+        if isinstance(owner, model.Team) and home != ".":
+            title = bind_home(context, owner.title, owner, unit=unit)
+            text = f"This file loads for every session started under `{home}/`. If yours started there, you are a member of {title}. If not, it only describes them.\n\n" + text
+        elif isinstance(owner, model.Member):
+            _, team = find_home_team(context, owner, unit=unit)
+            team_title = bind_home(context, team.title, owner, unit=unit)
+            title = bind_home(context, owner.title, owner, unit=unit)
+            text = f"If your session started in this folder, you are {team_title}'s {title}. If not, this only describes that role.\n\n" + text
+        elif not isinstance(owner, model.Team) and owner.title:
+            title = bind_home(context, owner.title, owner, unit=unit)
+            text = f"If your session started in this folder, you are {title}. If not, this only describes that role.\n\n" + text
         source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
         source = os.path.relpath(source_unit.prompt_file.source_path, target.project_config.config_dir)
         files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
@@ -97,7 +108,7 @@ def compile_home(target, session, context, home, owner, unit, plan):
         )
     home_map = build_home_map(compiled)
     compiled, parts, pointers = split_details(compiled, home)
-    files = home_files(target, home, owner, unit, compiled, pointers, plan, session.evaluate_rules)
+    files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
     data = {
         "owner": owner,
         "unit": unit,

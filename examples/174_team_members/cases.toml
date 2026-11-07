@@ -2,6 +2,15 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
+name = "build writes team and member scope lines but not a root team line"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "AGENTS.md" = ["Shared work."], "pods/growth/AGENTS.md" = ["This file loads for every session started under `pods/growth/`. If yours started there, you are a member of the growth pod. If not, it only describes them.", "", "Grow the product."], "pods/growth/qa/AGENTS.md" = ["If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.", "", "Test the work."] }
+
+[[cases]]
 name = "a team compiles only its own text"
 status = "active"
 kind = "render_contract"

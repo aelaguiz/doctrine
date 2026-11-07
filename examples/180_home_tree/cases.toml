@@ -19,18 +19,24 @@ expected_file_lines = { "AGENTS.md" = [
     "",
     "Say what you found.",
 ], "pods/AGENTS.md" = [
+    "This file loads for every session started under `pods/`. If yours started there, you are a member of the pods. If not, it only describes them.",
+    "",
     "This file is for every pod member. If your session started in `pods` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
     "",
     "## How pods work",
     "",
     "A pod works toward one goal.",
 ], "pods/growth/AGENTS.md" = [
+    "This file loads for every session started under `pods/growth/`. If yours started there, you are a member of the growth pod. If not, it only describes them.",
+    "",
     "This file is for every member of the growth pod. If your session started in `pods/growth` or a folder under it, you are one of them. If it started anywhere else, this describes them; it does not make you one.",
     "",
     "## What counts as a win",
     "",
     "More users who pay.",
 ], "pods/growth/qa/AGENTS.md" = [
+    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "",
     "You are the growth pod's QA.",
     "",
     "## Your job",
@@ -73,6 +79,8 @@ project = "project_links"
 args = ["build", "."]
 expected_exit = 0
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
+    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "",
     "You test what users meet.",
     "",
     "## Older work",
@@ -94,9 +102,15 @@ expected_exit = 0
 expected_file_lines = { "AGENTS.md" = [
     "This file is for every agent here.",
 ], "pods/growth/AGENTS.md" = [
+    "This file loads for every session started under `pods/growth/`. If yours started there, you are a member of the growth pod. If not, it only describes them.",
+    "",
     "This file is for every member of the growth pod.",
 ], "pods/feature/AGENTS.md" = [
+    "This file loads for every session started under `pods/feature/`. If yours started there, you are a member of the feature pod. If not, it only describes them.",
+    "",
     "This file is for the people building features.",
 ], "pods/outside/AGENTS.md" = [
+    "This file loads for every session started under `pods/outside/`. If yours started there, you are a member of the outside pod. If not, it only describes them.",
+    "",
     "We work for the company.",
 ] }

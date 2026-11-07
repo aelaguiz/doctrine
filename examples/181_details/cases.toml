@@ -12,6 +12,8 @@ stdout_contains = [
   "built 2 homes",
 ]
 expected_file_lines = { "pods/growth/AGENTS.md" = [
+    "This file loads for every session started under `pods/growth/`. If yours started there, you are a member of the growth pod. If not, it only describes them.",
+    "",
     "## When to wait",
     "",
     "Wait only when what you wait for could change what you'd do.",
@@ -22,6 +24,8 @@ expected_file_lines = { "pods/growth/AGENTS.md" = [
     "",
     "On October 13 a watcher moved a member mid test pass.",
 ], "pods/growth/qa/AGENTS.md" = [
+    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "",
     "You test.",
     "",
     "## How you think",
