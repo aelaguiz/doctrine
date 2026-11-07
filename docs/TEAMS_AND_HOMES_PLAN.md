@@ -1304,6 +1304,7 @@ add up, so one thing can have two owners. There is no precedence. Ownership does
 pass to children, because a child is a different declaration. `doctrine diff` reports a
 change to an owned declaration, and any change to a `person` declaration, since that
 changes who owns what. A ref that doesn't resolve is `E651`, as is a glob matching no file.
+A ref to a member is `E651` too, because `owns:` takes top-level declarations. Own its team.
 
 A glob owns every declaration in a matching `.prompt` file, and every declaration that reads
 a matching `from` file, since that file's text is part of the declaration. `diff` reads
@@ -1748,7 +1749,8 @@ section, and one `_details/` file results).
 `test_sources_lists_inline_by_site`, `test_owners_add_up`, `test_e651_glob_matches_nothing`,
 `test_e650_repeated_field`, `test_e650_unknown_person_filter`, `test_glob_owns_from_file_readers`,
 `test_owners_read_from_both_sides`, `test_bad_quote_stops_only_its_home`,
-`test_inline_person_title_reaches_home`, `test_w305_counts_unreached_citations`.
+`test_inline_person_title_reaches_home`, `test_w305_counts_unreached_citations`,
+`test_e651_member_ref`, `test_person_and_workflow_share_a_name`.
 
 **`tests/test_messages.py`**: `test_both_homes_share_body`, `test_field_change_reaches_both`,
 `test_e660_shape_on_message`, `test_e301_for_other_targets_stays`, `test_w303_no_reader`,
@@ -1911,7 +1913,7 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E634` | `Hand edit in a compiled file` | `` `<path>` was edited by hand. `` then, for a file the build would overwrite, one line per differing section, `` - <title>: <origin> at <site> ``; `` `<path>` was written by hand. ``; `` `<path>` is a link Doctrine didn't write. `` Hint: ``Move the edit to its source, then build. `--force` overwrites it.`` |
 | `E640` | `No home matches` | `` `<selector>` matches no home. `` |
 | `E641` | `Bad revision` | `` `<rev>` is not a revision in this repository. `` |
-| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` `<field>` in `<name>` is set twice. ``; `` Inline quote: <what's wrong>. ``; `` `--person <name>` is not a `person`. `` |
+| `E650` | `Invalid quote` | `` Quote `<name>` needs `by:`. ``; `` Quote `<name>` needs `on:`. ``; `` `by:` in `<name>` is not a `person`. ``; `` `on:` in `<name>` must be a date, `YYYY-MM-DD`. ``; `` `<field>` in `<name>` is set twice. ``; `` `--person <name>` is not a `person`. ``. Inline: `` Inline quote: `<ref>` is not a `person`. ``; `` Inline quote: `<text>` must be a date, `YYYY-MM-DD`. ``; `` Inline quote: `<field>` is not a field. Use `to`, `about`, or `source`. ``; `` Inline quote: `<field>` is set twice. ``; `` Inline quote: the words must come last, as `: "<words>"`. ``; `` Inline quote: `{` and `}` can't appear inside one. `` |
 | `E651` | `Invalid owner` | `` `<ref>` in `owns:` resolves to nothing. ``; `` Glob `<glob>` in `owns:` matches no file. `` |
 | `E652` | `Missing Markdown source` | `` `<decl>` reads `<path>`, which does not exist. `` |
 | `E653` | `Duplicate heading key` | `` `<path>` has two sibling headings with key `<key>`, at lines <a> and <b>. `` |
