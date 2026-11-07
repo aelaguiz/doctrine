@@ -34,3 +34,55 @@ kind = "cli_contract"
 project = "project"
 args = ["where", "No such words"]
 expected_exit = 1
+
+[[cases]]
+name = "each declaration has its own share"
+status = "active"
+kind = "cli_contract"
+project = "project_shares"
+args = ["diff", "--base-tree", "base"]
+expected_exit = 0
+expected_stdout_lines = [
+  "2 declarations changed. 3 homes changed.",
+  "",
+  "Numbers (prompts/AGENTS.prompt) reaches 3 homes, +9 characters each:",
+  "  ., pod, pod/qa",
+  "",
+  "Qa (prompts/AGENTS.prompt) reaches 1 home, +3 characters:",
+  "  pod/qa",
+  "",
+  "Each home: +9 to +12 characters",
+]
+
+[[cases]]
+name = "a team value has reach without its own text"
+status = "active"
+kind = "cli_contract"
+project = "project_value"
+args = ["diff", "--base-tree", "base"]
+expected_exit = 0
+expected_stdout_lines = [
+  "1 declaration changed. 1 home changed.",
+  "",
+  "Pod (prompts/AGENTS.prompt) reaches 1 home:",
+  "  pod/qa",
+]
+
+[[cases]]
+name = "a declaration has a share in only some homes"
+status = "active"
+kind = "cli_contract"
+project = "project_partial"
+args = ["diff", "--base-tree", "base"]
+expected_exit = 0
+expected_stdout_lines = [
+  "2 declarations changed. 3 homes changed.",
+  "",
+  "Pod.c (prompts/AGENTS.prompt) reaches 1 home, +5 characters:",
+  "  pod/c",
+  "",
+  "Qa (prompts/AGENTS.prompt) reaches 3 homes, +1 to +4 characters in 2:",
+  "  pod/a, pod/b, pod/c",
+  "",
+  "Each home: +1 to +5 characters",
+]

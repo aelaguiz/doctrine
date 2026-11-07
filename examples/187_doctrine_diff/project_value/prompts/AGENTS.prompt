@@ -1,0 +1,7 @@
+abstract agent Qa:
+    role: "Test {{agent:thing}}."
+team Pod: "Pod"
+    home: "pod"
+    values:
+        thing: "all work"
+    member qa[Qa]: "QA"

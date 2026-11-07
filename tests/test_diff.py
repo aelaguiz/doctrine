@@ -53,7 +53,8 @@ class DiffTests(HomeProject, unittest.TestCase):
         self.assertEqual([home["home"] for home in result["homes"]], ["pod/qa"])
         self.assertEqual(
             result["changed_declarations"][0]["homes"],
-            [{"home": "pod/qa", "delta": {"always_on": 6, "details": 0}}],
+            [{"home": "pod/qa", "delta": {"always_on": 6, "details": 0},
+              "own": {"always_on": 6, "details": 0}}],
         )
 
     def test_change_at_a_level_reaches_homes_below(self):
@@ -64,7 +65,8 @@ class DiffTests(HomeProject, unittest.TestCase):
         self.assertEqual([home["home"] for home in result["homes"]], ["pod", "pod/qa"])
         self.assertEqual(
             result["changed_declarations"][0]["homes"],
-            [{"home": path, "delta": {"always_on": 4, "details": 0}}
+            [{"home": path, "delta": {"always_on": 4, "details": 0},
+              "own": {"always_on": 4, "details": 0}}
              for path in ("pod", "pod/qa")],
         )
         self.assertEqual([home["delta"]["always_on"] for home in result["homes"]], [4, 4])
@@ -120,10 +122,61 @@ team T: "Team"
         ))
         declaration, = result["changed_declarations"]
         self.assertEqual(declaration["homes"], [
-            {"home": "pod/a", "delta": {"always_on": 1, "details": 0}},
-            {"home": "pod/b", "delta": {"always_on": 4, "details": 0}},
+            {"home": "pod/a", "delta": {"always_on": 1, "details": 0},
+             "own": {"always_on": 1, "details": 0}},
+            {"home": "pod/b", "delta": {"always_on": 4, "details": 0},
+             "own": {"always_on": 4, "details": 0}},
         ])
         self.assertNotIn("delta", declaration)
+
+    def test_each_declaration_has_its_own_share_on_a_selected_home(self):
+        source = '''workflow Numbers: "Numbers"
+    "Count."
+abstract agent Qa:
+    role: "Test."
+team Root: "Root"
+    home: "."
+    numbers: Numbers
+team Pod: "Pod"
+    home: "pod"
+    member qa[Qa]: "QA"
+'''
+        new = source.replace('"Count."', '"Count all data."').replace('"Test."', '"Test it."')
+        result = json.loads(self.compare(source, new, "pod/qa", "--json"))
+        self.assertEqual([item["name"] for item in result["changed_declarations"]], ["Numbers", "Qa"])
+        for declaration, size in zip(result["changed_declarations"], (9, 3)):
+            self.assertEqual(declaration["homes"], [{
+                "home": "pod/qa", "delta": {"always_on": 12, "details": 0},
+                "own": {"always_on": size, "details": 0},
+            }])
+        self.assertIn("Each home: +12 characters", self.compare(source, new, "pod/qa"))
+
+    def test_declaration_share_can_reach_only_some_homes(self):
+        source = '''abstract agent Qa:
+    role: "Test {{agent:word}}."
+team Pod: "Pod"
+    home: "pod"
+    member a[Qa]: "A"
+        values:
+            word: "a"
+    member b[Qa]: "B"
+        values:
+            word: "long"
+    member c[Qa]: "C"
+        role: "Other."
+'''
+        new = source.replace("{{agent:word}}", "{{agent:word}}{{agent:word}}")
+        new = new.replace("Other.", "Other work.")
+        result = json.loads(self.compare(source, new, "--json"))
+        qa = next(item for item in result["changed_declarations"] if item["name"] == "Qa")
+        self.assertEqual([home["own"] for home in qa["homes"]], [
+            {"always_on": 1, "details": 0}, {"always_on": 4, "details": 0}, None,
+        ])
+        self.assertIn("reaches 3 homes, +1 to +4 characters in 2:", self.compare(source, new))
+        self.assertIn("reaches 3 homes, +1 characters in 2:", self.compare(
+            source.replace('word: "long"', 'word: "a"'),
+            new.replace('word: "long"', 'word: "a"'),
+        ))
 
     def test_failed_base_exits_2(self):
         before = self.project(SOURCE.replace("You test.", "{{agent:missing}}"))
@@ -291,6 +344,7 @@ team T:''').replace('"Read the change."', '"Read {{agent:word}}."')
         ))
         self.assertEqual([item["name"] for item in result["changed_declarations"]], ["Root"])
         self.assertEqual(result["homes"][0]["delta"]["always_on"], 2)
+        self.assertIsNone(result["changed_declarations"][0]["homes"][0]["own"])
 
     def test_from_file_content_changes_source_hash(self):
         source = (

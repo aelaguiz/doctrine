@@ -62,6 +62,7 @@ def compare_entries(old, new, home, selected, new_homes, new_sections):
             "path": list(path),
             "status": "added" if a is None else "removed" if b is None else "changed",
             "origin": entry.origin,
+            "always_on": entry.always_on,
             "delta": (b.size_utf16 if b else 0) - (a.size_utf16 if a else 0),
         })
         if old and new and a is None and path in new["map"].wildcard_keys:
@@ -103,13 +104,14 @@ def compare_homes(before, after, selectors):
     }
     old_loads = {load["home"]: load for load in before["loads"]}
     new_loads = {load["home"]: load for load in after["loads"]}
-    home_changes, new_sections, details_changes = [], {}, set()
+    home_changes, new_sections, details_changes, level_entries = [], {}, set(), {}
     levels = {
         level for home in selected for homes in (old_homes, new_homes)
         for level, _ in loaded_levels(homes, home)
     }
     for home in sorted(levels):
         old, new = old_homes.get(home), new_homes.get(home)
+        level_entries[home] = compare_entries(old, new, home, selected, new_homes, new_sections)
         details_changed = any(
             old_files.get(path) != new_files.get(path)
             for data in (old, new) if data for path in data["pointers"]
@@ -135,12 +137,11 @@ def compare_homes(before, after, selectors):
             if data else 0
             for data, files in ((old, old_files), (new, new_files))
         ]
-        entries = compare_entries(old, new, home, selected, new_homes, new_sections)
         if home in selected:
             home_changes.append({
                 "home": home,
                 "delta": {"always_on": sizes[1] - sizes[0], "details": details[1] - details[0]},
-                "entries": entries,
+                "entries": level_entries[home],
             })
     return {
         "homes": home_changes, "changed_levels": changed_levels,
@@ -149,7 +150,7 @@ def compare_homes(before, after, selectors):
             {"origin": origin, "path": list(path), "homes": sorted(paths)}
             for (origin, path), paths in sorted(new_sections.items())
         ],
-        "outputs": outputs,
+        "outputs": outputs, "level_entries": level_entries,
     }
 
 
@@ -175,7 +176,14 @@ def build_result(before, after, comparison, base):
                 for side in (before, after)
                 for level, data in loaded_levels(side["homes"], path)
             ):
-                reached.append({"home": path, "delta": home["delta"]})
+                levels = {level for side in (before, after)
+                          for level, _ in loaded_levels(side["homes"], path)}
+                entries = [entry for level in levels for entry in comparison["level_entries"][level]
+                           if entry["origin"] == name and (level == path or entry["always_on"])]
+                own = {key: sum(entry["delta"] for entry in entries
+                                if entry["always_on"] == (key == "always_on"))
+                       for key in ("always_on", "details")} if entries else None
+                reached.append({"home": path, "delta": home["delta"], "own": own})
         if not reached:
             continue
         kind = next(
@@ -208,22 +216,32 @@ def render_diff(result):
         f"changed. {len(homes)} {'home' if len(homes) == 1 else 'homes'} changed."
     ]
     for declaration in declarations:
-        deltas = [home["delta"] for home in declaration["homes"]]
+        deltas = [home["own"] for home in declaration["homes"] if home["own"] is not None]
+        count = len(declaration["homes"])
+        line = (
+            f"{declaration['name']} ({declaration['site'].rsplit(':', 1)[0]}) "
+            f"reaches {count} {'home' if count == 1 else 'homes'}"
+        )
+        if not deltas:
+            blocks.append(line + ":\n  " + ", ".join(home["home"] for home in declaration["homes"]))
+            continue
         a = min(delta["always_on"] for delta in deltas)
         b = max(delta["always_on"] for delta in deltas)
         size = f"{a:+,}" if a == b else f"{a:+,} to {b:+,}"
-        count = len(deltas)
-        line = (
-            f"{declaration['name']} ({declaration['site'].rsplit(':', 1)[0]}) "
-            f"reaches {count} {'home' if count == 1 else 'homes'}, {size} characters"
-        )
-        if count > 1 and a == b:
+        line += f", {size} characters"
+        if len(deltas) < count:
+            line += f" in {len(deltas)}"
+        elif count > 1 and a == b:
             line += " each"
         a = min(delta["details"] for delta in deltas)
         b = max(delta["details"] for delta in deltas)
         if a or b:
             line += " (details " + (f"{a:+,}" if a == b else f"{a:+,} to {b:+,}") + ")"
         blocks.append(line + ":\n  " + ", ".join(home["home"] for home in declaration["homes"]))
+    if len(declarations) > 1:
+        deltas = [home["delta"]["always_on"] for home in homes]
+        a, b = min(deltas), max(deltas)
+        blocks.append("Each home: " + (f"{a:+,}" if a == b else f"{a:+,} to {b:+,}") + " characters")
     if result["owned"]:
         blocks.append("Owned declarations changed:\n" + "\n".join(
             f"  {entry['name']}" + (f", owned by {', '.join(entry['owners'])}" if entry['owners'] else "")

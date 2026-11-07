@@ -1,0 +1,12 @@
+abstract agent Qa:
+    role: "Test {{agent:word}}."
+team Pod: "Pod"
+    home: "pod"
+    member a[Qa]: "A"
+        values:
+            word: "a"
+    member b[Qa]: "B"
+        values:
+            word: "long"
+    member c[Qa]: "C"
+        role: "Other."

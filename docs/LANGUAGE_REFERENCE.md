@@ -2331,13 +2331,17 @@ for the first five `RULE###` codes. Examples
 [186](../examples/186_rule_load_assertions) prove team scopes and load assertions.
 
 `doctrine diff --base HEAD` shows changed declarations, the homes they reach,
-and each home's load change in UTF-16 characters. Details have their own size
-change. Use `--base-tree DIR` to compare two project folders, or `--with PATH`
-to compare only those working files against the base. Repeat `--with` for
-several files. JSON `outputs` lists only files whose bytes changed. Each
-changed declaration's `homes` list holds a `home` and its `delta`. New
-sections that arrive through `inherit *` get their own list. A base that
-cannot compile exits 2 and prints its error. No comparison takes place.
+and each declaration's share of the load change in UTF-16 characters. Details
+have their own size change. When several declarations changed, the report also
+shows each home's total change. Use `--base-tree DIR` to compare two project
+folders, or `--with PATH` to compare only those working files against the
+base. Repeat `--with` for several files. JSON `outputs` lists only files whose
+bytes changed. Each
+changed declaration's `homes` list holds a `home`, its total `delta`, and the
+declaration's `own` share, or `null` when it has no entries. If only some
+reached homes have a share, the text report says how many. New sections that
+arrive through `inherit *` get their own list. A base that cannot compile
+exits 2 and prints its error. No comparison takes place.
 A bad revision is `E641` and exits 1. A team name selects the team's home
 and the homes under it. Removed homes keep the source that changed them.
 An edit to a member from an abstract team reports once, under that team.

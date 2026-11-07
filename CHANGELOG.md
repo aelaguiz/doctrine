@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
+- `doctrine diff` shows each declaration's share of a home's change. JSON
+  keeps the total `delta` and adds the declaration's `own` share.
 
 ### Markdown import (6.0.0; language 6.0)
 

@@ -1,0 +1,10 @@
+workflow Numbers: "Numbers"
+    "Count all data."
+abstract agent Qa:
+    role: "Test it."
+team Root: "Root"
+    home: "."
+    numbers: Numbers
+team Pod: "Pod"
+    home: "pod"
+    member qa[Qa]: "QA"
