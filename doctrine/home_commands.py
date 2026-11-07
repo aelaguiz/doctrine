@@ -8,6 +8,7 @@ import sys
 import subprocess
 from html import unescape
 from contextlib import contextmanager, nullcontext, redirect_stderr
+from dataclasses import replace
 from difflib import SequenceMatcher
 from os.path import relpath
 from pathlib import Path, PurePosixPath
@@ -25,7 +26,7 @@ from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
 from doctrine.homes import compile_homes, build_homes
 from doctrine.parser import parse_file
-from doctrine.project_config import load_project_config
+from doctrine.project_config import load_project_config, project_file_path, real_project_path
 from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
@@ -36,8 +37,8 @@ from doctrine.runtime_load import (
 
 @contextmanager
 def resolve_target(args):
-    source = revision_source(args) if args.rev else nullcontext((args.pyproject, None, None))
-    with source as (project_path, target_names, live_root):
+    source = revision_source(args) if args.rev else nullcontext((args.pyproject, None, None, None))
+    with source as (project_path, target_names, live_root, revision):
         config = load_project_config(resolve_pyproject_path(project_path))
         if args.target:
             raw_targets = (config.raw_emit or {}).get("targets", [])
@@ -50,6 +51,9 @@ def resolve_target(args):
                 item["name"] for item in raw_targets if item["output_dir"] == chosen["output_dir"]
             )
         targets = load_emit_targets(project_path, target_names=target_names)
+        if revision:
+            targets = {name: replace(target, project_config=replace(target.project_config, revision=revision))
+                       for name, target in targets.items()}
         sessions, team_targets = {}, []
         for target in targets.values():
             if target.entrypoint.name in ("AGENTS.prompt", "SOUL.prompt"):
@@ -196,7 +200,8 @@ def load(args):
             for _, level in loaded_levels(homes, home):
                 for ref, _ in level["file_refs"]:
                     path = Path(ref[2])
-                    name = relpath(path, target.project_config.config_dir)
+                    name = relpath(real_project_path(target.project_config, path),
+                                   real_project_path(target.project_config, target.project_config.config_dir))
                     if name not in shared:
                         text = (generated[path] if path in generated else path.read_bytes()).decode()
                         shared[name] = {"path": name, "sizes": {
@@ -207,13 +212,12 @@ def load(args):
             -row["sizes"][target.runtimes[0]], row["path"]))
         if live_root:
             output = live_root / target.output_dir.relative_to(target.project_config.config_dir)
-            for values in settings.values():
-                for file in values["external"]:
-                    file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
         loads = home_loads(target, homes, files, settings, selected)
         for home in loads:
             for runtime, load in home["runtimes"].items():
                 for file in load["files"]:
+                    if live_root and file["kind"] in ("external", "reserved"):
+                        file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
                     if live_root and file["kind"] == "home":
                         link = PurePosixPath(file["path"]).parent / RUNTIMES[runtime][0]
                         file["on_disk"] = (output / link).is_file()
@@ -323,7 +327,8 @@ def where_source(args):
             if not isinstance(declaration, model.FileDecl):
                 continue
             base = target.output_dir if declaration.body is not None else target.project_config.config_dir
-            path = (base / Path(declaration.path).expanduser()).resolve()
+            path = ((base / declaration.path).resolve() if declaration.body is not None
+                    else project_file_path(target.project_config, declaration.path))
             reached = {home for home in selected for _, level in loaded_levels(homes, home)
                        if any(ref[2] == str(path) for ref, _ in level["file_refs"])}
             if (args.home and not reached) or (declaration.body is not None and path not in generated):

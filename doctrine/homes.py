@@ -26,6 +26,7 @@ from doctrine.emit_docs import (
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown, render_readable_block
+from doctrine.project_config import project_file_path
 from doctrine.runtime_load import home_budgets, loaded_levels
 
 
@@ -109,13 +110,13 @@ def compile_home(target, session, context, home, owner, unit, plan):
             roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots)
         )
     home_map = build_home_map(map_text(
-        compiled, lambda text: render_file_refs(text, target.output_dir / home)))
+        compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config)))
     compiled, parts, pointers = split_details(compiled, home)
     refs = [(json.loads(match[1]), always_on)
             for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
             for text in model_walk(value) if isinstance(text, str)
             for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
-    compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home))
+    compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
     files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
     data = {
         "owner": owner,
@@ -130,13 +131,13 @@ def compile_home(target, session, context, home, owner, unit, plan):
     return data, files, parts
 
 
-def companion_files(homes, companions, output_dir):
+def companion_files(homes, companions, target):
     files = {}
     for path, parts in companions.items():
         if path.startswith("_details/"):
             parts.sort(key=lambda part: part[1].origin.line)
         source = parts[0][1].origin.site.rsplit(":", 1)[0]
-        text = render_file_refs(render_companion(parts), (output_dir / path).parent)
+        text = render_file_refs(render_companion(parts), (target.output_dir / path).parent, target.project_config)
         local = [
             data for home, data in homes.items() if str(PurePosixPath(home) / "DETAILS.md") == path
         ]
@@ -245,12 +246,12 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             contract = team_contract(context, owner, unit=data["unit"], compiled_members=compiled)
             files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
-    files.update(companion_files(homes, companions, target.output_dir))
+    files.update(companion_files(homes, companions, target))
     declarations = [(unit, decl) for unit in session.units()
                     for decl in unit.declarations.files_by_name.values()]
     referenced = {Path(ref[2]) for data in homes.values() for ref, _ in data["file_refs"]}
     for unit, decl in declarations:
-        path = (target.project_config.config_dir / Path(decl.path).expanduser()).resolve()
+        path = project_file_path(target.project_config, decl.path)
         if (decl.body is None and (path in referenced or whole)
                 and not path.is_file()):
             raise compile_error(code="E652", summary="Missing Markdown source",
@@ -281,7 +282,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                        if other.body is not None and other.path not in written
                        and (target.output_dir / other.path).resolve() in referenced)
         source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
-        files[path] = with_header(render_file_refs(raw, (target.output_dir / path).parent), source).encode()
+        files[path] = with_header(render_file_refs(raw, (target.output_dir / path).parent, target.project_config), source).encode()
     for data in homes.values():
         data["shared_files"] = [str(Path(ref[2]).relative_to(target.output_dir))
             for ref, _ in data["file_refs"] if Path(ref[2]).is_relative_to(target.output_dir)

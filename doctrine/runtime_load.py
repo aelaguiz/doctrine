@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tomllib
+import subprocess
 from os.path import relpath
 from pathlib import Path, PurePosixPath
 
@@ -9,6 +10,7 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_links import markdown_destinations
 from doctrine._compiler.teams import agent_parents
+from doctrine.project_config import project_file_path, real_project_path
 
 
 RUNTIMES = {"claude": ("CLAUDE.md", "utf16", 150000), "codex": ("AGENTS.md", "bytes", 32768)}
@@ -57,7 +59,6 @@ def runtime_settings(target):
         ):
             if not valid:
                 bad(f"`{key}` for `{runtime}`: {detail}.")
-        external = []
         if not isinstance(values["external"], list) or any(
             not isinstance(item, dict) or not isinstance(item.get("path"), str)
             for item in values["external"]
@@ -66,33 +67,7 @@ def runtime_settings(target):
         for item in values["external"]:
             if "reserve" in item and type(item["reserve"]) is not int:
                 bad(f"`reserve` for `{runtime}`: must be an integer.")
-            path = Path(item["path"]).expanduser()
-            path = path if path.is_absolute() else base / path
-            if path.is_file():
-                try:
-                    text = path.read_bytes().decode("utf-8")
-                except UnicodeDecodeError:
-                    bad(f"`external` for `{runtime}`: `{item['path']}` is not UTF-8.")
-                size = text_size(text, runtime)
-            elif "reserve" in item:
-                text, size = "", item["reserve"]
-            else:
-                raise compile_error(
-                    code="E633",
-                    summary="External file missing",
-                    detail=f"`{item['path']}` is listed for {runtime}, "
-                    "but it is absent and has no `reserve`.",
-                )
-            external.append(
-                {
-                    "path": item["path"],
-                    "size": size,
-                    "kind": "external" if path.is_file() else "reserved",
-                    "text": text,
-                    "on_disk": path.is_file(),
-                }
-            )
-        settings[runtime] = {**values, "external": external}
+        settings[runtime] = values
     return settings
 
 
@@ -127,29 +102,71 @@ def loaded_levels(homes, home):
     return sorted(levels, key=lambda pair: len(PurePosixPath(pair[0]).parts))
 
 
-def follow_imports(path, text, reader, seen, depth):
+def follow_imports(path, text, reader, seen, depth, config):
     if depth == 4:
         return []
     rows = []
     for start, end, is_import in markdown_destinations(text):
         if not is_import:
             continue
-        imported = (path.parent / Path(text[start:end].replace("\\ ", " ")).expanduser()).resolve()
+        imported = project_file_path(config, path.parent / Path(text[start:end].replace("\\ ", " ")).expanduser())
         if imported in seen:
             continue
         seen.add(imported)
         content = reader(imported)
         rows.append((imported, content))
-        rows.extend(follow_imports(imported, content, reader, seen, depth + 1))
+        rows.extend(follow_imports(imported, content, reader, seen, depth + 1, config))
     return rows
 
 
 def home_loads(target, homes, files, settings, selected):
     loads = []
+    config = target.project_config
     generated = {(target.output_dir / path).resolve(): content for path, content in files.items()
                  if isinstance(content, bytes)}
+    generated.update({(target.output_dir / path).resolve(): files[str(PurePosixPath(path).parent / str(content))]
+                      for path, content in files.items() if isinstance(content, Path)})
+    for runtime, values in settings.items():
+        external = []
+        for item in values["external"]:
+            path = project_file_path(target.project_config, item["path"])
+            if path in generated or path.is_file():
+                try:
+                    text = (generated[path] if path in generated else path.read_bytes()).decode("utf-8")
+                except UnicodeDecodeError:
+                    raise compile_error(code="E632", summary="Invalid runtime settings",
+                        detail=f"`external` for `{runtime}`: `{item['path']}` is not UTF-8.")
+                size = text_size(text, runtime)
+            elif "reserve" in item:
+                text, size = "", item["reserve"]
+            else:
+                raise compile_error(
+                    code="E633",
+                    summary="External file missing",
+                    detail=f"`{item['path']}` is listed for {runtime}, "
+                    "but it is absent and has no `reserve`.",
+                )
+            external.append(
+                {
+                    "path": item["path"],
+                    "size": size,
+                    "kind": "external" if path in generated or path.is_file() else "reserved",
+                    "text": text,
+                    "on_disk": path.is_file(),
+                }
+            )
+        values["external"] = external
     def file_text(path):
-        return (generated[path] if path in generated else path.read_bytes()).decode("utf-8", errors="replace")
+        if path in generated:
+            return generated[path].decode("utf-8", errors="replace")
+        if config.revision:
+            root, scratch, _, revision, overlays = config.revision
+            if path.is_relative_to(scratch) and real_project_path(config, path) not in overlays:
+                result = subprocess.run(["git", "show", f"{revision}:{path.relative_to(scratch)}"],
+                                        cwd=root, capture_output=True)
+                return result.stdout.decode("utf-8", errors="replace") if not result.returncode else None
+        real = real_project_path(config, path)
+        return real.read_bytes().decode("utf-8", errors="replace") if real.is_file() else None
     for home, data in homes.items():
         if home not in selected:
             continue
@@ -189,10 +206,10 @@ def home_loads(target, homes, files, settings, selected):
                 level, item = by_folder.get(folder, (None, None))
                 candidate = folder / RUNTIMES[runtime][0]
                 if item is None or str(PurePosixPath(level) / RUNTIMES[runtime][0]) not in files:
-                    if candidate.is_file():
-                        text = file_text(candidate.resolve())
+                    text = file_text(project_file_path(config, candidate))
+                    if text is not None:
                         loaded.append({"path": relpath(candidate, root), "size": text_size(text, runtime),
-                            "kind": "level", "text": text, "on_disk": True})
+                            "kind": "level", "text": text, "on_disk": real_project_path(config, candidate).is_file()})
                     if item is None:
                         continue
                 path = str(PurePosixPath(level) / RUNTIMES[runtime][0])
@@ -222,7 +239,7 @@ def home_loads(target, homes, files, settings, selected):
                     on_demand[relpath(path, target.project_config.config_dir)] = text_size(file_text(path), runtime)
                 for ref, always_on in item["file_refs"]:
                     path = Path(ref[2])
-                    name = relpath(path, target.project_config.config_dir)
+                    name = relpath(real_project_path(config, path), real_project_path(config, root))
                     if ref[0] == "load" and always_on:
                         if runtime == "codex" and not any(file["path"] == name for file in loaded):
                             text = file_text(path)
@@ -232,16 +249,21 @@ def home_loads(target, homes, files, settings, selected):
                         on_demand[name] = text_size(file_text(path), runtime)
             if runtime == "claude":
                 expanded, seen = [], set()
+                home_paths = {project_file_path(config, root / entry["path"])
+                              for entry in loaded if entry["kind"] == "home"}
                 for entry in loaded:
-                    path = (root / entry["path"]).resolve()
+                    path = project_file_path(config, root / entry["path"])
+                    if entry["kind"] == "external" and path in home_paths:
+                        continue
                     if path in seen:
                         continue
                     seen.add(path)
                     expanded.append(entry)
                     if entry["kind"] != "reserved":
-                        for imported, text in follow_imports(path, entry["text"], file_text, seen, 0):
-                            expanded.append({"path": relpath(imported, root), "size": text_size(text, runtime),
-                                "kind": "import", "text": text, "on_disk": imported.is_file()})
+                        for imported, text in follow_imports(path, entry["text"], file_text, seen, 0, config):
+                            expanded.append({"path": relpath(real_project_path(config, imported), real_project_path(config, root)),
+                                "size": text_size(text, runtime), "kind": "import", "text": text,
+                                "on_disk": real_project_path(config, imported).is_file()})
                 loaded = expanded
             limit = next(
                 (budget[runtime] for budget in budgets if runtime in budget), setting["limit"]
@@ -330,7 +352,7 @@ def padded_rows(rows):
 
 
 def has_home_file(load):
-    return any(file["kind"] == "home" for file in load["files"])
+    return any(file["kind"] in ("home", "level") for file in load["files"])
 
 
 def is_missing(file):
@@ -378,7 +400,7 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "read first" if file["kind"] == "read_first" else "hand-written" if file["kind"] == "level" else "missing" if is_missing(file)
+                    "read first" if file["kind"] == "read_first" else "hand-written" if file["kind"] == "level" else "import" if file["kind"] == "import" else "missing" if is_missing(file)
                     else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]

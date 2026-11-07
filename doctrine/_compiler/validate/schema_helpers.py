@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from doctrine import model
+from doctrine.project_config import project_file_path
 from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.provenance import render_inline_quotes
@@ -175,7 +175,8 @@ class ValidateSchemaHelpersMixin:
                     raise authored_compile_error(code="E655", summary="File ref can't go here",
                         detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
                 base = self.session.emit_root if file_decl.body is not None else self.session.project_config.config_dir
-                path = (base / Path(file_decl.path).expanduser()).resolve()
+                path = ((base / file_decl.path).resolve() if file_decl.body is not None
+                        else project_file_path(self.session.project_config, file_decl.path))
                 if file_decl.body is None and not path.is_file():
                     raise authored_compile_error(code="E652", summary="Missing Markdown source",
                         detail=f"`{file_decl.name}` names `{file_decl.path}`, which doesn't exist.", unit=file_unit, source_span=file_decl.source_span)

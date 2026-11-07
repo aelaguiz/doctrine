@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 import tomllib
@@ -745,6 +746,110 @@ team T: "Team"
             self.assertEqual(code, 0, error)
             report = json.loads(output)["homes"][0]["runtimes"]["claude"]
             self.assertEqual(report["on_demand"][0]["size"], 17)
+
+    def test_rev_walks_revision_files_and_reads_outside_paths_from_disk(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            outside = Path(temporary) / "outside.md"
+            outside.write_text("Before.\n")
+            root = self.project()
+            guide = root / "guide.md"
+            parent = root / "pods/CLAUDE.md"
+            parent.parent.mkdir()
+            relative = os.path.relpath(outside, root)
+            (root / "prompts/AGENTS.prompt").write_text(f'''file Guide: "Guide"
+    path: "{guide}"
+file Outside: "Outside"
+    path: "{relative}"
+team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Read {{{{Outside}}}}."
+        work: "Work"
+            "Read {{{{load:Guide}}}}"
+''')
+            guide.write_text(f"Revision guide.\n@nested.md\n@{relative}\n")
+            (root / "nested.md").write_text("Revision import.\n")
+            parent.write_text("Revision parent.\n")
+            self.git_project(root)
+            guide.write_text("Changed guide.\n")
+            (root / "nested.md").write_text("Changed import.\n")
+            parent.write_text("Changed parent.\n")
+            outside.write_text("Changed outside.\n")
+            code, output, error = self.cli(root, "load", "T.qa", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            rows = {row["path"]: row for row in report["files"]}
+            self.assertEqual(rows["pods/CLAUDE.md"]["size"], len("Revision parent.\n"))
+            self.assertEqual(rows["guide.md"]["size"], len(f"Revision guide.\n@nested.md\n@{relative}\n"))
+            self.assertEqual(rows["nested.md"]["size"], len("Revision import.\n"))
+            self.assertEqual(rows[relative]["size"], len("Changed outside.\n"))
+            self.assertEqual(report["on_demand"], [{"path": relative, "size": len("Changed outside.\n")}])
+            code, _, error = self.cli(root, "build", "--rev", "HEAD")
+            self.assertEqual(code, 0, error)
+            link = os.path.relpath(outside, root / "pods/team/qa")
+            self.assertIn(f"[Outside]({link})", (root / "pods/team/qa/AGENTS.md").read_text())
+
+    def test_rev_external_and_imports_use_revision_and_overlays(self):
+        root = self.project('''team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Test."
+''')
+        external = root / "external.md"
+        (root / "pyproject.toml").write_text((root / "pyproject.toml").read_text() +
+            f'\n[tool.doctrine.runtimes.claude]\nexternal = [{{path="{external}"}}]\n')
+        external.write_text("Revision external.\n@import.md\n")
+        imported = root / "import.md"
+        imported.write_text("Revision import.\n")
+        self.git_project(root)
+        external.write_text("Changed external.\n")
+        imported.write_text("Overlay import.\n")
+        (root / "pods").mkdir()
+        (root / "pods/CLAUDE.md").write_text("Untracked parent.\n")
+        code, output, error = self.cli(root, "load", "T.qa", "--rev", "HEAD", "--with", "import.md", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        self.assertEqual(rows[0]["size"], len("Revision external.\n@import.md\n"))
+        self.assertEqual(rows[1]["size"], len("Overlay import.\n"))
+        self.assertNotIn("pods/CLAUDE.md", [row["path"] for row in rows])
+
+    def test_rev_reads_a_file_outside_the_project_but_inside_the_repository(self):
+        root = self.project()
+        project = root / "project"
+        project.mkdir()
+        (root / "prompts").rename(project / "prompts")
+        (root / "pyproject.toml").rename(project / "pyproject.toml")
+        (project / "prompts/AGENTS.prompt").write_text('''file Guide: "Guide"
+    path: "../guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        (root / "guide.md").write_text("Revision guide.\n")
+        self.git_project(root)
+        (root / "guide.md").write_text("Changed guide.\n")
+        code, output, error = self.cli(project, "load", "t", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(report["on_demand"], [{"path": "../guide.md", "size": 16}])
+
+    def test_rev_uses_resolved_path_for_a_symlink_outside_the_repository(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            outside = Path(temporary) / "outside.md"
+            outside.write_text("Before.\n")
+            root = self.project('''file Guide: "Guide"
+    path: "link.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+            (root / "link.md").symlink_to(outside)
+            self.git_project(root)
+            outside.write_text("Changed outside.\n")
+            code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            self.assertEqual(report["on_demand"][0]["size"], len("Changed outside.\n"))
 
     def test_rev_reads_codex_limit_from_revision(self):
         root = self.project(example="183_load_budgets")

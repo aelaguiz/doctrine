@@ -4,15 +4,18 @@ import os
 import posixpath
 import re
 import json
+from pathlib import Path
 
 from doctrine import model
+from doctrine.project_config import real_project_path
 from doctrine._compiler.markdown_reader import fenced_lines
 
 
-def render_file_refs(text, folder):
+def render_file_refs(text, folder, config):
     def render(match):
         mode, title, path, anchor = json.loads(match[1])
-        relative = os.path.relpath(path, folder).replace(os.sep, "/")
+        relative = os.path.relpath(real_project_path(config, Path(path)),
+                                   real_project_path(config, folder)).replace(os.sep, "/")
         if anchor:
             relative += "#" + anchor
         if mode == "load":

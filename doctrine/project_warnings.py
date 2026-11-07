@@ -6,7 +6,7 @@ from collections import defaultdict
 from difflib import SequenceMatcher
 from itertools import combinations
 from os.path import relpath
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
 from lark import Token
 
@@ -18,6 +18,7 @@ from doctrine._compiler.naming import model_walk
 from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
+from doctrine.project_config import project_file_path
 
 
 def near_copy_warnings(session):
@@ -59,7 +60,7 @@ def near_copy_warnings(session):
                     name = ".".join((*unit.module_parts, declaration.name))
                     texts.append((name, source, 1, source.read_text()))
             if isinstance(declaration, model.FileDecl) and declaration.body is None:
-                source = base / Path(declaration.path).expanduser()
+                source = project_file_path(session.project_config, declaration.path)
                 name = ".".join((*unit.module_parts, declaration.name))
                 texts.append((name, source, 1, source.read_text()))
         for name, source, line, text in texts:

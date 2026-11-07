@@ -59,6 +59,19 @@ team T: "Team"
         self.assertIn("hand-written", output)
         self.assertIn("import", output)
 
+    def test_external_compiled_level_uses_compiled_text_once(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Compiled text."
+''', settings='[tool.doctrine.runtimes.claude]\nexternal = [{path="t/AGENTS.md"}]\n')
+        (root / "t").mkdir()
+        (root / "t/AGENTS.md").write_bytes(b"Old binary: \xff\n")
+        code, output, error = self.cli(root, "load", "t", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(len(report["files"]), 1)
+        self.assertEqual(report["files"][0]["kind"], "home")
+
     def test_selected_build_ignores_another_homes_budget(self):
         source = '''team T: "Team"
     home: "t"
