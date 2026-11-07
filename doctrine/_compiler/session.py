@@ -153,6 +153,8 @@ class CompilationSession:
         self.evaluate_rules = evaluate_rules
         self.rule_agents = None
         self.value_reads: set[tuple[Path, int]] = set()
+        self.value_origins: set[tuple[Path, int, str]] = set()
+        self.value_home: str | None = None
         self.emit_paths: dict[str, Path] = {}
         self.emit_root: Path | None = None
         self.provided_prompt_roots = compile_config.provided_prompt_roots

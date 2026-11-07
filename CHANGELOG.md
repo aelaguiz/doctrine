@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Shared cases can use agent and team values. Cases that read those words or
   hold a roster go to each home's `DETAILS.md`, including words read through refs.
   `E621` is retired.
+- `doctrine where` finds values before the text that reads them, shows a close
+  sentence when there is no exact match, and searches the last commit when the
+  working source has errors. JSON adds `closest`.
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
 - `doctrine diff` shows each declaration's share of a home's change. JSON

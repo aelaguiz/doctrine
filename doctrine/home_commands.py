@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
+import re
 import sys
 import subprocess
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, redirect_stderr
 from dataclasses import replace
+from difflib import SequenceMatcher
+from os.path import relpath
 from pathlib import Path, PurePosixPath
 
+from doctrine import model
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
@@ -218,36 +223,97 @@ def run_command(args, command):
         return 2
 
 
-def where(args):
+def where_source(args):
     with resolve_target(args) as (target, session, _):
         if target is None:
-            return 2
+            return None
         homes, _, selected, _ = compile_homes(
             target, session=session, selectors=[args.home] if args.home else ()
         )
+        if args.home:
+            selected = {home for home in selected
+                        if home == args.home or homes[home]["owner"].name == args.home}
+            if not selected:
+                raise compile_error(code="E640", summary="No home matches",
+                                    detail=f"`{args.home}` matches no home.")
         needle = " ".join(args.words.casefold().split())
-        matches = {}
+        matches, sentences, readers = {}, {}, {}
+        for path, line, home in session.value_origins:
+            readers.setdefault(home, set()).add((path, line))
+        reached_values = {}
         for home in sorted(selected):
             for level, data in loaded_levels(homes, home):
+                for site in readers.get(level, ()):
+                    reached_values.setdefault(site, set()).add(home)
                 for entry, text in data["map"].texts.items():
-                    if (level != home and not entry.always_on) or needle not in " ".join(
-                        text.casefold().split()
-                    ):
+                    if level != home and not entry.always_on:
                         continue
                     key = (entry.origin, entry.origin_path, entry.site)
-                    matches.setdefault(key, set()).add(home)
-        result = [
+                    if needle in " ".join(text.casefold().split()):
+                        matches.setdefault(key, set()).add(home)
+                    for sentence in re.split(r"(?<=[.!?])\s+|\n", text):
+                        if sentence.strip():
+                            sentences.setdefault((*key, sentence.strip()), set()).add(home)
+        values = {}
+        for unit, declaration in declarations_in(session).values():
+            if isinstance(declaration, (model.Agent, model.Team, model.Member)):
+                for field in declaration.fields:
+                    if isinstance(field, model.ValuesField):
+                        for key, text, span in field.items:
+                            path = unit.prompt_file.source_path
+                            if needle in " ".join(text.casefold().split()):
+                                reached = reached_values.get((path, span.line), set())
+                                if not args.home or reached:
+                                    site = f"{relpath(path, target.project_config.config_dir)}:{span.line}"
+                                    values[path, span.line] = {
+                                        "origin": f"value {key}", "site": site,
+                                        "homes": sorted(reached),
+                                    }
+        result = list(values.values()) + [
             {"origin": ".".join((origin, *path)), "site": site, "homes": sorted(reached)}
             for (origin, path, site), reached in matches.items()
         ]
-        if args.json:
-            print(json.dumps({"format_version": 1, "matches": result}))
-        else:
-            for match in result:
-                count = len(match["homes"])
-                print(f"{match['origin']}  {match['site']}")
-                print(
-                    f"  reaches {count} {'home' if count == 1 else 'homes'}: "
-                    + ", ".join(match["homes"])
-                )
-        return 0 if matches else 1
+        closest, best = None, 0.6
+        if not result:
+            for (origin, path, site, sentence), reached in sorted(
+                sentences.items(), key=lambda item: (item[0][2].rsplit(":", 1)[0],
+                                                       int(item[0][2].rsplit(":", 1)[1]))
+            ):
+                score = SequenceMatcher(None, needle.split(), sentence.casefold().split()).ratio()
+                if score >= best and (closest is None or score > best):
+                    closest, best = {
+                        "origin": ".".join((origin, *path)), "site": site,
+                        "homes": sorted(reached), "text": sentence,
+                    }, score
+        return {"matches": result, "closest": closest}
+
+
+def where(args):
+    try:
+        result = where_source(args)
+    except DoctrineError as original:
+        if original.code == "E640":
+            raise
+        try:
+            with redirect_stderr(io.StringIO()):
+                result = where_source(argparse.Namespace(**{**vars(args), "rev": "HEAD"}))
+            if result is None:
+                raise original
+        except (DoctrineError, subprocess.CalledProcessError, OSError):
+            raise original
+        print("Source has errors. Searching HEAD.", file=sys.stderr)
+    if result is None:
+        return 2
+    if args.json:
+        print(json.dumps({"format_version": 1, **result}))
+    else:
+        for match in result["matches"] or ([result["closest"]] if result["closest"] else []):
+            if not result["matches"]:
+                print("No exact match. Closest:")
+            count = len(match["homes"])
+            print(f"{match['origin']}  {match['site']}")
+            if "text" in match:
+                print(f"  {match['text']}")
+            reach = f"  reaches {count} {'home' if count == 1 else 'homes'}"
+            print(reach + (": " + ", ".join(match["homes"]) if count else ""))
+    return 0 if result["matches"] else 1

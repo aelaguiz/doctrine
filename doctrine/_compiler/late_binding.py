@@ -125,6 +125,9 @@ def bind_home(context, compiled, agent, *, unit, _stack=None):
         for environment in environments:
             if key in environment:
                 text, source, span = environment[key]
+                if context.session.value_home is not None:
+                    context.session.value_origins.add(
+                        (source.prompt_file.source_path, span.line, context.session.value_home))
                 text = context._interpolate_authored_prose_string(
                     text, unit=source,
                     owner_label=f"value {key}", surface_label="value text")

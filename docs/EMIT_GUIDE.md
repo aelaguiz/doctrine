@@ -137,6 +137,18 @@ Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
 order, or `--json` for the versioned report. A `--full` header marks missing
 files. Companions have a separate size.
 
+`where "words"` finds the source of words and the homes that read them. It
+ignores case and extra whitespace. A matching `values:` entry comes first,
+followed by the sentence that uses it. A value with no readers shows zero
+homes. Use `--home PATH` to search one home and the values it reads.
+
+If no text matches, `where` may show `No exact match. Closest:`, the closest
+sentence, its source, and its reach. It exits 1 even when it finds a close
+sentence. JSON has `matches` and `closest`; `closest` is null when there is
+an exact match or no close sentence. If the source has errors, `where` searches
+the last commit and says so on stderr. If that also fails, it reports the
+original error.
+
 The hand-edit report matches sections by title and then by order when titles
 repeat. A removed section says `no longer in source`. A companion names its
 source file without guessing which section owns an edit. Markdown-backed
