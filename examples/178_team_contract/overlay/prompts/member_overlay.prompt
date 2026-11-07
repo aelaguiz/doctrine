@@ -1,0 +1,41 @@
+abstract agent QA:
+    role: "{{agent:title}} uses {{agent:source}}."
+    testing: "Testing"
+        "Test the change."
+abstract agent NewQA:
+    role: "New {{agent:title}} uses {{agent:source}}."
+    testing: "Testing"
+        "Test the change."
+abstract team Base:
+    member qa[QA]: "QA"
+abstract team UpdatedBase:
+    member qa[NewQA]: "QA"
+team Product[Base]: "Product"
+    home: "product"
+    values:
+        source: "team"
+    override member qa:
+        values:
+            source: "recordings"
+        override testing:
+            super
+            "Start from recordings."
+        report: "Report"
+            "Share the result."
+team Updated[UpdatedBase]: "Updated"
+    home: "updated"
+    values:
+        source: "team"
+    override member qa:
+        values:
+            source: "recordings"
+team Renamed[Base]: "Renamed"
+    home: "renamed"
+    values:
+        source: "team"
+    override member qa: "Reviewer"
+team Replaced[Product]: "Replaced"
+    home: "replaced"
+    override member qa[NewQA]:
+        values:
+            source: "replacement"

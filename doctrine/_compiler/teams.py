@@ -170,6 +170,17 @@ def order_team_fields(agent, fields, *, keys, parent_fields, unit):
                     detail=f"Team `{agent.name}` uses key `{field.key}` twice.",
                     path=unit.prompt_file.source_path, source_span=field.source_span,
                 )
+            if isinstance(field, model.Member) and field.override:
+                inherited = parent_fields[field.key][0]
+                if field.parent_ref is None and inherited.fields:
+                    raise compile_error(
+                        code="E612", summary="Conflicting patches",
+                        detail=f"`{agent.name}` overlays `{field.key}`, but the inherited member has its own body. Move that body into its class, or write `override member {field.key}[Role]` to replace it.",
+                        path=unit.prompt_file.source_path, source_span=field.source_span,
+                    )
+                own_members[field.key] = replace(own_members[field.key],
+                    parent_ref=field.parent_ref or inherited.parent_ref,
+                    title=field.title if field.title is not None else inherited.title)
         order = [key for key in inherited_members if key in own_members] + [key for key in own_members if key not in inherited_members]
         fields = [field for field in fields if not isinstance(field, model.Member)] + [
             replace(own_members[key], scope_unit=own_members[key].scope_unit or unit) for key in order

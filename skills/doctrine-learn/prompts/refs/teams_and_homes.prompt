@@ -71,7 +71,16 @@ team ProductPod[CrossFunctional]: "the product pod"
         unit: "change"
     override member lead[PodRole]: "pod lead"
 """
-        "Add a member by declaring it. Use `drop` with a reason to remove one. `override member` replaces a member whole. Inherited members keep their order and come before new members."
+        "Add a member by declaring it. Use `drop` with a reason to remove one. `override member` without a role keeps the inherited class and patches it; the inherited member must have no body. With a role, it replaces the member whole. Inherited members keep their order and come before new members."
+        code:
+            language: prompt
+            text: """team ProductPod[CrossFunctionalPod]: "the product pod"
+    home: "pods/product"
+    override member qa:
+        override testing:
+            super
+            "Start from recordings of users with history."
+"""
 
     section roster: "Show Who Makes Each Call"
         "A `roster` builds a table from a team's direct members. This is from `examples/177_roster`."

@@ -30,6 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Markdown import keeps extra space after bold leads, leaves quotes in bold leads
   and code spans, and lists long quotes one line at a time outside code spans.
 - Parse errors point out a string ended by a stray quote and clip long source lines.
+- A member override without a role keeps the inherited class and title. It can
+  patch the class and set a new title. A replacement with a role keeps the
+  inherited title when no new title is given.
 - Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.

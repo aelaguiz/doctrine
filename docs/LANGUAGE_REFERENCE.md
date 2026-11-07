@@ -373,9 +373,12 @@ A team holds a role, values, budgets, slots, and members. It cannot hold typed a
 fields such as `inputs:` or `review:`. Slots and members share one key space.
 
 A team may inherit another team. Its inherited members come first, followed
-by new members. `override member key[Role]: "Title"` replaces an inherited
-member whole. `drop key: "Reason"` removes it. Each concrete team gets its
-own copy of the member templates from an abstract team.
+by new members. `override member key:` keeps the inherited member's class and
+title and patches the class. It can also set a new title. The inherited member
+must have no body of its own; move that body into its class or replace the member.
+`override member key[Role]:` replaces an inherited member whole and keeps its
+title unless a new title is given. `drop key: "Reason"` removes it. Each concrete
+team gets its own copy of the member templates from an abstract team.
 
 A member's parent may be an abstract agent, a concrete agent, or another
 member. Without a parent, it needs its own role. `Team.key` works in agent

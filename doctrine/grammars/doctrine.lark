@@ -170,7 +170,7 @@ team_body: team_item+
           | drop_item
 team_home_stmt: "home" ":" string _NL?
 member_decl: "member" CNAME inheritance? ":" string _NL member_body?
-member_override_decl: "override" "member" CNAME inheritance? ":" string _NL member_body?
+member_override_decl: "override" "member" CNAME inheritance? ":" string? _NL member_body?
 member_body: _INDENT agent_field+ _DEDENT
 inheritance: "[" name_ref "]"
 inherit_all: "inherit" "*" _NL?
