@@ -342,7 +342,7 @@ class ParseError(DoctrineError):
             previous = stack[-1] if stack else None
         else:
             previous = None
-        if (isinstance(previous, Token) and previous.type in {"ESCAPED_STRING", "MULTILINE_STRING"}
+        if (isinstance(previous, Token) and previous.type == "ESCAPED_STRING"
                 and previous.end_line == line):
             hints = ('A `"` ended this string early. Use `\\"`, or wrap the text in `"""`.',)
 

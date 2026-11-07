@@ -30,6 +30,8 @@ def import_markdown(args):
 
     def replace_quote(match):
         name, written_date, context, words = match.groups()
+        if lead and match.start() < lead.end(1):
+            return match[0]
         try:
             day = datetime.strptime(written_date, "%B %d, %Y")
         except ValueError:
@@ -108,13 +110,17 @@ def import_markdown(args):
         if args.kind == "agent" and len(stack) == 1 and key in _RESERVED_AGENT_FIELD_KEYS:
             key += "_"
         keys = stack[-1]["keys"]
-        count = keys.get(key, 0) + 1
-        keys[key] = count
-        return f"{key}_{count}" if count > 1 else key
+        base, count = key, 1
+        while key in keys:
+            count += 1
+            key = f"{base}_{count}"
+        keys[key] = True
+        return key
 
     for number, line, inside_fence, heading in markdown_lines(lines, path=args.path, start=start):
         if not inside_fence and not heading:
-            line = re.sub(r'(?:^|(?<=\()|(?<=[.!?] ))([A-Z][a-zA-Z0-9]*(?: [A-Z][a-zA-Z0-9]*){0,2}), '
+            lead = re.match(r'^\*\*(.+?)\*\*(?:\s|$)', line)
+            line = re.sub(r'(?:^|(?<=\()|(?<=[.!?] )|(?<=[.!?][")] ))([A-Z][a-zA-Z0-9]*(?: [A-Z][a-zA-Z0-9]*){0,2}), '
                           r'([A-Z][a-z]+ \d{1,2}, \d{4})(?:, ([^\n{}]+?))?: "([^"{}]*)"(?=$|[\s).,;:!?])',
                           replace_quote, line)
         if not inside_fence:
@@ -143,11 +149,10 @@ def import_markdown(args):
         pending.append(line)
     flush()
     original = "\n".join(([f"# {title}"] if start == 2 else []) + lines)
-    for quote in re.finditer(r'"((?:[^"]|(?<=\s)"(?=\S)[^"]*")*)"', original):
-        number = original.count("\n", 0, quote.start()) + 1
-        column = quote.start() - original.rfind("\n", 0, quote.start()) - 1
-        if (number, column) not in converted and len(quote[1].split()) >= 6:
-            print(f"Quote left as prose at line {number}.", file=sys.stderr)
+    for number, line in enumerate(original.splitlines(), 1):
+        for quote in re.finditer(r'"((?:[^"]|(?<=\s)"(?=\S)[^"]*")*)"', line):
+            if (number, quote.start()) not in converted and len(quote[1].split()) >= 6:
+                print(f"Quote left as prose at line {number}.", file=sys.stderr)
     output[:0] = [f'person {key}: {title_string(name)}' for key, name in people.items()]
     print("\n".join(output))
     if args.check:

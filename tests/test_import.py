@@ -71,6 +71,27 @@ class ImportTests(HomeProject, unittest.TestCase):
         self.assertIn('    craft: "Craft"', source)
         self.assertIn('    craft_2: "Craft"', source)
 
+    def test_generated_paragraph_keys_do_not_collide(self):
+        text = '**Thing.** First.\n\n**Thing.** Second.\n\n**Thing 2.** Third.\n'
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertIn('paragraph thing_2_2:', source)
+
+    def test_opening_bold_with_extra_space_stays_text(self):
+        for gap in ('  ', '\t'):
+            with self.subTest(gap=gap):
+                (self.root / 'source.md').write_text(f'**Who.**{gap}You test.\n\nPhones are nearby.\n')
+                code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+                self.assertEqual(code, 0, error)
+                self.assertIn(f'**Who.**{gap}You test.', source)
+
+    def test_sentence_ending_in_quote_allows_next_quote(self):
+        (self.root / 'source.md').write_text('Owner, November 6, 2026: "One." Owner, November 7, 2026: "Two."\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(source.count('{{Owner,'), 2)
+
     def test_agent_opening_gets_keyed_paragraphs(self):
         text = '# Title\n\n**Who you are.** You test.\n\nPhones are nearby.\n'
         (self.root / 'source.md').write_text(text)
@@ -149,10 +170,23 @@ class ImportTests(HomeProject, unittest.TestCase):
         self.assertNotIn('person JaneDoe:', source)
         self.assertEqual(error, ''.join(f'Quote left as prose at line {n}.\n' for n in (1, 2, 3)) + 'Render matches.\n')
 
-    def test_unconverted_multiline_quote_reports_its_first_line(self):
+    def test_unconverted_multiline_quote_is_not_listed(self):
         (self.root / 'source.md').write_text('"one two three\nfour five six"\n')
         code, _, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
         self.assertEqual(code, 0, error)
+        self.assertEqual(error, 'Render matches.\n')
+
+    def test_stray_quote_does_not_shift_later_lines(self):
+        (self.root / 'source.md').write_text('A 6" board.\n"one two three four five six"\n')
+        code, _, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(error, 'Quote left as prose at line 2.\nRender matches.\n')
+
+    def test_quote_in_bold_lead_stays_prose(self):
+        (self.root / 'source.md').write_text('**(Jane Doe, November 5, 2026: "one two three four five six")** Body.\n\nOther.\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertNotIn('person JaneDoe:', source)
         self.assertEqual(error, 'Quote left as prose at line 1.\nRender matches.\n')
 
     def test_check_with_quote_in_agent_without_opening(self):

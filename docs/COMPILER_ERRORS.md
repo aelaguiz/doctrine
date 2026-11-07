@@ -84,7 +84,7 @@ Stability rules:
 | `E202` | Abstract agent does not render | The target agent exists, but it is marked `abstract`. |
 | `E203` | Duplicate role field | One agent defines `role` more than once. |
 | `E204` | Duplicate typed field | One agent defines the same typed field more than once. |
-| `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field. |
+| `E205` | Concrete agent is missing role field | A concrete agent is missing its required `role` field or has dropped every role paragraph. |
 | `E206` | Retired | Retired in language 6.0. A role keeps its authored position. Slots may come before it. |
 | `E207` | Cyclic agent inheritance | Agent inheritance forms a cycle. |
 | `E208` | Unsupported agent field | A field reached the compiler on a surface the shipped subset does not support. |
@@ -136,7 +136,7 @@ Stability rules:
 | `E292` | Could not resolve prompts root | The compiler could not find the owning `prompts/` root for the current prompt file path. |
 | `E293` | Duplicate enum member key | One `enum` body repeats the same member key. |
 | `E294` | Duplicate enum member wire | One `enum` body repeats the same host-facing `wire` value. |
-| `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a document block, properties entry, inline schema entry, footnote, or table child. |
+| `E295` | Duplicate readable key | A readable surface repeats a keyed child such as a role paragraph, document block, properties entry, inline schema entry, footnote, or table child. |
 | `E296` | Readable guard reads disallowed source | A readable `when` guard reads emitted output fields or other disallowed sources instead of only declared inputs and enum members. |
 | `E297` | Invalid readable block structure | A readable block uses an invalid structural shape, such as an unknown callout kind, single-line raw/code text, an empty inline or named table, or a multiline inline table cell. |
 | `E298` | Invalid render_profile declaration | A `render_profile` declares an unknown target, unsupported mode, or duplicate target rule. |

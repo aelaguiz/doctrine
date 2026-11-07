@@ -45,7 +45,7 @@ def opening_paragraphs(lines):
         groups[-1] = groups[-1].rstrip("\n")
     result = []
     for text in groups:
-        bold = re.match(r"^\*\*(.+?)\*\*(?:[ \t]+(?=[^\n])|\n)", text)
+        bold = re.match(r"^\*\*(.+?)\*\*(?: (?=[^ \t\n])|\n)", text)
         inline = bold and not bold[0].endswith("\n")
         result.append((bold[1] if inline else None, text[bold.end():] if inline else text,
                        bold[1] if bold else text))
@@ -155,8 +155,11 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
                 paragraphs = []
                 for lead, text, key_text in parts:
                     key = heading_key(" ".join(key_text.split()[:4]))
-                    keys[key] = keys.get(key, 0) + 1
-                    key = f"{key}_{keys[key]}" if keys[key] > 1 else key
+                    base, count = key, 1
+                    while key in keys:
+                        count += 1
+                        key = f"{base}_{count}"
+                    keys[key] = True
                     paragraphs.append(model.ReadableBlock("paragraph", key, literal(lead) if lead else None, (literal(text),)))
                 fields = (model.RoleScalar(text=literal(role_text(paragraphs)), paragraphs=tuple(paragraphs)), *fields)
             else:

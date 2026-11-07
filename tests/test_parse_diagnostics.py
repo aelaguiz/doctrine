@@ -27,6 +27,9 @@ class ParseDiagnosticsTests(unittest.TestCase):
         with self.assertRaises(ParseError) as caught:
             parse_text('agent A:\n    role: "Words" @\n')
         self.assertEqual(caught.exception.diagnostic.hints, error.diagnostic.hints)
+        with self.assertRaises(ParseError) as caught:
+            parse_text('agent A:\n    role: """Words""" @\n')
+        self.assertNotIn('ended this string early', ' '.join(caught.exception.diagnostic.hints))
 
     def test_e132_only_after_arrow(self):
         from doctrine.diagnostics import ParseError

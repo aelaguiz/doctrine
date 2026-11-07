@@ -296,7 +296,7 @@ class CompileAgentMixin:
                 seen_typed_fields[field_key] = field
                 field_specs.append(AgentFieldCompileSpec(field=field))
 
-            if not seen_role and not isinstance(agent, model.Team):
+            if (not seen_role or isinstance(first_role_field, model.RoleScalar) and not first_role_field.text) and not isinstance(agent, model.Team):
                 raise compile_error(
                     code="E205",
                     summary="Concrete agent is missing role field",
@@ -661,7 +661,7 @@ class CompileAgentMixin:
                 paragraphs = interpolate_role_paragraphs(
                     field.paragraphs, self._interpolate_authored_prose_string,
                     unit=unit, owner_label=f"agent {agent_name}")
-                return model.RoleScalar(text=role_text(paragraphs))
+                return model.RoleScalar(text=role_text(paragraphs), paragraphs=paragraphs)
             return model.RoleScalar(
                 text=self._interpolate_authored_prose_string(
                     field.text,
