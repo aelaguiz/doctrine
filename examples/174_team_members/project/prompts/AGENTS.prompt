@@ -1,0 +1,9 @@
+team Root: "the repository"
+    home: "."
+    role: "Shared work."
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "Grow the product."
+    member qa: "QA"
+        role: "Test the work."

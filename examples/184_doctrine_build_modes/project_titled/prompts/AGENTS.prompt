@@ -1,0 +1,5 @@
+agent Writer: "the writer"
+    role: "Write clearly."
+
+agent Reader:
+    role: "Read closely."

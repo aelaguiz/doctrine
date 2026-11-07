@@ -79,7 +79,9 @@ A Claude-only target writes `CLAUDE.md`. With no runtimes set, the target
 writes `AGENTS.md`.
 
 Every Markdown file `doctrine build` writes has a source and body hash in
-its header, including plain agents. The `python -m doctrine.emit_*` commands
+its header, including plain agents. A team or member home begins with a line
+that says who it is for. A plain agent gets a line when it has a title. A root
+team has no line. These lines count toward load. The `python -m doctrine.emit_*` commands
 keep their current output. The build checks every file before any write. A hand edit fails with
 `E634`; move it to the source named by the error. `--force` overwrites it.
 Writes are atomic and use your umask. Equal bytes keep their file's mtime.
@@ -107,8 +109,7 @@ its home path. A path selects that home and every home below it.
 One target with teams can be inferred; otherwise pass `--target NAME`.
 Each command takes `--pyproject PATH`.
 
-`load` says when a home has no file for a runtime. A plain agent writes only
-`AGENTS.md`, so Claude loads nothing from it.
+`load` says when a home has no file for a runtime.
 
 `build` and `check` compile the selected homes and check rules, budgets,
 and hand edits. A build writes nothing if a check fails. `--force` allows hand
@@ -137,6 +138,18 @@ load, but belong to no source entry. Nested entries never count text twice.
 Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
 order, or `--json` for the versioned report. A `--full` header marks missing
 files. Companions have a separate size.
+
+`where "words"` finds the source of words and the homes that read them. It
+ignores case and extra whitespace. A matching `values:` entry comes first,
+followed by the sentence that uses it. A value with no readers shows zero
+homes. Use `--home PATH` to search one home and the values it reads.
+
+If no text matches, `where` may show `No exact match. Closest:`, the closest
+sentence, its source, and its reach. It exits 1 even when it finds a close
+sentence. JSON has `matches` and `closest`; `closest` is null when there is
+an exact match or no close sentence. If the source has errors, `where` searches
+the last commit and says so on stderr. If that also fails, it reports the
+original error.
 
 The hand-edit report matches sections by title and then by order when titles
 repeat. A removed section says `no longer in source`. A companion names its

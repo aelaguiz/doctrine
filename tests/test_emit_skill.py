@@ -50,6 +50,8 @@ class EmitSkillTests(unittest.TestCase):
             self.assertIn("# Doctrine Agent Linter", skill_markdown)
             self.assertIn("Audit Doctrine agent authoring thoughtfully.", skill_markdown)
             self.assertIn("This skill is for human review reports.", skill_markdown)
+            for name in ("audit-method.md", "finding-catalog.md"):
+                self.assertIn("AL234", (output_dir / "references" / name).read_text(encoding="utf-8"))
             self.assertFalse((output_dir / "scripts").exists())
             self.assertFalse((output_dir / "schemas").exists())
 

@@ -34,6 +34,10 @@ The release version for this major language move is 6.0.0.
    fails when files are missing or out of date, so a tree that does not commit
    built files needs a build first.
 
+`doctrine build` adds a scope line to team and member homes and to plain
+agent homes with a title. Root teams have no scope line. The line counts
+toward load. Remove authored scope lines that the build now supplies.
+
 Overrides now keep cases written in inherited bodies. Use `drop` with a reason to remove one.
 A team or member can add a case by path. An override fails with `E612` if
 its kept cases would repeat a key; drop a case or give it a different key.
@@ -46,7 +50,10 @@ Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.
 In diff JSON, each changed declaration's `homes` list holds a `home`, its total
 `delta`, and the declaration's `own` share, or `null` when it has no entries.
-Where JSON lists each match's `origin`, `site`, and `homes`.
+Where JSON lists each match's `origin`, `site`, and `homes`. Value matches use
+`value` and the key as their origin. `closest` is null or has `origin`, `site`,
+`homes`, and `text`; it is null when there is an exact match.
+If the working source has errors, `where` searches `HEAD` instead.
 
 ## The Version Lines
 

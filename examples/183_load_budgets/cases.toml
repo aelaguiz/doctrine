@@ -11,12 +11,12 @@ expected_exit = 0
 setup = [["build", "."]]
 expected_stdout_lines = [
   "Home               Runtime  Load   Limit  Headroom",
-  "pods/growth/big    codex    935    800    -135",
-  "pods/growth/big    claude   1,035  1,000  -35",
-  "pods/growth/small  codex    242    800    558",
-  "pods/growth/small  claude   342    1,000  658",
-  "pods/growth        codex    123    800    677",
-  "pods/growth        claude   223    1,000  777",
+  "pods/growth/big    codex    1,202  800    -402",
+  "pods/growth/big    claude   1,302  1,000  -302",
+  "pods/growth/small  codex    511    800    289",
+  "pods/growth/small  claude   611    1,000  389",
+  "pods/growth        codex    280    800    520",
+  "pods/growth        claude   380    1,000  620",
 ]
 
 [[cases]]
@@ -28,22 +28,22 @@ args = ["load", "pods/growth/small"]
 expected_exit = 0
 setup = [["build", "."]]
 expected_stdout_lines = [
-  "pods/growth/small on claude: 342 of 1,000 characters, 658 left",
+  "pods/growth/small on claude: 611 of 1,000 characters, 389 left",
   "",
   "Files:",
   "  not-here.md                  100  reserved",
-  "  pods/growth/AGENTS.md        123",
-  "  pods/growth/small/AGENTS.md  119",
+  "  pods/growth/AGENTS.md        280",
+  "  pods/growth/small/AGENTS.md  231",
   "",
   "Biggest parts:",
   "  GrowthPod: 10",
   "  GrowthPod.small: 6",
   "",
-  "pods/growth/small on codex: 242 of 800 bytes, 558 left",
+  "pods/growth/small on codex: 511 of 800 bytes, 289 left",
   "",
   "Files:",
-  "  pods/growth/AGENTS.md        123",
-  "  pods/growth/small/AGENTS.md  119",
+  "  pods/growth/AGENTS.md        280",
+  "  pods/growth/small/AGENTS.md  231",
   "",
   "Biggest parts:",
   "  GrowthPod: 10",
@@ -108,15 +108,17 @@ args = ["load", "--target", "homes"]
 expected_exit = 0
 setup = [["build", "--target", "homes"]]
 expected_stdout_lines = [
-  "Home  Runtime  Load     Limit    Headroom",
-  "pair  codex    139      32,768   32,629",
-  "solo  codex    124      32,768   32,644",
-  "pair  claude   no file  150,000  150,000",
-  "solo  claude   no file  150,000  150,000",
+  "Home   Runtime  Load     Limit    Headroom",
+  "pair   codex    139      32,768   32,629",
+  "solo   codex    124      32,768   32,644",
+  "empty  codex    no file  32,768   32,768",
+  "pair   claude   139      150,000  149,861",
+  "solo   claude   124      150,000  149,876",
+  "empty  claude   no file  150,000  150,000",
 ]
 
 [[cases]]
-name = "one plain agent on claude prints no false load"
+name = "one plain agent on claude shows its load"
 status = "active"
 kind = "cli_contract"
 project = "project_plain_agent"
@@ -124,7 +126,25 @@ args = ["load", "solo", "--target", "homes", "--runtime", "claude"]
 expected_exit = 0
 setup = [["build", "--target", "homes"]]
 expected_stdout_lines = [
-  "solo on claude: no CLAUDE.md here, so claude loads nothing from this home",
+  "solo on claude: 124 of 150,000 characters, 149,876 left",
+  "",
+  "Files:",
+  "  solo/AGENTS.md  124",
+  "",
+  "Biggest parts:",
+  "  Solo: 11",
+]
+
+[[cases]]
+name = "a team with no text reports no Claude file"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["load", "empty", "--target", "homes", "--runtime", "claude"]
+expected_exit = 0
+setup = [["build", "--target", "homes"]]
+expected_stdout_lines = [
+  "empty on claude: no CLAUDE.md here, so claude loads nothing from this home",
 ]
 
 [[cases]]
@@ -136,8 +156,8 @@ args = ["check"]
 expected_exit = 0
 setup = [["build", "."]]
 stderr_contains = [
-  "W306 over budget: pods/growth/big loads 1,035 of 1,000 on claude.",
-  "W306 over budget: pods/growth/big loads 935 of 800 on codex.",
+  "W306 over budget: pods/growth/big loads 1,302 of 1,000 on claude.",
+  "W306 over budget: pods/growth/big loads 1,202 of 800 on codex.",
 ]
 
 [[cases]]

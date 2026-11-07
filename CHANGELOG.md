@@ -10,12 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Super in overrides
 
-- Use `super` to keep a parent's text and add to it in an override.
+- Use `super` on its own line in an override to keep the parent's text and add
+  to it. `E614` reports a `super` outside an override.
+
+### Scope lines
+
+- `doctrine build` writes who a team, member, or titled plain agent file is for.
+  The agent linter flags prose about how files load.
 
 ### Fixed
 
-- Overrides with `super` keep inherited case sources, workflow laws, and drop records.
-- `super` errors point to the file that contains them. A final `super` needs no trailing newline.
+- Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.
 - Overrides keep cases written in inherited bodies. A team or member can add a case by path,
@@ -23,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Shared cases can use agent and team values. Cases that read those words or
   hold a roster go to each home's `DETAILS.md`, including words read through refs.
   `E621` is retired.
+- `doctrine where` finds values before the text that reads them, shows a close
+  sentence when there is no exact match, and searches the last commit when the
+  working source has errors. JSON adds `closest`.
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
 - `doctrine diff` shows each declaration's share of a home's change. JSON

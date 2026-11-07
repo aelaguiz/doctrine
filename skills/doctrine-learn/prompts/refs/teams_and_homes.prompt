@@ -26,6 +26,7 @@ agent GrowthQa[PodQa]: "QA"
 
     section teams: "Put Teams And Members In Homes"
         "A team holds shared doctrine in a folder. Its members live below it. This is from `examples/174_team_members`."
+        "Write a team title as words that read well in a sentence. The build uses it to say who the file is for."
         code:
             language: prompt
             text: """abstract agent PodMember:

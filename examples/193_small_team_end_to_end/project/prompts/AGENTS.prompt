@@ -6,22 +6,16 @@ person Owner: "The owner"
         Numbers
 
 
-abstract team Level:
-    role: "This file is for {{team:audience}}. If your session started in `{{team:home}}` or below, you are one of them. If it started anywhere else, this describes them; it does not make you one."
-
-
 abstract agent Member:
-    role: "You are {{team:title}}'s {{agent:title}}. If your session started anywhere else, this describes that member; it does not make you one."
+    role: "Help the team ship its work."
 
 
 workflow Numbers: "Numbers"
     "Get every number the canonical way."
 
 
-team Root[Level]: "the repository"
+team Root: "the repository"
     home: "."
-    values:
-        audience: "every agent here"
     numbers: Numbers
 
 
@@ -52,7 +46,7 @@ output CodeReady: "Code is ready"
         "What users get from them"
 
 
-abstract team Pod[Level]:
+abstract team Pod:
     who: "Who makes each call"
         "Members: {{team:members}}."
         roster calls: "The calls"
@@ -65,14 +59,12 @@ abstract team Pod[Level]:
 team GrowthPod[Pod]: "the growth pod"
     home: "pods/growth"
     values:
-        audience: "every member of the growth pod"
         unit: "bet"
 
 
 team FeaturePod[Pod]: "the feature pod"
     home: "pods/feature"
     values:
-        audience: "every member of the feature pod"
         unit: "feature"
 
 

@@ -756,7 +756,7 @@ agent Worker[T.qa]:
                 self.assertEqual(declaration["name"], "T.qa")
                 self.assertEqual(
                     [home["home"] for home in declaration["homes"]],
-                    ["pod", "pod/lead", "pod/qa"] if key == "members" else ["pod/lead"],
+                    ["pod", "pod/lead", "pod/qa"] if key == "members" else ["pod/lead", "pod/qa"],
                 )
 
     def test_reach_reads_both_sides(self):
