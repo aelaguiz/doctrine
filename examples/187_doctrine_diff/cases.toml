@@ -23,7 +23,7 @@ project = "project"
 args = ["where", "You follow the bet"]
 expected_exit = 0
 expected_stdout_lines = [
-  "PodQa.whom  prompts/AGENTS.prompt:4",
+  "PodQa.whom  prompts/AGENTS.prompt:3",
   "  reaches 1 home: pods/growth/qa",
 ]
 

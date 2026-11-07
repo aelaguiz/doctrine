@@ -955,7 +955,10 @@ PodQa.whom_you_work_with  prompts/roles/qa.prompt:12
 ```
 
 A home is reached when the matching text is in its load, so a sentence at a level counts
-every home under it. A text set by a value also prints the value's site. No match exits 1.
+every home under it. The site is the map entry's: the section, not the sentence. Text a value
+filled shows up in the blank at that site, so `where` has no separate line for values. With
+`--json` it prints `{"format_version": 1, "matches": [{"origin": "PodQa.whom", "site": "...",
+"homes": ["..."]}]}`. No match exits 1.
 
 **`doctrine load [SELECTOR...] [--runtime NAME] [--json]`** prints load by headroom:
 
@@ -1130,8 +1133,8 @@ Default base is `HEAD`. It compiles the base with the same extraction as `build 
 reads `--base-tree`, compiles the new side, and compares home maps and source hashes. The
 new side is the working tree, or with `--with`, the base plus only those files. So a commit
 tool in a shared checkout asks exactly what one author's files change.
-Compile errors in the working tree are exit 1. A base that fails to compile prints a
-warning line and compares nothing from that base, with exit 2.
+Compile errors in the working tree are exit 1. A base that fails to compile prints
+`Base <rev> does not compile, so nothing was compared.` and then the error to stderr, and exits 2.
 
 Text output, in this order, each block omitted when empty:
 
@@ -1180,8 +1183,7 @@ JSON shape:
     "kind": "abstract agent",
     "site": "prompts/roles/qa.prompt:3",
     "owners": [],
-    "homes": ["pods/growth/qa"],
-    "delta": {"always_on": 120, "details": 0}
+    "homes": [{"home": "pods/growth/qa", "delta": {"always_on": 120, "details": 0}}]
   }],
   "homes": [{
     "home": "pods/growth/qa",
@@ -1225,7 +1227,8 @@ disable = ["W301"]
 **`W301` method.** Fixed values, no config.
 
 - Paragraphs come from source, not output, so one shared section compiled into 56 homes is
-  not a copy. A paragraph is one authored string, split on blank lines.
+  not a copy. A paragraph is one authored string, split on blank lines. A `from` file's text
+  counts too, because a port's near-copies sit there.
 - Tokens are `\w+` runs after casefolding, with Markdown emphasis removed. Paragraphs under
   12 tokens are skipped.
 - Candidates share at least three 4-token shingles, found through an inverted index.
@@ -1680,11 +1683,13 @@ section, and one `_details/` file results).
 `test_new_section_through_wildcard`, `test_explicit_member_fails_instead_of_new_section`,
 `test_outputs_list_exact_paths`, `test_outputs_hold_only_changed_files`,
 `test_outputs_list_removed_paths`, `test_with_ignores_other_uncommitted_edits`,
+`test_text_blocks_for_new_sections_and_over_budget`, `test_declaration_homes_carry_each_delta`,
+`test_failed_base_exits_2`,
 `test_json_format_version`.
 
 **`tests/test_project_warnings.py`**: `test_w301_type_1_and_near`,
 `test_w301_short_paragraph_skipped`, `test_w301_shared_section_not_a_copy`,
-`test_w301_groups_by_declaration_pair`, `test_w302_double_load`,
+`test_w301_groups_by_declaration_pair`, `test_w301_reads_from_files`, `test_w302_double_load`,
 `test_w302_groups_across_slot_keys`, `test_w304_unused_value`,
 `test_check_disable_list`, `test_strict_fails_on_warning`.
 
