@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches, merge_override,
+    mark_wildcard, prepare_body_patches, apply_path_patches, merge_override, reject_super,
 )
 from dataclasses import replace
 
@@ -114,6 +114,7 @@ class ResolveDocumentsMixin:
                     else parent_document.render_profile if parent_document is not None else None
                 ),
             )
+            reject_super(resolved.items, _dotted_decl_name(unit.module_parts, document_decl.name), unit)
             self._resolved_document_cache[document_key] = resolved
             return resolved
         finally:

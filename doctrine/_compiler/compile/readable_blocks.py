@@ -7,7 +7,6 @@ from doctrine._compiler.compile.readables import compile_paragraph
 from dataclasses import replace
 
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.resolve.patches import reject_super
 from doctrine._compiler.constants import _semantic_render_target_for_block
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.readable_diagnostics import (
@@ -73,7 +72,6 @@ class CompileReadableBlocksMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
-        reject_super(block.payload, owner_label, unit)
         if block.kind == "details":
             body = section_body_compiler(block.payload, owner_label)
             return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block, body), body=body)

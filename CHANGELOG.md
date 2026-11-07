@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Overrides with `super` keep inherited case sources, workflow laws, and drop records.
+- `super` errors point to the file that contains them. A final `super` needs no trailing newline.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.
 - Overrides keep cases written in inherited bodies. A team or member can add a case by path,

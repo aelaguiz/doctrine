@@ -784,7 +784,7 @@ workflow_override_use: "override" CNAME ":" name_ref _NL?
 workflow_root_readable_block: readable_nonsection_block
                             | override_readable_nonsection_block
 
-super_stmt: "super" _NL
+super_stmt: "super" _NL?
 workflow_section_body: workflow_section_item+
 ?workflow_section_item: super_stmt
                       | prose_line _NL?

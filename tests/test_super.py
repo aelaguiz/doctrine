@@ -244,7 +244,7 @@ agent Child[Base]:
             "Child."
     inherit *
 ''')
-        self.assertIn('`Child` writes `part` in `override work`, and `super` already brings it. Patch it with `override work.part`.', str(caught.exception))
+        self.assertIn('`Child` writes `part` in `override work`, and `super` already brings it. Override `part` on its own, or drop `super`.', str(caught.exception))
 
     def test_parent_prose_keeps_its_module(self):
         with tempfile.TemporaryDirectory() as directory:
