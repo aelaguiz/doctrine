@@ -107,7 +107,7 @@ def check_homes(target, session, selectors):
             if resolved.is_relative_to(root) and not resolved.exists() and resolved not in built:
                 dead_links.append(f"{name} points at {dest}, which does not exist.")
     if dead_links:
-        raise compile_error(code="E636", summary="Dead link", detail="\n- ".join(dead_links))
+        raise compile_error(code="E636", summary="Dead link", detail="\n".join(dead_links))
     settings = runtime_settings(target)
     context = CompilationContext(session)
     validate_load_rules(context, homes, selected, whole)

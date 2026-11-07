@@ -111,6 +111,19 @@ expected_exit = 1
 stderr_contains = ["E636", "points at missing.md, which does not exist."]
 
 [[cases]]
+name = "every dead link is listed in one error"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read [one](one.md) and [two](two.md).\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = [
+  "- pod/AGENTS.md points at one.md, which does not exist.",
+  "  pod/AGENTS.md points at two.md, which does not exist.",
+]
+
+[[cases]]
 name = "the file limit warns on compiled levels"
 status = "active"
 kind = "cli_contract"
