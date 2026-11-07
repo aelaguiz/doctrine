@@ -29,6 +29,7 @@ from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
 )
+from doctrine.classes import agent_view, class_tree, class_view, render_agent, render_class, render_mermaid, render_tree
 
 
 @contextmanager
@@ -209,6 +210,28 @@ def load(args):
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))
+        return 0
+
+
+def classes(args):
+    with resolve_target(args) as (target, session, _):
+        if target is None:
+            return 2
+        tree, declarations, parents = class_tree(target, session)
+        name, data = next(((name, data) for name, data in declarations.items()
+                           if args.selector and args.selector in (name, data[2])), (None, None))
+        if args.selector and name is None:
+            raise compile_error(code="E640", summary="No home matches",
+                                detail=f"`{args.selector}` matches no class, team, member or home.")
+        if args.mermaid:
+            print(render_mermaid(session, tree, declarations, parents, name)); return 0
+        if name:
+            unit, owner, home = data
+            view = (class_view(session, tree, declarations, parents, name)
+                    if owner.abstract or isinstance(owner, model.Team) else agent_view(target, session, name, unit, owner, home))
+        else:
+            view = tree
+        print(json.dumps(view) if args.json else {"tree": render_tree, "class": render_class, "agent": render_agent}[view["view"]](view))
         return 0
 
 

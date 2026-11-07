@@ -17,6 +17,7 @@ from doctrine._compiler.home_map import build_home_map
 from doctrine.emit_docs import _build_previous_turn_contexts, emit_target
 from doctrine.emit_common import load_emit_targets
 from doctrine._verify_corpus.manifest import _load_manifest
+from doctrine.classes import agent_view
 
 
 class CliTests(HomeProject, unittest.TestCase):
@@ -979,6 +980,10 @@ team T: "Team"
                             except DoctrineError:
                                 continue
                             build_home_map(compiled)
+                            with patch("doctrine.classes.compile_homes", return_value=(
+                                {"home": {"compiled": compiled}}, {}, [], False
+                            )):
+                                agent_view(None, session, agent.name, unit, agent, "home")
                             count += 1
         self.assertGreater(count, 350)
 

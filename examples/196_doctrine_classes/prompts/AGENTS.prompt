@@ -6,12 +6,15 @@ abstract agent QA: "How QA works on every team"
     values:
         subject: "{{team:unit}}"
     testing: Craft
+    abstract policy: AccuracyPolicy
 
 abstract agent WebQA[QA]: "How web QA works"
     inherit *
+    policy: AccuracyPolicy
 
 abstract agent AppQA[QA]: "How app QA works"
     inherit *
+    policy: AccuracyPolicy
 
 abstract team Pod: "A team that ships work"
     abstract win
@@ -44,3 +47,7 @@ team Product[Pod]: "product"
     member qa[WebQA]: "QA"
         override testing: "Testing"
             "Test the change twice."
+
+document AccuracyPolicy: "Accuracy Policy"
+    section summary: "Summary"
+        "Check the facts."

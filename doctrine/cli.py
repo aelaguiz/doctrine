@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from doctrine.home_commands import build, check, load, where, run_command
+from doctrine.home_commands import build, check, load, where, classes, run_command
 from doctrine.diff import diff
 from doctrine.import_markdown import import_markdown
 from doctrine.sources import sources
@@ -43,6 +43,15 @@ def main(argv=None):
     source_command.add_argument("--json", action="store_true")
     source_command.add_argument("--person")
     source_command.set_defaults(rev=None, overlays=[])
+    classes_command = commands.add_parser("classes")
+    classes_command.add_argument("selector", nargs="?")
+    classes_command.add_argument("--pyproject")
+    classes_command.add_argument("--target")
+    classes_command.add_argument("--rev")
+    classes_command.add_argument("--with", dest="overlays", action="append", default=[])
+    formats = classes_command.add_mutually_exclusive_group()
+    formats.add_argument("--json", action="store_true")
+    formats.add_argument("--mermaid", action="store_true")
     import_command = commands.add_parser("import")
     import_command.add_argument("path")
     import_command.add_argument("--name", required=True)
@@ -54,7 +63,7 @@ def main(argv=None):
         parser.error("--with needs --rev")
     return run_command(args, {
         "build": build, "check": check, "load": load, "diff": diff, "where": where, "sources": sources,
-        "import": import_markdown,
+        "import": import_markdown, "classes": classes,
     }[args.command])
 
 
