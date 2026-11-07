@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from doctrine._compiler.details import validate_shared_details
+from doctrine._compiler.details import details_origin
 from doctrine import model
 from doctrine._compiler.compile.roster import compile_roster
 from doctrine._compiler.compile.readables import compile_paragraph
@@ -73,8 +73,7 @@ class CompileReadableBlocksMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
         if block.kind == "details":
-            validate_shared_details(block)
-            return CompiledSection(kind="details", title=block.title, key=block.key, origin=block.origin, body=section_body_compiler(block.payload, owner_label))
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block), body=section_body_compiler(block.payload, owner_label))
         if block.kind == "roster":
             return compile_roster(self, block, unit=unit)
         if block.when_expr is not None:

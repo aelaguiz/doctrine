@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Shared cases can use agent and team values. Cases that read those words or
+  hold a roster go to each home's `DETAILS.md`. `E621` is retired.
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
 - `doctrine diff` shows each declaration's share of a home's change. JSON

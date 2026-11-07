@@ -252,10 +252,12 @@ replace a named block in an inherited readable body.
 The lexical owner chooses the companion. Teams and members use their own
 `DETAILS.md`. A concrete agent uses `DETAILS.md` beside its emitted file.
 Abstract agents, abstract teams, workflows, and documents use one shared
-`_details/<owner-slug>.md`. Imported module names join the owner with `-`.
-A shared companion keeps its owner's headings and order even when homes
-reorder or retitle that text. Its text and titles cannot read agent or team
-values (`E621`). Skills, skill packages, input or output bodies, output structures,
+`_details/<owner-slug>.md` for cases that do not read a home's values.
+Imported module names join the owner with `-`. A shared companion keeps its
+owner's headings and order even when homes reorder or retitle that text.
+A case that reads agent or team values in its text, title, or parent heading
+goes to each home's `DETAILS.md`. A case with a roster does too. Code text
+does not count as a value read. Skills, skill packages, input or output bodies, output structures,
 sibling `SOUL.prompt` files, and emitted documents cannot hold details (`E620`).
 
 `budget:` takes runtime names and positive integers. The nearest setting

@@ -34,6 +34,9 @@ The release version for this major language move is 6.0.0.
    fails when files are missing or out of date, so a tree that does not commit
    built files needs a build first.
 
+Shared cases can read agent and team values. Those cases, and cases with a
+roster, go to each home's `DETAILS.md`. `E621` is retired.
+
 Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.

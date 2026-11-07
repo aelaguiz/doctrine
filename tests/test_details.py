@@ -426,7 +426,25 @@ agent A:
                 self.assertIn("E620 compile error: Details not allowed here", process.stderr)
                 self.assertFalse((root / ("worker" if soul else "a") / "AGENTS.md").exists())
 
-    def test_roster_in_shared_details_is_e621(self):
+    def test_code_in_shared_details_does_not_read_a_value(self):
+        root = self.project('''abstract agent R:
+    role: "Test."
+    work: "Work"
+        details example: "Example"
+            code:
+                language: prompt
+                text: """{{agent:missing}}
+"""
+team T: "Team"
+    home: "t"
+    member qa[R]: "QA"
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("{{agent:missing}}", (root / "_details/r.md").read_text())
+        self.assertFalse((root / "t/qa/DETAILS.md").exists())
+
+    def test_roster_in_shared_details_uses_each_home(self):
         root = self.project('''workflow W: "Work"
     details who: "Who"
         roster members: "Members"
@@ -443,5 +461,6 @@ team Beta: "Beta"
         role: "B."
 ''')
         code, _, error = self.cli(root, 'build')
-        self.assertEqual(code, 1)
-        self.assertIn('E621', error)
+        self.assertEqual(code, 0, error)
+        self.assertIn('A', (root / 'alpha/DETAILS.md').read_text())
+        self.assertIn('B', (root / 'beta/DETAILS.md').read_text())

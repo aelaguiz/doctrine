@@ -47,13 +47,24 @@ absent_files = [
 ]
 
 [[cases]]
-name = "shared details may not read one agent's words"
+name = "shared details use each team's words"
 status = "active"
 kind = "cli_contract"
 project = "project_agent_words"
 args = ["build", "."]
-expected_exit = 1
-stderr_contains = [
-  "E621",
-  "Move this into the team or member",
-]
+expected_exit = 0
+expected_file_lines = { "pods/growth/qa/DETAILS.md" = [
+    "## When to wait",
+    "",
+    "The bet waited.",
+], "pods/feature/qa/DETAILS.md" = [
+    "## When to wait",
+    "",
+    "The feature waited.",
+], "_details/waiter.md" = [
+    "## When to wait",
+    "",
+    "### A shared case",
+    "",
+    "Wait for the result.",
+] }

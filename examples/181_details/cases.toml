@@ -48,3 +48,58 @@ stderr_contains = [
   "E620 compile error: Details not allowed here",
   "`details` can't be used in `SOUL.prompt`.",
 ]
+
+[[cases]]
+name = "shared cases use each team's words"
+status = "active"
+kind = "cli_contract"
+project = "project_team_words"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "alpha/qa/DETAILS.md" = [
+    "## Test the bet",
+    "",
+    "### A case",
+    "",
+    "The heading uses the team's word.",
+    "",
+    "## More cases",
+    "",
+    "### A bet case",
+    "",
+    "The title uses the team's word.",
+    "",
+    "### The team",
+    "",
+    "#### Members",
+    "",
+    "| Who |",
+    "| --- |",
+    "| Alpha QA |",
+], "beta/qa/DETAILS.md" = [
+    "## Test the feature",
+    "",
+    "### A case",
+    "",
+    "The heading uses the team's word.",
+    "",
+    "## More cases",
+    "",
+    "### A feature case",
+    "",
+    "The title uses the team's word.",
+    "",
+    "### The team",
+    "",
+    "#### Members",
+    "",
+    "| Who |",
+    "| --- |",
+    "| Beta QA |",
+], "_details/qa.md" = [
+    "## More cases",
+    "",
+    "### A common case",
+    "",
+    "Every team can use this.",
+] }

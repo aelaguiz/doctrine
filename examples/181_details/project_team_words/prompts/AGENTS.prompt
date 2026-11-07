@@ -1,0 +1,25 @@
+abstract agent Qa:
+    role: "Test."
+    work: "Test the {{team:unit}}"
+        details heading: "A case"
+            "The heading uses the team's word."
+    more: "More cases"
+        details title: "A {{team:unit}} case"
+            "The title uses the team's word."
+        details roster: "The team"
+            roster members: "Members"
+                who: "Who" = "{{agent:title}}"
+        details common: "A common case"
+            "Every team can use this."
+
+team Alpha: "Alpha"
+    home: "alpha"
+    values:
+        unit: "bet"
+    member qa[Qa]: "Alpha QA"
+
+team Beta: "Beta"
+    home: "beta"
+    values:
+        unit: "feature"
+    member qa[Qa]: "Beta QA"
