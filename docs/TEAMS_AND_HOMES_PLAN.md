@@ -1497,6 +1497,16 @@ stdout. This is the lossless first step of a port: file by file, before any refa
   `"""..."""`, with later lines at column 0, because a triple-quoted string keeps them as written.
 - A repeated key in one section gets `_2`, `_3`, in order. A key that is a keyword in that
   position gets a final `_`, as Python does, so `## Details` prints `details_: "Details"`.
+  Find out by parsing a small source with that key in that position, not from a word list,
+  plus `_RESERVED_AGENT_FIELD_KEYS` at the top of an agent.
+- `--kind agent` prints `abstract agent <Name>:`. `--kind workflow` prints
+  `workflow <Name>: "<Title>"`. The title is the first-line `# Heading`, or the name when
+  there is none, as `from` does. Headings below `###` stay text, as `from` keeps them.
+  Reuse `fenced_lines`, so a heading or bold run inside a fence stays text.
+- A missing file is `E652`, and an `@` import line is `E654`, as `from` reports them. Text
+  holding `{{` prints as written. `--check` then reports the compile error, because a string
+  isn't literal the way a `from` file is. Exit 1.
+- `import` needs no pyproject. `PATH` is relative to where it runs.
 - Text before the first `##` becomes `role:` for `--kind agent`, or loose prose for
   `--kind workflow`.
 - Link destinations stay as written. Text in `.prompt` source doesn't follow its file, so
