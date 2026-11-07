@@ -3,3 +3,6 @@ agent Solo:
 
 agent Pair:
     role: "Work with one other agent."
+
+team Empty: "Empty team"
+    home: "empty"

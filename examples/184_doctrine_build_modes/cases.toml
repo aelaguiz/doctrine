@@ -2,6 +2,46 @@ schema_version = 1
 default_prompt = "prompts/AGENTS.prompt"
 
 [[cases]]
+name = "a plain agent builds a Claude-only home"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["build", "--target", "claude"]
+expected_exit = 0
+expected_file_lines = { "solo/CLAUDE.md" = ["Work alone."] }
+absent_files = ["solo/AGENTS.md"]
+
+[[cases]]
+name = "a plain agent builds a home for both runtimes"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["build", "--target", "both"]
+expected_exit = 0
+expected_file_lines = { "solo/AGENTS.md" = ["Work alone."] }
+expected_links = { "solo/CLAUDE.md" = "AGENTS.md" }
+
+[[cases]]
+name = "a Claude-only plain agent counts its file"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["load", "solo", "--target", "claude", "--runtime", "claude"]
+setup = [["build", "--target", "claude"]]
+expected_exit = 0
+stdout_contains = ["solo on claude: 124 of 150,000 characters", "solo/CLAUDE.md  124"]
+
+[[cases]]
+name = "a plain agent counts its file on both runtimes"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["load", "solo", "--target", "both"]
+setup = [["build", "--target", "both"]]
+expected_exit = 0
+stdout_contains = ["solo on claude: 124 of 150,000 characters", "solo on codex: 124 of 32,768 bytes", "solo/AGENTS.md  124"]
+
+[[cases]]
 name = "a selected build fails on a stale parent"
 status = "active"
 kind = "cli_contract"
