@@ -4,7 +4,7 @@ Doctrine surface owns it. This file is a task-first chooser, not a second
 syntax reference. It maps common jobs to the one surface that should own
 them, then cites the shipped example to copy from.
 
-For the judgment behind these choices, read `references/getting-good-results.md` first: it covers shared roles, where lessons land, thin homes, prose and types, and patterns that drift. The chooser below maps other jobs to their language surfaces."""
+For the judgment behind these choices, read `references/getting-good-results.md` first: it covers shared roles, where lessons land, thin homes, prose and types, and patterns that go bad. The chooser below maps other jobs to their language surfaces."""
 
     section chooser: "Task-First Chooser"
         """Each row names one real job, one Doctrine surface, and one shipped example
@@ -266,7 +266,7 @@ should land once."""
     section anti_patterns: "Anti-Patterns"
         "These shapes compile but push against the principles. Fix them early."
 
-        "For copied roles, prose versus types, and harness boundaries, see `references/getting-good-results.md`."
+        "For copied roles and prose versus types, see `references/getting-good-results.md`. For harness boundaries, see `references/principles.md`."
 
         section vague_names: "Vague Names And Descriptions"
             bullets items:
