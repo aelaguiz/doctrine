@@ -24,6 +24,8 @@ The release version for this major language move is 6.0.0.
    `member` and `home` as agent slots, `values` in agent bodies, and `roster`
    in readable bodies, plus `budget` and `details`, are also reserved where
    their forms can start.
+5. `Message` is now a built-in output target, like `File`. Rename any
+   project's own `output target Message` and update its references.
 
 Load rules run in `doctrine check` and `emit_docs`. Builds run no rules.
 Use `check --strict` when project warnings should fail an author's change.

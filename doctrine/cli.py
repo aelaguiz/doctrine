@@ -4,6 +4,7 @@ import argparse
 
 from doctrine.home_commands import build, check, load, where, run_command
 from doctrine.diff import diff
+from doctrine.import_markdown import import_markdown
 from doctrine.sources import sources
 
 
@@ -43,11 +44,17 @@ def main(argv=None):
     source_command.add_argument("--json", action="store_true")
     source_command.add_argument("--person")
     source_command.set_defaults(rev=None, overlays=[])
+    import_command = commands.add_parser("import")
+    import_command.add_argument("path")
+    import_command.add_argument("--name", required=True)
+    import_command.add_argument("--kind", choices=("workflow", "agent"), required=True)
+    import_command.set_defaults(rev=None, overlays=[])
     args = parser.parse_args(argv)
     if args.overlays and not args.rev and args.command != "diff":
         parser.error("--with needs --rev")
     return run_command(args, {
-        "build": build, "check": check, "load": load, "diff": diff, "where": where, "sources": sources
+        "build": build, "check": check, "load": load, "diff": diff, "where": where, "sources": sources,
+        "import": import_markdown,
     }[args.command])
 
 

@@ -21,6 +21,9 @@ Each numbered example may contain:
 
 ## How To Read The Corpus
 
+Example `192_doctrine_import` shows how to print source from Markdown.
+Example `193_small_team_end_to_end` brings teams and homes together.
+
 - Read the examples in numeric order. The sequence is intentional.
 - The manifest is the proof surface. A checked-in ref file is not proof on its
   own.

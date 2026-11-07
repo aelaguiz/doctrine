@@ -38,6 +38,7 @@ for repo setup and proof commands.
   workflow flow diagrams, and troubleshoot emit failures
 - [../examples/README.md](../examples/README.md): the teaching and verification
   corpus, in order
+- [../README.md](../README.md): setup, team builds, and Markdown import
 
 ## Feature Guides
 

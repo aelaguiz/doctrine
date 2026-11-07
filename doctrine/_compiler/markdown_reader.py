@@ -22,6 +22,17 @@ def fenced_lines(lines):
         yield line, inside
 
 
+def markdown_lines(lines, *, path, start, source_path=None, source_span=None):
+    for number, (line, inside) in enumerate(fenced_lines(lines), start):
+        if not inside and line.startswith("@"):
+            raise compile_error(
+                code="E654", summary="Import line in Markdown source",
+                detail=f"`{path}` line {number} is a runtime import, and its path would break once inlined. Declare that file too and compose it.",
+                path=source_path, source_span=source_span,
+            )
+        yield number, line, inside, None if inside else re.match(r"^(#{2,3}) (.+)$", line)
+
+
 def read_markdown(declaration, *, source_path, project_path, prompt_root):
     from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 
@@ -52,14 +63,11 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
         start = 1
     root = {"lines": [], "children": [], "keys": {}}
     stack = [root]
-    for number, (line, inside_fence) in enumerate(fenced_lines(lines), start):
+    for number, line, inside_fence, match in markdown_lines(
+        lines, path=declaration.markdown_path, start=start,
+        source_path=source_path, source_span=declaration.source_span,
+    ):
         if not inside_fence:
-            if line.startswith("@"):
-                raise error(
-                    "E654", "Import line in Markdown source",
-                    f"`{declaration.markdown_path}` line {number} is a runtime import, and its path would break once inlined. Declare that file too and compose it.",
-                )
-            match = re.match(r"^(#{2,3}) (.+)$", line)
             if match:
                 level = len(match[1]) - 1
                 stack = stack[:level]
