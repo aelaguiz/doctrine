@@ -1,0 +1,5 @@
+agent Solo:
+    role: "Work alone."
+
+agent Pair:
+    role: "Work with one other agent."

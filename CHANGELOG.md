@@ -272,6 +272,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `164`.
 - Removed the VS Code extension, which Cursor also used.
 
+### Fixed
+
+- A literal condition or arm no longer crashes the compiler. `active when true`
+  with no `current` line gives `E331`. A literal `route_from` arm, `match` arm,
+  or review `when` line gives the normal error for that spot, with a line number.
+- A titled agent slot with no body, such as `notes: "Notes"`, gives `E105`
+  instead of a crash.
+- `doctrine load` says when a home has no file for a runtime. A plain agent
+  writes only `AGENTS.md`, so the report no longer shows `0 of 150,000` for Claude.
+- `doctrine build` rejects `details` in a sibling `SOUL.prompt` with `E620`, as
+  `emit_docs` does. The text used to land in `SOUL.md` under a stray heading.
+- `make verify-skill-examples` builds the skills and checks their Markdown. It
+  used to scan folders with no Markdown and pass on nothing. It now fails if it
+  finds no blocks.
+
 ### Verification
 
 - Phase 5 implementation proof on 2026-04-26: `make verify-examples`

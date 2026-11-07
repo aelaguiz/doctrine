@@ -1,0 +1,3 @@
+agent InvalidTitledSlotWithoutBody:
+    role: "Show that a titled slot needs a body."
+    notes: "Notes"

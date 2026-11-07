@@ -72,8 +72,8 @@ def run_skill_example_checks(skill_roots: Iterable[Path]) -> list[SkillExampleFa
 
 
 def default_skill_roots(repo_root: Path) -> tuple[Path, ...]:
-    # Only validate canonical source trees. Build output and the public
-    # curated tree mirror the source, so duplicating checks would be noise.
+    # Skills are written in .prompt files, so their Markdown exists only in
+    # build output. `make verify-skill-examples` emits it first.
     skills_dir = repo_root / "skills"
     if not skills_dir.is_dir():
         return ()
@@ -81,7 +81,7 @@ def default_skill_roots(repo_root: Path) -> tuple[Path, ...]:
     for entry in sorted(skills_dir.iterdir()):
         if entry.name.startswith("."):
             continue
-        prompts_dir = entry / "prompts"
-        if prompts_dir.is_dir():
-            roots.append(prompts_dir)
+        build_dir = entry / "build"
+        if build_dir.is_dir():
+            roots.append(build_dir)
     return tuple(roots)

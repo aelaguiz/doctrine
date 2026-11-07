@@ -243,6 +243,10 @@ def padded_rows(rows):
     )
 
 
+def has_home_file(load):
+    return any(file["kind"] == "home" for file in load["files"])
+
+
 def render_load(loads):
     if len(loads) != 1:
         rows = [("Home", "Runtime", "Load", "Limit", "Headroom")]
@@ -250,7 +254,7 @@ def render_load(loads):
             (
                 home["home"],
                 runtime,
-                f"{load['total']:,}",
+                f"{load['total']:,}" if has_home_file(load) else "no file",
                 f"{load['limit']:,}",
                 f"{load['headroom']:,}",
             )
@@ -267,6 +271,12 @@ def render_load(loads):
     home = loads[0]
     blocks = []
     for runtime, load in home["runtimes"].items():
+        if not has_home_file(load):
+            blocks.append(
+                f"{home['home']} on {runtime}: no {RUNTIMES[runtime][0]} here, "
+                f"so {runtime} loads nothing from this home"
+            )
+            continue
         headroom = load["headroom"]
         unit = "characters" if runtime == "claude" else "bytes"
         blocks.append(

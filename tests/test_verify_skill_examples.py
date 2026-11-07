@@ -101,16 +101,15 @@ class RunSkillExampleChecksTests(unittest.TestCase):
 
 
 class SkillRootDiscoveryTests(unittest.TestCase):
-    def test_default_skill_roots_point_at_source_prompts(self) -> None:
-        repo_root = Path(__file__).resolve().parents[1]
-        roots = default_skill_roots(repo_root)
-        self.assertTrue(roots, "expected at least one skill prompts root in the repo")
-        for root in roots:
-            self.assertEqual(root.name, "prompts")
-            self.assertTrue(root.is_dir())
-            # Source-only: no build output and no curated public mirror.
-            self.assertNotIn(".curated", root.parts)
-            self.assertNotIn("build", root.parts)
+    def test_default_skill_roots_point_at_built_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            built = repo_root / "skills/alpha/build"
+            built.mkdir(parents=True)
+            (repo_root / "skills/alpha/prompts").mkdir()
+            (repo_root / "skills/beta/prompts").mkdir(parents=True)
+            (repo_root / "skills/.curated/alpha/build").mkdir(parents=True)
+            self.assertEqual(default_skill_roots(repo_root), (built,))
 
     def test_iter_markdown_files_yields_md_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

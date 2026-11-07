@@ -260,6 +260,7 @@ class ValidateRouteSemanticsContextMixin:
                     enum_unit=enum_unit,
                     unit=unit,
                     owner_label=f"route_from {enum_decl.name}",
+                    fallback_source_span=route.source_span,
                 )
                 for head in route.choice_case_heads
             )

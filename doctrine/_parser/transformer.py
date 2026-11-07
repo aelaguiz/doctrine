@@ -205,6 +205,13 @@ class DeclarationTransformerMixin:
         body: WorkflowBodyParts | None,
     ) -> model.WorkflowSlotValue:
         if body is None:
+            if isinstance(value, str):
+                raise TransformParseFailure(
+                    "A titled authored workflow slot must define an indented body.",
+                    code="E105",
+                    summary="Invalid authored slot body",
+                    hints=("Add an indented body, or point the slot at a declaration by name.",),
+                )
             return value
         if isinstance(value, model.NameRef):
             raise ValueError("Authored workflow slot references cannot also define an inline body.")

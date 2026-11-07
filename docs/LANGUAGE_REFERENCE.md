@@ -256,7 +256,7 @@ Abstract agents, abstract teams, workflows, and documents use one shared
 A shared companion keeps its owner's headings and order even when homes
 reorder or retitle that text. Its text and titles cannot read agent or team
 values (`E621`). Skills, skill packages, input or output bodies, output structures,
-and emitted documents cannot hold details (`E620`).
+sibling `SOUL.prompt` files, and emitted documents cannot hold details (`E620`).
 
 `budget:` takes runtime names and positive integers. The nearest setting
 wins: the home, its team, outer teams by folder, then the runtime limit.

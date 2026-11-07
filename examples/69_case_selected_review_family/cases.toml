@@ -256,3 +256,13 @@ agent = "InvalidCaseNonTotalDemo"
 exception_type = "CompileError"
 error_code = "E470"
 location_line = 70
+
+[[cases]]
+name = "review cases reject a literal when line with a real error"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_literal_case_selector/AGENTS.prompt"
+agent = "SelectedReviewFamilyDemo"
+exception_type = "CompileError"
+error_code = "E470"
+location_line = 103

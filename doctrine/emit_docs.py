@@ -231,8 +231,7 @@ def runtime_files(plan, compiled, target, *, evaluate_rules=True, surface=None):
             json.dumps(contract, indent=2) + "\n").encode()
     if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
         soul = _compile_runtime_package_soul(plan, target=target, evaluate_rules=evaluate_rules)
-        if surface is not None:
-            reject_details(soul, surface)
+        reject_details(soul, surface or "`SOUL.prompt`")
         files[plan.soul_output_path] = render_markdown(soul).encode()
     for bundled_file in plan.bundled_files:
         files[plan.markdown_path.parent / bundled_file.path] = bundled_file.content
