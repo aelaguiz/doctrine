@@ -73,6 +73,7 @@ def home_value_sources(context, agent, unit):
     if match is not None:
         team_unit, team = match
         team_sources.append((team, team_unit))
+        team_sources.extend(agent_parents(context, team, team_unit))
         flow = context.session.flow_for_unit(team_unit)
         outer = [
             candidate for candidate in flow.teams_by_name.values()
@@ -85,7 +86,6 @@ def home_value_sources(context, agent, unit):
                 outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True
             )
         )
-        team_sources.extend(agent_parents(context, team, team_unit))
     agent_sources.extend(team_sources)
     agent_sources.extend(agent_parents(context, agent, owner))
     return agent_sources, team_sources

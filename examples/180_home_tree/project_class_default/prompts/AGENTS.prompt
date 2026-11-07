@@ -1,0 +1,25 @@
+# A team reads its own values, then its parent teams, then the folders above.
+
+abstract team Level:
+    role: "This file is for {{team:audience}}."
+
+
+team Root[Level]: "the repository"
+    home: "."
+    values:
+        audience: "every agent here"
+
+
+abstract team Pod[Level]:
+    values:
+        audience: "every member of {{team:title}}"
+
+
+team GrowthPod[Pod]: "the growth pod"
+    home: "pods/growth"
+
+
+team FeaturePod[Pod]: "the feature pod"
+    home: "pods/feature"
+    values:
+        audience: "the people building features"
