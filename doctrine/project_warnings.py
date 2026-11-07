@@ -12,7 +12,6 @@ from lark import Token
 
 from doctrine import model
 from doctrine._compiler.constants import _message_target
-from doctrine._compiler.indexing import lookup_flow_registry_decl
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.provenance import collect_quotes
 from doctrine._compiler.source_graph import model_walk
@@ -149,14 +148,16 @@ def message_warnings(context, homes):
             continue
         if isinstance(receiver, model.Team):
             flow = context.session.flow_for_unit(recipient_unit)
-            teams = (team for team in flow.teams_by_name.values() if not team.abstract
-                     and (team.home == receiver.home
-                          or PurePosixPath(receiver.home) in PurePosixPath(team.home).parents))
-            readers = (context._resolve_agent_contract(member, unit=team_unit).inputs
-                       for team in teams
-                       for team_unit, _ in (lookup_flow_registry_decl(flow, registry_name="teams_by_name",
-                                                                      declaration_name=team.name),)
-                       for member in team_members(context, team, unit=team_unit))
+            readers = (
+                context._resolve_agent_contract(member, unit=team_unit).inputs
+                for team_unit in flow.units_by_path.values()
+                for team in team_unit.declarations.teams_by_name.values()
+                if not team.abstract and (
+                    team.home == receiver.home
+                    or PurePosixPath(receiver.home) in PurePosixPath(team.home).parents
+                )
+                for member in team_members(context, team, unit=team_unit)
+            )
         else:
             readers = (context._resolve_agent_contract(receiver, unit=recipient_unit).inputs,)
         if not any(key in inputs for inputs in readers):
