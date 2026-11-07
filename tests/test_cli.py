@@ -20,6 +20,26 @@ from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_dead_links_fail_build_and_check(self):
+        for link in ("[missing](missing.md)", "@missing.md"):
+            with self.subTest(link=link):
+                root = self.project(
+                    'team T: "Team"\n    home: "t"\n    role: "' + link + '"\n'
+                )
+                for command in ("build", "check"):
+                    code, _, error = self.cli(root, command)
+                    self.assertEqual(code, 1, error)
+                    self.assertIn("E636 compile error: Dead link", error)
+                    self.assertIn("t/AGENTS.md points at missing.md, which does not exist.", error)
+
+    def test_links_to_planned_files_and_code_pass(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n'
+            '    role: "[self](AGENTS.md) and `[code](missing.md)`"\n'
+        )
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+
     def test_selected_build_checks_only_its_members_rules(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)

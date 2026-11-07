@@ -6,16 +6,19 @@ import json
 import re
 import sys
 import subprocess
+from html import unescape
 from contextlib import contextmanager, nullcontext, redirect_stderr
 from dataclasses import replace
 from difflib import SequenceMatcher
 from os.path import relpath
 from pathlib import Path, PurePosixPath
+from urllib.parse import unquote, urlsplit
 
 from doctrine import model
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
+from doctrine._compiler.markdown_links import markdown_destinations
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.provenance import declaration_owners
 from doctrine._compiler.source_graph import declarations_in
@@ -81,6 +84,24 @@ def check_homes(target, session, selectors):
     homes, files, selected, whole = compile_homes(
         target, session=session, selectors=selectors, evaluate_rules=True
     )
+    root = target.project_config.config_dir.resolve()
+    built = {(target.output_dir / path).resolve() for path in files}
+    for name, content in files.items():
+        if not name.endswith(".md") or isinstance(content, Path):
+            continue
+        text = content.decode()
+        for start, end, _ in markdown_destinations(text):
+            dest = text[start:end]
+            url = urlsplit(dest)
+            if url.scheme or url.netloc or not url.path:
+                continue
+            path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
+            resolved = ((target.output_dir / name).parent / Path(path).expanduser()).resolve()
+            if resolved.is_relative_to(root) and not resolved.exists() and resolved not in built:
+                raise compile_error(
+                    code="E636", summary="Dead link",
+                    detail=f"{name} points at {dest}, which does not exist.",
+                )
     settings = runtime_settings(target)
     context = CompilationContext(session)
     validate_load_rules(context, homes, selected, whole)

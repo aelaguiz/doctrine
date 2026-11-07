@@ -35,6 +35,7 @@ HOME_DIAGNOSTICS = {
         '[tool.doctrine.runtimes.codex]\nexternal = [{path = "absent.md"}]\n',
     ),
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E636": ('team T: "Team"\n    home: "t"\n    role: "[Missing](missing.md)"\n', ""),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E650": ('person P: "Person"\nquote Q: "Words"\n    by: P\n    on: "bad"\nteam T: "Team"\n    home: "t"\n    role: "{{Q}}"\n', ""),
     "W305": ('person P: "Person"\nquote Q: "Words"\n    by: P\n    on: "2026-11-05"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
