@@ -394,7 +394,7 @@ class ContractBodySummary:
 
 @dataclass(slots=True, frozen=True)
 class AgentContract:
-    inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl]]
+    inputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.InputDecl | model.OutputDecl]]
     input_bindings_by_path: dict[tuple[str, ...], ContractBinding]
     outputs: dict[tuple[tuple[str, ...], str], tuple[IndexedUnit, model.OutputDecl]]
     output_bindings_by_path: dict[tuple[str, ...], ContractBinding]

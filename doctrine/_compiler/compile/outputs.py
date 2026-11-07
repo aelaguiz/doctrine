@@ -4,6 +4,9 @@ import re
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.constants import _message_target
+from doctrine._compiler.source_graph import declaration_match
+from doctrine._compiler.teams import find_home_team
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
@@ -178,6 +181,20 @@ class CompileOutputsMixin:
         requirement_item = scalar_items.get("requirement")
         files_section = section_items.get("files")
 
+        message = _message_target(decl)
+        if message:
+            for field, value, span in (
+                ("shape", shape_item, _source_span(shape_item)),
+                ("requirement", requirement_item, _source_span(requirement_item)),
+                ("schema", decl.schema_ref, decl.schema_source_span),
+                ("structure", decl.structure_ref, decl.structure_source_span),
+                ("files", files_section, _source_span(files_section)),
+            ):
+                if value is not None:
+                    raise output_compile_error(code="E660", summary="Invalid message",
+                        detail=f"`Message` output `{decl.name}` can't have `{field}`. A message is prose.",
+                        unit=unit, source_span=span or decl.source_span)
+
         if files_section is not None and (target_item is not None or shape_item is not None):
             related = []
             if target_item is not None:
@@ -207,7 +224,7 @@ class CompileOutputsMixin:
                     "Choose either `files:` or the `target:` / `shape:` pair, not both.",
                 ),
             )
-        if files_section is None and (target_item is None or shape_item is None):
+        if files_section is None and (target_item is None or (shape_item is None and not message)):
             primary_span = (
                 _source_span(target_item)
                 or _source_span(shape_item)
@@ -241,7 +258,30 @@ class CompileOutputsMixin:
             schema_section: CompiledSection | None = None
             structure_items: tuple[CompiledBodyItem, ...] = ()
             use_compact_contract = False
-            if files_section is not None:
+            if message:
+                recipient = next((item for item in message.body or ()
+                                  if isinstance(item, model.RecordScalar) and item.key == "to"), None)
+                match = None
+                if recipient is not None and not isinstance(recipient.value, str):
+                    if isinstance(recipient.value, model.NameRef):
+                        match = declaration_match(self, recipient.value, unit)
+                    if match is None or not isinstance(match[1], model.Agent):
+                        raise output_compile_error(code="E660", summary="Invalid message",
+                            detail=f"`to:` in `{decl.name}` must be an agent, a team, or a string.",
+                            unit=unit, source_span=recipient.source_span)
+                self._compile_output_config_rows(message.body or (),
+                    spec=self._resolve_output_target_spec(message.value, unit=unit), unit=unit,
+                    owner_label=f"output {decl.name} target", owner_source_span=message.source_span)
+                if isinstance(recipient.value, str):
+                    title = recipient.value
+                else:
+                    owner, agent = match
+                    title = agent.title or agent.name
+                    if isinstance(agent, model.Member):
+                        _, team = find_home_team(self, agent, unit=owner)
+                        title = f"{team.title}'s {title}"
+                body.append(f"Send this to {title}.")
+            elif files_section is not None:
                 contract_rows = [
                     ("Target", "File Set"),
                 ]

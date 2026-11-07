@@ -64,6 +64,7 @@ class CompileAgentMixin:
                     agent_key=agent_key,
                 )
                 for (_input_key, (input_unit, input_decl)) in sorted(agent_contract.inputs.items())
+                if isinstance(input_decl, model.InputDecl)
             )
             if spec is not None
         )

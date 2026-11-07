@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Messages (6.0.0; language 6.0)
+
+- A `Message` output renders the same prose for the sender and receiver. The
+  receiver may list it in `inputs:`. `W303` reports a message with no reader.
+
 ### Provenance (6.0.0; language 6.0)
 
 - `quote` records words and their source. Named and inline quotes render with

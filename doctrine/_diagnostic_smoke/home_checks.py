@@ -86,6 +86,15 @@ HOME_DIAGNOSTICS.update({
         'workflow Shared: "Shared"\n    "Shared text."\nteam T: "Team"\n    home: "t"\n'
         '    work: Shared\n    member qa: "QA"\n        role: "Test."\n        work: Shared\n', "",
     ),
+    "E660": (
+        'output Note: "Note"\n    target: Message\n        to: "reader"\n    shape: Comment\n'
+        'team T: "Team"\n    home: "t"\n    member a: "A"\n        role: "Test."\n'
+        '        outputs: "Outputs"\n            Note\n', "",
+    ),
+    "W303": (
+        'output Note: "Note"\n    target: Message\n        to: T.reader\n'
+        'team T: "Team"\n    home: "t"\n    member reader: "Reader"\n        role: "Test."\n', "",
+    ),
     "W304": (
         'team T: "Team"\n    home: "t"\n    role: "Test."\n'
         '    values:\n        unused: "No reader."\n', "",

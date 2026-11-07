@@ -1731,8 +1731,14 @@ output ReviewComment: "Review Comment"
 Important rules:
 
 - An output uses either `target` plus `shape`, or a titled `files:` section.
+  A `Message` uses `target` and `to:` instead.
 - Built-in targets used in the shipped corpus include `TurnResponse` and
-  `File`.
+  `File` and `Message`.
+- A `Message` has prose for a receiver. Its `to:` names an agent, member,
+  team, or string. It cannot have `shape`, `requirement`, `schema`, `structure`,
+  or `files`. The sender lists it in `outputs:` and the receiver can list the
+  same output in `inputs:`. Both see the same body. `W303` warns when an agent
+  or team named in `to:` has no reader in its scope.
 - Custom targets can be declared with `output target`.
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.

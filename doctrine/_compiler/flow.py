@@ -10,6 +10,7 @@ from doctrine._compiler.constants import (
     _BUILTIN_RENDER_PROFILE_NAMES,
     _INTERPOLATION_EXPR_RE,
     _INTERPOLATION_RE,
+    _message_target,
     _READABLE_DECL_REGISTRIES,
     _RESERVED_AGENT_FIELD_KEYS,
     _REVIEW_CONTRACT_FACT_KEYS,
@@ -816,10 +817,12 @@ class FlowMixin:
         key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
-        source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
-            decl,
-            unit=unit,
-        )
+        if isinstance(decl, model.OutputDecl):
+            source_title, shape_title, requirement_title, detail_lines = None, None, None, ()
+        else:
+            source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
+                decl, unit=unit,
+            )
         nodes[key] = FlowInputNode(
             module_parts=unit.module_parts,
             name=decl.name,
@@ -845,12 +848,15 @@ class FlowMixin:
         key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
-        target_title, primary_path, shape_title, requirement_title, detail_lines = (
-            self._flow_output_summary(
-                decl,
-                unit=unit,
+        if _message_target(decl):
+            self._compile_output_decl(decl, unit=unit)
+            target_title, primary_path, shape_title, requirement_title, detail_lines = (
+                "Message", None, None, None, ()
             )
-        )
+        else:
+            target_title, primary_path, shape_title, requirement_title, detail_lines = (
+                self._flow_output_summary(decl, unit=unit)
+            )
         nodes[key] = FlowOutputNode(
             module_parts=unit.module_parts,
             name=decl.name,

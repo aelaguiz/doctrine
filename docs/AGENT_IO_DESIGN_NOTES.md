@@ -87,6 +87,9 @@ one direct item.
 
 ## Outputs
 
+`Message` is an ordinary `output`. Doctrine renders it on both sides and carries nothing
+at run time.
+
 An `output` describes one emitted artifact:
 
 ```prompt

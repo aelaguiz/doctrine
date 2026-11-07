@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from doctrine import model
 from doctrine._compiler.declaration_kinds import (
     ADDRESSABLE_ROOT_DECLARATION_KINDS,
     READABLE_DECLARATION_KINDS,
@@ -41,6 +42,7 @@ _BUILTIN_INPUT_SOURCES = {
 }
 
 _BUILTIN_OUTPUT_TARGETS = {
+    "Message": ResolvedOutputTargetSpec(title="Message", required_keys={"to": "To"}, optional_keys={}),
     "TurnResponse": ResolvedOutputTargetSpec(
         title="Turn Response",
         required_keys={},
@@ -52,6 +54,12 @@ _BUILTIN_OUTPUT_TARGETS = {
         optional_keys={},
     ),
 }
+
+
+def _message_target(decl):
+    return next((item for item in decl.items if isinstance(item, model.RecordScalar)
+                 and item.key == "target" and isinstance(item.value, model.NameRef)
+                 and not item.value.module_parts and item.value.declaration_name == "Message"), None)
 
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
 

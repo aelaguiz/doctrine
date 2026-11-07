@@ -27,9 +27,10 @@ Read the source of truth in this order before you ship code:"""
 """
         "Important rules:"
         bullets rules:
-            "An output uses either `target` plus `shape`, or a titled `files:` section."
+            "An output uses either `target` plus `shape`, or a titled `files:` section. A `Message` uses `target` and `to:` instead."
             """Built-in targets used in the shipped corpus include `TurnResponse` and
-  `File`. Custom targets can be declared with `output target`."""
+  `File` and `Message`. Custom targets can be declared with `output target`."""
+            "A `Message` is prose for a receiver. Its `to:` names an agent, member, team, or string. It cannot have `shape`, `requirement`, `schema`, `structure`, or `files`. The receiver may list it in `inputs:`. Both sides see the same body."
             "Output shapes can be named with `output shape`."
             """`schema:` on `output` attaches a Doctrine `schema` declaration for
   schema-owned sections, gates, and artifacts."""
