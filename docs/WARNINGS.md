@@ -43,8 +43,9 @@ disable = ["W301"]
 ```
 
 Near-copy checks read source paragraphs, so shared text used by many homes
-is counted once. Each authored string is split at blank lines. Paragraphs
-with fewer than 12 word tokens are skipped. Tokens ignore case and Markdown
+is counted once. Each authored string and `from` file is split at blank lines.
+Code fences do not count. A `from` paragraph names its own file and line.
+Paragraphs with fewer than 12 word tokens are skipped. Tokens ignore case and Markdown
 emphasis. Candidate pairs must share at least three 4-token shingles. A
 `SequenceMatcher` ratio of 0.85 or more is a finding, with `autojunk=False`.
 A ratio of 1 is a copy; lower ratios are near copies.

@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import ast
 import hashlib
 import json
-from dataclasses import fields, is_dataclass
-
-from lark import Token
+from dataclasses import fields, is_dataclass, replace
 
 from doctrine import model
-from doctrine.parser import _build_lark_parser
 from doctrine._compiler.constants import _INTERPOLATION_RE, LATE_ROOT
 from doctrine._compiler.declaration_kinds import DECLARATION_KINDS
 from doctrine._compiler.indexing import unit_loaded_imports, lookup_flow_registry_decl
-from doctrine._compiler.teams import find_team_member
+from doctrine._compiler.teams import find_team_member, home_value_sources
 
 
 def model_walk(value):
@@ -107,10 +103,9 @@ def dependency_graph(context, sources):
     return graph
 
 
-def source_strings(path):
-    return [
-        (ast.literal_eval(str(token)), token.line)
-        for token in _build_lark_parser().parse(path.read_text()).scan_values(
-            lambda value: isinstance(value, Token)
-        ) if token.type in {"ESCAPED_STRING", "MULTILINE_STRING"}
-    ]
+def build_home_deps(context, homes):
+    for data in homes.values():
+        sources, team_sources = home_value_sources(context, data["owner"], data["unit"])
+        graph = dependency_graph(context, [sources[0], *team_sources])
+        data["map"] = replace(data["map"], deps=frozenset(graph))
+        data["deps_graph"] = graph

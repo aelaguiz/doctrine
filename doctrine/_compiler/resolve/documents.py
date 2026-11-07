@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from doctrine import model
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
-from doctrine._compiler.resolve.patches import mark_wildcard, prepare_body_patches, apply_path_patches
+from doctrine._compiler.resolve.patches import (
+    mark_wildcard, prepare_body_patches, apply_path_patches,
+)
 from dataclasses import replace
 
 from doctrine._compiler.readable_diagnostics import (

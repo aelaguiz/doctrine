@@ -63,7 +63,8 @@ HOME_DIAGNOSTICS.update({
     "RULE006": (
         'workflow Lesson: "Lesson"\n    "Use numbers."\nteam T: "Team"\n    home: "t"\n'
         '    member qa: "QA"\n        role: "Test."\nrule R: "Load lesson"\n    scope:\n'
-        '        member: qa\n    assertions:\n        requires load Lesson\n    message: "Use numbers."\n', "",
+        '        member: qa\n    assertions:\n        requires load Lesson\n'
+        '    message: "Use numbers."\n', "",
     ),
     "RULE007": (
         'workflow Lesson: "Lesson"\n    "Use numbers."\nteam T: "Team"\n    home: "t"\n'
@@ -75,7 +76,8 @@ HOME_DIAGNOSTICS.update({
         'team T: "Team"\n    home: "t"\n'
         '    role: "Read every change with care and test each part that a user will meet today."\n'
         '    member qa: "QA"\n'
-        '        role: "Read every change with care and test each part that a user will meet today."\n', "",
+        '        role: "Read every change with care and test each part '
+        'that a user will meet today."\n', "",
     ),
     "W302": (
         'workflow Shared: "Shared"\n    "Shared text."\nteam T: "Team"\n    home: "t"\n'

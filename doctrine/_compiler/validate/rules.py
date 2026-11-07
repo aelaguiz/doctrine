@@ -77,7 +77,9 @@ class ValidateRulesMixin:
     ) -> None:
         for predicate in rule.scope.predicates:
             if isinstance(predicate, model.TeamPredicate) and predicate.target is not None:
-                target = ".".join((*predicate.target.module_parts, predicate.target.declaration_name))
+                target = ".".join((
+                    *predicate.target.module_parts, predicate.target.declaration_name
+                ))
                 match = declaration_match(self, predicate.target, rule_unit)
                 if match is None or not isinstance(match[1], model.Team):
                     self._raise_rule_unknown_scope_target(
@@ -131,7 +133,9 @@ class ValidateRulesMixin:
                         return True
                     rule_unit = flow.declaration_owner_units_by_id[id(rule)]
                     target = declaration_match(self, predicate.target, rule_unit)
-                    if (match[0].prompt_file.source_path, match[1].name) == (target[0].prompt_file.source_path, target[1].name):
+                    if (match[0].prompt_file.source_path, match[1].name) == (
+                        target[0].prompt_file.source_path, target[1].name
+                    ):
                         return True
                 continue
             if isinstance(predicate, model.MemberPredicate):
@@ -145,7 +149,9 @@ class ValidateRulesMixin:
                     home = match[1].home
                     if isinstance(agent, model.Member):
                         home = str(PurePosixPath(home) / agent.key.replace("_", "-"))
-                if home is not None and re.fullmatch(glob.translate(predicate.glob, recursive=True), home):
+                if home is not None and re.fullmatch(
+                    glob.translate(predicate.glob, recursive=True), home
+                ):
                     return True
                 continue
             if isinstance(predicate, model.AgentTagPredicate):

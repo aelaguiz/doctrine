@@ -39,7 +39,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.overlays and not args.rev and args.command != "diff":
         parser.error("--with needs --rev")
-    return run_command(args, {"build": build, "check": check, "load": load, "diff": diff, "where": where}[args.command])
+    return run_command(args, {
+        "build": build, "check": check, "load": load, "diff": diff, "where": where
+    }[args.command])
 
 
 if __name__ == "__main__":

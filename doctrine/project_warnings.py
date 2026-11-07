@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import ast
 import re
 from collections import defaultdict
 from difflib import SequenceMatcher
 from itertools import combinations
 
+from lark import Token
+
 from doctrine import model
-from doctrine._compiler.source_graph import model_walk, source_strings
+from doctrine._compiler.markdown_reader import fenced_lines
+from doctrine._compiler.source_graph import model_walk
+from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
 
 
@@ -31,18 +36,36 @@ def project_warnings(session, homes, loads):
                 if isinstance(value, model.ValuesField):
                     for key, _, span in value.items:
                         unused[path, span.line] = key
-        for text, line in source_strings(path):
+        texts = []
+        tree = _build_lark_parser().parse(path.read_text())
+        for token in tree.scan_values(lambda value: isinstance(value, Token)):
+            if token.type not in {"ESCAPED_STRING", "MULTILINE_STRING"}:
+                continue
             declaration = next(
                 declaration for declaration in reversed(declarations)
-                if declaration.source_span.line <= line
+                if declaration.source_span.line <= token.line
             )
             name = ".".join((*unit.module_parts, declaration.name))
+            texts.append((name, path, token.line, ast.literal_eval(str(token))))
+        for declaration in declarations:
+            if (isinstance(declaration, (model.Agent, model.WorkflowDecl))
+                    and declaration.markdown_path):
+                source = base / declaration.markdown_path
+                name = ".".join((*unit.module_parts, declaration.name))
+                texts.append((name, source, 1, source.read_text()))
+        for name, source, line, text in texts:
+            text = "".join(
+                "\n" if inside else line
+                for line, inside in fenced_lines(text.splitlines(keepends=True))
+            )
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):
-                paragraph = re.sub(r"(?<!\w)(_+)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", paragraph, flags=re.S)
+                paragraph = re.sub(
+                    r"(?<!\w)(_+)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", paragraph, flags=re.S
+                )
                 tokens = re.findall(r"\w+", paragraph.casefold())
                 if len(tokens) >= 12:
-                    paragraphs.append((name, f"{path.relative_to(base)}:{line + offset}", tokens))
+                    paragraphs.append((name, f"{source.relative_to(base)}:{line + offset}", tokens))
                 offset += paragraph.count("\n")
     index, candidates = defaultdict(set), defaultdict(int)
     for number, (_, _, tokens) in enumerate(paragraphs):
@@ -65,7 +88,10 @@ def project_warnings(session, homes, loads):
         groups[a[0], b[0]].append({"sites": [a[1], b[1]], "words": words})
     warnings = []
     for (a, b), examples in groups.items():
-        text = f"W301 near copy: {a} and {b} share {len(examples)} paragraphs that differ by a few words."
+        text = (
+            f"W301 near copy: {a} and {b} share {len(examples)} paragraphs "
+            "that differ by a few words."
+        )
         for example in examples[:3]:
             text += "\n- " + " and ".join(example["sites"]) + ": " + " / ".join(example["words"])
         text += "\nHint: Share the paragraph and put the different words in `values:`."

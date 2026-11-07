@@ -352,7 +352,9 @@ class ResolveAgentSlotsMixin:
                             hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
-                    resolved_slots.append(mark_wildcard(parent_slot) if field.wildcard else parent_slot)
+                    resolved_slots.append(
+                        mark_wildcard(parent_slot) if field.wildcard else parent_slot
+                    )
                     continue
 
                 if isinstance(field, model.AuthoredSlotOverride):

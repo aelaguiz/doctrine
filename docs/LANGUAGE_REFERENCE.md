@@ -2283,13 +2283,17 @@ for the first five `RULE###` codes. Examples
 and each home's load change in UTF-16 characters. Details have their own size
 change. Use `--base-tree DIR` to compare two project folders, or `--with PATH`
 to compare only those working files against the base. Repeat `--with` for
-several files. JSON `outputs` lists only files whose bytes changed. New
-sections that arrive through `inherit *` get their own list.
+several files. JSON `outputs` lists only files whose bytes changed. Each
+changed declaration's `homes` list holds a `home` and its `delta`. New
+sections that arrive through `inherit *` get their own list. A base that
+cannot compile exits 2 and prints its error. No comparison takes place.
 
 `doctrine where "some words"` finds the source of text in a home's load.
 Case and whitespace do not matter. A sentence at a parent level reaches
-every home below it. Use `--home PATH` to limit the homes searched. A search
-with no match exits 1. See [example 187](../examples/187_doctrine_diff).
+every home below it. The source site names the section that holds the text.
+Use `--home PATH` to limit the homes searched. With `--json`, the result has
+`format_version: 1` and `matches`. Each match has `origin`, `site`, and `homes`.
+A search with no match exits 1. See [example 187](../examples/187_doctrine_diff).
 
 ## Markdown Emission
 

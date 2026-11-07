@@ -5,17 +5,15 @@ import json
 import os
 import re
 import sys
-from dataclasses import replace
 from pathlib import Path, PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
-from doctrine._compiler.source_graph import dependency_graph
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
-from doctrine._compiler.teams import home_value_sources, team_members, team_contract
+from doctrine._compiler.teams import team_members, team_contract
 from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
     _build_runtime_emit_plan,
@@ -85,9 +83,7 @@ def compile_home(target, session, context, home, owner, unit, compiled, plan):
     session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
     if plan is None:
         compiled = session.compile_agent(owner.name)
-    sources, team_sources = home_value_sources(context, owner, unit)
-    graph = dependency_graph(context, [sources[0], *team_sources])
-    home_map = replace(build_home_map(compiled, home), deps=frozenset(graph))
+    home_map = build_home_map(compiled, home)
     source_compiled = compiled
     compiled, parts, pointers = split_details(compiled, home)
     files = home_files(target, home, owner, unit, compiled, pointers, plan, session.evaluate_rules)
@@ -97,7 +93,6 @@ def compile_home(target, session, context, home, owner, unit, compiled, plan):
         "compiled": compiled,
         "source_compiled": source_compiled,
         "map": home_map,
-        "deps_graph": graph,
         "files": list(files),
         "pointers": pointers,
         "budgets": home_budgets(owner, unit, context),

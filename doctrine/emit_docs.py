@@ -176,7 +176,10 @@ def emit_target(
 
     try:
         session.emit_paths = {plan.root.agent_name: target.output_dir / plan.markdown_path.relative_to(output_root) for plan in planned_emits}
-        session.home_paths = {plan.root.agent_name: plan.markdown_path.parent.relative_to(output_root).as_posix() for plan in planned_emits}
+        session.home_paths = {
+            plan.root.agent_name: plan.markdown_path.parent.relative_to(output_root).as_posix()
+            for plan in planned_emits
+        }
         previous_turn_contexts = _build_previous_turn_contexts(
             session,
             agent_roots=tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),
@@ -195,7 +198,9 @@ def emit_target(
         plan.markdown_path.parent.relative_to(output_root).as_posix(): {
             "owner": session.flow_for_unit(plan.root.unit).agents_by_name[plan.root.agent_name],
             "unit": plan.root.unit,
-            "map": build_home_map(compiled, plan.markdown_path.parent.relative_to(output_root).as_posix()),
+            "map": build_home_map(
+                compiled, plan.markdown_path.parent.relative_to(output_root).as_posix()
+            ),
         }
         for plan, compiled in zip(planned_emits, compiled_agents, strict=True)
     })

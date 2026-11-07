@@ -35,9 +35,24 @@ class CliTests(HomeProject, unittest.TestCase):
         root = self.project(example="187_doctrine_diff")
         code, output, error = self.cli(root, "where", "YOU   FOLLOW the BET")
         self.assertEqual(code, 0, error)
-        self.assertIn("PodQa.whom  prompts/AGENTS.prompt:4", output)
+        self.assertIn("PodQa.whom  prompts/AGENTS.prompt:3", output)
         self.assertIn("reaches 1 home: pods/growth/qa", output)
         self.assertNotIn("pods/feature/qa", output)
+
+    def test_where_json(self):
+        root = self.project(example="187_doctrine_diff")
+        code, output, error = self.cli(root, "where", "YOU   FOLLOW the BET", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output), {
+            "format_version": 1,
+            "matches": [{
+                "origin": "PodQa.whom", "site": "prompts/AGENTS.prompt:3",
+                "homes": ["pods/growth/qa"],
+            }],
+        })
+        code, output, error = self.cli(root, "where", "No such text", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output), {"format_version": 1, "matches": []})
 
     def test_where_reports_reach(self):
         root = self.project('''team T: "Team"
@@ -105,6 +120,67 @@ rule R: "Rule"
         self.assertEqual(result[0], 1, result)
         self.assertIn("RULE006", result[2])
         self.assertIn("\n- Qa must load Lesson.", result[2])
+
+    def test_named_team_scope_matches_only_its_members(self):
+        source = '''workflow Lesson: "Lesson"
+    "Shared text."
+team A: "First team"
+    home: "first"
+    member qa: "QA"
+        role: "Test."
+        work: Lesson
+team B: "Second team"
+    home: "second"
+    member qa: "QA"
+        role: "Test."
+rule R: "Rule"
+    scope:
+        team: A
+    assertions:
+        requires load Lesson
+    message: "Read the lesson."
+'''
+        self.assertEqual(self.cli(self.project(source), "check")[0], 0)
+        result = self.cli(self.project(source.replace('team: A', 'team: B')), "check")
+        self.assertEqual(result[0], 1, result)
+        self.assertIn("RULE006", result[2])
+        self.assertIn("B.qa must load Lesson.", result[2])
+
+    def test_load_rules_stay_in_their_flow(self):
+        root = self.project('''import worker
+workflow Lesson: "Lesson"
+    "Root lesson."
+team T: "Team"
+    home: "pod"
+    role: "Root role."
+rule R: "Root rule"
+    scope:
+        agent_tag: A
+    assertions:
+        requires load Lesson
+    message: "Read the lesson."
+''')
+        (root / "prompts/worker").mkdir()
+        (root / "prompts/worker/AGENTS.prompt").write_text('''workflow Local: "Local lesson"
+    "Local text."
+export agent A:
+    role: "Test."
+    work: Local
+rule R: "Local rule"
+    scope:
+        agent_tag: A
+    assertions:
+        requires load Local
+    message: "Read the local lesson."
+''')
+        result = self.cli(root, "check")
+        self.assertEqual(result[0], 0, result)
+
+    def test_build_does_not_walk_dependencies(self):
+        root = self.project(example="186_rule_load_assertions")
+        with patch("doctrine._compiler.source_graph.model_walk", side_effect=AssertionError):
+            result = self.cli(root, "build", ".")
+        self.assertEqual(result[0], 0, result)
 
     def test_home_glob_star_stays_in_one_segment(self):
         source = '''workflow Lesson: "Lesson"

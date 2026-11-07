@@ -15,11 +15,12 @@ class ProjectWarningTests(HomeProject, unittest.TestCase):
     def test_w301_type_1_and_near(self):
         root = self.project(example="188_project_warnings")
         source = root / "prompts/AGENTS.prompt"
-        source.write_text(source.read_text().replace('team Root:', '''abstract agent Copy:
-    role: "You test."
-    plan: "Plan"
-        "You follow the opportunity's card from the design on, and you write the test plan as the design settles."
-team Root:'''))
+        copy = (
+            'abstract agent Copy:\n    role: "You test."\n    plan: "Plan"\n'
+            '        "You follow the opportunity\'s card from the design on, '
+            'and you write the test plan as the design settles."\nteam Root:'
+        )
+        source.write_text(source.read_text().replace('team Root:', copy))
         warnings = [item for item in self.warnings(root) if item["code"] == "W301"]
         self.assertEqual(len(warnings), 3)
         self.assertTrue(any(not item["examples"][0]["words"] for item in warnings))
@@ -33,6 +34,27 @@ team Root:'''))
         role: "You test."
 ''')
         self.assertEqual(self.warnings(root), [])
+
+    def test_w301_reads_from_files(self):
+        root = self.project('''abstract agent A from "first.md"
+workflow B from "second.md"
+team T: "Team"
+    home: "pod"
+    member qa[A]: "QA"
+        work: B
+''')
+        paragraph = "Read every change with care and test each part that a user will meet today."
+        (root / "first.md").write_text(
+            f"# Role\n\n{paragraph}\n\n~~~text\n{paragraph}\n```\n\n{paragraph}\n~~~\n"
+        )
+        (root / "second.md").write_text(
+            f"# Work\n\n{paragraph.replace('user', 'reader')}\n\n```text\n{paragraph}\n```\n"
+        )
+        warning, = self.warnings(root)
+        self.assertEqual(warning["code"], "W301")
+        self.assertEqual(warning["examples"], [
+            {"sites": ["first.md:3", "second.md:3"], "words": ["user", "reader"]}
+        ])
 
     def test_w301_shared_section_not_a_copy(self):
         root = self.project('''workflow Shared: "Shared"
@@ -73,12 +95,18 @@ team T: "Team"
     def test_w302_double_load(self):
         warnings = self.warnings(self.project(example="188_project_warnings"))
         warning, = [item for item in warnings if item["code"] == "W302"]
-        self.assertIn("Shared reaches pods/growth/qa from AGENTS.md and pods/growth/qa/AGENTS.md", warning["text"])
+        self.assertIn(
+            "Shared reaches pods/growth/qa from AGENTS.md and pods/growth/qa/AGENTS.md",
+            warning["text"],
+        )
 
     def test_w302_groups_across_slot_keys(self):
         root = self.project(example="188_project_warnings")
         source = root / "prompts/AGENTS.prompt"
-        source.write_text(source.read_text().replace('    shared: Shared', '    first_key: Shared').replace('        again: Shared', '        second_key: Shared'))
+        source.write_text(
+            source.read_text().replace('    shared: Shared', '    first_key: Shared')
+            .replace('        again: Shared', '        second_key: Shared')
+        )
         self.assertEqual(sum(item["code"] == "W302" for item in self.warnings(root)), 1)
 
     def test_w304_unused_value(self):
@@ -92,10 +120,14 @@ team T: "Team"
         role: "{{agent:first}}"
 ''')
         warning, = self.warnings(root)
-        self.assertEqual(warning["text"], "W304 unused value: unused at prompts/AGENTS.prompt:4 is read by no home.")
+        self.assertEqual(
+            warning["text"],
+            "W304 unused value: unused at prompts/AGENTS.prompt:4 is read by no home.",
+        )
 
     def test_check_disable_list(self):
-        self.assertEqual(self.warnings(self.project(example="188_project_warnings", fixture="project_disabled"), "--strict"), [])
+        root = self.project(example="188_project_warnings", fixture="project_disabled")
+        self.assertEqual(self.warnings(root, "--strict"), [])
 
     def test_strict_fails_on_warning(self):
         root = self.project(example="188_project_warnings")

@@ -59,11 +59,14 @@ def home_value_sources(context, agent, unit):
         flow = context.session.flow_for_unit(team_unit)
         outer = [
             candidate for candidate in flow.teams_by_name.values()
-            if not candidate.abstract and PurePosixPath(candidate.home) in PurePosixPath(team.home).parents
+            if not candidate.abstract
+            and PurePosixPath(candidate.home) in PurePosixPath(team.home).parents
         ]
         team_sources.extend(
             (candidate, flow.declaration_owner_units_by_id[id(candidate)])
-            for candidate in sorted(outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True)
+            for candidate in sorted(
+                outer, key=lambda item: len(PurePosixPath(item.home).parts), reverse=True
+            )
         )
         team_sources.extend(parents(team, team_unit))
     agent_sources.extend(team_sources)

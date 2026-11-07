@@ -15,12 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `RULE006` and `RULE007` name missing and forbidden text. Builds run no rules.
 - `diff` compares source hashes and home loads against a revision or project
   tree. It lists changed files, details sizes, reach, and new wildcard sections.
-  Source hashes include Markdown `from` files and ignore source line moves.
+  JSON lists each reached home's size change. A base that cannot compile
+  exits 2. Source hashes include Markdown `from` files and ignore source line moves.
 - `where` finds the source and home reach of a sentence, ignoring case and
-  whitespace.
+  whitespace. Text and JSON name the source section and the homes it reaches.
 - Project checks warn on near copies (`W301`), double loads (`W302`), and
   unused values (`W304`). Projects can disable warning codes. JSON near-copy
-  findings include every example pair.
+  findings include every example pair. Near-copy checks read `from` files too
+  and skip code fences.
 - The agent linter can review changed declarations against a reached home.
   Its three new findings cover repeated lessons, added rules beside a
   judgment, and changes that contradict a parent.
