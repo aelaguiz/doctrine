@@ -32,7 +32,8 @@ def run_cli_contract(case):
                     except SystemExit as exc:
                         code = exc.code
                 expected = spec["expected_exit"] if args is spec["args"] else 0
-                assert code == expected, f"Expected exit {expected}, got {code}.\n{stdout.getvalue()}\n{stderr.getvalue()}"
+                assert code == expected, (f"Expected exit {expected}, got {code}.\n"
+                                          f"{stdout.getvalue()}\n{stderr.getvalue()}")
             output, errors = stdout.getvalue(), stderr.getvalue()
             if "expected_stdout_lines" in spec:
                 assert output.splitlines() == spec["expected_stdout_lines"], output
@@ -50,7 +51,8 @@ def run_cli_contract(case):
             for name, target in spec.get("expected_links", {}).items():
                 assert os.readlink(project / name) == target, name
             for name, expected_file in spec.get("expected_files", {}).items():
-                actual, expected = (project / name).read_bytes(), (case.example_dir / expected_file).read_bytes()
+                actual = (project / name).read_bytes()
+                expected = (case.example_dir / expected_file).read_bytes()
                 if name.endswith(".json"):
                     assert json.loads(actual) == json.loads(expected), name
                 else:

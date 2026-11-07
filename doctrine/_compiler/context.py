@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from doctrine import model
 from doctrine._compiler.late_binding import bind_home, reject_late_roots
-from doctrine.details import reject_details
+from doctrine._compiler.details import reject_details
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.resolved_types import (

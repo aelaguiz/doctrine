@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Team targets emit home trees, runtime files, and `TEAM.contract.json`.
   Whole builds record paths in `HOMES.contract.json` and remove obsolete files.
+  A record with a merge conflict counts as missing and is rebuilt.
   Headers guard hand edits. Equal bytes skip writes; writes are atomic.
 - `details` moves longer cases into local or shared companions. A paragraph
   can hold details. Shared companions keep their owner's words and headings.

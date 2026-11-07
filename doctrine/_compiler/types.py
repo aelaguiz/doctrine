@@ -25,7 +25,7 @@ class CompiledSection:
     title: str
     body: tuple[CompiledBodyItem, ...]
     kind: str = "section"
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
     drops: tuple = ()
     requirement: str | None = None
@@ -44,7 +44,7 @@ class CompiledSequenceBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -57,7 +57,7 @@ class CompiledBulletsBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -70,7 +70,7 @@ class CompiledChecklistBlock:
     item_schema: ReadableInlineSchemaData | None = None
     semantic_target: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -81,7 +81,7 @@ class CompiledDefinitionsBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -92,7 +92,7 @@ class CompiledPropertiesBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -132,7 +132,7 @@ class CompiledTableBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -144,7 +144,7 @@ class CompiledCalloutBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -156,7 +156,7 @@ class CompiledCodeBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -168,7 +168,7 @@ class CompiledRawTextBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -179,7 +179,7 @@ class CompiledFootnotesBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -192,7 +192,7 @@ class CompiledImageBlock:
     requirement: str | None = None
     when_text: str | None = None
     anonymous: bool = False
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -201,7 +201,7 @@ class CompiledGuardBlock:
     title: str | None
     body: tuple[CompiledBodyItem, ...]
     when_text: str
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 
@@ -209,7 +209,7 @@ class CompiledGuardBlock:
 class CompiledRuleBlock:
     requirement: str | None = None
     when_text: str | None = None
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     key: str = ""
 
 

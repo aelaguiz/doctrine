@@ -342,7 +342,7 @@ class TeamHomeTests(HomeProject, unittest.TestCase):
         members = json.loads(files['t/TEAM.contract.json'])['members']
         self.assertEqual([member['key'] for member in members], ['qa', 'lead'])
         self.assertEqual(members[0]['sections'], ['Work'])
-        self.assertEqual(homes['t/qa']['compiled'].fields[0].origin[0], 'Base.qa')
+        self.assertEqual(homes['t/qa']['compiled'].fields[0].origin.declaration, 'Base.qa')
 
     def test_e607_member_folder_collides_with_team(self):
         root = HomeProject.project(self, 'team A: "A"\n    home: "a"\n    member qa: "QA"\n        role: "Test."\nteam B: "B"\n    home: "a/qa"\n    role: "Other."\n')

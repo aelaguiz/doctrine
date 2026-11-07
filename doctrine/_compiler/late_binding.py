@@ -5,7 +5,7 @@ from dataclasses import fields, is_dataclass, replace
 from pathlib import PurePosixPath
 
 from doctrine import model
-from doctrine.details import validate_shared_details
+from doctrine._compiler.details import validate_shared_details
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members
@@ -23,7 +23,6 @@ def map_text(value, substitute, markdown=None):
     if isinstance(value, tuple):
         return tuple(map_text(item, substitute, markdown) for item in value)
     if is_dataclass(value):
-        validate_shared_details(value)
         return replace(value, **{
             field.name: map_text(getattr(value, field.name), substitute, markdown)
             for field in fields(value) if field.name not in {"origin", "drops"}
@@ -56,6 +55,7 @@ def value_reading_sites(context, root, key):
 
 
 def bind_home(context, compiled, agent, *, unit):
+    validate_shared_details(compiled)
     team_match = find_home_team(context, agent, unit=unit)
     team_unit, team = team_match if team_match else (None, None)
     missing = []

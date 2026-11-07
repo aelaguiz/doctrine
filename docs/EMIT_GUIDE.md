@@ -83,7 +83,8 @@ Writes are atomic, and equal bytes keep their file's mtime.
 
 A whole build writes `HOMES.contract.json`, which lists every emitted path.
 It removes recorded paths the new source no longer emits. It leaves their
-folders alone. A missing record means no files are obsolete.
+folders alone. A missing record means no files are obsolete. A record that
+won't parse counts as missing, so a build can repair a merge conflict.
 A team with members also writes `TEAM.contract.json`. It lists member names,
 folders, parents, and top-level headings, in member order. Example 178
 proves this contract. Machine contracts have no header or hand-edit guard.

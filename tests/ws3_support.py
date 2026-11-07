@@ -13,16 +13,32 @@ from doctrine.runtime_load import home_loads, runtime_settings
 
 
 class HomeProject:
-    def project(self, source=None, *, example="184_doctrine_build_modes", fixture="project", runtimes='["claude", "codex"]', settings=""):
+    def project(
+        self,
+        source=None,
+        *,
+        example="184_doctrine_build_modes",
+        fixture="project",
+        runtimes='["claude", "codex"]',
+        settings="",
+    ):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         if source is None:
-            shutil.copytree(Path(__file__).resolve().parents[1] / "examples" / example / fixture, root, dirs_exist_ok=True)
+            shutil.copytree(
+                Path(__file__).resolve().parents[1] / "examples" / example / fixture,
+                root,
+                dirs_exist_ok=True,
+            )
         else:
             (root / "prompts").mkdir()
             (root / "prompts/AGENTS.prompt").write_text(source)
-            (root / "pyproject.toml").write_text(f'[[tool.doctrine.emit.targets]]\nname = "homes"\nentrypoint = "prompts/AGENTS.prompt"\noutput_dir = "."\nruntimes = {runtimes}\n{settings}')
+            (root / "pyproject.toml").write_text(
+                '[[tool.doctrine.emit.targets]]\nname = "homes"\n'
+                'entrypoint = "prompts/AGENTS.prompt"\noutput_dir = "."\n'
+                f"runtimes = {runtimes}\n{settings}"
+            )
         return root
 
     def cli(self, root, *args):

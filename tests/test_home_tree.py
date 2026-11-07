@@ -32,27 +32,52 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
                     text = path.read_text()
                     header = HEADER.match(text)
                     self.assertIsNotNone(header)
-                    self.assertEqual(header[1], hashlib.sha256(text[header.end():].encode()).hexdigest()[:12])
-                    self.assertIn(f'source={source}.', header[0])
+                    self.assertEqual(
+                        header[1], hashlib.sha256(text[header.end() :].encode()).hexdigest()[:12]
+                    )
+                    self.assertIn(f"source={source}.", header[0])
                 self.assertEqual(self.cli(root, "build", ".")[0], 0)
 
     def test_emit_is_deterministic(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        original = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        original = {
+            path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()
+        }
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        self.assertEqual(original, {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()})
+        self.assertEqual(
+            original,
+            {
+                path.relative_to(root): path.read_bytes()
+                for path in root.rglob("*")
+                if path.is_file()
+            },
+        )
 
     def test_no_import_lines_emitted(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        self.assertFalse(any(line.startswith("@") for path in root.rglob("AGENTS.md") for line in path.read_text().splitlines()))
+        self.assertFalse(
+            any(
+                line.startswith("@")
+                for path in root.rglob("AGENTS.md")
+                for line in path.read_text().splitlines()
+            )
+        )
 
     def test_concurrent_builds_are_safe(self):
         root = self.project()
         repo = str(Path(__file__).resolve().parents[1])
-        processes = [subprocess.Popen([sys.executable, "-m", "doctrine.cli", "build", "."], cwd=root,
-            env={**os.environ, "PYTHONPATH": repo}, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for _ in range(8)]
+        processes = [
+            subprocess.Popen(
+                [sys.executable, "-m", "doctrine.cli", "build", "."],
+                cwd=root,
+                env={**os.environ, "PYTHONPATH": repo},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            for _ in range(8)
+        ]
         for process in processes:
             stdout, stderr = process.communicate(timeout=60)
             self.assertEqual(process.returncode, 0, (stdout, stderr))
@@ -66,7 +91,12 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         self.assertEqual(before, {path: path.lstat().st_mtime_ns for path in before})
 
     def test_files_outside_team_tree_unchanged(self):
-        root = self.project('team T: "Team"\n    home: "t"\n    role: "Team text."\nagent A:\n    role: "Ordinary text."\n')
+        root = self.project(
+            (
+                'team T: "Team"\n    home: "t"\n    role: "Team text."\nagent A:\n    '
+                'role: "Ordinary text."\n'
+            )
+        )
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         ordinary = root / "a/AGENTS.md"
         self.assertEqual(ordinary.read_bytes(), b"Ordinary text.\n")
@@ -77,10 +107,16 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         for path in (root / "HOMES.contract.json", root / "pods/growth/TEAM.contract.json"):
-            path.write_text('{"format_version": 1, "files": []}\n' if path.name == "HOMES.contract.json" else '{}\n')
+            path.write_text(
+                '{"format_version": 1, "files": []}\n'
+                if path.name == "HOMES.contract.json"
+                else "{}\n"
+            )
         self.assertEqual(self.cli(root, "build", ".", "--check")[0], 1)
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        self.assertEqual(json.loads((root / "HOMES.contract.json").read_text())["format_version"], 1)
+        self.assertEqual(
+            json.loads((root / "HOMES.contract.json").read_text())["format_version"], 1
+        )
 
     def test_claude_md_link_left_alone(self):
         root = self.project()
@@ -114,7 +150,13 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         paths = json.loads((root / "HOMES.contract.json").read_text())["files"]
-        expected = sorted(path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file() and path.suffix != ".prompt" and path.name not in {"pyproject.toml", "HOMES.contract.json"})
+        expected = sorted(
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*")
+            if path.is_file()
+            and path.suffix != ".prompt"
+            and path.name not in {"pyproject.toml", "HOMES.contract.json"}
+        )
         self.assertEqual(paths, expected)
 
     def test_missing_record_means_nothing_obsolete(self):
@@ -123,4 +165,20 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         obsolete.parent.mkdir()
         obsolete.write_text("Old file.\n")
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertEqual(obsolete.read_text(), "Old file.\n")
+
+    def test_conflicted_record_counts_as_missing(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        record = root / "HOMES.contract.json"
+        paths = json.loads(record.read_text())["files"]
+        record.write_text('<<<<<<< HEAD\n{"files": []}\n=======\n{}\n>>>>>>> member\n')
+        obsolete = root / "gone/AGENTS.md"
+        obsolete.parent.mkdir()
+        obsolete.write_text("Old file.\n")
+        code, output, error = self.cli(root, "build", ".", "--check")
+        self.assertEqual(code, 1, error)
+        self.assertIn("stale HOMES.contract.json", output)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertEqual(json.loads(record.read_text())["files"], paths)
         self.assertEqual(obsolete.read_text(), "Old file.\n")

@@ -5,6 +5,7 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
+    Origin,
     AddressableRef,
     Expr,
     InheritItem,
@@ -31,7 +32,7 @@ class LocalSection:
     key: str
     title: str
     items: tuple[SectionBodyItem, ...]
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

@@ -161,7 +161,7 @@ class ResolvedSectionItem:
     title: str
     items: tuple[ResolvedSectionBodyItem, ...]
     source_span: model.SourceSpan | None = dataclass_field(default=None, compare=False)
-    origin: tuple | None = None
+    origin: model.Origin | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -295,7 +295,7 @@ class ResolvedDocumentBody:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[model.DocumentBlock, ...]
     render_profile: ResolvedRenderProfile | None = None
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     drops: tuple = ()
 
 
@@ -344,7 +344,7 @@ class ResolvedWorkflowBody:
     preamble: tuple[model.ProseLine, ...]
     items: tuple[ResolvedWorkflowItem, ...]
     law: model.LawBody | None = None
-    origin: tuple | None = None
+    origin: model.Origin | None = None
     drops: tuple = ()
 
 

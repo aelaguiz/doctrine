@@ -7,6 +7,21 @@ from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 
 
+def fenced_lines(lines):
+    fence = None
+    for line in lines:
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line.rstrip("\n"))
+        inside = fence is not None
+        if fence is not None:
+            if (marker and marker[1][0] == fence[0] and len(marker[1]) >= fence[1]
+                    and not marker[2].strip()):
+                fence = None
+        elif marker and (marker[1][0] == "~" or "`" not in marker[2]):
+            fence = marker[1][0], len(marker[1])
+            inside = True
+        yield line, inside
+
+
 def read_markdown(declaration, *, source_path, project_path, prompt_root):
     from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 
@@ -37,15 +52,8 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
         start = 1
     root = {"lines": [], "children": [], "keys": {}}
     stack = [root]
-    fence = None
-    for number, line in enumerate(lines, start):
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
-        if fence is not None:
-            if marker and marker[1][0] == fence[0] and len(marker[1]) >= fence[1] and not marker[2].strip():
-                fence = None
-        elif marker and (marker[1][0] == "~" or "`" not in marker[2]):
-            fence = marker[1][0], len(marker[1])
-        else:
+    for number, (line, inside_fence) in enumerate(fenced_lines(lines), start):
+        if not inside_fence:
             if line.startswith("@"):
                 raise error(
                     "E654", "Import line in Markdown source",

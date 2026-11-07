@@ -376,7 +376,7 @@ class ResolveDocumentBlocksMixin:
         owner_label: str,
         kind: str,
         owner_source_span: model.SourceSpan | None = None,
-        origin: tuple | None = None,
+        origin: model.Origin | None = None,
     ) -> tuple[model.ReadableSectionBodyItem, ...]:
         resolved: list[model.ReadableSectionBodyItem] = []
         for child in self._require_tuple_payload(

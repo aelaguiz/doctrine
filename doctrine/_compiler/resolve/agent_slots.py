@@ -468,7 +468,7 @@ class ResolveAgentSlotsMixin:
         unit: IndexedUnit,
         owner_label: str,
         owner_source_span: model.SourceSpan | None,
-        origin: tuple | None = None,
+        origin: model.Origin | None = None,
     ) -> ResolvedWorkflowBody:
         if isinstance(value, model.WorkflowBody):
             return self._resolve_workflow_body(

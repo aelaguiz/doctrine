@@ -358,7 +358,9 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                     )
             title = value.title if value.title is not None else node.title
             if replacement_origin and value.title is not None and (not isinstance(node, model.ReadableBlock) or node.kind == "section"):
-                replacement_origin = (*replacement_origin[:4], (*replacement_origin[4][:-1], title))
+                replacement_origin = replace(
+                    replacement_origin, headings=(*replacement_origin.headings[:-1], title)
+                )
             if isinstance(node, model.ReadableBlock):
                 return replace(node, title=title, payload=items, origin=replacement_origin)
             return replace(

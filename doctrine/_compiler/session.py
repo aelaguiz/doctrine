@@ -8,7 +8,7 @@ from pathlib import Path
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
 from doctrine._compiler.late_binding import reject_late_roots
-from doctrine.details import reject_details
+from doctrine._compiler.details import reject_details
 from doctrine._compiler.indexing import (
     FlowLoadKey,
     IndexedFlow,

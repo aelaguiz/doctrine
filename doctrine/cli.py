@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from doctrine.home_commands import run_command
+from doctrine.home_commands import build, check, load, run_command
 
 
 def main(argv=None):
@@ -29,7 +29,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.overlays and not args.rev:
         parser.error("--with needs --rev")
-    return run_command(args)
+    return run_command(args, {"build": build, "check": check, "load": load}[args.command])
 
 
 if __name__ == "__main__":

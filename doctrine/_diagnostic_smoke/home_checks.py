@@ -11,17 +11,51 @@ from doctrine._diagnostic_smoke.fixtures import _expect
 
 
 HOME_DIAGNOSTICS = {
-    "E607": ('team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Test."\nteam Other: "Other"\n    home: "t/qa"\n    role: "Other."\n', ''),
-    "E621": ('abstract agent R:\n    role: "Test."\n    work: "Work"\n        details:\n            "{{agent:title}}"\nteam T: "Team"\n    home: "t"\n    member qa[R]: "QA"\n', ''),
-    "E630": ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 1\n', ''),
-    "E631": ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 0\n', ''),
-    "E632": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.runtimes.codex]\nlimit = 0\n'),
-    "E633": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.runtimes.codex]\nexternal = [{path = "absent.md"}]\n'),
-    "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
-    "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
-    "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ''),
-    "W306": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.runtimes.codex]\nlimit = 100\n'),
-    "W307": ('team T: "Team"\n    home: "."\n    role: "Shared."\n    member qa: "QA"\n        role: "Test."\n', ''),
+    "E607": (
+        (
+            'team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: '
+            '"Test."\nteam Other: "Other"\n    home: "t/qa"\n    role: "Other."\n'
+        ),
+        "",
+    ),
+    "E621": (
+        (
+            'abstract agent R:\n    role: "Test."\n    work: "Work"\n        '
+            'details:\n            "{{agent:title}}"\nteam T: "Team"\n    home: '
+            '"t"\n    member qa[R]: "QA"\n'
+        ),
+        "",
+    ),
+    "E630": (
+        ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 1\n'),
+        "",
+    ),
+    "E631": (
+        ('team T: "Team"\n    home: "t"\n    role: "Test."\n    budget:\n        codex: 0\n'),
+        "",
+    ),
+    "E632": (
+        'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+        "[tool.doctrine.runtimes.codex]\nlimit = 0\n",
+    ),
+    "E633": (
+        'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+        '[tool.doctrine.runtimes.codex]\nexternal = [{path = "absent.md"}]\n',
+    ),
+    "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E641": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "W306": (
+        'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+        "[tool.doctrine.runtimes.codex]\nlimit = 100\n",
+    ),
+    "W307": (
+        (
+            'team T: "Team"\n    home: "."\n    role: "Shared."\n    member qa: '
+            '"QA"\n        role: "Test."\n'
+        ),
+        "",
+    ),
 }
 
 
@@ -31,7 +65,13 @@ def run_home_checks():
             root = Path(directory)
             (root / "prompts").mkdir()
             (root / "prompts/AGENTS.prompt").write_text(source)
-            (root / "pyproject.toml").write_text('[[tool.doctrine.emit.targets]]\nname = "homes"\nentrypoint = "prompts/AGENTS.prompt"\noutput_dir = "."\n' + settings)
+            (root / "pyproject.toml").write_text(
+                (
+                    '[[tool.doctrine.emit.targets]]\nname = "homes"\nentrypoint = '
+                    '"prompts/AGENTS.prompt"\noutput_dir = "."\n'
+                )
+                + settings
+            )
             args = ["check"]
             if code == "E634":
                 (root / "t").mkdir()
@@ -49,7 +89,10 @@ def run_home_checks():
             error = StringIO()
             with chdir(root), redirect_stderr(error), redirect_stdout(StringIO()):
                 result = main(args)
-            _expect(result == (0 if code.startswith("W") else 1) and code in error.getvalue(), f"expected {code}, got {result}: {error.getvalue()}")
+            _expect(
+                result == (0 if code.startswith("W") else 1) and code in error.getvalue(),
+                f"expected {code}, got {result}: {error.getvalue()}",
+            )
     with TemporaryDirectory() as directory:
         path = Path(directory) / "prompts/SKILL.prompt"
         path.parent.mkdir()

@@ -9,106 +9,141 @@ from pathlib import Path, PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
+from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.markdown_reader import fenced_lines
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.teams import team_members, team_contract
+from doctrine.emit_docs import (
+    _runtime_emit_roots_for_target, _build_runtime_emit_plan,
+    _build_previous_turn_contexts, runtime_files,
+)
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
-from doctrine.details import split_details, render_companion
-from doctrine.emit_docs import _runtime_emit_roots_for_target, _build_runtime_emit_plan, _build_previous_turn_contexts, runtime_files
+from doctrine.runtime_load import home_budgets
 
 
-HEADER = re.compile(r'^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. Run: doctrine where "<words>" -->\n\n')
+HEADER = re.compile(
+    r'^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. '
+    r'Run: doctrine where "<words>" -->\n\n'
+)
 
 
 def with_header(text, source):
     digest = hashlib.sha256(text.encode()).hexdigest()[:12]
-    return f'<!-- doctrine sha256={digest} source={source}. Do not edit. Run: doctrine where "<words>" -->\n\n{text}'
+    return (f'<!-- doctrine sha256={digest} source={source}. Do not edit. '
+            f'Run: doctrine where "<words>" -->\n\n{text}')
+
+
+def home_files(target, home, owner, unit, compiled, pointers, plan):
+    text = render_markdown(compiled)
+    if pointers:
+        links = (f"[{path if path.startswith('_details/') else 'DETAILS.md'}]"
+                 f"({os.path.relpath(path, home)})" for path in pointers)
+        text = (text.rstrip() + "\n\nFuller cases, under the same headings: "
+                + ", ".join(links) + ".\n")
+    if plan is not None:
+        files = runtime_files(plan, compiled, target)
+        files[plan.markdown_path] = text.encode()
+        return {path.relative_to(target.output_dir).as_posix(): content
+                for path, content in files.items()}
+    files = {}
+    if text.strip():
+        source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
+        source = source_unit.prompt_file.source_path.relative_to(
+            target.project_config.config_dir
+        ).as_posix()
+        runtimes = target.runtimes or ("codex",)
+        filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
+        files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
+        if "claude" in runtimes and "codex" in runtimes:
+            files[str(PurePosixPath(home) / "CLAUDE.md")] = Path("AGENTS.md")
+    return files
+
+
+def compile_home(target, session, context, home, owner, unit, compiled, plan):
+    session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
+    if plan is None:
+        compiled = session.compile_agent(owner.name)
+    home_map = build_home_map(compiled, home)
+    compiled, parts, pointers = split_details(compiled, home)
+    files = home_files(target, home, owner, unit, compiled, pointers, plan)
+    data = {"owner": owner, "unit": unit, "compiled": compiled, "map": home_map,
+            "files": list(files), "pointers": pointers,
+            "budgets": home_budgets(owner, unit, context)}
+    return data, files, parts
+
+
+def companion_files(homes, companions):
+    files = {}
+    for path, parts in companions.items():
+        if path.startswith("_details/"):
+            parts.sort(key=lambda part: part[1].origin.line)
+        source = parts[0][1].origin.site.rsplit(":", 1)[0]
+        text = render_companion(parts)
+        local = [data for home, data in homes.items()
+                 if str(PurePosixPath(home) / "DETAILS.md") == path]
+        generated = not local or isinstance(local[0]["owner"], (model.Team, model.Member))
+        files[path] = (with_header(text, source) if generated else text).encode()
+        for data in local:
+            data["files"].append(path)
+    return files
 
 
 def compile_homes(target, *, evaluate_rules=False):
-    session = CompilationSession(parse_file(target.entrypoint), project_config=target.project_config,
-                                 evaluate_rules=evaluate_rules)
+    session = CompilationSession(
+        parse_file(target.entrypoint), project_config=target.project_config,
+        evaluate_rules=evaluate_rules,
+    )
     context = CompilationContext(session)
-    flow = session.root_flow
-    homes, files, compiled = {}, {}, {}
-    companions = {}
+    homes, files, compiled, companions = {}, {}, {}, {}
     owners = []
-    plans = tuple(_build_runtime_emit_plan(root, target=target, output_root=target.output_dir,
-        provider_root=session.provided_prompt_root_for(root.unit.prompt_root))
-        for root in _runtime_emit_roots_for_target(session, target=target))
+    plans = tuple(_build_runtime_emit_plan(
+        root, target=target, output_root=target.output_dir,
+        provider_root=session.provided_prompt_root_for(root.unit.prompt_root),
+    ) for root in _runtime_emit_roots_for_target(session, target=target))
     session.emit_paths = {plan.root.agent_name: plan.markdown_path for plan in plans}
     roots = tuple((plan.root.unit, plan.root.agent_name) for plan in plans)
-    ordinary = session.compile_agents_from_units(roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots))
+    ordinary = session.compile_agents_from_units(
+        roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots)
+    )
     for plan, result in zip(plans, ordinary, strict=True):
         unit = plan.root.unit
         owner = session.flow_for_unit(unit).agents_by_name[plan.root.agent_name]
         home = plan.markdown_path.parent.relative_to(target.output_dir).as_posix()
         owners.append((home, owner, unit, result, plan))
-    for team in flow.teams_by_name.values():
+    for team in session.root_flow.teams_by_name.values():
         if not team.abstract:
-            unit = flow.declaration_owner_units_by_id[id(team)]
+            unit = session.root_flow.declaration_owner_units_by_id[id(team)]
             owners.append((team.home, team, unit, None, None))
-            owners.extend((str(PurePosixPath(team.home) / member.key.replace("_", "-")), member, unit, None, None)
+            owners.extend((str(PurePosixPath(team.home) / member.key.replace("_", "-")),
+                           member, unit, None, None)
                           for member in team_members(context, team, unit=unit))
     for home, owner, unit, result, plan in owners:
         if home in homes:
-            raise compile_error(code="E607", summary="Two homes, one path",
-                                detail=f"`{homes[home]['owner'].name}` and `{owner.name}` both land at `{home}`.")
-        session.emit_paths[owner.name] = target.output_dir / home / "AGENTS.md"
-        if plan is None:
-            result = session.compile_agent(owner.name)
-        home_map = build_home_map(result, home)
-        result, parts, pointers = split_details(result, home)
+            raise compile_error(
+                code="E607", summary="Two homes, one path",
+                detail=f"`{homes[home]['owner'].name}` and `{owner.name}` both land at `{home}`.",
+            )
+        data, content, parts = compile_home(
+            target, session, context, home, owner, unit, result, plan
+        )
+        homes[home] = data
+        files.update(content)
+        compiled[owner.name] = data["compiled"]
         for companion, content in parts.items():
-            companions.setdefault(companion, []).extend(content if not companion.startswith("_details/") else [part for part in content if part not in companions.get(companion, [])])
-        compiled[owner.name] = result
-        text = render_markdown(result)
-        if pointers:
-            text = text.rstrip() + "\n\nFuller cases, under the same headings: " + ", ".join(f"[{path if path.startswith('_details/') else 'DETAILS.md'}]({os.path.relpath(path, home)})" for path in pointers) + ".\n"
-        source_unit = owner.scope_unit or unit if isinstance(owner, model.Member) else unit
-        source = source_unit.prompt_file.source_path.relative_to(target.project_config.config_dir).as_posix()
-        paths = []
-        if plan is not None:
-            ordinary_files = runtime_files(plan, result, target)
-            ordinary_files[plan.markdown_path] = text.encode()
-            for path, content in ordinary_files.items():
-                name = path.relative_to(target.output_dir).as_posix()
-                files[name] = content
-                paths.append(name)
-        elif text.strip():
-            runtimes = target.runtimes or ("codex",)
-            filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
-            path = str(PurePosixPath(home) / filename)
-            files[path] = with_header(text, source).encode()
-            paths.append(path)
-            if "claude" in runtimes and "codex" in runtimes:
-                link = str(PurePosixPath(home) / "CLAUDE.md")
-                files[link] = Path("AGENTS.md")
-                paths.append(link)
-        budget_fields = [field for field in owner.fields if isinstance(field, model.BudgetField)]
-        budget_owner, budget_unit = owner, unit
-        while isinstance(budget_owner, model.Team) and budget_owner.parent_ref:
-            budget_unit, budget_owner = context._resolve_parent_agent_decl(budget_owner, unit=budget_unit)
-            budget_fields.extend(field for field in budget_owner.fields if isinstance(field, model.BudgetField))
-        homes[home] = {"owner": owner, "unit": unit, "compiled": result, "map": home_map, "files": paths, "pointers": pointers, "budgets": budget_fields}
+            collected = companions.setdefault(companion, [])
+            collected.extend([part for part in content
+                              if not companion.startswith("_details/") or part not in collected])
     for home, data in homes.items():
         owner = data["owner"]
         if isinstance(owner, model.Team) and team_members(context, owner, unit=data["unit"]):
             path = str(PurePosixPath(home) / "TEAM.contract.json")
-            files[path] = (json.dumps(team_contract(context, owner, unit=data["unit"], compiled_members=compiled), indent=2) + "\n").encode()
+            contract = team_contract(context, owner, unit=data["unit"], compiled_members=compiled)
+            files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
-    for path, parts in companions.items():
-        if path.startswith("_details/"):
-            parts.sort(key=lambda part: int(part[1].origin[2].rsplit(":", 1)[1]))
-        source = parts[0][1].origin[2].rsplit(":", 1)[0]
-        text = render_companion(parts)
-        owner = next((data["owner"] for home, data in homes.items() if str(PurePosixPath(home) / "DETAILS.md") == path), None)
-        files[path] = (with_header(text, source) if owner is None or isinstance(owner, (model.Team, model.Member)) else text).encode()
-        for home, data in homes.items():
-            if str(PurePosixPath(home) / "DETAILS.md") == path:
-                data["files"].append(path)
+    files.update(companion_files(homes, companions))
     return homes, files
 
 
@@ -119,7 +154,8 @@ def select_homes(homes, selectors):
                    if selector == "." or data["owner"].name == selector
                    or home == selector or home.startswith(selector + "/")}
         if not matches:
-            raise compile_error(code="E640", summary="No home matches", detail=f"`{selector}` matches no home.")
+            raise compile_error(code="E640", summary="No home matches",
+                                detail=f"`{selector}` matches no home.")
         selected.update(matches)
     return selected
 
@@ -132,10 +168,12 @@ def file_state(path, fresh):
     if not path.exists():
         return "missing"
     content = path.read_bytes()
-    if path.suffix == ".md" and (fresh is None or isinstance(fresh, Path) or fresh.startswith(b"<!-- doctrine sha256=")):
+    if path.suffix == ".md" and (fresh is None or isinstance(fresh, Path)
+                                 or fresh.startswith(b"<!-- doctrine sha256=")):
         text = content.decode()
         match = HEADER.match(text)
-        if match is None or hashlib.sha256(text[match.end():].encode()).hexdigest()[:12] != match[1]:
+        if (match is None
+                or hashlib.sha256(text[match.end():].encode()).hexdigest()[:12] != match[1]):
             return "edited"
     return "unchanged" if content == fresh else "stale"
 
@@ -155,15 +193,9 @@ def atomic_write(path, content):
 
 def home_sections(text):
     sections, counts = {}, {}
-    key, fence = None, None
-    for line in text.splitlines(keepends=True):
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line.rstrip("\n"))
-        if fence is not None:
-            if marker and marker[1][0] == fence[0] and len(marker[1]) >= fence[1] and not marker[2].strip():
-                fence = None
-        elif marker and (marker[1][0] == "~" or "`" not in marker[2]):
-            fence = marker[1][0], len(marker[1])
-        else:
+    key = None
+    for line, inside in fenced_lines(text.splitlines(keepends=True)):
+        if not inside:
             heading = re.match(r"^ {0,3}##[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$", line.rstrip("\n"))
             if heading:
                 title = heading[1]
@@ -175,61 +207,82 @@ def home_sections(text):
     return {key: text.strip("\n") for key, text in sections.items()}
 
 
+def hand_edit_detail(root, name, files, homes):
+    path = root / name
+    if path.is_symlink():
+        return f"`{name}` is a link Doctrine didn't write."
+    old = path.read_text()
+    header = HEADER.match(old)
+    if header is None:
+        return f"`{name}` was written by hand."
+    detail = f"`{name}` was edited by hand."
+    if path.name == "DETAILS.md" or path.parent.name == "_details":
+        return detail + f"\nsource={header[2]}"
+    if name in files:
+        fresh = files[name]
+        if isinstance(fresh, Path):
+            fresh = files[str(PurePosixPath(name).parent / str(fresh))]
+        old_sections, fresh_sections = home_sections(old), home_sections(fresh.decode())
+        origins = {}
+        for data in homes.values():
+            if name in data["files"]:
+                for entry in data["map"].entries:
+                    if len(entry.path) == 1 and entry.title is not None and entry.always_on:
+                        key = entry.title, sum(title == entry.title for title, _ in origins)
+                        origins[key] = entry
+        for key in dict.fromkeys((*old_sections, *fresh_sections)):
+            if old_sections.get(key) != fresh_sections.get(key):
+                if key not in fresh_sections:
+                    detail += f"\n- {key[0]}: no longer in source"
+                else:
+                    entry = origins[key]
+                    detail += f"\n- {key[0]}: {entry.origin} at {entry.site}"
+    return detail
+
+
+def stale_levels(root, selected, homes, files):
+    stale = []
+    for home in selected:
+        stale.extend(path for path in homes[home]["pointers"]
+                     if path.startswith("_details/")
+                     and file_state(root / path, files[path]) != "unchanged")
+        for level in PurePosixPath(home).parents:
+            for filename in ("AGENTS.md", "CLAUDE.md"):
+                path = str(level / filename)
+                if (path in files and file_state(root / path, files[path]) != "unchanged"
+                        or path not in files and (root / path).exists()):
+                    stale.append(path)
+    return sorted(set(stale))
+
+
 def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=False, force=False):
     root = output_dir or target.output_dir
     selected = select_homes(homes, selectors)
     whole = not selectors or "." in selectors
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
+    obsolete = set()
     record = root / "HOMES.contract.json"
-    obsolete = set(json.loads(record.read_bytes())["files"]) - set(files) if whole and record.exists() else set()
     if whole:
-        files = {**files, "HOMES.contract.json": (json.dumps({"format_version": 1, "files": sorted(files)}, indent=2) + "\n").encode()}
+        if record.exists():
+            try:
+                obsolete = set(json.loads(record.read_bytes())["files"]) - set(files)
+            except json.JSONDecodeError:
+                pass
+        files = {**files, "HOMES.contract.json": (json.dumps(
+            {"format_version": 1, "files": sorted(files)}, indent=2
+        ) + "\n").encode()}
         wanted.add("HOMES.contract.json")
     states = {name: file_state(root / name, files.get(name)) for name in sorted(wanted | obsolete)}
     if not check and not force:
         for name, state in states.items():
             if state == "edited":
-                path = root / name
-                if path.is_symlink():
-                    detail = f"`{name}` is a link Doctrine didn't write."
-                elif HEADER.match(path.read_text()) is None:
-                    detail = f"`{name}` was written by hand."
-                else:
-                    detail = f"`{name}` was edited by hand."
-                    if path.name == "DETAILS.md" or path.parent.name == "_details":
-                        detail += f"\nsource={HEADER.match(path.read_text())[2]}"
-                    elif name in files:
-                        fresh = files[name]
-                        if isinstance(fresh, Path):
-                            fresh = files[str(PurePosixPath(name).parent / str(fresh))]
-                        old_sections = home_sections(path.read_text())
-                        fresh_sections = home_sections(fresh.decode())
-                        origins = {}
-                        for data in homes.values():
-                            if name in data["files"]:
-                                for entry in data["map"].entries:
-                                    if len(entry.path) == 1 and entry.title is not None and entry.always_on:
-                                        key = (entry.title, sum(title == entry.title for title, _ in origins))
-                                        origins[key] = entry
-                        for key in dict.fromkeys((*old_sections, *fresh_sections)):
-                            if old_sections.get(key) != fresh_sections.get(key):
-                                if key not in fresh_sections:
-                                    detail += f"\n- {key[0]}: no longer in source"
-                                else:
-                                    entry = origins[key]
-                                    detail += f"\n- {key[0]}: {entry.origin} at {entry.site}"
-                raise compile_error(code="E634", summary="Hand edit in a compiled file", detail=detail,
-                    hints=("Move the edit to its source, then build. `--force` overwrites it.",))
-    stale_levels = []
-    if not whole:
-        for home in selected:
-            stale_levels.extend(path for path in homes[home]["pointers"] if path.startswith("_details/") and file_state(root / path, files[path]) != "unchanged")
-            for level in PurePosixPath(home).parents:
-                for filename in ("AGENTS.md", "CLAUDE.md"):
-                    path = str(level / filename)
-                    if path in files and file_state(root / path, files[path]) != "unchanged" or path not in files and (root / path).exists():
-                        stale_levels.append(path)
-    result = {"format_version": 1, "written": [], "unchanged": [], "removed": [], "stale_levels": sorted(set(stale_levels))}
+                raise compile_error(
+                    code="E634", summary="Hand edit in a compiled file",
+                    detail=hand_edit_detail(root, name, files, homes),
+                    hints=("Move the edit to its source, then build. `--force` overwrites it.",),
+                )
+    result = {"format_version": 1, "written": [], "unchanged": [], "removed": [],
+              "stale_levels": [] if whole else stale_levels(root, selected, homes, files)}
     for name, state in states.items():
         if check:
             if name in obsolete:
@@ -245,4 +298,5 @@ def build_homes(target, homes, files, *, selectors=(), output_dir=None, check=Fa
         else:
             atomic_write(root / name, files[name])
             result["written"].append(name)
-    return selected, result, any(state != "unchanged" or name in obsolete for name, state in states.items())
+    changed = any(state != "unchanged" or name in obsolete for name, state in states.items())
+    return selected, result, changed

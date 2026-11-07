@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine.details import reject_details
+from doctrine._compiler.details import reject_details
 from pathlib import Path
 
 from doctrine._compiler.late_binding import reject_late_roots

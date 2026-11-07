@@ -5,6 +5,7 @@ from dataclasses import field as _field
 from typing import TYPE_CHECKING, TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
+    Origin,
     Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan,
 )
 
@@ -174,7 +175,7 @@ class ReadableBlock:
     row_schema: ReadableInlineSchemaData | None = None
     anonymous: bool = False
     legacy_section: bool = False
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

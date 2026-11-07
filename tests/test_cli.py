@@ -24,7 +24,13 @@ class CliTests(HomeProject, unittest.TestCase):
                 self.assertIn("E601", error)
 
     def git_project(self, root):
-        for args in (("init", "-q"), ("config", "user.name", "Fixture"), ("config", "user.email", "fixture@example.com"), ("add", "."), ("commit", "-qm", "Fixture [skip ci]")):
+        for args in (
+            ("init", "-q"),
+            ("config", "user.name", "Fixture"),
+            ("config", "user.email", "fixture@example.com"),
+            ("add", "."),
+            ("commit", "-qm", "Fixture [skip ci]"),
+        ):
             subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
 
     def test_build_writes_only_selected_folders(self):
@@ -51,12 +57,22 @@ class CliTests(HomeProject, unittest.TestCase):
         before = (root / "pods/growth/AGENTS.md").read_bytes()
         code, output, error = self.cli(root, "build", ".", "--check")
         self.assertEqual(code, 1, error)
-        for line in ("stale pods/growth/AGENTS.md", "edited pods/growth/qa/AGENTS.md", "missing pods/growth/analyst/CLAUDE.md"):
+        for line in (
+            "stale pods/growth/AGENTS.md",
+            "edited pods/growth/qa/AGENTS.md",
+            "missing pods/growth/analyst/CLAUDE.md",
+        ):
             self.assertIn(line, output)
         self.assertEqual((root / "pods/growth/AGENTS.md").read_bytes(), before)
 
     def test_e634_names_section_and_origin(self):
-        root = self.project('abstract agent Role:\n    role: "Test."\n    work: "Your job"\n        "Do the work."\nteam T: "Team"\n    home: "pod"\n    member qa[Role]: "QA"\n')
+        root = self.project(
+            (
+                'abstract agent Role:\n    role: "Test."\n    work: "Your job"\n        '
+                '"Do the work."\nteam T: "Team"\n    home: "pod"\n    member qa[Role]: '
+                '"QA"\n'
+            )
+        )
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         path = root / "pod/qa/AGENTS.md"
         path.write_text(path.read_text().replace("Do the work.", "Hand edit."))
@@ -89,21 +105,28 @@ class CliTests(HomeProject, unittest.TestCase):
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         (root / "pods/growth/analyst/AGENTS.md").write_text("Hand edit.\n")
         source = root / "prompts/AGENTS.prompt"
-        source.write_text(source.read_text().split('    member analyst:')[0])
+        source.write_text(source.read_text().split("    member analyst:")[0])
         self.assertEqual(self.cli(root, "build", ".", "--force")[0], 0)
         self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
 
     def test_rev_extracts_only_what_the_result_depends_on(self):
-        root = self.project('abstract agent Role from "craft.md"\nteam T: "Team"\n    home: "pod"\n    member qa[Role]: "QA"\n')
+        root = self.project(
+            (
+                'abstract agent Role from "craft.md"\nteam T: "Team"\n    home: "pod"\n    '
+                'member qa[Role]: "QA"\n'
+            )
+        )
         (root / "craft.md").write_text("Role from revision.\n")
         (root / "unrelated.bin").write_bytes(b"Not a dependency.")
         self.git_project(root)
         archive_paths = []
         original = subprocess.check_output
+
         def capture(args, **kwargs):
             if args[:2] == ["git", "archive"]:
-                archive_paths.extend(args[args.index("--") + 1:])
+                archive_paths.extend(args[args.index("--") + 1 :])
             return original(args, **kwargs)
+
         with patch("subprocess.check_output", side_effect=capture):
             result = self.cli(root, "build", ".", "--rev", "HEAD")
         self.assertEqual(result[0], 0, result)
@@ -138,7 +161,9 @@ class CliTests(HomeProject, unittest.TestCase):
         source = root / "prompts/AGENTS.prompt"
         source.write_text(source.read_text().replace("QA text.", "Changed QA."))
         (root / "pyproject.toml").write_text("An unrelated unfinished edit.")
-        result = self.cli(root, "build", "GrowthPod.qa", "--rev", "HEAD", "--with", "prompts/AGENTS.prompt")
+        result = self.cli(
+            root, "build", "GrowthPod.qa", "--rev", "HEAD", "--with", "prompts/AGENTS.prompt"
+        )
         self.assertEqual(result[0], 0, result)
         self.assertIn("Changed QA.", (root / "pods/growth/qa/AGENTS.md").read_text())
 
@@ -160,7 +185,7 @@ class CliTests(HomeProject, unittest.TestCase):
         self.assertEqual(scripts["doctrine-agents"], "doctrine.cli:main")
 
     def test_build_never_fails_on_budget_or_rule(self):
-        root = self.project('''rule HasWork: "Has Work"
+        root = self.project("""rule HasWork: "Has Work"
     scope:
         agent_tag: A
     assertions:
@@ -173,34 +198,56 @@ team T: "Team"
     role: "Team text."
     budget:
         codex: 1
-''')
-        code, _, error = self.cli(root, 'build', '.')
+""")
+        code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 0, error)
-        self.assertIn('W306 near budget:', error)
-        self.assertTrue((root / 't/AGENTS.md').is_file())
+        self.assertIn("W306 near budget:", error)
+        self.assertTrue((root / "t/AGENTS.md").is_file())
 
     def test_check_fails_on_budget_and_rule(self):
         for source, error_code in (
-            ('team T: "Team"\n    home: "t"\n    role: "Team text."\n    budget:\n        codex: 1\n', 'E630'),
-            ('rule HasWork: "Has Work"\n    scope:\n        agent_tag: A\n    assertions:\n        requires declare work\n    message: "Keep work."\nagent A:\n    role: "Agent."\nteam T: "Team"\n    home: "t"\n    role: "Team."\n', 'RULE005'),
+            (
+                (
+                    'team T: "Team"\n    home: "t"\n    role: "Team text."\n    '
+                    "budget:\n        codex: 1\n"
+                ),
+                "E630",
+            ),
+            (
+                (
+                    'rule HasWork: "Has Work"\n    scope:\n        agent_tag: A\n    '
+                    'assertions:\n        requires declare work\n    message: "Keep work."\n'
+                    'agent A:\n    role: "Agent."\nteam T: "Team"\n    home: "t"\n    role: '
+                    '"Team."\n'
+                ),
+                "RULE005",
+            ),
         ):
             with self.subTest(error_code=error_code):
                 root = self.project(source)
-                code, _, error = self.cli(root, 'check')
+                code, _, error = self.cli(root, "check")
                 self.assertEqual(code, 1)
                 self.assertIn(error_code, error)
-                self.assertFalse((root / 't/AGENTS.md').exists())
+                self.assertFalse((root / "t/AGENTS.md").exists())
 
     def test_check_json_shape(self):
-        for settings in ("", '[tool.doctrine.runtimes.codex]\nlimit = 1\n', '[tool.doctrine.runtimes.codex]\nlimit = 1\nover = "warn"\n'):
+        for settings in (
+            "",
+            "[tool.doctrine.runtimes.codex]\nlimit = 1\n",
+            '[tool.doctrine.runtimes.codex]\nlimit = 1\nover = "warn"\n',
+        ):
             with self.subTest(settings=settings):
-                root = self.project('team T: "Team"\n    home: "t"\n    role: "Team text."\n', settings=settings)
+                root = self.project(
+                    'team T: "Team"\n    home: "t"\n    role: "Team text."\n', settings=settings
+                )
                 plain_code, _, plain_error = self.cli(root, "check")
                 code, output, error = self.cli(root, "check", "--json")
                 self.assertEqual(code, plain_code)
                 self.assertEqual(error, "")
                 result = json.loads(output)
-                self.assertEqual(set(result), {"format_version", "ok", "homes", "errors", "warnings"})
+                self.assertEqual(
+                    set(result), {"format_version", "ok", "homes", "errors", "warnings"}
+                )
                 self.assertEqual(result["format_version"], 1)
                 self.assertEqual(result["homes"], 1)
                 self.assertEqual(result["ok"], code == 0)
@@ -209,7 +256,12 @@ team T: "Team"
                     self.assertIn(finding["text"], plain_error)
                     self.assertTrue(finding["text"].startswith(finding["code"]))
                 if settings:
-                    self.assertEqual(len(result["warnings"] if 'over = "warn"' in settings else result["errors"]), 1)
+                    self.assertEqual(
+                        len(
+                            result["warnings"] if 'over = "warn"' in settings else result["errors"]
+                        ),
+                        1,
+                    )
         root = self.project('team T: "Team"\n    home: "t"\n    role: "{{agent:missing}}"\n')
         code, output, error = self.cli(root, "check", "--json")
         self.assertEqual(code, 1)
@@ -222,7 +274,9 @@ team T: "Team"
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         path = root / "t/AGENTS.md"
         path.write_text(path.read_text().replace("Do the work.", "Hand edit."))
-        (root / "prompts/AGENTS.prompt").write_text('team T: "Team"\n    home: "t"\n    role: "New work."\n')
+        (root / "prompts/AGENTS.prompt").write_text(
+            'team T: "Team"\n    home: "t"\n    role: "New work."\n'
+        )
         before = path.read_bytes()
         code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 1)
@@ -230,7 +284,7 @@ team T: "Team"
         self.assertEqual(path.read_bytes(), before)
 
     def test_e634_matches_repeated_titles_in_order(self):
-        root = self.project('''abstract agent Base:
+        root = self.project("""abstract agent Base:
     role: "Test."
     first: "Same"
         "First."
@@ -241,7 +295,7 @@ team T: "Team"
     member qa[Base]: "QA"
         override second: "Same"
             "Changed."
-''')
+""")
         code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 0, error)
         path = root / "t/qa/AGENTS.md"
@@ -252,7 +306,12 @@ team T: "Team"
         self.assertNotIn("- Same: Base", error)
 
     def test_e634_companion_names_only_its_source(self):
-        root = self.project('team T: "Team"\n    home: "t"\n    work: "Work"\n        details:\n            "Long case."\n')
+        root = self.project(
+            (
+                'team T: "Team"\n    home: "t"\n    work: "Work"\n        '
+                'details:\n            "Long case."\n'
+            )
+        )
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         path = root / "t/DETAILS.md"
         path.write_text(path.read_text().replace("Long case.", "Hand edit."))
@@ -261,3 +320,55 @@ team T: "Team"
         self.assertIn("`t/DETAILS.md` was edited by hand.", error)
         self.assertIn("source=prompts/AGENTS.prompt", error)
         self.assertNotIn("- Work:", error)
+
+    def test_source_and_target_usage_errors(self):
+        root = self.project()
+        for verb in ("build", "check", "load"):
+            with self.subTest(verb=verb):
+                code, _, error = self.cli(root, verb, "--with", "prompts/AGENTS.prompt")
+                self.assertEqual(code, 2)
+                self.assertIn("--with needs --rev", error)
+        config = root / "pyproject.toml"
+        config.write_text(
+            config.read_text() + "\n[[tool.doctrine.emit.targets]]\n"
+            'name = "other"\nentrypoint = "prompts/AGENTS.prompt"\n'
+            'output_dir = "other"\n'
+        )
+        for verb in ("build", "check", "load"):
+            with self.subTest(verb=verb):
+                code, _, error = self.cli(root, verb)
+                self.assertEqual(code, 2)
+                self.assertEqual(error, "Choose a target with --target.\n")
+
+    def test_build_json(self):
+        root = self.project()
+        code, output, error = self.cli(root, "build", ".", "--json")
+        self.assertEqual(code, 0, error)
+        result = json.loads(output)
+        self.assertEqual(
+            set(result), {"format_version", "written", "unchanged", "removed", "stale_levels"}
+        )
+        self.assertEqual(result["format_version"], 1)
+        expected = sorted(
+            ["HOMES.contract.json", "pods/growth/TEAM.contract.json"]
+            + [
+                f"{home}/{filename}"
+                for home in ("pods/growth", "pods/growth/qa", "pods/growth/analyst")
+                for filename in ("AGENTS.md", "CLAUDE.md")
+            ]
+        )
+        self.assertEqual(result["written"], expected)
+        for key in ("unchanged", "removed", "stale_levels"):
+            self.assertEqual(result[key], [])
+
+    def test_e634_file_written_by_hand(self):
+        root = self.project()
+        path = root / "pods/growth/AGENTS.md"
+        path.parent.mkdir(parents=True)
+        path.write_text("Hand text.\n")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("E634 compile error: Hand edit in a compiled file", error)
+        self.assertIn("`pods/growth/AGENTS.md` was written by hand.", error)
+        self.assertEqual(path.read_text(), "Hand text.\n")
+        self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())

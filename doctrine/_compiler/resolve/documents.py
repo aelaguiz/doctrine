@@ -128,9 +128,9 @@ class ResolveDocumentsMixin:
         parent_body: model.DocumentBody | None = None,
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
-        origin: tuple | None = None,
+        origin: model.Origin | None = None,
     ) -> ResolvedDocumentBody:
-        drops = (*(parent_document.drops if parent_document else ()), *drop_records(document_body.items, origin[0] if origin else owner_label))
+        drops = (*(parent_document.drops if parent_document else ()), *drop_records(document_body.items, origin.declaration if origin else owner_label))
         document_body, patches = prepare_body_patches(
             document_body, parent_document, kind="document", owner_label=owner_label,
             unit=unit, source_span=owner_source_span,
@@ -306,7 +306,7 @@ class ResolveDocumentsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
-        origin: tuple | None = None,
+        origin: model.Origin | None = None,
     ) -> tuple[model.DocumentBlock, ...]:
         resolved: list[model.DocumentBlock] = []
         seen_keys: dict[str, model.DocumentBlock] = {}

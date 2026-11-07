@@ -34,10 +34,20 @@ class SourceSpan:
 
 
 @_dataclass(slots=True, frozen=True)
+class Origin:
+    declaration: str
+    path: tuple[str, ...]
+    site: str
+    companion: str | None
+    headings: tuple[str, ...]
+    line: int
+
+
+@_dataclass(slots=True, frozen=True)
 class RoleScalar:
     text: str
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -45,7 +55,7 @@ class RoleBlock:
     title: str
     lines: tuple[ProseLine, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -152,7 +162,7 @@ class InheritAll:
 class DropItem:
     path: tuple[str, ...]
     reason: str
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -160,5 +170,5 @@ class DropItem:
 class OverridePath:
     path: tuple[str, ...]
     value: object
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)

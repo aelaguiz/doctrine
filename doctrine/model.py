@@ -42,6 +42,7 @@ from doctrine._model.analysis import (
     ProveStmt,
 )
 from doctrine._model.core import (
+    Origin,
     AddressableRef,
     AuthoredProse,
     MarkdownProse,

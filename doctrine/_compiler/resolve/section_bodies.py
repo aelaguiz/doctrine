@@ -23,7 +23,7 @@ class ResolveSectionBodiesMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
-        origin: tuple | None = None,
+        origin: model.Origin | None = None,
     ) -> tuple[ResolvedSectionBodyItem, ...]:
         resolved: list[ResolvedSectionBodyItem] = []
         for item in items:
@@ -39,14 +39,17 @@ class ResolveSectionBodiesMixin:
                 )
                 continue
             if isinstance(item, model.LocalSection):
+                section_origin = item.origin or child_origin(
+                    origin, item.key, item.source_span, item.title
+                )
                 resolved.append(
                     ResolvedSectionItem(
                         key=item.key,
-                        origin=item.origin or child_origin(origin, item.key, item.source_span, item.title),
+                        origin=section_origin,
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
-                            origin=item.origin or child_origin(origin, item.key, item.source_span, item.title),
+                            origin=section_origin,
                             unit=unit,
                             owner_label=f"{owner_label}.{item.key}",
                         ),

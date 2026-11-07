@@ -78,9 +78,16 @@ class MarkdownReaderTests(unittest.TestCase):
         return files, target
 
     def test_relative_link_rebased_per_home(self):
-        files, _ = self.rebased('[case](cases.md) ![art](art.png)')
+        files, _ = self.rebased(
+            '[case](cases.md) ![art](art.png) [angle](<more notes.md>) '
+            '[nested](cases(old).md "Title")'
+        )
         self.assertIn(b'[case](../../../shared/cases.md) ![art](../../../shared/art.png)', files['pods/core/qa/AGENTS.md'])
         self.assertIn(b'../../../shared/cases.md', files['pods/core/analyst/AGENTS.md'])
+        self.assertIn(b'[angle](<../../../shared/more notes.md>)',
+                      files['pods/core/qa/AGENTS.md'])
+        self.assertIn(b'[nested](../../../shared/cases(old).md "Title")',
+                      files['pods/core/qa/AGENTS.md'])
 
     def test_anchor_kept_on_rebased_link(self):
         files, _ = self.rebased('[case](cases.md#today)')

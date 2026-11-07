@@ -5,6 +5,7 @@ from dataclasses import field as _field
 from typing import TypeAlias as _TypeAlias
 
 from doctrine._model.core import (
+    Origin,
     InheritAll, DropItem, OverridePath, NameRef, RoleBlock, RoleScalar, SourceSpan,
 )
 from doctrine._model.io import IoFieldValue
@@ -17,7 +18,7 @@ class AuthoredSlotField:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -38,7 +39,7 @@ class AuthoredSlotOverride:
     key: str
     value: WorkflowSlotValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -47,7 +48,7 @@ class InputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -56,35 +57,35 @@ class OutputsField:
     value: IoFieldValue
     parent_ref: NameRef | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class AnalysisField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class DecisionField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class SkillsField:
     value: SkillsValue
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
 class ReviewField:
     value: NameRef
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -93,7 +94,7 @@ class FinalOutputField:
     route_path: tuple[str, ...] | None = None
     review_fields: ReviewFieldsConfig | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
@@ -107,7 +108,7 @@ class AgentSelectorBinding:
 class SelectorsField:
     bindings: tuple[AgentSelectorBinding, ...]
     source_span: SourceSpan | None = _field(default=None, compare=False)
-    origin: tuple | None = _field(default=None, compare=False)
+    origin: Origin | None = _field(default=None, compare=False)
 
 
 @_dataclass(slots=True, frozen=True)
