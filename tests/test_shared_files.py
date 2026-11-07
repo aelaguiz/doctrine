@@ -111,14 +111,6 @@ team T: "Team"
         self.assertEqual(code, 0, error)
         self.assertIn("read first", output)
         self.assertIn("On demand:\n  guide.md", output)
-        code, output, error = self.cli(root, "load", "--json")
-        self.assertEqual(code, 0, error)
-        shared = json.loads(output)["shared_files"]
-        self.assertEqual(shared, [
-            {"path": "basics.md", "size": 8, "homes": ["t/qa"]},
-            {"path": "guide.md", "size": 7, "homes": ["t/qa"]},
-        ])
-        self.assertIn("Shared files:", self.cli(root, "load")[1])
 
     def test_shared_file_rejects_details_and_home_values(self):
         for body, diagnostic in (

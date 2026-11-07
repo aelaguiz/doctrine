@@ -21,7 +21,7 @@ from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
 from doctrine.revision_source import copy_overlay
 from doctrine.homes import compile_homes, home_selectors, select_homes
-from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, shared_file_data, text_size
+from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, text_size
 
 
 def compile_side(args):
@@ -33,10 +33,22 @@ def compile_side(args):
         build_home_deps(context, homes)
         declarations = declarations_in(session)
         base = target.project_config.config_dir
+        shared = {}
+        generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
+                     if isinstance(content, bytes)}
+        for home in homes:
+            for _, level in loaded_levels(homes, home):
+                for ref, _ in level["file_refs"]:
+                    path = Path(ref[2])
+                    name = relpath(path, base)
+                    if name not in shared:
+                        text = generated[path].decode() if path in generated else path.read_text()
+                        shared[name] = {"text": text, "homes": set()}
+                    shared[name]["homes"].add(home)
         return {
             "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
             "owners": declaration_owners(context, declarations, base),
-            "shared_files": shared_file_data(target, homes, files, homes),
+            "shared_files": shared,
             "loads": home_loads(target, homes, files, runtime_settings(target), homes),
             "hashes": {
                 name: source_hash(declaration, base)

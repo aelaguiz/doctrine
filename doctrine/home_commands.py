@@ -31,7 +31,6 @@ from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
-    padded_rows, shared_file_data, text_size,
 )
 
 
@@ -197,10 +196,6 @@ def load(args):
                 for file in values["external"]:
                     file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
         loads = home_loads(target, homes, files, settings, selected)
-        shared = shared_file_data(target, homes, files, selected)
-        shared_files = sorted(({"path": path, "size": text_size(row["text"], "claude"),
-                                "homes": sorted(row["homes"])} for path, row in shared.items()),
-                              key=lambda row: (-row["size"], row["path"]))
         for home in loads:
             for runtime, load in home["runtimes"].items():
                 for file in load["files"]:
@@ -226,7 +221,7 @@ def load(args):
                         {key: value for key, value in file.items() if key != "text"}
                         for file in runtime["files"]
                     ]
-            print(json.dumps({"format_version": 1, "homes": loads, "shared_files": shared_files}))
+            print(json.dumps({"format_version": 1, "homes": loads}))
         elif args.full and len(selected) == 1:
             for runtime in loads[0]["runtimes"].values():
                 for file in runtime["files"]:
@@ -235,11 +230,6 @@ def load(args):
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))
-            if not args.selectors and shared_files:
-                print("\nShared files:\n" + padded_rows([
-                    ("  " + row["path"], f"{row['size']:,}",
-                     f"{len(row['homes'])} {'home' if len(row['homes']) == 1 else 'homes'}")
-                    for row in shared_files]))
         return 0
 
 

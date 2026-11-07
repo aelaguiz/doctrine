@@ -126,22 +126,6 @@ def loaded_levels(homes, home):
     return sorted(levels, key=lambda pair: len(PurePosixPath(pair[0]).parts))
 
 
-def shared_file_data(target, homes, files, selected):
-    shared = {}
-    generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
-                 if isinstance(content, bytes)}
-    for home in selected:
-        for _, level in loaded_levels(homes, home):
-            for ref, _ in level["file_refs"]:
-                path = Path(ref[2])
-                name = relpath(path, target.project_config.config_dir)
-                if name not in shared:
-                    text = generated[path].decode() if path in generated else path.read_text()
-                    shared[name] = {"text": text, "homes": set()}
-                shared[name]["homes"].add(home)
-    return shared
-
-
 def home_loads(target, homes, files, settings, selected):
     loads = []
     generated = {(target.output_dir / path).resolve(): content for path, content in files.items()
