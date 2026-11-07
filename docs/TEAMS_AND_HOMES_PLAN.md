@@ -1076,13 +1076,17 @@ entry.
 `origin` is the declaration whose source wrote the text, not the one that inherited it.
 `deps` comes from a dataclass-reflection walk over the model that collects every name ref,
 addressable ref, and `{{Ref}}` in strings, closed over parents, slots, `use`, and values. A
-member's `deps` hold its team but not its siblings. A `roster` in a home does read its team's
-members, so that home's `deps` hold them. It does not need per-kind code.
+member's `deps` hold its team but not its siblings. A `roster`, `{{team:members}}`, or
+`{{team:others}}` in a home does read its team's members, so that home's `deps` hold them. It
+does not need per-kind code.
 
 A declaration's **source hash** is sha256 over its model, with all `source_span` values
 removed, via one dataclass-reflection walk. Moving a declaration within a file does not
 change its hash. A team's hash leaves out its members, which hash on their own, so one
-member's edit is one changed declaration.
+member's edit is one changed declaration. A member an abstract team declares hashes and
+reports under that team, as `Pod.lead`, however many concrete teams stamp it. Hashes cover
+every declaration in the loaded files on both sides, so a declaration only counts as changed
+when its own text changed.
 
 ## 8. WS4: Reach (#98, #99, #101 Report)
 
@@ -1123,8 +1127,7 @@ the reverse. An unknown target is `RULE002`. A failed `requires load` is `RULE00
 RULE007 Forbids load
 
 Detail:
-- GrowthPod.qa must not load SpecialistsOnlyLesson.
-- It arrives by: GrowthPod.qa -> PodQa -> QaCraft -> SpecialistsOnlyLesson
+- GrowthPod.qa must not load SpecialistsOnlyLesson. It arrives by: GrowthPod.qa -> PodQa -> QaCraft -> SpecialistsOnlyLesson
 ```
 
 Load rules need compiled homes, so `doctrine check` evaluates them. `emit_docs` does too,
@@ -1175,9 +1178,10 @@ Rules:
 - Characters are UTF-16 units of always-on text. `details` changes print separately as
   `(details +300)`.
 - Lines sort by declaration name, then home path.
-- New sections: an entry present now and absent in the base, whose path is in
-  `wildcard_keys`. It lists every home whose load holds it, so a section added at a level
-  names the homes under that level.
+- New sections: an entry present now and absent in the base, in a home that exists on both
+  sides, whose path is in `wildcard_keys`. It lists every selected home whose load holds it,
+  so a section added at a level names the homes under that level. One that reaches no selected
+  home isn't listed.
 
 JSON shape:
 
@@ -1226,7 +1230,7 @@ disable = ["W301"]
 | `W301` | near_copy | Two source paragraphs are copies or differ by a few words |
 | `W302` | double_load | One declaration's text reaches a home from two files in its load |
 | `W303` | message_without_reader | A `Message` output no `inputs:` reads (section 10) |
-| `W304` | unused_value | A `values:` key no text in any home reads. A key text reads counts as read everywhere it is set, including a default a team overrides |
+| `W304` | unused_value | A `values:` key that no home reads through its own lookup chain. A read counts for every place the chain sets that key, including a default a team overrides |
 | `W305` | unused_quote | A `quote` nothing cites |
 | `W306` | near_budget | A home is at or past `warn_at`, or over budget during `build` |
 | `W307` | stale_level | A level a selected home loads differs from this build |
@@ -1697,7 +1701,10 @@ section, and one `_details/` file results).
 `test_one_member_edit_is_one_declaration`, `test_new_section_at_a_level_lists_homes_under_it`,
 `test_stamped_member_keeps_its_team_module`, `test_roster_home_depends_on_members`,
 `test_team_scope_on_abstract_team_is_rule001`, `test_shipped_assertions_skip_teams`,
-`test_forbids_load_sees_any_depth`,
+`test_forbids_load_sees_any_depth`, `test_plain_agent_reaching_a_roster`,
+`test_team_list_reads_name_their_cause`, `test_reach_reads_both_sides`,
+`test_unedited_declaration_is_not_changed`, `test_template_member_edit_is_one_declaration`,
+`test_new_home_lists_no_new_sections`, `test_repeated_entry_paths_both_report`,
 `test_json_format_version`.
 
 **`tests/test_project_warnings.py`**: `test_w301_type_1_and_near`,
