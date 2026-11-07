@@ -406,8 +406,8 @@ becomes `_`, with the ends trimmed. Two sibling headings with one key are
 `E653`, which names both lines. On an abstract agent, a reserved agent
 field key gets a final `_`. For example, `## Skills` uses `skills_` and
 still renders as `## Skills`. Text stays verbatim, including `{{`.
-A runtime import line starting with `@` is `E654`. Declare that file too
-and compose it. These keys support `drop`, `override`, and dotted patches.
+Runtime import paths in a Markdown source follow the text to its new home.
+These keys support `drop`, `override`, and dotted patches.
 A Markdown workflow also supports `{{Decl:key.title}}` on its keys.
 See [example 179](../examples/179_markdown_backed_declarations).
 

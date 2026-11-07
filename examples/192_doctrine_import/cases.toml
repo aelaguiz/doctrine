@@ -8,6 +8,7 @@ kind = "cli_contract"
 project = "project"
 args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent"]
 expected_exit = 0
+
 expected_stdout_lines = [
   "abstract agent QaCraft:",
   "    role: \"You are the QA specialist.\"",
@@ -29,4 +30,12 @@ status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["import", "old/qa.md", "--name", "QaCraft", "--kind", "agent", "--check"]
+expected_exit = 0
+
+[[cases]]
+name = "import check keeps a runtime import"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/imports.md", "--name", "QaCraft", "--kind", "agent", "--check"]
 expected_exit = 0

@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Markdown-backed declarations keep runtime import lines and move their paths
+  with the text. `doctrine import` also keeps those lines. `E654` is retired.
 - Plain agent homes now use the same runtime file names and links as team members.
 - Overrides keep cases in inherited sections and guards, and report conflicting case patches.
   Diff reports cases dropped by one member even when other members keep them.

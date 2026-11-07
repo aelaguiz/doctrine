@@ -1,0 +1,4 @@
+abstract agent Craft from "shared/craft.md"
+team Pod: "Pod"
+    home: "pod"
+    member qa[Craft]: "QA"
