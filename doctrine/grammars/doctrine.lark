@@ -131,7 +131,7 @@ forbids_load_assertion: "forbids" "load" name_ref _NL
 rule_message: "message" ":" string _NL
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
-abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
+abstract_agent: "abstract" "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 
 abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
 workflow_markdown: "workflow" CNAME "from" string _NL

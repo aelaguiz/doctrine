@@ -20,6 +20,27 @@ from doctrine.renderer import render_markdown
 class TeamTests(unittest.TestCase):
     session = test_late_binding.LateBindingTests.session
 
+    def test_abstract_agent_title_does_not_render(self):
+        source = '''abstract agent Base:
+    role: "Test the work."
+abstract agent QA[Base]:
+    inherit *
+team One: "One"
+    home: "one"
+    member qa[QA]: "QA"
+team Two: "Two"
+    home: "two"
+    member qa[QA]: "QA"
+'''
+        plain = self.session(source)
+        titled = self.session(source.replace('abstract agent QA[Base]:',
+                                             'abstract agent QA[Base]: "How QA works"'))
+        self.assertEqual(titled.root_flow.agents_by_name['QA'].title, 'How QA works')
+        for name in ('One', 'One.qa', 'Two', 'Two.qa'):
+            with self.subTest(name=name):
+                self.assertEqual(render_markdown(titled.compile_agent(name)),
+                                 render_markdown(plain.compile_agent(name)))
+
     def test_member_name_and_folder(self):
         compiled = self.session('team T: "Team"\n    home: "pods/core"\n    member tech_lead: "Lead"\n        role: "{{agent:key}} {{agent:home}} {{agent:folder}}"\n').compile_agent('T.tech_lead')
         self.assertEqual(compiled.name, 'T.tech_lead')

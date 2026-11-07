@@ -1,0 +1,37 @@
+workflow Craft: "Craft"
+    "Test {{team:unit}} for {{team:audience}}."
+
+abstract agent QA: "How QA works on every team"
+    role: "Test {{agent:subject}}."
+    values:
+        subject: "{{team:unit}}"
+    testing: Craft
+
+abstract agent WebQA[QA]: "How web QA works"
+    inherit *
+
+abstract agent AppQA[QA]: "How app QA works"
+    inherit *
+
+team Growth: "growth"
+    home: "pods/growth"
+    values:
+        unit: "bet"
+        audience: "new users"
+    member qa[WebQA]: "QA"
+
+team Feature: "feature"
+    home: "pods/feature"
+    values:
+        unit: "feature"
+        audience: "players"
+    member qa[AppQA]: "QA"
+
+team Product: "product"
+    home: "pods/product"
+    values:
+        unit: "change"
+        audience: "players"
+    member qa[WebQA]: "QA"
+        override testing: "Testing"
+            "Test the change twice."

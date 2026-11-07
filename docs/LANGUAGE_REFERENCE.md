@@ -120,6 +120,8 @@ Important rules:
 - `agent` declares a concrete runtime owner.
 - `abstract agent` declares an inheritance-only owner that does not render on
   its own.
+- An abstract agent may have a title that says what the class is for. The
+  title does not render in a home.
 - A concrete agent may declare a head title. Bare readable refs default to that
   title, while `:key` and the legacy `:name` projection keep the structural
   declaration name available.

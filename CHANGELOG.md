@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Abstract agent titles
+
+- Abstract agents can have a title that describes the class without adding it
+  to a home.
+
 ### Super in overrides
 
 - Use `super` on its own line in an override to keep the parent's text and add

@@ -1,0 +1,26 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "abstract agent title does not render"
+status = "active"
+kind = "render_contract"
+agent = "Growth.qa"
+assertion = "exact_lines"
+expected_lines = ["Test bet.", "", "## Craft", "", "Test bet for new users."]
+
+[[cases]]
+name = "another class keeps the shared text"
+status = "active"
+kind = "render_contract"
+agent = "Feature.qa"
+assertion = "exact_lines"
+expected_lines = ["Test feature.", "", "## Craft", "", "Test feature for players."]
+
+[[cases]]
+name = "a member overrides the shared workflow"
+status = "active"
+kind = "render_contract"
+agent = "Product.qa"
+assertion = "exact_lines"
+expected_lines = ["Test change.", "", "## Testing", "", "Test the change twice."]

@@ -2,10 +2,11 @@ document TeamsAndHomes: "Teams And Homes"
     "Load this when sharing a role across teams, naming members, or porting a Markdown home. Roles carry the craft. Teams say where agents live. Values supply the words that differ."
 
     section values: "Share A Role With Values"
+        "Give an abstract agent a title that says what the class is for. The title does not render in a home."
         "Values let one shared role use each home's words. In `examples/173_late_bound_values`, the role reads the concrete agent's values after inheritance."
         code:
             language: prompt
-            text: """abstract agent PodQa:
+            text: """abstract agent PodQa: "How QA works on every team"
     role: "You test each {{agent:unit}}."
     values:
         card: "pod's"

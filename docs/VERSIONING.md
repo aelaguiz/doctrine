@@ -5,6 +5,9 @@ breaking-change guidance.
 
 Current Doctrine language version: 6.0
 
+Abstract agents can have titles. These describe the class and do not render
+in homes.
+
 ## Upgrade To Language 6.0
 
 The release version for this major language move is 6.0.0.

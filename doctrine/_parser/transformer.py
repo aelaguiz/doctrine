@@ -186,7 +186,7 @@ class DeclarationTransformerMixin:
         if len(items) > 1 and isinstance(items[1], model.NameRef):
             parent_ref = items[1]
             fields_start = 2
-        if not abstract and len(items) > fields_start and isinstance(items[fields_start], str):
+        if len(items) > fields_start and isinstance(items[fields_start], str):
             title = items[fields_start]
             fields_start += 1
         fields = _flatten_grouped_items(items[fields_start:])
