@@ -37,3 +37,11 @@ kind = "cli_contract"
 project = "project_disabled"
 args = ["check", "--strict"]
 expected_exit = 0
+
+[[cases]]
+name = "different rendered text is not a double load"
+status = "active"
+kind = "cli_contract"
+project = "project_rendered"
+args = ["check", "--strict"]
+expected_exit = 0

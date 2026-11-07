@@ -113,8 +113,8 @@ def double_load_warnings(homes, loads):
                 for path in paths.intersection(data["files"]):
                     for entry in data["map"].entries:
                         if entry.always_on:
-                            groups[entry.origin, entry.origin_path].add(path)
-            for (origin, _), paths in groups.items():
+                            groups[entry.origin, entry.origin_path, data["map"].texts[entry]].add(path)
+            for (origin, _, _), paths in groups.items():
                 for a, b in combinations(sorted(paths), 2):
                     warning = {"code": "W302", "text": (
                         f"W302 double load: {origin} reaches {load['home']} from {a} and {b}."

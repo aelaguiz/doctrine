@@ -1,0 +1,10 @@
+# The load of a home is its externals plus each level's file down to the home.
+# `build` makes files. `check` judges them.
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "Team text."
+    member big: "big"
+        role: "word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word"
+    member small: "small"
+        role: "Small."

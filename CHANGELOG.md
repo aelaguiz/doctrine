@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Fixed
+
+- `W302` compares rendered text, so different words from a shared declaration
+  do not cause a double-load warning. `W306` says when a home is over budget.
+
 ### Markdown import (6.0.0; language 6.0)
 
 - `doctrine import` prints agent or workflow source from a Markdown file.

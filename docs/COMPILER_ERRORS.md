@@ -2,6 +2,8 @@
 
 This document is the canonical error reference for the shipped Doctrine parser,
 compiler, and emit pipeline.
+For warnings, including `W302` double loads and `W306` load budgets, see
+[WARNINGS.md](WARNINGS.md).
 For public compatibility rules, release duties, and upgrade policy, use
 [VERSIONING.md](VERSIONING.md).
 

@@ -16,7 +16,7 @@ judgment-first authoring review.
 
 | Code | Meaning |
 | --- | --- |
-| `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Builds also use this warning for an over-budget home. |
+| `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. The warning says when the home is over budget. |
 | `W307` | A selected home's shared level differs from the fresh build. The selected build compares it and leaves it alone. |
 
 `doctrine check` fails an over-budget home with `E630`, unless the runtime
@@ -32,7 +32,7 @@ with `--strict`. `doctrine build` runs none of these three checks.
 | Code | Key | Meaning |
 | --- | --- | --- |
 | `W301` | `near_copy` | Paragraphs in two source declarations are copies or differ by a few words. |
-| `W302` | `double_load` | The same declaration's text reaches a home from two files in its load. |
+| `W302` | `double_load` | The same rendered text from the same declaration and path reaches a home from two files in its load. |
 | `W303` | `message_without_reader` | A sent message names an agent or team, but no one in its scope reads it. |
 | `W304` | `unused_value` | No home reads a `values:` key. |
 | `W305` | `unused_quote` | A named quote is cited nowhere. |
