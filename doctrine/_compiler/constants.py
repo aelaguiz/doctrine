@@ -61,6 +61,7 @@ def _message_target(decl):
                  and item.key == "target" and isinstance(item.value, model.NameRef)
                  and not item.value.module_parts and item.value.declaration_name == "Message"), None)
 
+
 _BUILTIN_RENDER_PROFILE_NAMES = ("ContractMarkdown", "ArtifactMarkdown", "CommentMarkdown")
 
 

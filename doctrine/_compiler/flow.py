@@ -849,7 +849,6 @@ class FlowMixin:
         if key in nodes:
             return
         if _message_target(decl):
-            self._compile_output_decl(decl, unit=unit)
             target_title, primary_path, shape_title, requirement_title, detail_lines = (
                 "Message", None, None, None, ()
             )

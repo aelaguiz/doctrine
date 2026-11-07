@@ -349,11 +349,11 @@ shows the canonical formatted shape for one shipped compile error.
 | `E608` | Value set twice | `values:` sets one key twice in the same body, in one block or across two. |
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
 | `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. |
-| `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no file. |
-| `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
+| `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
 | `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
 | `E654` | Import line in Markdown source | A runtime import path would break once its text is inlined. Declare that file too and compose it. |
+| `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
 
 ## Homes And Load
 

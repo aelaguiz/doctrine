@@ -93,7 +93,9 @@ HOME_DIAGNOSTICS.update({
     ),
     "W303": (
         'output Note: "Note"\n    target: Message\n        to: T.reader\n'
-        'team T: "Team"\n    home: "t"\n    member reader: "Reader"\n        role: "Test."\n', "",
+        'team T: "Team"\n    home: "t"\n    member reader: "Reader"\n        role: "Test."\n'
+        '    member sender: "Sender"\n        role: "Send."\n'
+        '        outputs: "Outputs"\n            Note\n', "",
     ),
     "W304": (
         'team T: "Team"\n    home: "t"\n    role: "Test."\n'

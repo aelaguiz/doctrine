@@ -79,11 +79,15 @@ class MessageTests(HomeProject, unittest.TestCase):
         to: Reader
 agent Reader: "Reader"
     role: "Read."
+agent Sender: "Sender"
+    role: "Send."
+    outputs: "Outputs"
+        Note
 '''
         self.assertEqual(self.warnings(source), [
             "W303 message without reader: Note goes to Reader, and nothing there reads it."
         ])
-        source += '    inputs: "Inputs"\n        Note\n'
+        source = source.replace('    role: "Read."', '    role: "Read."\n    inputs: "Inputs"\n        Note')
         self.assertEqual(self.warnings(source), [])
 
     def test_string_to_has_no_reader_check(self):
@@ -135,6 +139,51 @@ agent Reader: "Reader"
         source = source.replace('home: "team"', 'home: "team/inner"').replace('team T: "the team"', 'team Outer: "outer"\n    home: "team"\n    role: "Lead."\nteam T: "the team"').replace('to: T\n', 'to: Outer\n')
         self.assertEqual(self.warnings(source), [])
         self.assertEqual(len(self.warnings(source.replace('        inputs: "Inputs"\n            Note\n', ''))), 1)
+
+    def test_w303_skips_abstract_scope(self):
+        for declaration in ('abstract team Scope: "Scope"\n    member reader: "reader"\n        role: "Read."\n',
+                            'abstract agent Scope:\n    role: "Read."\n'):
+            with self.subTest(declaration=declaration):
+                source = declaration + MESSAGE.replace('to: T.reader', 'to: Scope')
+                self.assertEqual(self.warnings(source), [])
+
+    def test_w303_unsent_message_has_no_check(self):
+        source = '''output Unsent: "Unsent"
+    target: Message
+        to: Reader
+output Unused[Missing]: "Unused"
+    inherit target
+agent Reader: "Reader"
+    role: "Read."
+'''
+        self.assertEqual(self.warnings(source), [])
+
+    def test_w303_child_output_reads_as_itself(self):
+        source = '''output Base: "Base"
+    target: Message
+        to: T.reader
+output Child[Base]: "Child"
+    inherit target
+team T: "Team"
+    home: "team"
+    member sender: "sender"
+        role: "Send."
+        outputs: "Outputs"
+            Child
+    member another: "another sender"
+        role: "Send."
+        outputs: "Outputs"
+            Child
+    member reader: "reader"
+        role: "Read."
+        inputs: "Inputs"
+            Child
+'''
+        self.assertEqual(self.warnings(source), [])
+        source = source.replace('        inputs: "Inputs"\n            Child\n', '')
+        self.assertEqual(self.warnings(source), [
+            "W303 message without reader: Child goes to T.reader, and nothing there reads it."
+        ])
 
     def test_message_input_in_flow_graph(self):
         root = self.project('''output Note: "Note"

@@ -127,44 +127,35 @@ def project_warnings(session, homes, loads, context, all_declarations):
             warnings.append({"code": "W305", "text": (
                 f"W305 unused quote: {row['key']} at {row['site']} is cited nowhere."
             )})
-    for (name, _), (unit, declaration) in all_declarations.items():
-        if not isinstance(declaration, model.OutputDecl):
-            continue
-        if not _message_target(declaration) and (
-            declaration.parent_ref is None or any(
-                isinstance(item, model.RecordScalar) and item.key == "target"
-                for item in declaration.items
-            )
-        ):
-            continue
-        declaration = context._resolve_output_decl_body(declaration, unit=unit)
+    warnings.extend(message_warnings(context, homes))
+    return warnings
+
+
+def message_warnings(context, homes):
+    outputs, warnings = {}, []
+    for data in homes.values():
+        if not isinstance(data["owner"], model.Team):
+            outputs.update(context._resolve_agent_contract(data["owner"], unit=data["unit"]).outputs)
+    for key, (unit, declaration) in outputs.items():
         target = _message_target(declaration)
         if not target:
             continue
-        recipient = next((item.value for item in target.body or ()
-                          if isinstance(item, model.RecordScalar) and item.key == "to"), None)
+        recipient = next(item.value for item in target.body if item.key == "to")
         if not isinstance(recipient, model.NameRef):
             continue
-        match = declaration_match(context, recipient, unit)
-        if match is None or not isinstance(match[1], model.Agent):
+        recipient_unit, receiver = declaration_match(context, recipient, unit)
+        if receiver.abstract:
             continue
-        recipient_unit, receiver = match
-        readers = []
-        for home, data in homes.items():
-            owner = data["owner"]
-            if isinstance(owner, model.Team):
-                continue
-            if isinstance(receiver, model.Team):
-                in_scope = (isinstance(owner, model.Member) and
-                            PurePosixPath(receiver.home) in PurePosixPath(home).parents)
-            else:
-                receiver_unit = receiver.team_unit if isinstance(receiver, model.Member) else recipient_unit
-                in_scope = owner.name == receiver.name and data["unit"] == receiver_unit
-            if in_scope:
-                readers.append(context._resolve_agent_contract(owner, unit=data["unit"]).inputs)
-        if not any((unit.module_parts, declaration.name) in inputs for inputs in readers):
+        if isinstance(receiver, model.Team):
+            readers = (context._resolve_agent_contract(data["owner"], unit=data["unit"]).inputs
+                       for home, data in homes.items() if isinstance(data["owner"], model.Member)
+                       and PurePosixPath(receiver.home) in PurePosixPath(home).parents)
+        else:
+            readers = (context._resolve_agent_contract(receiver, unit=recipient_unit).inputs,)
+        if not any(key in inputs for inputs in readers):
             warnings.append({"code": "W303", "text": (
-                f"W303 message without reader: {name} goes to {_dotted_ref_name(recipient)}, "
+                f"W303 message without reader: {'.'.join((*unit.module_parts, declaration.name))} "
+                f"goes to {_dotted_ref_name(recipient)}, "
                 "and nothing there reads it."
             )})
     return warnings
