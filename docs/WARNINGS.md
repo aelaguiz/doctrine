@@ -56,8 +56,8 @@ the total count. JSON warnings also carry every pair in `examples`, with
 `sites` and the differing `words`. A parent and child can count as copies.
 Share the text and put the words that vary in `values:`.
 
-When text reads a value key, the key counts as read in each place that sets
-it. This includes a role default that a team overrides.
+When a home reads a value key, the key counts as read in each place its
+lookup chain sets it. This includes a role default that a team overrides.
 
 Double-load checks group always-on text by its source declaration and source
 path across each runtime's full load. Two slot names for one workflow still

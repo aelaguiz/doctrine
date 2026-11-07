@@ -180,8 +180,9 @@ team T: "Team"
             ("work",): ("Base", "## Work\n\nParent."),
             ("work", "child"): (
                 "T.qa",
-                "### Child\n\nReplacement.\n\n#### Deep\n\nDeep replacement.",
+                "### Child\n\nReplacement.",
             ),
+            ("work", "child", "deep"): ("T.qa", "#### Deep\n\nDeep replacement."),
             ("work", "sibling"): ("Base", "### Sibling\n\nSibling text."),
             ("work", "cases"): ("Base", "### Cases\n\nLong case."),
             ("work", "divider"): ("Base", "---"),

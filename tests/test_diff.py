@@ -4,6 +4,8 @@ import json
 import subprocess
 import unittest
 
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
 from tests.ws3_support import HomeProject
 
 
@@ -356,7 +358,8 @@ workflow Far: "Far"
         code, _, error = self.cli(self.project(source), "check")
         self.assertEqual(code, 1, error)
         self.assertIn(
-            "\n- It arrives by: GrowthPod.qa -> Qa -> Far -> Middle -> Lesson", error
+            "- GrowthPod.qa must not load Lesson. "
+            "It arrives by: GrowthPod.qa -> Qa -> Far -> Middle -> Lesson", error
         )
 
     def test_team_name_selects_its_members_in_diff(self):
@@ -497,6 +500,12 @@ team T: "Team"
         self.assertEqual(selected["new_sections"], [{
             "origin": "Base", "path": ["added"], "homes": ["pod/qa"]
         }])
+        details = source.replace(
+            'workflow Child',
+            '    details added: "Added"\n        "New details."\nworkflow Child'
+        )
+        selected = json.loads(self.compare(source, details, "T.qa", "--json"))
+        self.assertEqual(selected["new_sections"], [])
 
     def test_stamped_member_keeps_its_team_module(self):
         source = '''import roles
@@ -517,7 +526,7 @@ export abstract team Pod: "Pod"
         code, output, error = self.cli(after, "diff", "--base-tree", str(before), "--json")
         self.assertEqual(code, 0, error)
         self.assertEqual(
-            [item["name"] for item in json.loads(output)["changed_declarations"]], ["GrowthPod.qa"]
+            [item["name"] for item in json.loads(output)["changed_declarations"]], ["roles.Pod.qa"]
         )
         (after / "prompts/AGENTS.prompt").write_text(source + '''rule R: "No lesson"
     scope:
@@ -528,7 +537,7 @@ export abstract team Pod: "Pod"
 ''')
         code, _, error = self.cli(after, "check")
         self.assertEqual(code, 1, error)
-        self.assertIn("\n- It arrives by: GrowthPod.qa -> roles.Lesson", error)
+        self.assertIn(" It arrives by: roles.Pod.qa -> roles.Lesson", error)
         self.assertNotIn("roles.GrowthPod.qa", error)
 
     def test_roster_home_depends_on_members(self):
@@ -626,3 +635,136 @@ rule R: "No lesson"
         self.assertEqual(json.loads(output)["matches"], [{
             "origin": "Lesson.secret", "site": "prompts/AGENTS.prompt:2", "homes": ["pod/qa"]
         }])
+
+    def test_plain_agent_reaching_a_roster(self):
+        source = '''team T: "Team"
+    home: "pod"
+    how: "How"
+        roster calls: "Calls"
+            who: "Who" = "{{agent:title}}"
+    member qa: "QA"
+        role: "Test."
+agent Worker[T.qa]:
+    inherit *
+'''
+        root = self.project(source)
+        result = self.cli(root, "check", "--target", "homes")
+        self.assertEqual(result[0], 0, result)
+        result = json.loads(self.compare(
+            source, source.replace("Test.", "Test changes."), "--target", "homes", "--json"
+        ))
+        self.assertEqual([item["name"] for item in result["changed_declarations"]], ["T.qa"])
+        emitted = emit_target(load_emit_targets(root / "pyproject.toml")["homes"])
+        self.assertTrue(emitted)
+
+    def test_team_list_reads_name_their_cause(self):
+        for key in ("members", "others"):
+            with self.subTest(key=key):
+                source = '''team T: "Team"
+    home: "pod"
+    role: "TEAM_TEXT"
+    member lead: "Lead"
+        role: "LEAD_TEXT"
+    member qa: "QA"
+        role: "Test."
+'''.replace("TEAM_TEXT", "Read {{team:members}}." if key == "members" else "Shared.").replace(
+                    "LEAD_TEXT", "Lead." if key == "members" else "Read {{team:others}}."
+                )
+                result = json.loads(self.compare(
+                    source, source.replace('qa: "QA"', 'qa: "Quality"'), "--json"
+                ))
+                declaration, = result["changed_declarations"]
+                self.assertEqual(declaration["name"], "T.qa")
+                self.assertEqual(
+                    [home["home"] for home in declaration["homes"]],
+                    ["pod", "pod/lead", "pod/qa"] if key == "members" else ["pod/lead"],
+                )
+
+    def test_reach_reads_both_sides(self):
+        level = '''team Pods: "Pods"
+    home: "pods"
+    role: "Shared text."
+'''
+        source = level + '''team Growth: "Growth"
+    home: "pods/growth"
+    role: "Growth text."
+    member qa: "QA"
+        role: "Test."
+    member writer: "Writer"
+        role: "Write."
+team Feature: "Feature"
+    home: "pods/feature"
+    role: "Feature text."
+    member qa: "QA"
+        role: "Test."
+    member writer: "Writer"
+        role: "Write."
+'''
+        result = json.loads(self.compare(source, source.removeprefix(level), "--json"))
+        declaration, = result["changed_declarations"]
+        self.assertEqual(declaration["name"], "Pods")
+        paths = [home["home"] for home in result["homes"]]
+        self.assertEqual(len(paths), 7)
+        self.assertEqual([home["home"] for home in declaration["homes"]], paths)
+        self.assertTrue(all(home["delta"]["always_on"] < 0 for home in declaration["homes"]))
+
+    def test_unedited_declaration_is_not_changed(self):
+        source = SOURCE.replace('    home: "pod"', '    home: "pod"\n    role: "Team text."')
+        removed = source.split('    member qa')[0]
+        for before, after in ((source, removed), (removed, source)):
+            with self.subTest(adding=before == removed):
+                result = json.loads(self.compare(before, after, "--json"))
+                self.assertEqual(
+                    [item["name"] for item in result["changed_declarations"]], ["T.qa"]
+                )
+
+    def test_template_member_edit_is_one_declaration(self):
+        source = '''abstract team Pod: "Pod"
+    member lead: "Lead"
+        role: "Lead the work."
+team Growth[Pod]: "Growth"
+    home: "pods/growth"
+    inherit *
+team Feature[Pod]: "Feature"
+    home: "pods/feature"
+    inherit *
+'''
+        result = json.loads(self.compare(
+            source, source.replace("Lead the work.", "Lead all the work."), "--json"
+        ))
+        declaration, = result["changed_declarations"]
+        self.assertEqual(declaration["name"], "Pod.lead")
+        self.assertEqual(declaration["site"], "prompts/AGENTS.prompt:2")
+        self.assertEqual([home["home"] for home in declaration["homes"]], [
+            "pods/feature/lead", "pods/growth/lead"
+        ])
+
+    def test_new_home_lists_no_new_sections(self):
+        new = SOURCE + '''team Other: "Other"
+    home: "other"
+    member qa[Craft]: "QA"
+'''
+        result = json.loads(self.compare(SOURCE, new, "--json"))
+        self.assertEqual(result["new_sections"], [])
+        self.assertIn("other/qa", [home["home"] for home in result["homes"]])
+
+    def test_repeated_entry_paths_both_report(self):
+        source = '''workflow Craft: "Craft"
+    "Read the shared part."
+team T: "Team"
+    home: "pod"
+    member qa: "QA"
+        role: "Test."
+        work: "Work"
+            "Read the first part."
+'''
+        result = json.loads(self.compare(
+            source, source.replace(
+                'work: "Work"\n            "Read the first part."', 'work: Craft'
+            ), "--json"
+        ))
+        home, = result["homes"]
+        self.assertEqual({
+            (tuple(entry["path"]), entry["origin"], entry["status"])
+            for entry in home["entries"]
+        }, {(("work",), "T.qa", "removed"), (("work",), "Craft", "added")})

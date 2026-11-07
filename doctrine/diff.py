@@ -26,14 +26,26 @@ def compile_side(args):
             return None
         homes, files, _, _ = compile_homes(target, session=session)
         build_home_deps(CompilationContext(session), homes)
-        graph = {name: node for data in homes.values() for name, node in data["deps_graph"].items()}
+        declarations = {}
+        for flow in session._flow_cache.values():
+            for unit in flow.units_by_path.values():
+                for declaration in unit.prompt_file.declarations:
+                    if isinstance(declaration, model.ImportDecl):
+                        continue
+                    name = ".".join((*unit.module_parts, declaration.name))
+                    declarations[name] = (unit, declaration)
+                    if isinstance(declaration, model.Team):
+                        declarations.update(
+                            (f"{name}.{member.key}", (unit, member))
+                            for member in declaration.fields if isinstance(member, model.Member)
+                        )
         base = target.project_config.config_dir
         return {
-            "homes": homes, "files": files, "graph": graph, "base_dir": base,
+            "homes": homes, "files": files, "declarations": declarations, "base_dir": base,
             "loads": home_loads(target, homes, files, runtime_settings(target)),
             "hashes": {
                 name: source_hash(declaration, base)
-                for name, (_, declaration, _) in graph.items()
+                for name, (_, declaration) in declarations.items()
             },
         }
 
@@ -96,10 +108,10 @@ def compare_homes(before, after, selectors):
             for data, files in ((old, old_files), (new, new_files))
         ]
         old_entries = {
-            (entry.path, entry.always_on): entry for entry in old["map"].entries
+            (entry.path, entry.origin_path, entry.always_on): entry for entry in old["map"].entries
         } if old else {}
         new_entries = {
-            (entry.path, entry.always_on): entry for entry in new["map"].entries
+            (entry.path, entry.origin_path, entry.always_on): entry for entry in new["map"].entries
         } if new else {}
         entries = []
         for key in sorted(old_entries.keys() | new_entries.keys()):
@@ -114,14 +126,17 @@ def compare_homes(before, after, selectors):
                 "origin": entry.origin,
                 "delta": (b.size_utf16 if b else 0) - (a.size_utf16 if a else 0),
             })
-            if a is None and path in new["map"].wildcard_keys:
+            if old and new and a is None and path in new["map"].wildcard_keys:
                 reached = {
                     child for child in selected
                     if child == home or (entry.always_on and any(
                         level == home for level, _ in loaded_levels(new_homes, child)
                     ))
                 }
-                new_sections.setdefault((entry.origin, entry.origin_path), set()).update(reached)
+                if reached:
+                    new_sections.setdefault((entry.origin, entry.origin_path), set()).update(
+                        reached
+                    )
         if home in selected:
             home_changes.append({
                 "home": home,
@@ -147,18 +162,19 @@ def build_result(before, after, comparison, base):
         reached = []
         for home in comparison["homes"]:
             path = home["home"]
-            side = after if path in after["homes"] else before
-            levels = loaded_levels(side["homes"], path)
             if any(
-                name in data["map"].deps and level in comparison["changed_levels"]
-                for level, data in levels
-            ) or (path in comparison["details_changes"]
-                  and name in side["homes"][path]["map"].deps):
+                name in data["map"].deps and (
+                    level in comparison["changed_levels"]
+                    or (level == path and path in comparison["details_changes"])
+                )
+                for side in (before, after)
+                for level, data in loaded_levels(side["homes"], path)
+            ):
                 reached.append({"home": path, "delta": home["delta"]})
         if not reached:
             continue
-        side = after if name in after["graph"] else before
-        unit, declaration, _ = side["graph"][name]
+        side = after if name in after["declarations"] else before
+        unit, declaration = side["declarations"][name]
         kind = next(
             kind.name for kind in DECLARATION_KINDS if isinstance(declaration, kind.decl_type)
         )

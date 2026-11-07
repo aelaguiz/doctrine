@@ -81,20 +81,35 @@ def dependency_graph(context, sources):
     graph = {}
 
     def visit(decl, owner):
-        name_unit = decl.team_unit if isinstance(decl, model.Member) else owner
-        name = ".".join((*name_unit.module_parts, decl.name))
+        if isinstance(decl, model.Member):
+            team = next(
+                team for team in owner.declarations.teams_by_name.values()
+                if any(isinstance(field, model.Member) and field.source_span == decl.source_span
+                       for field in team.fields)
+            )
+            name = ".".join((*owner.module_parts, team.name, decl.key))
+        else:
+            name = ".".join((*owner.module_parts, decl.name))
         if name in graph:
             return name
         dependencies = set()
         graph[name] = (owner, decl, dependencies)
         for value in model_walk(decl):
             refs = []
-            if isinstance(value, model.ReadableBlock) and value.kind == "roster":
-                team_unit, team = find_home_team(context, sources[0][0], unit=sources[0][1])
-                dependencies.update(
-                    visit(member, member.scope_unit or team_unit)
-                    for member in team_members(context, team, unit=team_unit)
+            reads_members = isinstance(value, model.ReadableBlock) and value.kind == "roster"
+            if isinstance(value, str):
+                reads_members = any(
+                    match[1] == "team" and match[2] in {"members", "others"}
+                    for match in LATE_ROOT.finditer(value)
                 )
+            if reads_members:
+                match = find_home_team(context, sources[0][0], unit=sources[0][1])
+                if match is not None:
+                    team_unit, team = match
+                    dependencies.update(
+                        visit(member, member.scope_unit or team_unit)
+                        for member in team_members(context, team, unit=team_unit)
+                    )
             if isinstance(value, model.NameRef):
                 refs.append(value)
             elif isinstance(value, str):

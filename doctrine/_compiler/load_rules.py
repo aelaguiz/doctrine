@@ -47,7 +47,7 @@ def validate_load_rules(context, homes):
                     agent = data["owner"].name
                     detail = f"{agent} must {'load' if required else 'not load'} {target}."
                     if not required:
-                        detail += "\n- It arrives by: " + " -> ".join(
+                        detail += " It arrives by: " + " -> ".join(
                             arrival_path(levels, data, target)
                         )
                     raise compile_error(

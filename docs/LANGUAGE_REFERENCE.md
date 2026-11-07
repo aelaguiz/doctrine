@@ -2292,7 +2292,10 @@ sections that arrive through `inherit *` get their own list. A base that
 cannot compile exits 2 and prints its error. No comparison takes place.
 A bad revision is `E641` and exits 1. A team name selects the team's home
 and the homes under it. Removed homes keep the source that changed them.
-New sections list every home whose load holds them.
+An edit to a member from an abstract team reports once, under that team.
+A declaration only counts as changed when its own source changed.
+New sections come from homes present on both sides. They list the selected
+homes whose load holds them, and skip sections that reach none.
 
 `doctrine where "some words"` finds the source of text in a home's load.
 Case and whitespace do not matter. A sentence at a parent level reaches
