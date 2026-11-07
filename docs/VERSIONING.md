@@ -46,7 +46,9 @@ Use `check --strict` when project warnings should fail an author's change.
 `diff` and `where` report reach without changing source or built files.
 In diff JSON, each changed declaration's `homes` list holds a `home`, its total
 `delta`, and the declaration's `own` share, or `null` when it has no entries.
-Where JSON lists each match's `origin`, `site`, and `homes`.
+Where JSON lists each match's `origin`, `site`, and `homes`. Value matches use
+`value` and the key as their origin. `closest` is null or has `origin`, `site`,
+`homes`, and `text`; it is null when there is an exact match.
 If the working source has errors, `where` searches `HEAD` instead.
 
 ## The Version Lines

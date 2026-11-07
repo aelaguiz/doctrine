@@ -192,10 +192,123 @@ rule AnalystWork: "Analyst work"
                 "origin": "PodQa.whom", "site": "prompts/AGENTS.prompt:3",
                 "homes": ["pods/growth/qa"],
             }],
+            "closest": None,
         })
         code, output, error = self.cli(root, "where", "No such text", "--json")
         self.assertEqual(code, 1, error)
-        self.assertEqual(json.loads(output), {"format_version": 1, "matches": []})
+        self.assertEqual(json.loads(output), {"format_version": 1, "matches": [], "closest": None})
+
+    def test_where_value_reach_and_selected_home(self):
+        root = self.project(example="187_doctrine_diff")
+        code, output, error = self.cli(root, "where", " BET ", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output), {
+            "format_version": 1,
+            "matches": [
+                {"origin": "value unit", "site": "prompts/AGENTS.prompt:10",
+                 "homes": ["pods/growth/qa"]},
+                {"origin": "PodQa.whom", "site": "prompts/AGENTS.prompt:3",
+                 "homes": ["pods/growth/qa"]},
+            ],
+            "closest": None,
+        })
+        code, output, error = self.cli(root, "where", "bet", "--home", "pods/feature/qa", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output)["matches"], [])
+
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace(
+            '    member qa[PodQa]: "QA"',
+            '    member qa[PodQa]: "QA"\n        values:\n            unit: "override"', 1))
+        code, output, error = self.cli(root, "where", "bet")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(output, "value unit  prompts/AGENTS.prompt:10\n  reaches 0 homes\n")
+        code, output, error = self.cli(root, "where", "bet", "--home", "pods/growth/qa", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output)["matches"], [])
+        code, output, error = self.cli(root, "where", "override")
+        self.assertEqual(code, 0, error)
+        self.assertIn("value unit  prompts/AGENTS.prompt:13\n  reaches 1 home: pods/growth/qa", output)
+
+    def test_where_closest_sentence_and_json(self):
+        root = self.project(example="187_doctrine_diff")
+        words = "You follow the bet from the design stage."
+        code, output, error = self.cli(root, "where", words)
+        self.assertEqual(code, 1, error)
+        self.assertEqual(output, "No exact match. Closest:\n"
+                         "PodQa.whom  prompts/AGENTS.prompt:3\n"
+                         "  You follow the bet from the design on.\n"
+                         "  reaches 1 home: pods/growth/qa\n")
+        code, output, error = self.cli(root, "where", words, "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output), {
+            "format_version": 1, "matches": [], "closest": {
+                "origin": "PodQa.whom", "site": "prompts/AGENTS.prompt:3",
+                "homes": ["pods/growth/qa"], "text": "You follow the bet from the design on.",
+            },
+        })
+        code, output, error = self.cli(root, "where", words, "--home", "pods/feature/qa", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output)["closest"]["homes"], ["pods/feature/qa"])
+        code, output, error = self.cli(root, "where", "zebra quartz nebula", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertIsNone(json.loads(output)["closest"])
+        code, output, error = self.cli(root, "where", "zebra quartz nebula")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(output, "")
+
+    def test_where_value_reach_includes_homes_that_load_the_team(self):
+        root = self.project('''team T: "Team"
+    home: "pod"
+    values:
+        topic: "common work"
+    role: "Review {{team:topic}}."
+    member qa: "QA"
+        role: "Test."
+    member writer: "Writer"
+        role: "Write."
+''')
+        code, output, error = self.cli(root, "where", "common work", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["matches"][0], {
+            "origin": "value topic", "site": "prompts/AGENTS.prompt:4",
+            "homes": ["pod", "pod/qa", "pod/writer"],
+        })
+        code, output, error = self.cli(root, "where", "common work", "--home", "pod", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["matches"][0]["homes"], ["pod"])
+
+    def test_where_closest_breaks_ties_in_source_order(self):
+        root = self.project('''team T: "Team"
+    home: "pod"
+    member zed: "Zed"
+        role: "Size your testing to the risk of the change."
+    member alpha: "Alpha"
+        role: "Size your testing to the risk of the change."
+''')
+        code, output, error = self.cli(
+            root, "where", "Size your testing to the risk of a change.", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertEqual(json.loads(output)["closest"], {
+            "origin": "T.zed.role", "site": "prompts/AGENTS.prompt:4",
+            "homes": ["pod/zed"], "text": "Size your testing to the risk of the change.",
+        })
+
+    def test_where_closest_splits_punctuation_and_lines(self):
+        root = self.project('''team T: "Team"
+    home: "pod"
+    member qa: "QA"
+        role: "Check the plan! Read the notes?\\nReview the result"
+''')
+        for words, expected in (
+            ("Check the plans!", "Check the plan!"),
+            ("Read the note?", "Read the notes?"),
+            ("Review the results", "Review the result"),
+        ):
+            with self.subTest(words=words):
+                code, output, error = self.cli(root, "where", words, "--json")
+                self.assertEqual(code, 1, error)
+                self.assertEqual(json.loads(output)["closest"]["text"], expected)
 
     def test_where_reports_reach(self):
         root = self.project('''team T: "Team"
@@ -222,6 +335,18 @@ rule AnalystWork: "Analyst work"
         self.assertEqual(code, 0, error)
         self.assertIn("PodQa.whom  prompts/AGENTS.prompt:3", output)
         self.assertEqual(error, "Source has errors. Searching HEAD.\n")
+
+    def test_where_does_not_search_head_for_a_missing_home(self):
+        root = self.project(example="187_doctrine_diff")
+        self.git_project(root)
+        source = root / "prompts/AGENTS.prompt"
+        text = source.read_text()
+        source.write_text(text.replace('home: "pods/growth"', 'home: "pods/changed"'))
+        code, output, error = self.cli(root, "where", "bet", "--home", "pods/growth/qa")
+        self.assertEqual(code, 1)
+        self.assertEqual(output, "")
+        self.assertIn("E640", error)
+        self.assertNotIn("Searching HEAD", error)
 
     def test_where_prints_original_error_when_head_is_missing(self):
         root = self.project(example="187_doctrine_diff")
