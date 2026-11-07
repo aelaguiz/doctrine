@@ -887,8 +887,9 @@ teams, `--target` may be left out. Otherwise leaving it out is exit 2.
 
 Diagnostics go to stderr in the shipped format, so a launcher can show them as they are.
 
-A **selector** is a home path or an agent name. A home path also selects every home under
-it. No selector means all. A selector that matches nothing is `E640`.
+A **selector** is a home path, an agent name, or a team name. A home path also selects every
+home under it, and a team name means that team's home path. No selector means all. A selector
+that matches nothing is `E640`.
 
 **`build` makes files. `check` judges them.** That split is the rule that keeps a launch
 from failing on someone else's rule or budget.
@@ -1736,7 +1737,7 @@ earlier one passes its gate.
 | --- | --- | --- | --- |
 | 1 | Sol 6.1 at xhigh | 900 | Touches 15 resolvers and every render; several parts |
 | 2 | Sol 6.1 at xhigh | 1,400 | New pass across compile; several parts |
-| 3 | Sol 6.1 at xhigh | 1,750 | Emit, config, CLI; several parts |
+| 3 | Sol 6.1 at xhigh | 1,850 | Emit, config, CLI; several parts |
 | 4 | Sol 6.1 at xhigh | 1,100 | New algorithms: map, diff, near-copy |
 | 5 | Terra 6.1 at xhigh | 400 | One piece from a full spec, with a check that proves it |
 | 6 | Terra 6.1 at xhigh | 200 | One piece from a full spec, with a check that proves it |
