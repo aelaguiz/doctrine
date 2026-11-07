@@ -103,7 +103,7 @@ class LoadTests(HomeProject, unittest.TestCase):
         code, output, error = self.cli(root, "load", "T.qa", "--runtime", "claude")
         self.assertEqual(code, 0, error)
         self.assertIn("outside.md", output)
-        self.assertIn("missing", output)
+        self.assertIn("reserved", output)
 
     def test_e633_absent_no_reserve(self):
         root = self.project(

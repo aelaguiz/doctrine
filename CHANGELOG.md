@@ -10,15 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- `doctrine build` checks rules, budgets, and hand edits before writing. A
-  selected build requires current loaded levels and linked files.
-- `doctrine check` reports files that are not current. It accepts selectors and
-  replaces `doctrine build --check`.
-- `doctrine load` marks missing runtime files and reports `on_disk` in JSON.
-- Builds fail for over-budget homes, invalid budgets or runtime settings, and
-  missing external files.
-- A selected build stops when a loaded parent fails to compile.
-
 - `W302` compares rendered text, so different words from a shared declaration
   do not cause a double-load warning. `W306` says when a home is over budget.
 - `doctrine diff` shows each declaration's share of a home's change. JSON
@@ -94,6 +85,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   each home. Footnotes and prose keep their text. Hand-edit reports name
   Markdown sources and heading lines. `build --check --json` prints only JSON.
   Rename `budget` and `details` keys where their new forms start.
+- `build` checks rules, budgets, and hand edits before writing. It fails for
+  over-budget homes, bad settings, and missing externals. A selected build
+  requires current loaded levels and linked files, and fails if a parent fails.
+- `check` takes selectors and reports files that are not current. It replaces
+  `build --check`. `load` marks missing runtime files and reports `on_disk` in JSON.
 
 
 ### Values and teams (6.0.0; language 6.0)

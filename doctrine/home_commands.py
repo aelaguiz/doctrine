@@ -108,8 +108,8 @@ def build(args):
         output = (Path(args.out).resolve() if args.out else
                   live_root / target.output_dir.relative_to(target.project_config.config_dir)
                   if live_root else None)
-        result, _ = build_homes(target, homes, files, selected=selected, whole=whole,
-                                output_dir=output, force=args.force)
+        result = build_homes(target, homes, files, selected=selected, whole=whole,
+                             output_dir=output, force=args.force)
         if args.json:
             print(json.dumps(result))
         else:
@@ -132,10 +132,10 @@ def check(args):
             )
             output = (live_root / target.output_dir.relative_to(target.project_config.config_dir)
                       if live_root else None)
-            result, changed = build_homes(target, homes, files, selected=selected, whole=whole,
-                                          output_dir=output, read_only=True)
+            result = build_homes(target, homes, files, selected=selected, whole=whole,
+                                 output_dir=output, read_only=True)
             paths = result["paths"]
-            ok = not failed and not changed and not paths and not (args.strict and warnings)
+            ok = not failed and not paths and not (args.strict and warnings)
     except DoctrineError as exc:
         if not args.json:
             raise

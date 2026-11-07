@@ -299,7 +299,7 @@ def hand_edit_detail(root, name, files, homes):
     path = root / name
     if path.is_symlink():
         return f"`{name}` is a link Doctrine didn't write."
-    old = path.read_text()
+    old = path.read_bytes().decode(errors="replace")
     header = HEADER.match(old)
     if header is None:
         return f"`{name}` was written by hand."
@@ -330,35 +330,22 @@ def hand_edit_detail(root, name, files, homes):
     return detail
 
 
-def stale_levels(root, homes, files, selected):
+def needed_files(root, homes, files, selected, wanted):
     for home in sorted(selected):
         levels = loaded_levels(homes, home)
-        for level, data in levels:
+        for level, _ in levels:
             if level in selected:
                 continue
             for filename in ("AGENTS.md", "CLAUDE.md"):
                 path = str(PurePosixPath(level) / filename)
                 disk = root / path
-                if path not in files:
-                    if not disk.is_file() or not disk.read_bytes().startswith(b"<!-- doctrine sha256="):
-                        continue
-                    state = "stale"
-                else:
-                    state = file_state(disk, files[path])
-                if state != "unchanged":
-                    detail = "missing" if state == "missing" else "out of date"
-                    raise compile_error(
-                        code="E635", summary="Home needs a full build",
-                        detail=f"`{home}` loads `{path}`, which is {detail}.",
-                        hints=("Run `doctrine build .`, then build this home.",),
-                    )
+                if path in files or disk.is_file() and disk.read_bytes().startswith(b"<!-- doctrine sha256="):
+                    state = file_state(disk, files.get(path))
+                    if state != "unchanged":
+                        yield home, "loads", path, state
         for path in dict.fromkeys(path for _, data in levels for path in data["pointers"]):
-            if not (root / path).is_file():
-                raise compile_error(
-                    code="E635", summary="Home needs a full build",
-                    detail=f"`{home}` links to `{path}`, which is missing.",
-                    hints=("Run `doctrine build .`, then build this home.",),
-                )
+            if path not in wanted and not (root / path).is_file():
+                yield home, "links to", path, "missing"
 
 
 def build_homes(
@@ -366,18 +353,6 @@ def build_homes(
 ):
     root = output_dir or target.output_dir
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
-    if read_only and not whole:
-        wanted.update(path for home in selected for level, data in loaded_levels(homes, home)
-                      if level not in selected for path in data["files"]
-                      if PurePosixPath(path).name in ("AGENTS.md", "CLAUDE.md"))
-        for home in selected:
-            for level, _ in loaded_levels(homes, home):
-                if level not in selected:
-                    for filename in ("AGENTS.md", "CLAUDE.md"):
-                        path = str(PurePosixPath(level) / filename)
-                        disk = root / path
-                        if path not in files and disk.is_file() and disk.read_bytes().startswith(b"<!-- doctrine sha256="):
-                            wanted.add(path)
     obsolete = set()
     record = root / "HOMES.contract.json"
     if whole:
@@ -394,8 +369,16 @@ def build_homes(
         }
         wanted.add("HOMES.contract.json")
     states = {name: file_state(root / name, files.get(name)) for name in sorted(wanted | obsolete)}
-    if not whole and not read_only:
-        stale_levels(root, homes, files, selected)
+    if not whole:
+        needed = needed_files(root, homes, files, selected, wanted)
+        if not read_only:
+            for home, action, path, state in needed:
+                detail = "missing" if state == "missing" else "out of date"
+                raise compile_error(
+                    code="E635", summary="Home needs a full build",
+                    detail=f"`{home}` {action} `{path}`, which is {detail}.",
+                    hints=("Run `doctrine build .`, then build this home.",),
+                )
     if not read_only and not force:
         for name, state in states.items():
             if state == "edited":
@@ -418,10 +401,11 @@ def build_homes(
             if name in obsolete or state != "unchanged"
         ]
         if not whole:
-            pointers = {path for home in selected for _, data in loaded_levels(homes, home)
-                        for path in data["pointers"]}
-            result["paths"].extend({"path": path, "state": "missing"} for path in sorted(pointers)
-                                   if path not in wanted and not (root / path).is_file())
+            seen = {item["path"] for item in result["paths"]}
+            for _, _, path, state in needed:
+                if path not in seen:
+                    result["paths"].append({"path": path, "state": state})
+                    seen.add(path)
     for name, state in states.items():
         if read_only:
             continue
@@ -434,5 +418,4 @@ def build_homes(
         else:
             atomic_write(root / name, files[name])
             result["written"].append(name)
-    changed = any(state != "unchanged" or name in obsolete for name, state in states.items())
-    return result, changed
+    return result

@@ -296,7 +296,7 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "missing" if not file["on_disk"]
+                    "missing" if file["kind"] == "home" and not file["on_disk"]
                     else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]

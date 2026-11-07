@@ -31,7 +31,7 @@ expected_stdout_lines = [
   "pods/growth/small on claude: 342 of 1,000 characters, 658 left",
   "",
   "Files:",
-  "  not-here.md                  100  missing",
+  "  not-here.md                  100  reserved",
   "  pods/growth/AGENTS.md        123",
   "  pods/growth/small/AGENTS.md  119",
   "",

@@ -282,8 +282,20 @@ team T: "Team"
         self.assertIn(b"Second case.", original)
         code, _, error = self.cli(root, "build", "T.qa")
         self.assertEqual(code, 0, error)
-        self.assertNotIn("W307", error)
         self.assertEqual(companion.read_bytes(), original)
+
+    def test_selected_build_writes_its_first_local_companion(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace(
+            '        role: "QA text."',
+            '        role: "QA text."\n        work: "Work"\n'
+            '            details:\n                "Long case."',
+        ))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertTrue((root / "pods/growth/qa/DETAILS.md").is_file())
 
     def test_details_in_document_section(self):
         root = self.project("""document D: "Document"

@@ -131,7 +131,7 @@ or tool error. `--json` prints `format_version`, `ok`, `homes`, `errors`,
 are marked `missing`; JSON reports `on_disk` for each file. Select one
 home to see its loaded files, five biggest source declarations, and drop
 reasons. Any smaller parts share one last row. A missing external with a
-reserve is marked `missing`. Headers and joining blank lines count toward
+reserve is marked `reserved`. Headers and joining blank lines count toward
 load, but belong to no source entry. Nested entries never count text twice.
 Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
 order, or `--json` for the versioned report. Companions have a separate size.

@@ -132,10 +132,10 @@ def run_home_checks():
             elif code == "E635":
                 args = ["build", "T.qa"]
             error = StringIO()
-            with chdir(root), redirect_stderr(error), redirect_stdout(StringIO()):
+            with chdir(root), redirect_stdout(StringIO()):
                 if code.startswith("W") and code != "W306":
-                    main(["build"])
-                    error = StringIO()
+                    with redirect_stderr(StringIO()):
+                        main(["build"])
                 with redirect_stderr(error):
                     result = main(args)
             _expect(

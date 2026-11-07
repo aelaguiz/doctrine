@@ -677,6 +677,16 @@ team T: "Team"
         self.assertEqual(path.read_text(), "Hand text.\n")
         self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())
 
+    def test_e634_binary_file_written_by_hand(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "pods/growth/qa/AGENTS.md").write_bytes(b"Hand written: \xff\n")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("E634", error)
+        self.assertIn("was written by hand.", error)
+        self.assertNotIn("Traceback", error)
+
     def test_every_compiling_corpus_agent_builds(self):
         examples = Path(__file__).resolve().parents[1] / "examples"
         prompts = {
@@ -803,13 +813,12 @@ agent A:
         self.assertEqual(code, 1)
         self.assertIn("RULE005", error)
 
-    def test_w307_skips_selected_and_hand_written_files(self):
+    def test_selected_build_skips_hand_written_files(self):
         root = self.project()
         path = root / "AGENTS.md"
         path.write_text("Hand written.\n")
         code, _, error = self.cli(root, "build", "pods/growth", "GrowthPod.qa")
         self.assertEqual(code, 0, error)
-        self.assertNotIn("W307", error)
         self.assertEqual(path.read_text(), "Hand written.\n")
 
     def test_broken_team_elsewhere_cannot_stop_build(self):

@@ -29,6 +29,10 @@ The release version for this major language move is 6.0.0.
    keyed `preamble` so a child can inherit it.
 5. `Message` is now a built-in output target, like `File`. Rename any
    project's own `output target Message` and update its references.
+6. Replace `doctrine build --check` with `doctrine check`. Builds now fail on
+   rule and budget errors. Run a whole build before a selected build. `check`
+   fails when files are missing or out of date, so a tree that does not commit
+   built files needs a build first.
 
 Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.
@@ -92,9 +96,6 @@ The Doctrine release version tracks one public shipped release or prerelease.
 - Prefer the next patch tag for routine public work. Use `v1.0.2`, not
   `v1.2.0`, for fixes, docs, tooling, packaging, and other routine
   non-breaking releases.
-- The unified build gate is `breaking`: replace `doctrine build --check` with
-  `doctrine check`. Builds now fail on rule and budget errors. A selected build
-  needs a whole build first, with current loaded levels and linked files.
 - Refreshing a first-party emitted skill bundle while keeping its stable code
   catalog, install layout, and machine-readable proof shape unchanged is still
   a patch-level public fix.
