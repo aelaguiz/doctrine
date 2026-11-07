@@ -90,11 +90,14 @@ def check_homes(target, session, selectors):
     )
     root = target.project_config.config_dir.resolve()
     built = {(target.output_dir / path).resolve() for path in files}
+    dead_links = []
     for name, content in files.items():
         if not name.endswith(".md") or isinstance(content, Path):
             continue
         text = content.decode()
-        for start, end, _ in markdown_destinations(text):
+        for start, end, is_import in markdown_destinations(text):
+            if is_import and text[end:].split("\n", 1)[0].strip():
+                continue
             dest = text[start:end]
             url = urlsplit(dest)
             if url.scheme or url.netloc or not url.path:
@@ -102,10 +105,9 @@ def check_homes(target, session, selectors):
             path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
             resolved = ((target.output_dir / name).parent / Path(path).expanduser()).resolve()
             if resolved.is_relative_to(root) and not resolved.exists() and resolved not in built:
-                raise compile_error(
-                    code="E636", summary="Dead link",
-                    detail=f"{name} points at {dest}, which does not exist.",
-                )
+                dead_links.append(f"{name} points at {dest}, which does not exist.")
+    if dead_links:
+        raise compile_error(code="E636", summary="Dead link", detail="\n- ".join(dead_links))
     settings = runtime_settings(target)
     context = CompilationContext(session)
     validate_load_rules(context, homes, selected, whole)

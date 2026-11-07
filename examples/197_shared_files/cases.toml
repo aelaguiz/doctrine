@@ -175,3 +175,41 @@ edit = { "pods/CLAUDE.md" = "Changed parent.\n", "shared/guide.md" = "Changed gu
 args = ["load", "pods/team/qa", "--runtime", "claude", "--rev", "HEAD", "--full"]
 expected_exit = 0
 stdout_contains = ["pods/CLAUDE.md", "Revision parent.", "shared/guide.md", "Guide at revision."]
+
+[[cases]]
+name = "a hand-written parent may mention missing imports during build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "CLAUDE.md" = "Parent notes. Ask @someone before you ship.\n@missing.md\n" }
+args = ["build", "."]
+expected_exit = 0
+
+[[cases]]
+name = "a hand-written parent may mention missing imports during load"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "CLAUDE.md" = "Parent notes. Ask @someone before you ship.\n@missing.md\n" }
+args = ["load", "pod/qa", "--runtime", "claude"]
+expected_exit = 0
+stdout_contains = ["CLAUDE.md", "hand-written"]
+
+[[cases]]
+name = "a handle inside a sentence is not a dead link"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Post on @brand today.\"\n" }
+args = ["build", "."]
+expected_exit = 0
+
+[[cases]]
+name = "an import at the end of a line is a dead link"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read @../missing.md\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E636", "pod/AGENTS.md points at ../missing.md, which does not exist."]

@@ -43,7 +43,7 @@ def markdown_destinations(text):
         r"^ {0,3}\[(?!\^)(?:\\.|[^\]\\\n])+\]:[ \t\n]*"
         + destination
         + r"[ \t]*(?:[\"'][^\"'\n]*[\"'][ \t]*)?$",
-        r"(?<!\S)@((?:\\ |[^\s])+)",
+        r"(?<!\S)@(\S+)",
     )
     for pattern in patterns:
         for match in re.finditer(pattern, visible, re.M):
@@ -57,10 +57,10 @@ def rebase_markdown(text, folder):
         dest = text[start:end]
         if dest.startswith(("/", "#", "~")) or re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", dest):
             continue
-        path, separator, anchor = (dest.replace("\\ ", " ") if is_import else dest).partition("#")
+        path, separator, anchor = dest.partition("#")
         relative = os.path.relpath(text.source_path.parent / path, folder).replace(os.sep, "/")
         rebased = posixpath.normpath(relative) + separator + anchor
-        changes.append((start, end, rebased.replace(" ", "\\ ") if is_import else rebased))
+        changes.append((start, end, rebased))
     result = str(text)
     for start, end, dest in sorted(changes, reverse=True):
         result = result[:start] + dest + result[end:]

@@ -109,11 +109,13 @@ def follow_imports(path, text, reader, seen, depth, config):
     for start, end, is_import in markdown_destinations(text):
         if not is_import:
             continue
-        imported = project_file_path(config, path.parent / Path(text[start:end].replace("\\ ", " ")).expanduser())
+        imported = project_file_path(config, path.parent / Path(text[start:end]).expanduser())
         if imported in seen:
             continue
         seen.add(imported)
         content = reader(imported)
+        if content is None:
+            continue
         rows.append((imported, content))
         rows.extend(follow_imports(imported, content, reader, seen, depth + 1, config))
     return rows
