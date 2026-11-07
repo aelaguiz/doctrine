@@ -1,0 +1,32 @@
+# `role` and typed fields are inherited items, accounted for like slots.
+
+input Brief: "Brief"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+
+
+abstract agent Base:
+    role: "Shared role text."
+    inputs: "Inputs"
+        Brief
+    notes: "Notes"
+        "Keep notes."
+
+
+agent Keeps[Base]: "Keeps"
+    inherit role
+    inherit inputs
+    inherit notes
+
+
+agent Replaces[Base]: "Replaces"
+    role: "Own role text."
+    drop inputs: "This agent works from memory."
+    inherit notes
+
+
+agent RoleLast: "Role Last"
+    workflow: "First"
+        "A slot may come before the role."
+    role: "The role renders where it is written."

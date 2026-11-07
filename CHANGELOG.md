@@ -8,6 +8,114 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Markdown import (6.0.0; language 6.0)
+
+- `doctrine import` prints agent or workflow source from a Markdown file.
+
+### Messages (6.0.0; language 6.0)
+
+- A `Message` output renders the same prose for the sender and receiver. The
+  receiver may list it in `inputs:`. `W303` reports a message with no reader.
+- `Message` is a built-in output target. Rename any project's own
+  `output target Message` and its references.
+
+### Provenance (6.0.0; language 6.0)
+
+- `quote` records words and their source. Named and inline quotes render with
+  their speaker and date. `sources` lists citations and home reach. `W305`
+  reports unused named quotes.
+- `person` names owners with declaration refs or file globs. `check` validates
+  ownership lists. `diff` reports changed owned declarations and people, using
+  owners from both sides of the comparison.
+
+### Reach (6.0.0; language 6.0)
+
+- Rules can select teams, member keys, and home paths. `requires load` and
+  `forbids load` check the full always-on load in `check` and `emit_docs`.
+  `RULE006` and `RULE007` name missing and forbidden text. Builds run no rules.
+- `diff` compares source hashes and home loads against a revision or project
+  tree. It lists changed files, details sizes, reach, and new wildcard sections.
+  JSON lists each reached home's size change. A base that cannot compile
+  exits 2. Source hashes include Markdown `from` files and ignore source line moves.
+  Team names select their member homes too. Removed homes keep their causes,
+  and a template member edit counts once, under its abstract team. Only source
+  edits count as declaration changes. New sections come from homes on both sides
+  and list only selected homes that load them.
+- `where` finds the source and home reach of a sentence, ignoring case and
+  whitespace. Text and JSON name the source section and the homes it reaches.
+- Project checks warn on near copies (`W301`), double loads (`W302`), and
+  unused values (`W304`). Projects can disable warning codes. JSON near-copy
+  findings include every example pair. Near-copy checks read each `from` file
+  once. Read value keys count in both defaults and overrides in the home's lookup chain.
+- The agent linter can review changed declarations against a reached home.
+  Its three new findings cover repeated lessons, added rules beside a
+  judgment, and changes that contradict a parent.
+
+### Homes and load (6.0.0; language 6.0)
+
+- Team targets emit home trees, runtime files, and `TEAM.contract.json`.
+  Whole builds record paths in `HOMES.contract.json` and remove obsolete files.
+  A record with a merge conflict counts as missing and is rebuilt.
+  Every built Markdown file guards hand edits, including plain agents.
+  Equal bytes skip writes; atomic writes follow the umask. Legacy emit output
+  stays the same and rejects details without companions.
+- `details` moves longer cases into local or shared companions. A paragraph
+  can hold details. Shared companions keep their owner's words and headings.
+  Skills and output structures reject details with `E620`.
+- Runtime settings and `budget:` measure externals plus each loaded level.
+  `build` writes without running rules or failing budgets; `check` judges them.
+  Selected launches compile only their homes and shared levels. Bad budgets,
+  runtime settings, and missing externals cannot stop a build. Unselected team
+  and plan errors cannot stop it either. Selected builds do not compare shared
+  companions. Malformed settings report `E632`. Role budgets
+  serve as defaults. Unknown runtime settings fail loudly.
+- `load` reports team and member homes, loaded files, source sizes, and drop
+  reasons. Nested entries count each line once. `check --json` returns findings.
+- The `doctrine` and `doctrine-agents` scripts share the CLI. Build selectors,
+  `--check`, `--force`, `--out`, `--rev`, and `--with` control home builds.
+  A team name selects the team and its members; a member build writes no contract.
+- Relative links from Markdown-backed declarations follow their text into
+  each home. Footnotes and prose keep their text. Hand-edit reports name
+  Markdown sources and heading lines. `build --check --json` prints only JSON.
+  Rename `budget` and `details` keys where their new forms start.
+
+
+### Values and teams (6.0.0; language 6.0)
+
+- `values:` supplies words to shared prose. Late `{{agent:key}}` and
+  `{{team:key}}` roots read each final home's values and facts. Missing
+  values name every blank and reading site. Cycles and fact assignments fail.
+- `team` and `member` add shared folders, member refs, and overlays with an
+  implied `inherit *`. Team doctrine stays in the team's own file.
+- `roster` builds tables from direct members, then adds static rows.
+- Markdown-backed abstract agents and workflows read keyed headings from
+  `from "path.md"`. Both support the shared patch language. Workflow keys
+  support checked title refs. Reserved agent heading keys get a final `_`,
+  so `## Skills` uses `skills_` and keeps its heading.
+- New errors are `E601` to `E604`, `E606`, `E608`, `E609`, and `E652` to `E654`.
+  Rename `member` and `home` agent slots, and `values` and `roster` keys
+  where their new forms can start.
+
+### Prose and patches (6.0.0; language 6.0)
+
+- Each authored prose string renders as its own paragraph, including list items.
+  Put a whole code fence in one triple-quoted string or a `code` block; a fence
+  split across strings fails with `E605`. Readable blocks print metadata only
+  when they carry a requirement or `when`.
+- `paragraph key:` gives prose an address and an optional run-in title.
+- Children must account for head prose, roles, and typed agent fields.
+  Use `inherit preamble`, `inherit role`, or `inherit inputs` to keep them.
+  `drop key: "Reason"` removes an inherited item. `inherit *` keeps the rest
+  in parent order, with overrides in their parent positions. Plain roles and
+  typed fields stay where written. Dotted patches reach sections, slots, and
+  paragraphs. Inherited roles keep refs in their parent module. Several
+  `decision:` fields form one inherited item.
+- A lone `.prompt` module inside a prompt root is a one-file flow when no
+  flow entrypoint sits above it. `E206` is retired; roles keep their authored
+  position. New errors are `E134`, `E605`, and `E610` to `E613`.
+- Rename `drop` and `paragraph` keys where their new forms can start.
+- See `docs/VERSIONING.md` for the four breaking changes and upgrade steps.
+
 ### Added
 - Top-level `receipt Name[Parent]?: "Title"` declarations. Receipts list
   required typed fields with builtin scalar (`string`, `integer`, `number`,
@@ -162,6 +270,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `docs/COMPILER_ERRORS.md`, `examples/README.md`, and the shipped
   `doctrine-learn` skill so release truth matches examples `150` through
   `164`.
+- Removed the VS Code extension, which Cursor also used.
 
 ### Fixed
 

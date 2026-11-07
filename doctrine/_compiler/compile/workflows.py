@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import _authored_slot_allows_law
@@ -118,6 +120,7 @@ class CompileWorkflowsMixin:
                 body.append(
                     CompiledSection(
                         title=item.title,
+                        origin=item.origin, key=item.key,
                         body=self._compile_section_body(
                             item.items,
                             unit=unit,
@@ -153,15 +156,15 @@ class CompileWorkflowsMixin:
                 continue
 
             body.append(
-                self._compile_workflow_decl(
+                replace(self._compile_workflow_decl(
                     item.workflow_decl,
                     unit=item.target_unit,
                     agent_contract=agent_contract,
                     slot_key=slot_key,
-                )
+                ), key=item.key)
             )
 
-        return CompiledSection(title=workflow_body.title, body=tuple(body))
+        return CompiledSection(title=workflow_body.title, body=tuple(body), origin=workflow_body.origin, drops=workflow_body.drops)
 
     def _compile_workflow_root_readable_block(
         self,
@@ -178,6 +181,7 @@ class CompileWorkflowsMixin:
             section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
                 self._resolve_section_body_items(
                     payload,
+                    origin=block.origin,
                     unit=unit,
                     owner_label=nested_owner_label,
                 ),
@@ -367,6 +371,7 @@ class CompileWorkflowsMixin:
                 body.append(
                     CompiledSection(
                         title=item.title,
+                        origin=item.origin, key=item.key,
                         body=self._compile_section_body(
                             item.items,
                             unit=unit,
@@ -397,6 +402,7 @@ class CompileWorkflowsMixin:
                         section_body_compiler=lambda payload, nested_owner_label: self._compile_section_body(
                             self._resolve_section_body_items(
                                 payload,
+                                origin=item.origin,
                                 unit=unit,
                                 owner_label=nested_owner_label,
                             ),

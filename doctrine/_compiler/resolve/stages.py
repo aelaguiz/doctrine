@@ -531,6 +531,7 @@ class ResolveStagesMixin:
             module_parts=ref.module_parts[:-1],
             declaration_name=ref.module_parts[-1],
             source_span=ref.source_span,
+            scope_unit=ref.scope_unit,
         )
         member_key = ref.declaration_name
         resolved_enum = self._try_resolve_enum_decl_with_unit(enum_ref, unit=unit)

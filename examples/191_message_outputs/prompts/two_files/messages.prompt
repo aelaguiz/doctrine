@@ -1,0 +1,4 @@
+output Note: "Note"
+    target: Message
+        to: Reader
+    "A short note."

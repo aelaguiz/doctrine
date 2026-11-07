@@ -1,0 +1,35 @@
+# A team can inherit another team's members, so a new team is an assembly.
+
+abstract agent PodRole:
+    role: "You are {{team:title}}'s {{agent:title}}. You work on each {{agent:unit}}."
+
+
+abstract agent PodLeadRole:
+    role: "You lead {{team:title}}. Each {{agent:unit}} is yours to call."
+
+
+abstract team CrossFunctional:
+    member lead[PodLeadRole]: "lead"
+    member qa[PodRole]: "QA"
+    member marketer[PodRole]: "marketer"
+
+
+team GrowthPod[CrossFunctional]: "the growth pod"
+    home: "pods/growth"
+    values:
+        unit: "bet"
+
+
+team FeaturePod[CrossFunctional]: "the feature pod"
+    home: "pods/feature"
+    values:
+        unit: "feature"
+    drop marketer: "This pod has no marketing work."
+    member writer[PodRole]: "writer"
+
+
+team ProductPod[CrossFunctional]: "the product pod"
+    home: "pods/product"
+    values:
+        unit: "change"
+    override member lead[PodRole]: "pod lead"

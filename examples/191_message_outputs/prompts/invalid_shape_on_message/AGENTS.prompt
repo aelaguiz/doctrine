@@ -1,0 +1,9 @@
+output Bad: "Bad"
+    target: Message
+        to: "someone"
+    shape: MarkdownDocument
+
+agent A: "A"
+    role: "A."
+    outputs: "Outputs"
+        Bad

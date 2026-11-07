@@ -44,6 +44,7 @@ Summarize the repo state and end with the declared final output.
 #### Field Notes
 
 Use the schema fields exactly once.
+
 Keep `summary` short and user-facing.
 
 #### Read on Its Own

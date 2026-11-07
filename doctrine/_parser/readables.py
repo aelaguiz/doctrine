@@ -47,8 +47,50 @@ class ReadableNodeTransformerMixin:
     def readable_nonsection_block(self, items):
         return items[0]
 
+    @v_args(meta=True, inline=True)
+    def readable_roster_block(self, meta, key, title, body):
+        return _with_source_span(model.ReadableBlock(kind="roster", key=key, title=title, payload=body), meta)
+
+    def roster_body(self, items):
+        columns = tuple(item for item in items if isinstance(item, model.ReadableTableColumn))
+        rows = items[-1].value if isinstance(items[-1], ReadableFieldPart) else ()
+        return model.ReadableTableData(columns=columns, rows=rows)
+
+    @v_args(meta=True, inline=True)
+    def roster_column(self, meta, key, title, template):
+        return _with_source_span(model.ReadableTableColumn(key=key, title=title, body=(template,)), meta)
+
     def override_readable_nonsection_block(self, items):
         return items[0]
+
+    @v_args(meta=True, inline=True)
+    def readable_paragraph_block(self, meta, key, *parts):
+        title = parts[0] if isinstance(parts[0], str) else None
+        return _with_source_span(
+            self._readable_block(
+                "paragraph", key, title, parts[1:] if title is not None else parts,
+            ),
+            meta,
+        )
+
+    @v_args(meta=True, inline=True)
+    def override_readable_paragraph_block(self, meta, key, *parts):
+        return _with_source_span(self._readable_override_block("paragraph", key, parts), meta)
+
+    @v_args(meta=True, inline=True)
+    def readable_details_block(self, meta, key, title, body):
+        return _with_source_span(model.ReadableBlock(kind="details", key=key, title=title, payload=body), meta)
+
+    @v_args(meta=True, inline=True)
+    def readable_bare_details_block(self, meta, body):
+        return _with_source_span(model.ReadableBlock(kind="details", key="details", title=None, payload=body, anonymous=True), meta)
+
+    @v_args(meta=True, inline=True)
+    def override_readable_details_block(self, meta, key, *parts):
+        return _with_source_span(self._readable_override_block("details", key, parts), meta)
+
+    def paragraph_body(self, items):
+        return tuple(items)
 
     @v_args(meta=True, inline=True)
     def readable_sequence_block(self, meta, key, *parts):

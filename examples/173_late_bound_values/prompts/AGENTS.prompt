@@ -1,0 +1,30 @@
+# `{{agent:key}}` reads the concrete agent the text lands in.
+# Values are text. A value may read other values. There is no logic.
+
+workflow WhomYouWorkWith: "Whom you work with"
+    "You follow the {{agent:card}} card from the design on."
+    "The analyst tells you what the {{agent:unit}} measures."
+
+
+abstract agent PodQa:
+    role: "You test each {{agent:unit}}."
+    values:
+        card: "pod's"
+    whom: WhomYouWorkWith
+    handle: "Your handle is {{agent:handle}}"
+        "Use it everywhere."
+
+
+agent GrowthQa[PodQa]: "QA"
+    values:
+        unit: "bet"
+        card: "opportunity's"
+        handle: "qa-{{agent:unit}}"
+    inherit *
+
+
+agent FeatureQa[PodQa]: "QA"
+    values:
+        unit: "feature"
+        handle: "qa-{{agent:unit}}"
+    inherit *

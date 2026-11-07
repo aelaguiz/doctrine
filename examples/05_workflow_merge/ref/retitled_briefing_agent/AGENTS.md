@@ -2,7 +2,12 @@ You are the retitled briefing agent.
 
 ## Revised Briefing
 
+Deliver the briefing in the base order.
+
+Keep the framing brief and direct.
+
 Deliver the revised briefing below.
+
 This child keeps the structure but changes one section title on purpose.
 
 ### Opening

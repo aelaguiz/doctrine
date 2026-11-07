@@ -1,0 +1,5 @@
+agent Loop: "Loop"
+    role: "{{agent:a}}"
+    values:
+        a: "{{agent:b}}"
+        b: "{{agent:a}}"

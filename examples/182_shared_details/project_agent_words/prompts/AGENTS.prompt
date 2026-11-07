@@ -1,0 +1,12 @@
+abstract agent Waiter:
+    role: "You wait well."
+    when: "When to wait"
+        details:
+            "The {{agent:unit}} waited."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    values:
+        unit: "bet"
+    member qa[Waiter]: "QA"

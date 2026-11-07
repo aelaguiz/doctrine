@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 SOURCE_RECEIPT_FILE_NAME = "SKILL.source.json"
 SOURCE_RECEIPT_VERSION = 1
 SKILL_LOCK_VERSION = 1
-DOCTRINE_LANGUAGE_VERSION = "5.7"
+DOCTRINE_LANGUAGE_VERSION = "6.0"
 
 
 @dataclass(slots=True, frozen=True)
@@ -362,12 +362,10 @@ def _collect_source_inputs(
 
 def _session_prompt_paths(session: "CompilationSession") -> tuple[Path, ...]:
     paths: set[Path] = set()
-    for flow in session._flow_cache.values():
-        units: tuple[IndexedUnit, ...] = tuple(flow.units_by_path.values())
-        for unit in units:
-            source_path = unit.prompt_file.source_path
-            if source_path is not None and source_path.is_file():
-                paths.add(source_path.resolve())
+    for unit in session.units():
+        source_path = unit.prompt_file.source_path
+        if source_path is not None and source_path.is_file():
+            paths.add(source_path.resolve())
     return tuple(sorted(paths))
 
 

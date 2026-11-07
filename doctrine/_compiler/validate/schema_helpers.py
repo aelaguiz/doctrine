@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
+from doctrine._compiler.provenance import render_inline_quotes
 from doctrine._compiler.readable_diagnostics import invalid_readable_block_error
 from doctrine._compiler.resolved_types import (
     IndexedUnit,
@@ -127,9 +128,12 @@ class ValidateSchemaHelpersMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
+        if isinstance(value, model.MarkdownProse):
+            return value
         if "{{" not in value and "}}" not in value:
             return value
 
+        value = render_inline_quotes(self, unit, value)
         parts: list[str] = []
         cursor = 0
         for match in _INTERPOLATION_RE.finditer(value):
@@ -182,7 +186,9 @@ class ValidateSchemaHelpersMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> model.ProseLine:
         if isinstance(value, str):
-            return self._interpolate_authored_prose_string(
+            if isinstance(value, model.MarkdownProse):
+                return value
+            text = self._interpolate_authored_prose_string(
                 value,
                 unit=unit,
                 owner_label=owner_label,
@@ -192,6 +198,16 @@ class ValidateSchemaHelpersMixin:
                 route_semantics=route_semantics,
                 render_profile=render_profile,
             )
+            if sum(line.strip().startswith("```") for line in text.splitlines()) % 2:
+                raise authored_compile_error(
+                    code="E605",
+                    summary="Code fence split across strings",
+                    detail=f"A string in {owner_label} opens a code fence it doesn't close.",
+                    unit=unit,
+                    source_span=None,
+                    hints=('Put the whole fence in one `"""` string, or use a `code` block.',),
+                )
+            return model.AuthoredProse(text)
         return model.EmphasizedLine(
             kind=value.kind,
             text=self._interpolate_authored_prose_string(

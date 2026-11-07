@@ -5,7 +5,7 @@
     "title": "Mixed Research Review Kit"
   },
   "doctrine": {
-    "language_version": "5.7",
+    "language_version": "6.0",
     "package_version": "5.1.0"
   },
   "source": {
@@ -59,7 +59,7 @@
     {
       "path": "agents/reviewer.md",
       "kind": "file",
-      "sha256": "5439994702663f95e3d3d48a79235b6ac61fd4bb29a963b785dd163e749e4420"
+      "sha256": "2f917672e92f176a72c663c67bb49a3312ba5973e0af6b97e1f20087a07e895c"
     },
     {
       "path": "references/query-patterns.md",
@@ -78,5 +78,5 @@
     }
   ],
   "source_tree_sha256": "28bc698ef5c91b0d8a5ec7271661ae3e3c93fd4475120d7aa7d58f80ebffadb0",
-  "output_tree_sha256": "c4f058674efde65aad2fe726d8a9e024e8685fe3d04858d53e0f91e44b8585f4"
+  "output_tree_sha256": "ba87ecd710f85bf5ce9de1cbe9821f12e39ad108c1f68c589755721f44d77548"
 }

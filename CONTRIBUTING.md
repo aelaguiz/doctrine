@@ -37,12 +37,8 @@ If you change diagnostics, also run:
 make verify-diagnostics
 ```
 
-If you change the VS Code extension under `editors/vscode/`, also run:
-
-```bash
-cd editors/vscode
-make
-```
+For Markdown import, run `uv run --locked python -m unittest tests.test_import`
+and verify example `192_doctrine_import`.
 
 ## Repo rules
 

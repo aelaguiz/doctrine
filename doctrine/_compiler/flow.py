@@ -3,6 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error, related_prompt_site
 from doctrine._compiler.indexing import unit_declarations
+from doctrine._compiler.teams import _message_target
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_INPUT_SOURCES,
@@ -120,11 +121,12 @@ class FlowMixin:
         edges: dict[tuple[object, ...], FlowEdge] = {}
 
         for unit, agent in root_agents:
+            resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
+            agent_contract = self._resolve_agent_contract(agent, unit=unit)
+            agent, _ = self._expand_agent_patches(agent, unit=unit)
             agent_key = self._flow_agent_key(unit, agent.name)
             self._flow_upsert_agent_node(agent_nodes, agent, unit=unit)
 
-            agent_contract = self._resolve_agent_contract(agent, unit=unit)
-            resolved_slot_states = self._resolve_agent_slots(agent, unit=unit)
             resolved_slots = {
                 slot.key: slot.body
                 for slot in resolved_slot_states
@@ -685,22 +687,11 @@ class FlowMixin:
     ) -> None:
         agent_key = self._flow_agent_key(agent_unit, agent.name)
         for branch in route_context.branches:
-            if branch.target_module_parts:
-                target_unit = self._load_module(branch.target_module_parts)
-                target_agent = unit_declarations(target_unit).agents_by_name.get(
-                    branch.target_name
-                )
-            else:
-                target_agent = self.session.flow_for_unit(agent_unit).agents_by_name.get(
-                    branch.target_name
-                )
-                target_unit = (
-                    agent_unit
-                    if target_agent is None
-                    else self.session.flow_for_unit(agent_unit).declaration_owner_units_by_id[
-                        id(target_agent)
-                    ]
-                )
+            target_unit = self._load_module(branch.target_module_parts) if branch.target_module_parts else agent_unit
+            match = self._flow_decl_match(branch.target_name, unit=target_unit, registry_name="agents_by_name")
+            target_agent = None
+            if match is not None:
+                target_unit, target_agent = match
             if target_agent is None:
                 raise compile_error(
                     code="E299",
@@ -754,10 +745,6 @@ class FlowMixin:
                 continue
             if item.target_module_parts:
                 target_unit = self._load_module(item.target_module_parts)
-                target_agent = unit_declarations(target_unit).agents_by_name.get(
-                    item.target_name
-                )
-                target_prompt_root, target_flow_root = self._flow_identity(target_unit)
             else:
                 current_flow = self.session.flow_by_key(agent_key[0], agent_key[1])
                 if current_flow is None:
@@ -769,14 +756,12 @@ class FlowMixin:
                         ),
                         path=self.root_flow.entrypoint_path,
                     )
-                target_agent = current_flow.agents_by_name.get(item.target_name)
-                target_unit = (
-                    self.root_entrypoint_unit
-                    if target_agent is None
-                    else current_flow.declaration_owner_units_by_id[id(target_agent)]
-                )
-                target_prompt_root = current_flow.prompt_root.resolve()
-                target_flow_root = current_flow.flow_root.resolve()
+                target_unit = current_flow.entrypoint_unit
+            match = self._flow_decl_match(item.target_name, unit=target_unit, registry_name="agents_by_name")
+            target_agent = None
+            if match is not None:
+                target_unit, target_agent = match
+            target_prompt_root, target_flow_root = self._flow_identity(target_unit)
             if target_agent is not None:
                 self._flow_upsert_agent_node(agent_nodes, target_agent, unit=target_unit)
             self._flow_add_edge(
@@ -832,10 +817,12 @@ class FlowMixin:
         key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
-        source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
-            decl,
-            unit=unit,
-        )
+        if isinstance(decl, model.OutputDecl):
+            source_title, shape_title, requirement_title, detail_lines = None, None, None, ()
+        else:
+            source_title, shape_title, requirement_title, detail_lines = self._flow_input_summary(
+                decl, unit=unit,
+            )
         nodes[key] = FlowInputNode(
             module_parts=unit.module_parts,
             name=decl.name,
@@ -861,12 +848,14 @@ class FlowMixin:
         key = (prompt_root, flow_root, decl.name)
         if key in nodes:
             return
-        target_title, primary_path, shape_title, requirement_title, detail_lines = (
-            self._flow_output_summary(
-                decl,
-                unit=unit,
+        if _message_target(decl):
+            target_title, primary_path, shape_title, requirement_title, detail_lines = (
+                "Message", None, None, None, ()
             )
-        )
+        else:
+            target_title, primary_path, shape_title, requirement_title, detail_lines = (
+                self._flow_output_summary(decl, unit=unit)
+            )
         nodes[key] = FlowOutputNode(
             module_parts=unit.module_parts,
             name=decl.name,
@@ -892,6 +881,7 @@ class FlowMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[str, ...]:
+        agent, _ = self._expand_agent_patches(agent, unit=unit)
         for field in agent.fields:
             if isinstance(field, model.RoleScalar):
                 return (

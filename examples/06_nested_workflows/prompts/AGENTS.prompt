@@ -56,6 +56,7 @@ workflow Delivery: "Delivery"
 workflow RevisedDelivery[Delivery]: "Delivery"
     "Move through the briefing in the revised sequence."
 
+    inherit preamble
     inherit opening
 
     context_note: "Context Note"
@@ -112,5 +113,6 @@ agent InheritedStructuredBriefingAgent[StructuredBriefingAgent]:
         "This file inherits the outer briefing structure."
         "It keeps preparation and replaces delivery through outer workflow inheritance."
 
+        inherit preamble
         inherit preparation
         override delivery: RevisedDelivery

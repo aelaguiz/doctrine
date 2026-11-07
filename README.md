@@ -7,7 +7,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aelaguiz/doctrine/badge)](https://scorecard.dev/viewer/?uri=github.com/aelaguiz/doctrine)
 [![Output: AGENTS.md](https://img.shields.io/badge/output-AGENTS.md-6E56CF.svg)](https://github.com/aelaguiz/doctrine)
 
-[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally) · [VS Code extension](editors/vscode/README.md)
+[Docs](docs/README.md) · [Versioning](docs/VERSIONING.md) · [Changelog](CHANGELOG.md) · [Rally](https://github.com/aelaguiz/rally)
 
 Write agent workflows in a code-like DSL. Compile them to portable instructions.
 
@@ -124,6 +124,27 @@ Want the packaged compiler?
 python -m pip install doctrine-agents
 ```
 
+For a configured team target, build its home tree and check its rules and budgets:
+
+```bash
+doctrine build .
+doctrine check
+doctrine load
+```
+
+Teams keep shared text in their own folders. Members load those levels
+above their own file. Put longer cases in `details` to keep the always-on
+text small. See [the home-tree guide](docs/EMIT_GUIDE.md#build-a-team-home-tree).
+
+To start porting a Markdown file, print its Doctrine source:
+
+```bash
+doctrine import old/guide.md --name Guide --kind workflow
+```
+
+First change relative links to paths from the repository root. Imported text
+does not follow the Markdown file when it moves.
+
 Need the example corpus, repo proof, or `emit_flow`?
 
 ```bash
@@ -161,8 +182,7 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
   enums, and workflow law
 - `emit_docs`, `emit_flow`, `emit_skill`, skill source receipts, and
   structured-output schema validation helpers
-- manifest-backed verification through `examples/149_external_skill_source_target`
-- a repo-local VS Code extension for `.prompt` files
+- manifest-backed examples through `examples/193_small_team_end_to_end`
 
 ## Workflow visualizer
 
@@ -183,7 +203,6 @@ The checked-in showcase above comes from `examples/73_flow_visualizer_showcase`.
 - [docs/AUTHORING_PATTERNS.md](docs/AUTHORING_PATTERNS.md)
 - [docs/EMIT_GUIDE.md](docs/EMIT_GUIDE.md)
 - [examples/README.md](examples/README.md)
-- [editors/vscode/README.md](editors/vscode/README.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Questions and contributions

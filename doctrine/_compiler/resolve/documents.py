@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.home_map import source_origin, child_origin, drop_records
+from doctrine._compiler.resolve.patches import (
+    mark_wildcard, prepare_body_patches, apply_path_patches,
+)
 from dataclasses import replace
 
 from doctrine._compiler.readable_diagnostics import (
@@ -93,6 +97,7 @@ class ResolveDocumentsMixin:
             ):
                 resolved = self._resolve_document_body(
                     document_decl.body,
+                    origin=source_origin(self, document_decl, unit, (), document_decl.source_span),
                     unit=unit,
                     owner_label=_dotted_decl_name(unit.module_parts, document_decl.name),
                     owner_source_span=document_decl.source_span,
@@ -125,7 +130,13 @@ class ResolveDocumentsMixin:
         parent_body: model.DocumentBody | None = None,
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
+        origin: model.Origin | None = None,
     ) -> ResolvedDocumentBody:
+        drops = (*(parent_document.drops if parent_document else ()), *drop_records(document_body.items, origin.declaration if origin else owner_label))
+        document_body, patches = prepare_body_patches(
+            document_body, parent_document, kind="document", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -138,19 +149,22 @@ class ResolveDocumentsMixin:
         )
         if parent_document is None:
             return ResolvedDocumentBody(
-                title=document_body.title,
+                title=document_body.title, origin=origin, drops=drops,
                 preamble=resolved_preamble,
                 items=self._resolve_non_inherited_document_items(
-                    document_body.items,
+                    document_body.items, origin=origin,
                     unit=unit,
                     owner_label=owner_label,
                 ),
             )
 
         parent_items_by_key = {item.key: item for item in parent_document.items}
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[model.DocumentBlock] = []
         emitted_items: dict[str, object] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in document_body.items:
             key = item.key
@@ -183,7 +197,7 @@ class ResolveDocumentsMixin:
                     )
                 resolved_items.append(
                     self._resolve_document_block(
-                        item,
+                        replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None)),
                         unit=unit,
                         owner_label=f"{owner_label}.{key}",
                     )
@@ -199,7 +213,7 @@ class ResolveDocumentsMixin:
                         source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                resolved_items.append(mark_wildcard(parent_item) if item.wildcard else parent_item)
                 continue
 
             if parent_item is None:
@@ -229,6 +243,7 @@ class ResolveDocumentsMixin:
                 self._resolve_document_block(
                     model.DocumentBlock(
                         kind=item.kind,
+                        origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None),
                         key=item.key,
                         title=(
                             item.title
@@ -282,7 +297,7 @@ class ResolveDocumentsMixin:
             )
 
         return ResolvedDocumentBody(
-            title=document_body.title,
+            title=document_body.title, origin=origin, drops=drops,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
         )
@@ -293,6 +308,7 @@ class ResolveDocumentsMixin:
         *,
         unit: IndexedUnit,
         owner_label: str,
+        origin: model.Origin | None = None,
     ) -> tuple[model.DocumentBlock, ...]:
         resolved: list[model.DocumentBlock] = []
         seen_keys: dict[str, model.DocumentBlock] = {}
@@ -311,7 +327,7 @@ class ResolveDocumentsMixin:
                 seen_keys[item.key] = item
                 resolved.append(
                     self._resolve_document_block(
-                        item,
+                        replace(item, origin=child_origin(origin, item.key, item.source_span, item.title if item.kind == "section" else None)),
                         unit=unit,
                         owner_label=f"{owner_label}.{item.key}",
                     )

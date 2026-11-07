@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches
+from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -97,6 +99,8 @@ class ResolveAgentSlotsMixin:
     def _resolve_agent_slots(
         self, agent: model.Agent, *, unit: IndexedUnit
     ) -> tuple[ResolvedAgentSlotState, ...]:
+        if isinstance(agent, model.Member):
+            unit = agent.scope_unit or unit
         agent_key = (unit.module_parts, agent.name)
         cached = self._resolved_agent_slot_cache.get(agent_key)
         if cached is not None:
@@ -126,7 +130,11 @@ class ResolveAgentSlotsMixin:
                 parent_slots = self._resolve_agent_slots(parent_agent, unit=parent_unit)
                 parent_label = f"agent {_dotted_decl_name(parent_unit.module_parts, parent_agent.name)}"
 
-            parent_slots_by_key = {slot.key: slot for slot in parent_slots}
+            agent, patches = self._expand_agent_patches(agent, unit=unit)
+            parent_slots_by_key = apply_path_patches(
+                self, {slot.key: slot for slot in parent_slots}, patches.path_overrides,
+                owner_label=agent.name, unit=unit, origin=source_origin(self, agent, unit, (), agent.source_span),
+            )
             resolved_slots: list[ResolvedAgentSlotState] = []
             seen_slot_fields: dict[
                 str,
@@ -135,7 +143,7 @@ class ResolveAgentSlotsMixin:
                 | model.AuthoredSlotInherit
                 | model.AuthoredSlotOverride,
             ] = {}
-            accounted_parent_concrete_keys: set[str] = set()
+            accounted_parent_concrete_keys: set[str] = set(patches.dropped_keys)
 
             for field in agent.fields:
                 if isinstance(field, model.AuthoredSlotField):
@@ -166,6 +174,7 @@ class ResolveAgentSlotsMixin:
                         if field.key == "workflow" and isinstance(field.value, model.WorkflowBody):
                             resolved_body = self._resolve_workflow_body(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot workflow",
                                 owner_source_span=field.source_span,
@@ -223,6 +232,7 @@ class ResolveAgentSlotsMixin:
                                 key=field.key,
                                 body=self._resolve_slot_value(
                                     field.value,
+                                    origin=field.origin,
                                     unit=unit,
                                     owner_label=f"agent {agent.name} slot {field.key}",
                                     owner_source_span=field.source_span,
@@ -236,6 +246,7 @@ class ResolveAgentSlotsMixin:
                             key=field.key,
                             body=self._resolve_slot_value(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
                                 owner_source_span=field.source_span,
@@ -341,7 +352,9 @@ class ResolveAgentSlotsMixin:
                             hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
-                    resolved_slots.append(parent_slot)
+                    resolved_slots.append(
+                        mark_wildcard(parent_slot) if field.wildcard else parent_slot
+                    )
                     continue
 
                 if isinstance(field, model.AuthoredSlotOverride):
@@ -408,6 +421,7 @@ class ResolveAgentSlotsMixin:
                             key=field.key,
                             body=self._resolve_slot_value(
                                 field.value,
+                                origin=field.origin,
                                 unit=unit,
                                 owner_label=f"agent {agent.name} slot {field.key}",
                                 owner_source_span=field.source_span,
@@ -456,10 +470,12 @@ class ResolveAgentSlotsMixin:
         unit: IndexedUnit,
         owner_label: str,
         owner_source_span: model.SourceSpan | None,
+        origin: model.Origin | None = None,
     ) -> ResolvedWorkflowBody:
         if isinstance(value, model.WorkflowBody):
             return self._resolve_workflow_body(
                 value,
+                origin=origin,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
@@ -576,6 +592,7 @@ class ResolveAgentSlotsMixin:
 
         preamble: list[model.ProseLine] = [f"Emit {output_decl.title}."]
         return ResolvedWorkflowBody(
+            origin=source_origin(self, decl, unit, (), decl.source_span),
             title=decl.body.title,
             preamble=tuple(preamble),
             items=(),
@@ -624,6 +641,7 @@ class ResolveAgentSlotsMixin:
             )
 
         return ResolvedWorkflowBody(
+            origin=source_origin(self, decl, unit, (), decl.source_span),
             title=decl.body.title,
             preamble=tuple(preamble),
             items=(),

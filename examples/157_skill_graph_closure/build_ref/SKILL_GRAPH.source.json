@@ -6,7 +6,7 @@
     "purpose": "Close the authoring graph over roots sets and recovery refs."
   },
   "doctrine": {
-    "language_version": "5.7",
+    "language_version": "6.0",
     "package_version": "5.1.0"
   },
   "target": {

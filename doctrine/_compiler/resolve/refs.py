@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.teams import find_team_member
 from doctrine._compiler.constants import (
     _ADDRESSABLE_ROOT_REGISTRIES,
     _BUILTIN_RENDER_PROFILE_NAMES,
@@ -47,8 +48,18 @@ class ResolveRefsMixin:
         unit: IndexedUnit,
         registry_name: str,
     ) -> tuple[IndexedUnit, object] | None:
+        flow = self.session.flow_for_unit(unit)
+        if registry_name == "agents_by_name" and "." in declaration_name:
+            team_name, key = declaration_name.rsplit(".", 1)
+            team = flow.teams_by_name.get(team_name)
+            if team is not None:
+                match = find_team_member(self, unit, declaration_name)
+                if match is not None:
+                    return match
+                raise reference_compile_error(code="E276", summary="Missing local declaration reference",
+                    detail=f"Missing local agent declaration: {declaration_name}", unit=unit, source_span=team.source_span)
         return lookup_flow_registry_decl(
-            self.session.flow_for_unit(unit),
+            flow,
             registry_name=registry_name,
             declaration_name=declaration_name,
         )
@@ -219,6 +230,7 @@ class ResolveRefsMixin:
     def _resolve_visible_imported_unit(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> IndexedUnit:
+        unit = ref.scope_unit or unit
         loaded_imports = unit_loaded_imports(unit)
         target_unit = loaded_imports.visible_imported_units.get(ref.module_parts)
         if target_unit is None and ref.rebound_imported:
@@ -239,7 +251,22 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[_RefLookupTarget, ...]:
+        unit = ref.scope_unit or unit
         if ref.module_parts:
+            team_ref = replace(ref, module_parts=ref.module_parts[:-1], declaration_name=ref.module_parts[-1])
+            imports = unit_loaded_imports(unit)
+            if not team_ref.module_parts or team_ref.module_parts in imports.visible_imported_units:
+                for target in self._decl_lookup_targets(team_ref, unit=unit):
+                    match = lookup_flow_registry_decl(self.session.flow_for_unit(target.unit),
+                        registry_name="teams_by_name", declaration_name=target.declaration_name)
+                    if match is not None:
+                        if ref.module_parts in imports.visible_imported_units:
+                            raise reference_compile_error(code="E270", summary="Ambiguous declaration reference",
+                                detail=f"Ambiguous readable reference: {'.'.join((*ref.module_parts, ref.declaration_name))}",
+                                unit=unit, source_span=ref.source_span)
+                        owner, team = self._resolve_decl_ref(team_ref, unit=unit,
+                            registry_name="teams_by_name", missing_label="team declaration")
+                        return (_RefLookupTarget(unit=owner, declaration_name=f"{team.name}.{ref.declaration_name}"),)
             if ref.module_parts == unit.module_parts:
                 return (_RefLookupTarget(unit=unit, declaration_name=ref.declaration_name),)
             return (
@@ -374,6 +401,7 @@ class ResolveRefsMixin:
     def _resolve_render_profile_ref(
         self, ref: model.NameRef, *, unit: IndexedUnit
     ) -> ResolvedRenderProfile:
+        unit = ref.scope_unit or unit
         if not ref.module_parts:
             local_match = lookup_flow_registry_decl(
                 self.session.flow_for_unit(unit),
@@ -776,14 +804,18 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[IndexedUnit, model.Agent]:
-        return self._resolve_parent_decl(
+        parent_unit, parent = self._resolve_parent_decl(
             unit=unit,
             child_name=agent.name,
             child_label="agent",
             parent_ref=agent.parent_ref,
-            registry_name="agents_by_name",
-            resolve_parent_ref=self._resolve_agent_ref,
+            registry_name="teams_by_name" if isinstance(agent, model.Team) else "agents_by_name",
+            resolve_parent_ref=(lambda ref, *, unit: self._resolve_decl_ref(ref, unit=unit,
+                registry_name="teams_by_name", missing_label="team declaration")) if isinstance(agent, model.Team) else self._resolve_agent_ref,
         )
+        if isinstance(parent, model.Member):
+            parent_unit = parent.scope_unit or parent_unit
+        return parent_unit, parent
 
     def _resolve_parent_decl(
         self,
@@ -828,10 +860,11 @@ class ResolveRefsMixin:
         registry_name: str,
         missing_label: str,
     ):
+        unit = ref.scope_unit or unit
         if not ref.module_parts:
             matches: list[tuple[_RefLookupTarget, object]] = []
-            local_match = lookup_flow_registry_decl(
-                self.session.flow_for_unit(unit),
+            local_match = self._flow_decl_match(
+                unit=unit,
                 registry_name=registry_name,
                 declaration_name=ref.declaration_name,
             )
@@ -852,8 +885,8 @@ class ResolveRefsMixin:
             )
             if imported_symbol is not None:
                 imported_flow = self.session.flow_for_unit(imported_symbol.target_unit)
-                imported_match = lookup_flow_registry_decl(
-                    imported_flow,
+                imported_match = self._flow_decl_match(
+                    unit=imported_symbol.target_unit,
                     registry_name=registry_name,
                     declaration_name=imported_symbol.target_name,
                 )
@@ -907,8 +940,8 @@ class ResolveRefsMixin:
         matches: list[tuple[_RefLookupTarget, object]] = []
         for lookup_target in lookup_targets:
             imported_flow = self.session.flow_for_unit(lookup_target.unit)
-            flow_match = lookup_flow_registry_decl(
-                imported_flow,
+            flow_match = self._flow_decl_match(
+                unit=lookup_target.unit,
                 registry_name=registry_name,
                 declaration_name=lookup_target.declaration_name,
             )
@@ -918,7 +951,7 @@ class ResolveRefsMixin:
                 if (
                     imported_flow.flow_root != current_flow.flow_root
                     or imported_flow.prompt_root != current_flow.prompt_root
-                ) and lookup_target.declaration_name not in imported_flow.exported_names:
+                ) and lookup_target.declaration_name not in imported_flow.exported_names and not isinstance(decl, model.Member):
                     self._raise_missing_export_error(
                         ref=ref,
                         unit=unit,
@@ -1062,11 +1095,10 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[tuple[str, IndexedUnit, ReadableDecl], ...]:
-        flow = self.session.flow_for_unit(unit)
         matches: list[tuple[str, IndexedUnit, ReadableDecl]] = []
         for label, registry_name in _READABLE_DECL_REGISTRIES:
-            flow_match = lookup_flow_registry_decl(
-                flow,
+            flow_match = self._flow_decl_match(
+                unit=unit,
                 registry_name=registry_name,
                 declaration_name=declaration_name,
             )
@@ -1086,11 +1118,10 @@ class ResolveRefsMixin:
         *,
         unit: IndexedUnit,
     ) -> tuple[tuple[str, IndexedUnit, AddressableRootDecl], ...]:
-        flow = self.session.flow_for_unit(unit)
         matches: list[tuple[str, IndexedUnit, AddressableRootDecl]] = []
         for label, registry_name in _ADDRESSABLE_ROOT_REGISTRIES:
-            flow_match = lookup_flow_registry_decl(
-                flow,
+            flow_match = self._flow_decl_match(
+                unit=unit,
                 registry_name=registry_name,
                 declaration_name=declaration_name,
             )

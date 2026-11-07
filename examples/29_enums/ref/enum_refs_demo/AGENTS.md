@@ -5,6 +5,7 @@ Keep closed vocabularies declared once instead of copying bare strings.
 ### Verdict Rules
 
 Use the Critic Verdict vocabulary and return accept or changes requested.
+
 Keep guided_walkthrough distinct from scripted_hand.
 
 ## Outputs

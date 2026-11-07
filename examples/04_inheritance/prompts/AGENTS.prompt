@@ -5,6 +5,7 @@ abstract agent ImportedBaseGreeter[PoliteGreeter]:
     role: "You are the imported base greeter."
 
     workflow: "Shared Instructions"
+        inherit preamble
         inherit greeting
         inherit courtesy
         inherit object
@@ -17,6 +18,7 @@ agent HelloWorldGreeter[PoliteGreeter]:
     role: "You are the hello world greeter."
 
     workflow: "Hello World Instructions"
+        inherit preamble
         inherit greeting
         inherit courtesy
         inherit object
@@ -31,6 +33,7 @@ agent InheritanceDemo[PoliteGreeter]:
         "Follow the inherited steps below."
         "This child keeps the shared greeting and replaces the final step."
 
+        inherit preamble
         inherit greeting
         inherit courtesy
 
@@ -41,6 +44,8 @@ agent InheritanceDemo[PoliteGreeter]:
 # Sibling parents work for named workflow declarations too.
 workflow ImportedWorkflowInstructions[BaseGreeting]: "Imported Workflow Instructions"
     "This workflow inherits its structure from an imported parent."
+
+    inherit preamble
 
     inherit greeting
 

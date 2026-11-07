@@ -1,0 +1,16 @@
+abstract agent SharedQa:
+    role: "You test."
+
+abstract agent Other:
+    role: "You do something else."
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[Other]: "QA"
+
+rule QaInheritsSharedRole: "Every team's QA inherits the shared QA role"
+    scope:
+        member: qa
+    assertions:
+        requires inherit SharedQa
+    message: "A team's QA inherits the shared QA role."

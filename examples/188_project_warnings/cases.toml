@@ -1,0 +1,39 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "warnings print and do not fail"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+expected_exit = 0
+stderr_contains = [
+  "W301",
+  "GrowthQa and FeatureQa",
+  "opportunity / feature",
+  "W302",
+  "Shared",
+  "pods/growth/qa",
+  "W304",
+  "never_read",
+]
+
+[[cases]]
+name = "strict fails on warnings"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check", "--strict"]
+expected_exit = 1
+stderr_contains = [
+  "W301",
+]
+
+[[cases]]
+name = "a project can turn a warning off"
+status = "active"
+kind = "cli_contract"
+project = "project_disabled"
+args = ["check", "--strict"]
+expected_exit = 0

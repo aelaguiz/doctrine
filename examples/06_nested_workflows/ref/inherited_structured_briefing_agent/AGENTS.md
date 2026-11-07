@@ -2,7 +2,10 @@ You are the inherited structured briefing agent.
 
 ## Inherited Revised Briefing
 
+This file is the runtime guide for a structured briefing.
+
 This file inherits the outer briefing structure.
+
 It keeps preparation and replaces delivery through outer workflow inheritance.
 
 ### Preparation
@@ -18,6 +21,8 @@ State the topic in one line.
 Name who the briefing is for.
 
 ### Delivery
+
+Move through the briefing in a fixed sequence.
 
 Move through the briefing in the revised sequence.
 

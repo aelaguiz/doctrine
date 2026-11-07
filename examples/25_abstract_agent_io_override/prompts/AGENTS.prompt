@@ -71,6 +71,7 @@ agent OverrideSectionRole[BaseSectionRole]:
     role: "Override the parent's shared section IO blocks through named block patching."
 
     inputs[BaseSectionInputs]: "Your Inputs"
+        inherit preamble
         inherit scoped_catalog_truth
 
         override continuity_only: "Continuity Only"
@@ -79,6 +80,7 @@ agent OverrideSectionRole[BaseSectionRole]:
             ForwardContinuityPacket
 
     outputs[BaseSectionOutputs]: "Your Outputs"
+        inherit preamble
         inherit durable_section_truth
 
         override coordination_handoff: "Coordination Handoff"

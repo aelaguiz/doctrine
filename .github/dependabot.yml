@@ -35,15 +35,3 @@ updates:
       - dependencies
       - kind:ci
     open-pull-requests-limit: 5
-
-  - package-ecosystem: "npm"
-    directory: "/editors/vscode"
-    schedule:
-      interval: weekly
-      day: monday
-    commit-message:
-      prefix: "deps(vscode)"
-    labels:
-      - dependencies
-      - area:vscode
-    open-pull-requests-limit: 5

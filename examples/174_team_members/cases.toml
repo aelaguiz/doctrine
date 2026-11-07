@@ -1,0 +1,68 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a team compiles only its own text"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod"
+assertion = "exact_lines"
+expected_lines = [
+  "This file is for the growth pod, in `pods/growth`.",
+  "",
+  "## What counts as a win",
+  "",
+  "More users who pay.",
+]
+
+[[cases]]
+name = "a member reads team facts and keeps its own sections first"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod.qa"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the growth pod's QA. Your folder is `pods/growth/qa`. Your handle is `growth-qa`.",
+  "",
+  "## Your own section",
+  "",
+  "This comes before the craft.",
+  "",
+  "## Your team",
+  "",
+  "Your team: technical lead, QA and analyst. The others: technical lead and analyst.",
+]
+
+[[cases]]
+name = "a member key maps to a kebab folder"
+status = "active"
+kind = "render_contract"
+agent = "GrowthPod.tech_lead"
+assertion = "exact_lines"
+expected_lines = [
+  "You are the growth pod's technical lead. Your folder is `pods/growth/tech-lead`. Your handle is `growth-tech-lead`.",
+  "",
+  "## Your team",
+  "",
+  "Your team: technical lead, QA and analyst. The others: QA and analyst.",
+]
+
+[[cases]]
+name = "a concrete team needs a home"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_team_without_home/AGENTS.prompt"
+agent = "Lost"
+exception_type = "CompileError"
+error_code = "E606"
+location_line = 1
+
+[[cases]]
+name = "a member key is unique"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid_duplicate_member/AGENTS.prompt"
+agent = "Twice"
+exception_type = "CompileError"
+error_code = "E606"
+location_line = 5

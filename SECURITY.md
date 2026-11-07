@@ -35,5 +35,5 @@ Include:
 
 ## Scope
 
-This policy covers the shipped Python package in `doctrine/`, the verified
-example corpus, and the VS Code extension under `editors/vscode/`.
+This policy covers the shipped Python package in `doctrine/` and the verified
+example corpus.

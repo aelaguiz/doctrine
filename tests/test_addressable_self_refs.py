@@ -101,16 +101,16 @@ class AddressableSelfRefTests(unittest.TestCase):
                 shape: MarkdownDocument
                 requirement: Required
 
-                details: "Details"
+                detail_body: "Details"
                     summary: "Summary"
                         "Keep the route record honest."
 
-                summary_copy: self:details.summary
-                guarded_summary: self:details.summary when route.exists
+                summary_copy: self:detail_body.summary
+                guarded_summary: self:detail_body.summary when route.exists
 
             output RouteNote[BaseRouteNote]: "Route Note"
-                inherit {target, shape, requirement, details, guarded_summary}
-                override summary_copy: self:details
+                inherit {target, shape, requirement, detail_body, guarded_summary}
+                override summary_copy: self:detail_body
 
             agent ReviewLead:
                 role: "Review the route repair."

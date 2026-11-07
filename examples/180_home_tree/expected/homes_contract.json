@@ -1,0 +1,14 @@
+{
+  "format_version": 1,
+  "files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "pods/AGENTS.md",
+    "pods/CLAUDE.md",
+    "pods/growth/AGENTS.md",
+    "pods/growth/CLAUDE.md",
+    "pods/growth/TEAM.contract.json",
+    "pods/growth/qa/AGENTS.md",
+    "pods/growth/qa/CLAUDE.md"
+  ]
+}

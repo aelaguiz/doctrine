@@ -1,5 +1,5 @@
 document Principles: "Principles"
-    """This file is the first thing the `doctrine-learn` skill loads. It teaches the nine principles that ground every other reference in this package. Every recommendation in later references descends from one of these rules. If a choice in Doctrine feels hard, the answer is usually in here.
+    """After `references/getting-good-results.md`, load this file when a choice is about design. It teaches ten principles that ground the other references. Every recommendation in later references descends from one of these rules. If a choice in Doctrine feels hard, the answer is usually in here.
 
 The principles come from `PRINCIPLES.md` and from the durable read of "thin harness, fat skills" in `docs/THIN_HARNESS_FAT_SKILLS.md`. For the product story behind them, see `docs/WHY_DOCTRINE.md`."""
 
@@ -109,4 +109,4 @@ One move to make: read every new sentence out loud. If you cannot say it in one 
             "Invent unshipped constructs. If it is not in `doctrine/grammars/doctrine.lark`, it does not exist yet."
             "Write role prose as state-transition code, nested parentheticals, or inline `(a)`/`(b)`/`(c)` enumerations."
 
-        "**Load when:** the author starts any new Doctrine task, is unsure which construct fits, or is about to push runtime behavior into authored doctrine."
+        "**Load when:** the choice is about design, or the author is about to push runtime behavior into authored doctrine."

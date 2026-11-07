@@ -1,0 +1,9 @@
+{
+  "format_version": 1,
+  "language_version": "6.0",
+  "team": {"key": "GrowthPod", "title": "the growth pod", "home": "pods/growth"},
+  "members": [
+    {"key": "qa", "agent": "GrowthPod.qa", "title": "QA", "home": "pods/growth/qa", "parent": "Role", "sections": ["Your job"]},
+    {"key": "tech_lead", "agent": "GrowthPod.tech_lead", "title": "technical lead", "home": "pods/growth/tech-lead", "parent": "Role", "sections": ["Your job"]}
+  ]
+}

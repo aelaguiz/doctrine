@@ -1,0 +1,27 @@
+# `inherit *` accounts for everything the child does not otherwise name.
+
+abstract agent Base:
+    role: "Base role."
+    one: "One"
+        "First."
+    two: "Two"
+        "Second."
+    three: "Three"
+        "Third."
+
+
+agent Patched[Base]: "Patched"
+    role: "My role."
+    intro: "Intro"
+        "Mine comes before the inherited items."
+    override two: "Two, Reworded"
+        "My second."
+    drop three: "Not for me."
+    inherit *
+    outro: "Outro"
+        "Mine comes after the inherited items."
+
+
+agent Reordered[Base]: "Reordered"
+    inherit *
+    inherit one

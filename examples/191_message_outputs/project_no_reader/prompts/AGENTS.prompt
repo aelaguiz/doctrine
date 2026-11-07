@@ -1,0 +1,18 @@
+output CodeReady: "Code is ready"
+    target: Message
+        to: CoreDev.lead
+    "One message when a team's code is ready."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member lead: "lead"
+        role: "You send."
+        outputs: "Outputs"
+            CodeReady
+
+
+team CoreDev: "the core dev pod"
+    home: "pods/core-dev"
+    member lead: "lead"
+        role: "You should read it, and you don't."

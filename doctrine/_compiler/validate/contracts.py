@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,
@@ -273,13 +276,17 @@ class ValidateContractsMixin:
         owner_source_span: model.SourceSpan | None = None,
     ) -> ContractBodySummary:
         if parent_ref is None:
-            return self._summarize_non_inherited_contract_items(
+            io_body, _ = prepare_body_patches(
+                io_body, None, kind=field_kind, owner_label=owner_label,
+                unit=unit, source_span=owner_source_span,
+            )
+            return replace(self._summarize_non_inherited_contract_items(
                 io_body.items,
                 unit=unit,
                 field_kind=field_kind,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
-            )
+            ), preamble=io_body.preamble)
 
         parent_summary: ContractBodySummary
         parent_label: str
@@ -334,11 +341,19 @@ class ValidateContractsMixin:
                 ),
             )
 
+        io_body, patches = prepare_body_patches(
+            io_body, replace(parent_decl.body, preamble=parent_summary.preamble,
+                             items=parent_summary.keyed_items),
+            kind=field_kind, owner_label=owner_label, unit=unit, source_span=owner_source_span,
+        )
         parent_items_by_key = {item.key: item for item in parent_summary.keyed_items}
+        parent_items_by_key = apply_path_patches(
+            self, parent_items_by_key, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ContractSectionSummary] = []
         unkeyed_artifacts: list[ContractArtifact] = []
         emitted_keys: dict[str, model.IoSection | model.RecordScalar | model.InheritItem | model.OverrideIoSection] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in io_body.items:
             if isinstance(item, (str, model.EmphasizedLine)):
@@ -485,6 +500,7 @@ class ValidateContractsMixin:
             artifacts.extend(item.artifacts)
             bindings.extend(item.bindings)
         return ContractBodySummary(
+            preamble=io_body.preamble,
             keyed_items=tuple(resolved_items),
             unkeyed_artifacts=tuple(unkeyed_artifacts),
             artifacts=tuple(artifacts),
@@ -586,6 +602,7 @@ class ValidateContractsMixin:
             artifacts.extend(item.artifacts)
             bindings.extend(item.bindings)
         return ContractBodySummary(
+            preamble=(),
             keyed_items=tuple(resolved_items),
             unkeyed_artifacts=tuple(unkeyed_artifacts),
             artifacts=tuple(artifacts),

@@ -4,7 +4,10 @@ from dataclasses import dataclass as _dataclass
 from dataclasses import field as _field
 from typing import TYPE_CHECKING, TypeAlias as _TypeAlias
 
-from doctrine._model.core import Expr, InheritItem, NameRef, ProseLine, SourceSpan
+from doctrine._model.core import (
+    Origin,
+    Expr, InheritItem, InheritAll, DropItem, NameRef, ProseLine, SourceSpan,
+)
 
 if TYPE_CHECKING:
     from doctrine._compiler.resolve.field_types import FieldTypeRef
@@ -172,6 +175,7 @@ class ReadableBlock:
     row_schema: ReadableInlineSchemaData | None = None
     anonymous: bool = False
     legacy_section: bool = False
+    origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
@@ -191,7 +195,14 @@ class ReadableOverrideBlock:
 
 DocumentBlock = ReadableBlock
 DocumentOverrideBlock = ReadableOverrideBlock
-DocumentItem: _TypeAlias = ProseLine | ReadableBlock | InheritItem | ReadableOverrideBlock
+DocumentItem: _TypeAlias = (
+    ProseLine
+    | ReadableBlock
+    | InheritItem
+    | InheritAll
+    | DropItem
+    | ReadableOverrideBlock
+)
 
 
 @_dataclass(slots=True, frozen=True)

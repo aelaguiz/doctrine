@@ -34,8 +34,6 @@ expected_lines = [
   "",
   "##### Changes Contract",
   "",
-  "_table_",
-  "",
   "| Column | Meaning |",
   "| --- | --- |",
   "| Item | Name the item. |",

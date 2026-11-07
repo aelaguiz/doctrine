@@ -13,6 +13,7 @@ expected_lines = [
   "## Your Job",
   "",
   "Use the custom source configuration to find the design document.",
+  "",
   "Fail if the required design source data is missing.",
   "",
   "## Inputs",

@@ -1,0 +1,40 @@
+# `requires load` and `forbids load` judge what lands in a home by any path.
+# A member loads its team's file too, so a rule on the root reaches it.
+
+workflow NumbersRule: "Numbers"
+    "Get every number the canonical way."
+
+
+workflow SpecialistsLesson: "A lesson for specialists"
+    "This lesson is for specialists."
+
+
+abstract agent Role:
+    role: "You work."
+
+
+team Root: "the repository"
+    home: "."
+    numbers: NumbersRule
+    member chief[Role]: "chief"
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[Role]: "QA"
+
+
+rule EveryoneLoadsNumbers: "Every agent loads the numbers rule"
+    scope:
+        team: *
+    assertions:
+        requires load NumbersRule
+    message: "A rule meant for every agent reaches every agent."
+
+
+rule PodsSkipSpecialistsLesson: "No pod member loads the specialists' lesson"
+    scope:
+        home: "pods/**"
+    assertions:
+        forbids load SpecialistsLesson
+    message: "A lesson for specialists stays with specialists."

@@ -1,0 +1,5 @@
+abstract agent Twice from "shared/twice.md"
+
+agent A[Twice]: "A"
+    role: "A."
+    inherit *

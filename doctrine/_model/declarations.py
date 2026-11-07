@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass as _dataclass
+from dataclasses import dataclass as _dataclass, field as _field
 from pathlib import Path as _Path
 from typing import TypeAlias as _TypeAlias
 
-from doctrine._model.agent import Agent
+from doctrine._model.agent import Agent, Team
 from doctrine._model.analysis import AnalysisDecl, DecisionDecl
-from doctrine._model.core import ImportDecl, RenderProfileDecl
+from doctrine._model.core import ImportDecl, NameRef, RenderProfileDecl, SourceSpan
 from doctrine._model.io import (
     EnumDecl,
     InputDecl,
@@ -34,8 +34,26 @@ from doctrine._model.workflow import (
 )
 
 
+@_dataclass(slots=True, frozen=True)
+class Person:
+    name: str
+    title: str
+    owns: tuple[NameRef | str, ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
+class Quote:
+    name: str
+    title: str
+    fields: tuple[tuple[str, object], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 Declaration: _TypeAlias = (
-    ImportDecl
+    Quote
+    | Person
+    | ImportDecl
     | RenderProfileDecl
     | AnalysisDecl
     | DecisionDecl

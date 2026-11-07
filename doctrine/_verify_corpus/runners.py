@@ -24,6 +24,7 @@ from doctrine._verify_corpus.diff import (
     _build_ref_has_svg_artifacts,
     _build_tree_diff,
 )
+from doctrine._verify_corpus.cli import run_cli_contract
 from doctrine._verify_corpus.manifest import (
     CaseSpec,
     ExpectedDiagnosticSite,
@@ -170,7 +171,10 @@ def verify_corpus(manifest_args: list[str] | None = None) -> VerificationReport:
         if ordered_results[index] is not None:
             continue
         try:
-            if case.kind == "render_contract":
+            if case.kind == "cli_contract":
+                run_cli_contract(case)
+                ordered_results[index] = CaseResult(case=case, result="PASS", detail="CLI contract matches.")
+            elif case.kind == "render_contract":
                 outcome = _run_render_contract(case)
                 ordered_results[index] = outcome.result
                 ordered_ref_diffs[index] = outcome.ref_diff

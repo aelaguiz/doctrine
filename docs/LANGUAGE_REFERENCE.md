@@ -38,7 +38,7 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `receipt`, `artifact`, `stage`, `skill_flow`, `skill_graph`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `output schema`
-- `enum`
+- `enum`, `person`, `quote`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. The normal standalone graph
@@ -61,6 +61,44 @@ safely while preserving deterministic output order.
 For target configuration, output layout, and flow-diagram emission, use
 [EMIT_GUIDE.md](EMIT_GUIDE.md). For package authoring, use
 [SKILL_PACKAGE_AUTHORING.md](SKILL_PACKAGE_AUTHORING.md).
+
+## People And Ownership
+
+A `person` names someone and can list what they own:
+
+```prompt
+person Owner: "The owner"
+    owns:
+        SharedRules
+        "prompts/roles/*.prompt"
+```
+
+Refs name declarations. Quoted globs name files relative to `pyproject.toml`.
+A glob matches only source files the compile loads. A person counts only when
+the compile loads the file that declares them.
+A file glob also owns declarations that read a matching `from` file. A team
+owner also owns its members. Owners add up; ownership does not pass to child
+declarations. `check` and `diff` validate these lists. `diff` reports changed
+owned declarations and changed people, even when they reach no home. It reads
+owners from both sides of the comparison. Builds do not read ownership lists.
+
+## Quotes
+
+A `quote` keeps words, their speaker, and their date in one place:
+
+```prompt
+person Speaker: "The speaker"
+quote Shared: "Keep it plain"
+    by: Speaker
+    on: "2026-11-05"
+    source: "session:123"
+```
+
+Use `{{Shared}}` in prose or put `Shared` on a section body line. Both render
+the words with the speaker and date. A quote may also have `to:` and `about:`.
+For a quote used once, write `{{Speaker, 2026-11-05: "Keep it plain"}}` inside
+a triple-quoted string. `doctrine sources` lists quotes and where they reach.
+Use `--person` to filter or `--json` for the full source record.
 
 ## Agents
 
@@ -188,8 +226,158 @@ final_output:
 
 `role` has two shipped shapes:
 
-- scalar `role: "..."` emits opening prose directly
+- scalar `role: "..."` emits prose where the field is written
 - titled `role: "Title"` with an indented body emits a headed section
+
+## Details And Budgets
+
+`details` moves longer text out of a home's always-on file. It takes the
+same body as a section. A named block gets a heading in the companion;
+a bare block stays under its section's heading.
+
+```doctrine
+team Core: "the core team"
+    home: "teams/core"
+    budget:
+        claude: 120000
+    work: "How to work"
+        "Keep the idea and one case here."
+        details older: "Older cases"
+            "Keep the longer case here."
+```
+
+A `paragraph` body can also hold `details`. Use `override details key:` to
+replace a named block in an inherited readable body.
+
+The lexical owner chooses the companion. Teams and members use their own
+`DETAILS.md`. A concrete agent uses `DETAILS.md` beside its emitted file.
+Abstract agents, abstract teams, workflows, and documents use one shared
+`_details/<owner-slug>.md`. Imported module names join the owner with `-`.
+A shared companion keeps its owner's headings and order even when homes
+reorder or retitle that text. Its text and titles cannot read agent or team
+values (`E621`). Skills, skill packages, input or output bodies, output structures,
+and emitted documents cannot hold details (`E620`).
+
+`budget:` takes runtime names and positive integers. The nearest setting
+wins: the home, its team, outer teams by folder, then the runtime limit.
+A budget cannot exceed that runtime limit. These errors are `E631`.
+`doctrine check` judges the load. `doctrine build` only warns on budgets.
+See [the emit guide](EMIT_GUIDE.md#build-a-team-home-tree) and examples
+181 through 184.
+
+## Values And Teams
+
+`values:` holds words that change between agents. It does not render.
+Shared prose reads the final home with `{{agent:key}}`. It reads the team
+with `{{team:key}}`. These roots work in prose, titles, and raw `markdown`
+and `html` blocks. Code blocks stay literal. A skill package, an emitted
+document, and machine `output schema` text cannot read home values.
+
+```doctrine
+abstract agent Tester:
+    role: "You test each {{agent:unit}}."
+    values:
+        unit: "change"
+
+team Core: "the core team"
+    home: "teams/core"
+    values:
+        unit: "feature"
+    member qa[Tester]: "QA"
+```
+
+The member above is `Core.qa`. Its folder is `teams/core/qa`.
+A member key changes `_` to `-` in its folder name.
+
+An agent reads a value from its own body first. Next come its team and the
+teams above it by folder, nearest first. Parent agents supply the defaults.
+A team reads its own values, then teams above it by folder, then its parent
+teams. A value may read another value or an ordinary declaration ref.
+Ordinary refs keep the meaning they had where the value was written.
+Values have no logic, filters, loops, or case changes.
+
+The compiler supplies these facts. Authors cannot set them in `values:`.
+
+| Fact | Agent | Team |
+| --- | --- | --- |
+| `key` | Agent name or member key | Team name |
+| `title` | Head title | Team title |
+| `home` | Member folder | Team folder |
+| `folder` | Last part of `home` | Last part of `home` |
+| `members` | No fact | Member titles in order |
+| `others` | No fact | Member titles except this member |
+
+A list of titles uses commas and a final ` and `. A team's own file cannot
+read `others`. An agent outside a team has no `home`, `folder`, or team values.
+A missing value fails with `E601`, which lists every blank and its reading sites.
+A value cycle is `E603`. Setting a fact is `E604`.
+
+A concrete `team` needs `home:`. An `abstract team` cannot have one.
+The path is relative to the output root. `.` means the root. Absolute paths,
+`..`, and a trailing `/` are errors. Folder paths alone form the team tree.
+A team holds a role, values, budgets, slots, and members. It cannot hold typed agent
+fields such as `inputs:` or `review:`. Slots and members share one key space.
+
+A team may inherit another team. Its inherited members come first, followed
+by new members. `override member key[Role]: "Title"` replaces an inherited
+member whole. `drop key: "Reason"` removes it. Each concrete team gets its
+own copy of the member templates from an abstract team.
+
+A member's parent may be an abstract agent, a concrete agent, or another
+member. Without a parent, it needs its own role. `Team.key` works in agent
+refs, routes, rule targets, `{{Team.key}}`, and `{{Team.key:title}}`.
+Members of abstract teams cannot be referenced.
+
+Team and member bodies are overlays. They keep parent items not named in
+the body, as if they ended with `inherit *`. The role renders first. Own
+items come next, then the parent's remaining items. An explicit `inherit *`
+places those parent items where it stands. Ordinary agent bodies still
+account for each inherited item in full.
+
+A team compiles only its own role and slots. That text stays out of member
+homes, because the runtime reads it from the folder above. A team needs no
+role. Its render may be empty.
+
+### Rosters
+
+`roster` makes a Markdown table from the team's direct members. Each column
+has the form `key: "Header" = "{{agent:value}}"`. Inside a cell, `agent`
+means that row's member. Every cell template must read at least one agent
+value. A member gets no row when a cell reads an agent value it lacks.
+A missing team value fails with `E601`. So does a roster that skips every
+member, even when it has static rows.
+
+An optional `rows:` block adds static rows after the member rows. It uses
+the same keyed cells as `table`. Each row must fill every column and cannot
+name a column the roster did not declare. A roster in a member home uses
+that member's team. Without a team, it fails with `E609`.
+
+See examples [173](../examples/173_late_bound_values),
+[174](../examples/174_team_members), [175](../examples/175_team_value_precedence),
+[176](../examples/176_team_assembly), and [177](../examples/177_roster).
+
+### Markdown Sources
+
+`abstract agent Craft from "craft.md"` and
+`workflow Shared from "shared.md"` read a Markdown file as a declaration.
+Paths start at the `pyproject.toml` folder. Without project config, they
+start at the parent of the prompt root. A missing file is `E652`.
+
+A first-line `# Heading` gives the workflow its title. An abstract agent
+drops that title. Text before the first `##` becomes the agent's role or
+the workflow's preamble. Each `##` is a keyed section. A `###` is a keyed
+section inside it. Deeper headings stay text. Headings in code fences do
+not count.
+
+A section key is its heading in lower case. Each run of other characters
+becomes `_`, with the ends trimmed. Two sibling headings with one key are
+`E653`, which names both lines. On an abstract agent, a reserved agent
+field key gets a final `_`. For example, `## Skills` uses `skills_` and
+still renders as `## Skills`. Text stays verbatim, including `{{`.
+A runtime import line starting with `@` is `E654`. Declare that file too
+and compose it. These keys support `drop`, `override`, and dotted patches.
+A Markdown workflow also supports `{{Decl:key.title}}` on its keys.
+See [example 179](../examples/179_markdown_backed_declarations).
 
 ## Workflows
 
@@ -253,7 +441,33 @@ Inherited workflows use explicit ordered patching:
   keeping the outer key stable
 
 Children must account for every inherited keyed item exactly once. Doctrine
-does not do implicit merge by omission.
+does not do implicit merge by omission. Head prose has the reserved key `preamble`.
+Keep it with `inherit preamble`, or remove it with `drop preamble: "Reason"`.
+The parent head comes first, then the child's own head prose.
+
+`drop key: "Reason"` removes an inherited item. The reason does not render.
+`inherit *` keeps all parent items the child does not name elsewhere. Write it
+once. Items before it come first. Parent items follow in parent order, with
+overrides in their parent positions and dropped items gone. Plain roles and
+typed fields stay where written. Items after it come last. An explicit
+`inherit key` moves that item to the line's position.
+
+On agents, `role`, `inputs`, `outputs`, `analysis`, `decision`, `skills`,
+`review`, `final_output`, and `selectors` need an account too. Write a field
+to replace it, or use `inherit <field>`. Typed fields may be dropped. A role
+must be kept or replaced; it cannot be dropped. An `inputs[Parent]:` or
+`outputs[Parent]:` field counts as an account of that field. An inherited
+role's refs resolve in the parent's module.
+Several `decision:` fields form one inherited item. `inherit decision` keeps
+them all in order. `drop decision` removes them all, and a child's `decision:`
+fields replace them all.
+
+Agents and workflows can patch a section, slot, or paragraph at depth:
+`override craft.habits.test_plan: "Test plans."` replaces that item in place.
+`drop craft.habits.daily: "Not used here."` removes one keyed item at depth.
+The patch accounts for `craft`, so do not also write `inherit craft`.
+Override the section around a table or callout; these blocks have their own
+body forms. Paths cannot step through text or anonymous items.
 
 ## Review Families And Control-Plane Declarations
 
@@ -485,6 +699,31 @@ Important rules:
   `ReleaseGuide:release_gates.columns.evidence.title` and
   `ReleaseGuide:release_gates.rows.release_notes`.
 
+### Prose And Paragraphs
+
+Each authored string is one paragraph. Adjacent strings have one blank line
+between them. A triple-quoted string keeps its own inner line breaks. List
+items, table cells, and definitions keep their own layout.
+
+A `paragraph` gives prose a key. Its optional title runs into the first string.
+Write the title's final punctuation yourself:
+
+```prompt
+workflow Habits: "Habits"
+    paragraph test_plan: "Test plans."
+        "Grow the plan with the design."
+        "Keep each check tied to a real change."
+```
+
+This renders as `**Test plans.** Grow the plan with the design.`, then a blank
+line and the next string. With no title, it renders plain prose with no heading.
+Use `override paragraph test_plan:` to replace it in a child.
+`Habits:test_plan.title` reads its title.
+
+Readable blocks print metadata only for `required`, `advisory`, `optional`,
+or `when`. The line names the block kind, such as `_Required · section_`.
+A bare kind line such as `_section_` never prints.
+
 ### Documents
 
 `document` declares a reusable markdown structure for markdown-bearing inputs
@@ -506,10 +745,11 @@ Important rules:
 
 - `document` supports readable block kinds such as `section`, `sequence`,
   `bullets`, `checklist`, `definitions`, `properties`, `table`, `guard`,
-  `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, and `rule`.
+  `callout`, `code`, `markdown`, `html`, `footnotes`, `image`, `paragraph`, and `rule`.
 - Block headers may carry `required`, `advisory`, or `optional`, plus
   descriptive `when <expr>` metadata.
-- Every non-rule readable block kind has a bare form and a named form.
+- Most readable block kinds have a bare form and a named form. `paragraph`
+  always keeps its key, even when it has no title.
   The bare form drops the CNAME key and any heading string (for example,
   `definitions:`, `callout:`, `table:`, `footnotes:`, `image:`, `code:`,
   `markdown:`, `html:`). The renderer skips the H3 heading and the
@@ -1494,8 +1734,15 @@ output ReviewComment: "Review Comment"
 Important rules:
 
 - An output uses either `target` plus `shape`, or a titled `files:` section.
+  A `Message` uses `target` and `to:` instead.
 - Built-in targets used in the shipped corpus include `TurnResponse` and
-  `File`.
+  `File` and `Message`.
+- A `Message` has prose for a receiver. Its `to:` names an agent, member,
+  team, or string. It cannot have `shape`, `requirement`, `schema`, `structure`,
+  or `files`. The sender lists it in `outputs:` and the receiver can list the
+  same output in `inputs:`. Both see the same body. `W303` warns when an agent
+  or team named in `to:` has no reader in its scope.
+  A message crossing flows is declared in the receiver's flow, because imports run one way.
 - Custom targets can be declared with `output target`.
 - A custom `output target` may bind one reusable delivery skill with
   `delivery_skill:`. Put delivery behavior on the target, not on each output.
@@ -2013,8 +2260,9 @@ workflow law, and review semantics.
 ## Project Rules
 
 Doctrine ships a declarative `rule` primitive that a project uses to lint its
-own agent graph. A `rule` lives at the top of a prompt file and runs during
-compile. If the rule matches a concrete agent and the agent violates an
+own agent graph. A `rule` lives at the top of a prompt file. Inheritance
+and slot assertions run at compile. Load assertions run in `doctrine check`
+and `emit_docs` for the homes it compiles. `doctrine build` runs no rules. If the rule matches a concrete agent and the agent violates an
 assertion, the compiler raises a `RULE###` diagnostic (see
 [`COMPILER_ERRORS.md`](./COMPILER_ERRORS.md)).
 
@@ -2040,6 +2288,11 @@ agents the rule evaluates against:
 - `file_tree: <STRING>` — every agent whose prompt file path matches the
   glob (evaluated with `fnmatch.fnmatch`) relative to the prompt root
 
+- `team: <NameRef>` matches that team's members. `team: *` matches all team members.
+- `member: <CNAME>` matches members with that key in any team.
+- `home: "pods/**"` matches home paths. `*` stays in one path segment;
+  `**` can cross segments.
+
 Multiple scope predicates combine with OR semantics: an agent matches the
 rule when at least one predicate matches.
 
@@ -2054,16 +2307,50 @@ Assertions say what scoped agents must or must not do:
 - `requires declare <CNAME>` — the scoped agent (or one of its declared
   ancestors) must declare a slot named `<CNAME>`. Violations raise `RULE005`.
 
-The `flow: <NameRef>` scope predicate also requires its target to resolve. If
-it does not, the compiler raises `RULE001`.
+- `requires load <NameRef>` checks that the declaration wrote always-on
+  text in the home or a level above it. Missing text raises `RULE006`.
+- `forbids load <NameRef>` checks the reverse. A failure raises `RULE007`
+  and shows one shortest path through the source declarations.
 
-The `message:` body is surfaced back to the author when the rule fires. Use it
+Load assertions count text that lands through any path, including composition.
+Nested text counts at any depth. Details do not count. An unknown load target
+raises `RULE002`. Inheritance and slot assertions judge agents and members;
+they skip team homes.
+
+The `flow: <NameRef>` and `team: <NameRef>` scope predicates require their
+targets to resolve. An unknown target raises `RULE001`. A team target must
+be concrete and in the rule's own flow, or it also raises `RULE001`.
+
+For inheritance and slot assertions, the `message:` body is shown when the rule fires. Use it
 to explain the invariant in plain English so a downstream author can read the
 diagnostic alone and know what to fix.
 
 See [`../examples/146_declarative_project_lint_rule`](../examples/146_declarative_project_lint_rule)
-for the manifest-backed teaching example that covers all five shipped
-`RULE###` codes.
+for the first five `RULE###` codes. Examples
+[185](../examples/185_rule_team_scopes) and
+[186](../examples/186_rule_load_assertions) prove team scopes and load assertions.
+
+`doctrine diff --base HEAD` shows changed declarations, the homes they reach,
+and each home's load change in UTF-16 characters. Details have their own size
+change. Use `--base-tree DIR` to compare two project folders, or `--with PATH`
+to compare only those working files against the base. Repeat `--with` for
+several files. JSON `outputs` lists only files whose bytes changed. Each
+changed declaration's `homes` list holds a `home` and its `delta`. New
+sections that arrive through `inherit *` get their own list. A base that
+cannot compile exits 2 and prints its error. No comparison takes place.
+A bad revision is `E641` and exits 1. A team name selects the team's home
+and the homes under it. Removed homes keep the source that changed them.
+An edit to a member from an abstract team reports once, under that team.
+A declaration only counts as changed when its own source changed.
+New sections come from homes present on both sides. They list the selected
+homes whose load holds them, and skip sections that reach none.
+
+`doctrine where "some words"` finds the source of text in a home's load.
+Case and whitespace do not matter. A sentence at a parent level reaches
+every home below it. The source site names the section that holds the text.
+Use `--home PATH` to limit the homes searched. With `--json`, the result has
+`format_version: 1` and `matches`. Each match has `origin`, `site`, and `homes`.
+A search with no match exits 1. See [example 187](../examples/187_doctrine_diff).
 
 ## Markdown Emission
 

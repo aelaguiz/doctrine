@@ -1,0 +1,9 @@
+agent Alone: "Alone"
+    role: "Alone."
+
+rule Ghost: "Unknown team"
+    scope:
+        team: GhostPod
+    assertions:
+        requires declare anything
+    message: "No such team."

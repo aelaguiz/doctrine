@@ -1,0 +1,2 @@
+agent Alone: "Alone"
+    role: "You belong to {{team:title}}."

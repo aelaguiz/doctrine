@@ -48,6 +48,12 @@ prompt_file: _NL* declaration+ _NL*
                        | rule_decl
                        | abstract_agent
                        | agent
+                       | person_decl
+                       | quote_decl
+                       | team_decl
+                       | abstract_team_decl
+                       | abstract_agent_markdown
+                       | workflow_markdown
 
 export_decl: "export" exportable_declaration
 
@@ -101,27 +107,82 @@ rule_scope_block: "scope" ":" _NL _INDENT rule_scope_predicate+ _DEDENT
                      | flow_predicate
                      | role_class_predicate
                      | file_tree_predicate
+                     | team_predicate
+                     | member_predicate
+                     | home_predicate
 agent_tag_predicate: "agent_tag" ":" CNAME _NL
 flow_predicate: "flow" ":" name_ref _NL
 role_class_predicate: "role_class" ":" CNAME _NL
 file_tree_predicate: "file_tree" ":" string _NL
+team_predicate: "team" ":" (name_ref | "*") _NL
+member_predicate: "member" ":" CNAME _NL
+home_predicate: "home" ":" string _NL
 rule_assertions_block: "assertions" ":" _NL _INDENT rule_assertion+ _DEDENT
 ?rule_assertion: requires_inherit_assertion
                | forbids_bind_assertion
                | requires_declare_assertion
+               | requires_load_assertion
+               | forbids_load_assertion
 requires_inherit_assertion: "requires" "inherit" name_ref _NL
 forbids_bind_assertion: "forbids" "bind" name_ref _NL
 requires_declare_assertion: "requires" "declare" CNAME _NL
+requires_load_assertion: "requires" "load" name_ref _NL
+forbids_load_assertion: "forbids" "load" name_ref _NL
 rule_message: "message" ":" string _NL
 
 agent: "agent" CNAME inheritance? ":" string? _NL _INDENT agent_field+ _DEDENT
 abstract_agent: "abstract" "agent" CNAME inheritance? ":" _NL _INDENT agent_field+ _DEDENT
+
+abstract_agent_markdown: "abstract" "agent" CNAME "from" string _NL
+workflow_markdown: "workflow" CNAME "from" string _NL
+quote_decl: "quote" CNAME ":" string _NL _INDENT quote_field+ _DEDENT
+?quote_field: quote_by | quote_on | quote_to | quote_about | quote_source
+quote_by: "by" ":" name_ref _NL?
+quote_on: "on" ":" string _NL?
+quote_to: "to" ":" string _NL?
+quote_about: "about" ":" string _NL?
+quote_source: "source" ":" string _NL?
+person_decl: "person" CNAME ":" string _NL (_INDENT person_body _DEDENT)?
+person_body: "owns" ":" _NL _INDENT person_owned_item+ _DEDENT
+person_owned_item: (name_ref | string) _NL?
+values_block: "values" ":" _NL _INDENT value_item+ _DEDENT
+budget_block: "budget" ":" _NL _INDENT budget_item+ _DEDENT
+budget_item: CNAME ":" SIGNED_NUMBER _NL?
+value_item: CNAME ":" string _NL?
+team_decl: "team" CNAME inheritance? ":" string _NL _INDENT team_body _DEDENT
+abstract_team_decl: "abstract" "team" CNAME inheritance? ":" string? _NL _INDENT team_body _DEDENT
+team_body: team_item+
+?team_item: team_home_stmt
+          | role_field
+          | values_block
+          | budget_block
+          | member_decl
+          | member_override_decl
+          | agent_slot_abstract
+          | agent_slot_inherit
+          | agent_slot_override
+          | override_path
+          | agent_slot_field
+          | inherit_all
+          | drop_item
+team_home_stmt: "home" ":" string _NL?
+member_decl: "member" CNAME inheritance? ":" string _NL member_body?
+member_override_decl: "override" "member" CNAME inheritance? ":" string _NL member_body?
+member_body: _INDENT agent_field+ _DEDENT
 inheritance: "[" name_ref "]"
+inherit_all: "inherit" "*" _NL?
+drop_item: "drop" patch_path ":" string _NL?
+patch_path: CNAME ("." CNAME)*
+override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an
 // authored workflow slot, which keeps the grammar open without making typed
 // contract fields magical.
-?agent_field: role_field
+?agent_field: inherit_all
+            | values_block
+            | budget_block
+            | drop_item
+            | role_field
             | inputs_patch_field
             | inputs_inline_field
             | inputs_ref_field
@@ -136,6 +197,7 @@ inheritance: "[" name_ref "]"
             | agent_selectors_field
             | agent_slot_abstract
             | agent_slot_inherit
+            | override_path
             | agent_slot_override
             | agent_slot_field
 
@@ -185,7 +247,9 @@ agent_slot_override: "override" CNAME ":" slot_value _NL slot_body?
 slot_body: _INDENT workflow_body _DEDENT
 
 review_body: review_item+
-?review_item: review_config
+?review_item: inherit_all
+            | drop_item
+            | review_config
             | pre_outcome_review_section
             | pre_outcome_review_section_untitled
             | on_accept_review_section_titled
@@ -357,7 +421,9 @@ grounding_policy_item: "start_from" CNAME grounding_unless_clause? _NL -> ground
 grounding_unless_clause: "unless" CNAME
 
 analysis_body: analysis_body_line+
-analysis_body_line: analysis_render_profile_stmt
+analysis_body_line: inherit_all
+                  | drop_item
+                  | analysis_render_profile_stmt
                   | analysis_string
                   | analysis_section
                   | analysis_inherit
@@ -412,7 +478,9 @@ decision_choose_one_winner_stmt: "choose" "one" "winner" _NL
 decision_rank_by_stmt: "rank_by" "{" CNAME ("," CNAME)* "}" _NL
 
 schema_body: schema_body_line+
-schema_body_line: schema_render_profile_stmt
+schema_body_line: inherit_all
+                | drop_item
+                | schema_render_profile_stmt
                 | schema_string
                 | schema_sections_block
                 | schema_gates_block
@@ -449,6 +517,7 @@ schema_block_key: "sections" -> schema_block_key_sections
                 | "gates" -> schema_block_key_gates
                 | "artifacts" -> schema_block_key_artifacts
                 | "groups" -> schema_block_key_groups
+                | "preamble" -> schema_block_key_preamble
 
 table_decl_body: table_decl_body_line+
 ?table_decl_body_line: readable_row_schema_block
@@ -457,7 +526,9 @@ table_decl_body: table_decl_body_line+
                      | readable_table_notes_block
 
 document_body: document_body_line+
-document_body_line: document_render_profile_stmt
+document_body_line: inherit_all
+                  | drop_item
+                  | document_render_profile_stmt
                   | document_string
                   | document_readable_block
                   | document_inherit
@@ -480,7 +551,11 @@ document_section_body: document_section_item+
 document_section_block: "section" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 document_override_section_block: "override" "section" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT document_section_body _DEDENT
 
-readable_nonsection_block: readable_sequence_block
+readable_nonsection_block: readable_details_block
+                         | readable_bare_details_block
+                         | readable_paragraph_block
+                         | readable_roster_block
+                         | readable_sequence_block
                          | readable_properties_block
                          | readable_inline_properties_block
                          | readable_guard_shell_block
@@ -502,7 +577,9 @@ readable_nonsection_block: readable_sequence_block
                          | readable_image_block
                          | readable_bare_image_block
                          | readable_rule_block
-override_readable_nonsection_block: override_readable_sequence_block
+override_readable_nonsection_block: override_readable_details_block
+                                  | override_readable_paragraph_block
+                                  | override_readable_sequence_block
                                   | override_readable_properties_block
                                   | override_readable_guard_shell_block
                                   | override_readable_bullets_block
@@ -516,6 +593,16 @@ override_readable_nonsection_block: override_readable_sequence_block
                                   | override_readable_footnotes_block
                                   | override_readable_image_block
                                   | override_readable_rule_block
+
+readable_paragraph_block: "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
+override_readable_paragraph_block: "override" "paragraph" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT paragraph_body _DEDENT
+paragraph_body: prose_or_details+
+?prose_or_details: prose_line _NL?
+                 | readable_details_block
+                 | readable_bare_details_block
+readable_details_block: "details" CNAME ":" string _NL _INDENT shared_readable_body _DEDENT
+readable_bare_details_block: "details" ":" _NL _INDENT shared_readable_body _DEDENT
+override_readable_details_block: "override" "details" CNAME ":" string? _NL _INDENT shared_readable_body _DEDENT
 
 readable_sequence_block: "sequence" CNAME ":" string? readable_requirement? readable_guard? _NL _INDENT readable_list_body _DEDENT
 readable_properties_block: "properties" CNAME ":" string readable_requirement? readable_guard? _NL _INDENT readable_properties_body _DEDENT
@@ -608,6 +695,9 @@ readable_table_column: CNAME ":" string _NL readable_table_column_body?
 // body rule and call the helper from its resolver.
 readable_table_column_body: _INDENT typed_field_body_line+ _DEDENT
 readable_table_rows_block: "rows" ":" _NL _INDENT readable_table_row+ _DEDENT
+readable_roster_block: "roster" CNAME ":" string _NL _INDENT roster_body _DEDENT
+roster_body: roster_column+ readable_table_rows_block?
+roster_column: CNAME ":" string "=" string _NL?
 readable_table_row: CNAME ":" _NL _INDENT readable_table_cell+ _DEDENT
 readable_table_cell: CNAME ":" string _NL?                                   -> readable_table_cell_text
                    | CNAME ":" _NL _INDENT shared_readable_body _DEDENT      -> readable_table_cell_body
@@ -658,7 +748,9 @@ workflow_body_line: workflow_string
                   | workflow_item
                   | law_block
 
-?workflow_item: workflow_skills_inline
+?workflow_item: inherit_all
+              | drop_item
+              | workflow_skills_inline
               | workflow_skills_ref
               | workflow_root_readable_block
               | local_section
@@ -666,6 +758,7 @@ workflow_body_line: workflow_string
               | workflow_inherit
               | workflow_override_skills_inline
               | workflow_override_skills_ref
+              | override_path
               | workflow_override_section
               | workflow_override_use
 
@@ -701,7 +794,9 @@ skills_string: prose_line _NL?
 skills_body_line: skills_string
                 | skills_item
 
-?skills_item: skills_section
+?skills_item: inherit_all
+            | drop_item
+            | skills_section
             | skill_entry
             | skills_inherit
             | skills_override_section
@@ -733,7 +828,9 @@ io_string: prose_line _NL?
 io_body_line: io_string
             | io_item
 
-?io_item: io_section
+?io_item: inherit_all
+        | drop_item
+        | io_section
         | record_ref_item
         | io_inherit
         | io_override_section
@@ -761,7 +858,9 @@ output_target_delivery_skill_stmt: "delivery_skill" ":" name_ref _NL?
 output_target_typed_as_stmt: "typed_as" ":" name_ref _NL?
 
 output_body: output_body_line+
-output_body_line: output_record_item
+output_body_line: inherit_all
+                | drop_item
+                | output_record_item
                 | output_inherit
                 | output_override_item
                 | trust_surface_block
@@ -791,7 +890,9 @@ output_override_structure_stmt: "override" "structure" ":" name_ref _NL?
 output_override_render_profile_stmt: "override" "render_profile" ":" name_ref _NL?
 
 output_shape_body: output_shape_body_line+
-output_shape_body_line: output_shape_schema_item
+output_shape_body_line: inherit_all
+                      | drop_item
+                      | output_shape_schema_item
                       | output_shape_override_schema_item
                       | output_shape_selector_block
                       | output_record_item
@@ -806,7 +907,9 @@ output_shape_selector_stmt: "mode" CNAME "as" name_ref _NL                 -> ou
                           | "mode" CNAME "=" expr "as" name_ref _NL        -> output_shape_selector_expr_stmt
 
 output_schema_body: output_schema_body_line+
-?output_schema_body_line: output_schema_field
+?output_schema_body_line: inherit_all
+                       | drop_item
+                       | output_schema_field
                        | output_schema_route_field
                        | output_schema_def
                        | output_schema_example
@@ -1009,7 +1112,9 @@ receipt_field_list_type: "list" "[" name_ref "]"
 // type family. Receipt route fields lower into per-receipt `routes:` metadata
 // without adding new typed receipt fields.
 receipt_decl_body: receipt_decl_body_line+
-?receipt_decl_body_line: receipt_decl_field
+?receipt_decl_body_line: inherit_all
+                       | drop_item
+                       | receipt_decl_field
                        | receipt_decl_route_field
                        | receipt_decl_inherit
                        | receipt_decl_override

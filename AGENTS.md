@@ -10,7 +10,6 @@
 - For package metadata, publish-flow, or public install work, run
   `make verify-package`.
 - For one manifest-backed example, use `uv run --locked python -m doctrine.verify_corpus --manifest examples/01_hello_world/cases.toml`.
-- If you change anything under `editors/vscode/`, run `cd editors/vscode && make`.
 - If a dependency is missing or a check cannot run, say that plainly.
 
 ## Definition Of Done
@@ -56,7 +55,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The current shipped corpus covers `examples/01_hello_world` through `examples/164_skill_graph_artifacts`.
+- The corpus covers `examples/01_hello_world` through `examples/193_small_team_end_to_end`.
 
 ## Authoring Rules
 

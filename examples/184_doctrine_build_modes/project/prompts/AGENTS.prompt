@@ -1,0 +1,7 @@
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    role: "Team text."
+    member qa: "QA"
+        role: "QA text."
+    member analyst: "analyst"
+        role: "Analyst text."

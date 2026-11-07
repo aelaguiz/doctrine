@@ -1,0 +1,44 @@
+# `Message` is an ordinary output. One declaration renders in both homes.
+# Doctrine carries nothing at run time.
+
+output CodeReady: "Code is ready"
+    target: Message
+        to: CoreDev.lead
+    "One message when a team's code is ready."
+    bullets carries: "It carries"
+        "The pull requests that go out together"
+        "What users get from them"
+
+
+output SaveNote: "Save note"
+    target: Message
+        to: "your next session"
+    "A note before a restart."
+
+
+abstract agent Sender:
+    role: "You send."
+    outputs: "Outputs"
+        CodeReady
+
+
+abstract agent Receiver:
+    role: "You receive."
+    inputs: "Inputs"
+        CodeReady
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member lead[Sender]: "lead"
+
+
+team CoreDev: "the core dev pod"
+    home: "pods/core-dev"
+    member lead[Receiver]: "lead"
+    member keeper: "keeper"
+        role: "You keep notes for yourself."
+        inputs: "Inputs"
+            SaveNote
+        outputs: "Outputs"
+            SaveNote

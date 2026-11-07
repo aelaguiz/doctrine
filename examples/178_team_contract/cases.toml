@@ -1,0 +1,14 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "the contract lists members in order with their sections"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = [
+  "built 2 homes",
+]
+expected_files = { "pods/growth/TEAM.contract.json" = "expected/team_contract.json" }

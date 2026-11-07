@@ -11,4 +11,4 @@ from doctrine._model.readable import *
 from doctrine._model.review import *
 from doctrine._model.schema import *
 from doctrine._model.workflow import *
-from doctrine._model.declarations import Declaration, PromptFile
+from doctrine._model.declarations import Declaration, Person, Quote, PromptFile

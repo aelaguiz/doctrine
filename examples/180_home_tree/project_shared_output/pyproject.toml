@@ -1,0 +1,12 @@
+[tool.doctrine.emit]
+
+[[tool.doctrine.emit.targets]]
+name = "homes"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "."
+runtimes = ["claude", "codex"]
+
+[[tool.doctrine.emit.targets]]
+name = "other"
+entrypoint = "prompts/other/AGENTS.prompt"
+output_dir = "."

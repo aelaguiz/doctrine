@@ -15,6 +15,13 @@ Use exact evidence plus model judgment."""
 Do not collapse a package, flow, or repo audit into one tiny slice just
 because that slice was easy to open first."""
 
+    section change_mode: "Review a change"
+        "Start with `doctrine diff --json`, each changed declaration's source, and one compiled home that the change reaches."
+        "Review only the changed declarations. Read them against the rest of that home, including its parents."
+        "A useful lesson changes the judgment an agent will make. If the home already teaches that judgment, a second version leaves two places to fix next time. Change the text that already makes the call."
+        "Ask whether the change restates an old lesson, adds a rule where a judgment already lives, or contradicts a parent. A distinct case may earn new text. Show what makes it distinct before calling it a copy."
+        "Use `AL231`, `AL232`, or `AL233` when the evidence fits. These are judgment calls, not compiler checks."
+
     section read_full_frontier: "Read The Full Frontier First"
         """Read the whole honest surface family before you decide findings.
 Do not freeze on the first bad line you see.

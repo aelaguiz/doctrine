@@ -105,6 +105,7 @@ Read the review carrier for the full review outcome.
 #### Field Notes
 
 Keep `current_artifact` aligned with Current Artifact.
+
 Use `route` value `revise` only when Outline Complete fails.
 
 #### Changes Requested Note

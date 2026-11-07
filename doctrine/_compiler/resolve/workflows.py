@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 from doctrine import model
+from dataclasses import replace
+from doctrine._compiler.home_map import source_origin, child_origin, drop_records
+from doctrine._compiler.resolve.patches import (
+    mark_wildcard, prepare_body_patches, apply_path_patches,
+)
 from doctrine._compiler.workflow_diagnostics import (
     workflow_compile_error,
     workflow_related_site,
@@ -116,6 +121,7 @@ class ResolveWorkflowsMixin:
             ):
                 resolved = self._resolve_workflow_body(
                     workflow_decl.body,
+                    origin=source_origin(self, workflow_decl, unit, (), workflow_decl.source_span),
                     unit=unit,
                     owner_label=_dotted_decl_name(unit.module_parts, workflow_decl.name),
                     owner_source_span=workflow_decl.source_span,
@@ -225,7 +231,13 @@ class ResolveWorkflowsMixin:
         parent_body: model.WorkflowBody | None = None,
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
+        origin: model.Origin | None = None,
     ) -> ResolvedWorkflowBody:
+        drops = (*(parent_workflow.drops if parent_workflow else ()), *drop_records(workflow_body.items, origin.declaration if origin else owner_label))
+        workflow_body, patches = prepare_body_patches(
+            workflow_body, parent_workflow, kind="workflow", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -238,10 +250,12 @@ class ResolveWorkflowsMixin:
         )
         if parent_workflow is None:
             return ResolvedWorkflowBody(
+                origin=origin, drops=drops,
                 title=workflow_body.title,
                 preamble=resolved_preamble,
                 items=self._resolve_non_inherited_items(
                     workflow_body.items,
+                    origin=origin,
                     unit=unit,
                     owner_label=owner_label,
                     owner_source_span=owner_source_span,
@@ -253,10 +267,13 @@ class ResolveWorkflowsMixin:
                 ),
             )
 
-        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        parent_items_by_key = apply_path_patches(
+            self, {item.key: item for item in parent_workflow.items}, patches.path_overrides,
+            owner_label=owner_label, unit=unit, origin=origin,
+        )
         resolved_items: list[ResolvedWorkflowItem] = []
         emitted_items: dict[str, model.WorkflowItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in workflow_body.items:
             key = item.key
@@ -278,12 +295,15 @@ class ResolveWorkflowsMixin:
             emitted_items[key] = item
 
             if isinstance(item, model.LocalSection):
+                section_origin = child_origin(origin, key, item.source_span, item.title)
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=section_origin,
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=section_origin,
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -341,7 +361,7 @@ class ResolveWorkflowsMixin:
                             ),
                         ),
                     )
-                resolved_items.append(item)
+                resolved_items.append(replace(item, origin=item.origin or child_origin(origin, key, item.source_span)))
                 continue
 
             parent_item = parent_items_by_key.get(key)
@@ -357,7 +377,7 @@ class ResolveWorkflowsMixin:
                         source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                resolved_items.append(mark_wildcard(parent_item) if item.wildcard else parent_item)
                 continue
 
             if parent_item is None:
@@ -396,12 +416,15 @@ class ResolveWorkflowsMixin:
                             ),
                         ),
                     )
+                section_origin = child_origin(origin, key, item.source_span, item.title)
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=section_origin,
                         title=item.title if item.title is not None else parent_item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=section_origin,
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -414,6 +437,7 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        origin=child_origin(origin, key, item.source_span),
                         unit=unit,
                         parent_item=parent_item,
                         parent_body=parent_body,
@@ -519,6 +543,7 @@ class ResolveWorkflowsMixin:
             )
 
         return ResolvedWorkflowBody(
+            origin=origin, drops=drops,
             title=workflow_body.title,
             preamble=resolved_preamble,
             items=tuple(resolved_items),
@@ -694,6 +719,10 @@ class ResolveWorkflowsMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedWorkflowBody:
+        workflow_body, patches = prepare_body_patches(
+            workflow_body, parent_workflow, kind="workflow", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
         if parent_workflow is None:
             return ResolvedWorkflowBody(
                 title=workflow_body.title,
@@ -711,10 +740,13 @@ class ResolveWorkflowsMixin:
                 ),
             )
 
-        parent_items_by_key = {item.key: item for item in parent_workflow.items}
+        parent_items_by_key = apply_path_patches(
+            self, {item.key: item for item in parent_workflow.items}, patches.path_overrides,
+            owner_label=owner_label, unit=unit,
+        )
         resolved_items: list[ResolvedWorkflowItem] = []
         emitted_items: dict[str, model.WorkflowItem] = {}
-        accounted_keys: set[str] = set()
+        accounted_keys: set[str] = set(patches.dropped_keys)
 
         for item in workflow_body.items:
             key = item.key
@@ -814,7 +846,7 @@ class ResolveWorkflowsMixin:
                         source_span=item.source_span or owner_source_span,
                     )
                 accounted_keys.add(key)
-                resolved_items.append(parent_item)
+                resolved_items.append(mark_wildcard(parent_item) if item.wildcard else parent_item)
                 continue
 
             if parent_item is None:
@@ -870,6 +902,7 @@ class ResolveWorkflowsMixin:
                 resolved_items.append(
                     self._merge_workflow_root_readable_override(
                         item,
+                        origin=None,
                         unit=unit,
                         parent_item=parent_item,
                         parent_body=parent_body,
@@ -995,6 +1028,7 @@ class ResolveWorkflowsMixin:
         unit: IndexedUnit,
         owner_label: str,
         owner_source_span: model.SourceSpan | None,
+        origin: model.Origin | None = None,
     ) -> tuple[ResolvedWorkflowItem, ...]:
         resolved_items: list[ResolvedWorkflowItem] = []
         seen_items: dict[str, model.WorkflowItem] = {}
@@ -1019,12 +1053,15 @@ class ResolveWorkflowsMixin:
             seen_items[key] = item
 
             if isinstance(item, model.LocalSection):
+                section_origin = child_origin(origin, key, item.source_span, item.title)
                 resolved_items.append(
                     ResolvedSectionItem(
                         key=key,
+                        origin=section_origin,
                         title=item.title,
                         items=self._resolve_section_body_items(
                             item.items,
+                            origin=section_origin,
                             unit=unit,
                             owner_label=f"{owner_label}.{key}",
                         ),
@@ -1059,7 +1096,7 @@ class ResolveWorkflowsMixin:
                 continue
 
             if isinstance(item, model.ReadableBlock):
-                resolved_items.append(item)
+                resolved_items.append(replace(item, origin=item.origin or child_origin(origin, key, item.source_span)))
                 continue
 
             item_label = "inherit" if isinstance(item, model.InheritItem) else "override"
@@ -1167,6 +1204,7 @@ class ResolveWorkflowsMixin:
         self,
         item: model.ReadableOverrideBlock,
         *,
+        origin: model.Origin | None,
         unit: IndexedUnit,
         parent_item: ResolvedWorkflowItem | None,
         parent_body: model.WorkflowBody | None,
@@ -1222,6 +1260,7 @@ class ResolveWorkflowsMixin:
             )
         return model.ReadableBlock(
             kind=item.kind,
+            origin=origin,
             key=item.key,
             title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
             payload=item.payload,

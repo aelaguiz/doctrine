@@ -1,0 +1,19 @@
+workflow NumbersRule: "Numbers"
+    "Get every number the canonical way."
+
+
+abstract agent Role:
+    role: "You work."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    member qa[Role]: "QA"
+
+
+rule EveryoneLoadsNumbers: "Every agent loads the numbers rule"
+    scope:
+        team: *
+    assertions:
+        requires load NumbersRule
+    message: "A rule meant for every agent reaches every agent."

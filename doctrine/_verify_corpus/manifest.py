@@ -40,6 +40,7 @@ class CaseSpec:
     message_contains: tuple[str, ...] = ()
     expected_location: ExpectedDiagnosticSite | None = None
     expected_related: tuple[ExpectedDiagnosticSite, ...] = ()
+    cli: dict | None = None
 
 
 def _resolve_manifest_paths(manifest_args: list[str] | None) -> tuple[Path, ...]:
@@ -81,9 +82,9 @@ def _load_manifest(path: Path) -> tuple[CaseSpec, ...]:
 
     example_dir = path.parent.resolve()
     default_prompt_rel = _require_str(raw, "default_prompt")
-    default_prompt_path = _resolve_example_path(
-        example_dir, default_prompt_rel, label="default_prompt"
-    )
+    default_prompt_path = (example_dir / default_prompt_rel).resolve() if all(
+        case.get("kind") == "cli_contract" for case in raw.get("cases", [])
+    ) else _resolve_example_path(example_dir, default_prompt_rel, label="default_prompt")
 
     raw_cases = raw.get("cases")
     if not isinstance(raw_cases, list) or not raw_cases:
@@ -130,6 +131,7 @@ def _load_case(
             "build_contract",
             "parse_fail",
             "compile_fail",
+            "cli_contract",
         },
         case_index=case_index,
     )
@@ -173,6 +175,13 @@ def _load_case(
             assertion=assertion,
             expected_lines=expected_lines,
         )
+
+    if kind == "cli_contract":
+        if "expected_stdout_lines" in raw_case and "stdout_contains" in raw_case:
+            raise ManifestError("Use expected_stdout_lines or stdout_contains, at most one.")
+        return CaseSpec(manifest_path=manifest_path, example_dir=example_dir, name=name,
+                        kind=kind, prompt_path=prompt_path, approx_ref_path=approx_ref_path,
+                        cli=raw_case)
 
     if kind == "render_declaration":
         declaration_kind = _require_choice(

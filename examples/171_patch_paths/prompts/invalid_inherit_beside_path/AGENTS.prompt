@@ -1,0 +1,14 @@
+workflow Craft: "Craft"
+    how: "How"
+        paragraph plan: "Plans."
+            "Grow them."
+        paragraph daily: "Daily."
+            "Look."
+
+workflow PodCraft[Craft]: "Pod Craft"
+    drop how.daily: "The dotted patch already accounts for how."
+    inherit how
+
+agent PodQa: "Pod QA"
+    role: "Pod QA."
+    craft: PodCraft

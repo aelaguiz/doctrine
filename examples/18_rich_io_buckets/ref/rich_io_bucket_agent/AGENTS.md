@@ -3,6 +3,7 @@ Core job: gather the section inputs and publish the current dossier truth.
 ## Your Job
 
 Use the current plan as truth and keep prior review notes as continuity help only.
+
 Always write the dossier file before you summarize the turn.
 
 ## Inputs
@@ -36,6 +37,7 @@ Use prior review notes only as continuity help, not as proof.
 ## Outputs
 
 Always produce these outputs when you own dossier work.
+
 The file artifact is the durable truth. The turn summary points at that truth.
 
 ### File Truth

@@ -2,7 +2,12 @@ You are the ordered briefing agent.
 
 ## Ordered Briefing
 
+Deliver the briefing in the base order.
+
+Keep the framing brief and direct.
+
 Deliver the revised briefing in the explicit order below.
+
 This child places inherited, overridden, and new sections on purpose.
 
 ### Opening

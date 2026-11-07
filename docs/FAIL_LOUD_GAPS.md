@@ -34,6 +34,12 @@ Every confirmed family also needs one owner layer (grammar, parser,
 indexing, resolve, validate, or compile), one diagnostic code, and at least
 one manifest-backed invalid example.
 
+## Closed In Language 6.0
+
+Inherited head prose, agent roles, and typed agent fields now need an explicit
+account. A missing account is `E003`. Stale drops and conflicting patches fail
+with `E610` to `E613`. See examples 167 to 171.
+
 ## High-Risk Gaps
 
 ### Near-Miss Reserved Agent Field Typos Compile As Normal Authored Slots

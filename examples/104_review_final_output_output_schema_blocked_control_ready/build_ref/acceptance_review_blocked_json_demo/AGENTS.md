@@ -83,6 +83,7 @@ When missing(blocked_gate), current artifact: Draft Plan.
 #### Field Notes
 
 Keep `next_owner` aligned with the routed review branch.
+
 Blocked branches should use null for `current_artifact` and `next_owner`.
 
 #### Verdict

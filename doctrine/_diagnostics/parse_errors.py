@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from lark import Token, Tree
 from lark.exceptions import (
     UnexpectedCharacters,
@@ -78,6 +80,7 @@ def _extract_toml_decode_position(
 
 def _classify_unexpected_token(
     exc: UnexpectedToken,
+    source: str,
 ) -> tuple[str, str, tuple[str, ...]]:
     previous = exc.token_history[-1] if exc.token_history else None
     expected = set(exc.expected or ())
@@ -88,7 +91,7 @@ def _classify_unexpected_token(
             "Missing route label",
             ("Add a quoted route label before `->`.",),
         )
-    if "CNAME" in expected and exc.token.type == "_NL":
+    if source[:exc.pos_in_stream].rstrip().endswith("->"):
         return (
             "E132",
             "Missing route target",
@@ -131,6 +134,19 @@ def _classify_unexpected_token(
             ("Keep indentation aligned with the current block structure.",),
         )
     if token_type == "_NL":
+        missing_title = re.fullmatch(
+            r"\s*(table|definitions|callout|properties|section|code|markdown|html|footnotes|image)"
+            r"\s+([A-Za-z_][A-Za-z0-9_]*):\s*",
+            source.splitlines()[exc.line - 1],
+        )
+        if missing_title is not None:
+            kind, key = missing_title.groups()
+            hints = [f'Write `{kind} {key}: "Title"`.']
+            if kind == "table":
+                hints.append(f"Write `{kind} {key}: TableRef` to use a declared table.")
+            if kind != "section":
+                hints.append(f"Write `{kind}:` for a block with no heading.")
+            return "E134", "Missing block title", tuple(hints)
         return (
             "E101",
             "Unexpected newline",

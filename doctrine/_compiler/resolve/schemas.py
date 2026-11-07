@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from doctrine import model
+from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
 from dataclasses import replace
 
 from doctrine._compiler.authored_diagnostics import (
@@ -136,6 +137,16 @@ class ResolveSchemasMixin:
         parent_unit: IndexedUnit | None = None,
         parent_label: str | None = None,
     ) -> ResolvedSchemaBody:
+        schema_body, patches = prepare_body_patches(
+            schema_body, parent_schema, kind="schema", owner_label=owner_label,
+            unit=unit, source_span=owner_source_span,
+        )
+        apply_path_patches(
+            self, {} if parent_schema is None else {
+                key: getattr(parent_schema, key)
+                for key in ("sections", "gates", "artifacts", "groups")
+            }, patches.path_overrides, owner_label=owner_label, unit=unit,
+        )
         resolved_preamble = tuple(
             self._interpolate_authored_prose_line(
                 line,
@@ -193,7 +204,7 @@ class ResolveSchemasMixin:
                 block_key="sections",
                 mode=sections_mode,
                 items=sections_items,
-                parent_items=parent_schema.sections,
+                parent_items=() if "sections" in patches.dropped_keys else parent_schema.sections,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
@@ -205,7 +216,7 @@ class ResolveSchemasMixin:
                 block_key="gates",
                 mode=gates_mode,
                 items=gates_items,
-                parent_items=parent_schema.gates,
+                parent_items=() if "gates" in patches.dropped_keys else parent_schema.gates,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
@@ -217,7 +228,7 @@ class ResolveSchemasMixin:
                 block_key="artifacts",
                 mode=artifacts_mode,
                 items=artifacts_items,
-                parent_items=parent_schema.artifacts,
+                parent_items=() if "artifacts" in patches.dropped_keys else parent_schema.artifacts,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,
@@ -229,7 +240,7 @@ class ResolveSchemasMixin:
                 block_key="groups",
                 mode=groups_mode,
                 items=groups_items,
-                parent_items=parent_schema.groups,
+                parent_items=() if "groups" in patches.dropped_keys else parent_schema.groups,
                 unit=unit,
                 owner_label=owner_label,
                 owner_source_span=owner_source_span,

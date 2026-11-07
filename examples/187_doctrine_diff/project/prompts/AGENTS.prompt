@@ -1,0 +1,18 @@
+abstract agent PodQa:
+    role: "You test."
+    whom: "Whom you work with"
+        "You follow the {{agent:unit}} from the design on. Always."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    values:
+        unit: "bet"
+    member qa[PodQa]: "QA"
+
+
+team FeaturePod: "the feature pod"
+    home: "pods/feature"
+    values:
+        unit: "feature"
+    member qa[PodQa]: "QA"

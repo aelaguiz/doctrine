@@ -68,6 +68,8 @@ expected_lines = [
   "",
   "## Your Inputs",
   "",
+  "Read these inputs in order.",
+  "",
   "### Scoped Catalog Truth",
   "",
   "#### Scoped Catalog Truth",
@@ -80,6 +82,7 @@ expected_lines = [
   "### Continuity Only",
   "",
   "Use continuity evidence to re-earn the section.",
+  "",
   "Read one section ahead only when the issue says continuity matters.",
   "",
   "#### Forward Continuity Packet",
@@ -90,6 +93,8 @@ expected_lines = [
   "- Requirement: Advisory",
   "",
   "## Your Outputs",
+  "",
+  "Always produce both outputs.",
   "",
   "### Durable Section Truth",
   "",
@@ -120,4 +125,4 @@ prompt = "prompts/invalid_wrong_patch_base/AGENTS.prompt"
 agent = "InvalidWrongPatchBase"
 exception_type = "CompileError"
 error_code = "E249"
-location_line = 33
+location_line = 35

@@ -1,0 +1,6 @@
+abstract agent QaCraft from "specialists/qa.md"
+
+agent A[QaCraft]: "A"
+    role: "A."
+    drop no_such_heading: "Gone from the file."
+    inherit *

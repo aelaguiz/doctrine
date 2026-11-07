@@ -38,8 +38,8 @@ expected_lines = [
   "",
   "```json",
   "{",
-  '  "headline": "Draft ready for review",',
-  '  "body": "Short draft covering the first milestone."',
+  "  \"headline\": \"Draft ready for review\",",
+  "  \"body\": \"Short draft covering the first milestone.\"",
   "}",
   "```",
   "",
@@ -48,6 +48,7 @@ expected_lines = [
   "#### Field Notes",
   "",
   "Always ground the headline in today's work.",
+  "",
   "Write one fresh draft. Do not critique prior drafts.",
 ]
 
@@ -88,8 +89,8 @@ expected_lines = [
   "",
   "```json",
   "{",
-  '  "headline": "Draft ready for review",',
-  '  "body": "Short draft covering the first milestone."',
+  "  \"headline\": \"Draft ready for review\",",
+  "  \"body\": \"Short draft covering the first milestone.\"",
   "}",
   "```",
   "",
@@ -98,6 +99,7 @@ expected_lines = [
   "#### Field Notes",
   "",
   "Always ground the headline in today's work.",
+  "",
   "Critique the latest draft. Name the one biggest gap.",
 ]
 
@@ -259,7 +261,7 @@ expected_lines = [
   "",
   "```json",
   "{",
-  '  "headline": "Draft ready for review"',
+  "  \"headline\": \"Draft ready for review\"",
   "}",
   "```",
   "",
@@ -268,5 +270,6 @@ expected_lines = [
   "#### Field Notes",
   "",
   "Always ground the headline in today's work.",
+  "",
   "Write one fresh draft.",
 ]

@@ -1,0 +1,9 @@
+abstract agent Specialist:
+    role: "You are the QA specialist."
+    craft: "Craft"
+        "Test what users meet."
+
+agent PodQa[Specialist]: "Pod QA"
+    role: "You are the pod's QA."
+    inherit craft
+    drop craft: "Two patches touch one item."
