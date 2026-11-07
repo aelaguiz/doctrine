@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Class inspection
+
+- `doctrine classes` shows class trees, reads, slots, changes, and the sources
+  of an agent's sections and values. It can also print JSON or a Mermaid diagram.
+
 ### Abstract agent titles
 
 - Abstract agents can have a title that describes the class without adding it
