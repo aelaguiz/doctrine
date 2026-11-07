@@ -28,12 +28,27 @@ expected_stdout_lines = [
 ]
 
 [[cases]]
+name = "where finds the value before the sentence that reads it"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "bet"]
+expected_exit = 0
+expected_stdout_lines = [
+  "value unit  prompts/AGENTS.prompt:10",
+  "  reaches 1 home: pods/growth/qa",
+  "PodQa.whom  prompts/AGENTS.prompt:3",
+  "  reaches 1 home: pods/growth/qa",
+]
+
+[[cases]]
 name = "where fails when nothing matches"
 status = "active"
 kind = "cli_contract"
 project = "project"
 args = ["where", "No such words"]
 expected_exit = 1
+expected_stdout_lines = []
 
 [[cases]]
 name = "each declaration has its own share"

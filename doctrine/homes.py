@@ -202,6 +202,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     for home, data in list(homes.items()):
         owner, unit, plan = data["owner"], data["unit"], data["plan"]
         session.evaluate_rules = evaluate_rules and home in selected
+        session.value_home = home
         data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
@@ -212,6 +213,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 part for part in content
                 if not companion.startswith("_details/") or part not in collected
             ])
+    session.value_home = None
     for home, data in homes.items():
         owner = data["owner"]
         if (
