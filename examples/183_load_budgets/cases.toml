@@ -108,15 +108,17 @@ args = ["load", "--target", "homes"]
 expected_exit = 0
 setup = [["build", "--target", "homes"]]
 expected_stdout_lines = [
-  "Home  Runtime  Load     Limit    Headroom",
-  "pair  codex    139      32,768   32,629",
-  "solo  codex    124      32,768   32,644",
-  "pair  claude   no file  150,000  150,000",
-  "solo  claude   no file  150,000  150,000",
+  "Home   Runtime  Load     Limit    Headroom",
+  "pair   codex    139      32,768   32,629",
+  "solo   codex    124      32,768   32,644",
+  "empty  codex    no file  32,768   32,768",
+  "pair   claude   139      150,000  149,861",
+  "solo   claude   124      150,000  149,876",
+  "empty  claude   no file  150,000  150,000",
 ]
 
 [[cases]]
-name = "one plain agent on claude prints no false load"
+name = "one plain agent on claude shows its load"
 status = "active"
 kind = "cli_contract"
 project = "project_plain_agent"
@@ -124,7 +126,25 @@ args = ["load", "solo", "--target", "homes", "--runtime", "claude"]
 expected_exit = 0
 setup = [["build", "--target", "homes"]]
 expected_stdout_lines = [
-  "solo on claude: no CLAUDE.md here, so claude loads nothing from this home",
+  "solo on claude: 124 of 150,000 characters, 149,876 left",
+  "",
+  "Files:",
+  "  solo/AGENTS.md  124",
+  "",
+  "Biggest parts:",
+  "  Solo: 11",
+]
+
+[[cases]]
+name = "a team with no text reports no Claude file"
+status = "active"
+kind = "cli_contract"
+project = "project_plain_agent"
+args = ["load", "empty", "--target", "homes", "--runtime", "claude"]
+expected_exit = 0
+setup = [["build", "--target", "homes"]]
+expected_stdout_lines = [
+  "empty on claude: no CLAUDE.md here, so claude loads nothing from this home",
 ]
 
 [[cases]]

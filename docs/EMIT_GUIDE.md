@@ -107,8 +107,7 @@ its home path. A path selects that home and every home below it.
 One target with teams can be inferred; otherwise pass `--target NAME`.
 Each command takes `--pyproject PATH`.
 
-`load` says when a home has no file for a runtime. A plain agent writes only
-`AGENTS.md`, so Claude loads nothing from it.
+`load` says when a home has no file for a runtime.
 
 `build` and `check` compile the selected homes and check rules, budgets,
 and hand edits. A build writes nothing if a check fails. `--force` allows hand

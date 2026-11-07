@@ -52,11 +52,14 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
         text = (
             text.rstrip() + "\n\nFuller cases, under the same headings: " + ", ".join(links) + ".\n"
         )
+    runtimes = target.runtimes
+    filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
+    files = {}
     if plan is not None:
         files = runtime_files(plan, compiled, target, evaluate_rules=evaluate_rules)
-        files[plan.markdown_path] = text.encode()
+        del files[plan.markdown_path]
         source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
-        return {
+        files = {
             path.relative_to(target.output_dir).as_posix(): with_header(
                 content.decode(), source
             ).encode()
@@ -64,12 +67,9 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
             else content
             for path, content in files.items()
         }
-    files = {}
-    if text.strip():
+    if plan is not None or text.strip():
         source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
         source = os.path.relpath(source_unit.prompt_file.source_path, target.project_config.config_dir)
-        runtimes = target.runtimes
-        filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
         files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
         if "claude" in runtimes and "codex" in runtimes:
             files[str(PurePosixPath(home) / "CLAUDE.md")] = Path("AGENTS.md")

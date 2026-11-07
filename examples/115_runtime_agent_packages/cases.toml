@@ -6,3 +6,13 @@ name = "runtime agent packages build the canonical runtime tree"
 status = "active"
 kind = "build_contract"
 build_target = "example_115_runtime_agent_packages"
+
+[[cases]]
+name = "runtime agent packages keep their files in a home build"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["build", "--target", "homes"]
+expected_exit = 0
+expected_file_lines = { "editor_home/SOUL.md" = ["Carry the editor background for the package."], "editor_home/references/style.txt" = ["Keep the brief crisp and direct."] }
+expected_links = { "editor_home/CLAUDE.md" = "AGENTS.md" }
