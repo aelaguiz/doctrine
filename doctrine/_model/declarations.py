@@ -42,9 +42,17 @@ class Person:
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
+@_dataclass(slots=True, frozen=True)
+class Quote:
+    name: str
+    title: str
+    fields: tuple[tuple[str, object], ...]
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
 Declaration: _TypeAlias = (
-    Person
-    | Team
+    Quote
+    | Person
     | ImportDecl
     | RenderProfileDecl
     | AnalysisDecl

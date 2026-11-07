@@ -68,7 +68,8 @@ class AgentFieldCompileSpec:
 FlowAgentKey = tuple[Path, Path, str]
 FlowArtifactKey = tuple[Path, Path, str]
 ReadableDecl: TypeAlias = (
-    model.Agent
+    model.Quote
+    | model.Agent
     | model.AnalysisDecl
     | model.SchemaDecl
     | model.TableDecl

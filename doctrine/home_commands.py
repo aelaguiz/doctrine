@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from os.path import relpath
+
 import argparse
 import json
 import sys
@@ -7,13 +9,14 @@ import subprocess
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
+from doctrine import model
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
 from doctrine._compiler.home_map import home_entries
 from doctrine._compiler.source_graph import declarations_in
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.provenance import declaration_owners
+from doctrine._compiler.provenance import declaration_owners, quote_citations, quote_data
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
 from doctrine.homes import compile_homes, build_homes
@@ -138,7 +141,13 @@ def check(args):
                 return 2
             settings = runtime_settings(target)
             homes, files, _, _ = compile_homes(target, evaluate_rules=True, session=session)
-            declaration_owners(CompilationContext(session), declarations_in(session), target.project_config.config_dir)
+            context = CompilationContext(session)
+            declarations = declarations_in(session)
+            declaration_owners(context, declarations, target.project_config.config_dir)
+            for unit, declaration in declarations.values():
+                if isinstance(declaration, model.Quote):
+                    quote_data(context, unit, declaration)
+            cited, _ = quote_citations(context, declarations, target.project_config.config_dir)
             validate_load_rules(CompilationContext(session), homes)
             loads = home_loads(target, homes, files, settings)
             findings, failed = budget_findings(loads, settings)
@@ -146,6 +155,9 @@ def check(args):
                 {"code": finding.split()[0], "text": finding}
                 for finding in findings if finding.startswith("W")
             ]
+            warnings += [{"code": "W305", "text": f"W305 unused quote: {name} at {relpath(unit.prompt_file.source_path, target.project_config.config_dir)}:{decl.source_span.line} is cited nowhere."}
+                         for (name, _), (unit, decl) in declarations.items()
+                         if isinstance(decl, model.Quote) and name not in cited]
             disabled = (target.project_config.raw_check or {}).get("disable", [])
             warnings = [warning for warning in warnings if warning["code"] not in disabled]
             findings = [finding for finding in findings if not finding.startswith("W")]

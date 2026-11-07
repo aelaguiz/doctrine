@@ -26,6 +26,7 @@ Load this when the author is new to Doctrine or is unsure which construct fits t
     section declarations: "Declarations At A Glance"
         "Every row below is a shipped declaration in `doctrine/grammars/doctrine.lark`. Each one points at one real example you can open and copy the shape from."
         bullets rows:
+            "**`quote`** — records words, their speaker, date, and optional source. First example: `examples/190_quotes`."
             "**`person`** — names someone and lists the declarations or files they own. First example: `examples/189_person_and_ownership`."
             "**`agent`** — a concrete runtime owner. Needs a `role`. Reserved typed fields include `inputs`, `outputs`, `analysis`, `decision`, `skills`, `review`, and `final_output`. Every other keyed field is an authored workflow slot. First example: `examples/01_hello_world`."
             "**`abstract agent`** — inheritance-only role scaffold. Does not emit. Use it to share structure across concrete agents. First example: `examples/12_role_home_composition`."

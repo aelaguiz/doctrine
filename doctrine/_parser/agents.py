@@ -52,6 +52,16 @@ class AgentTransformerMixin:
     def team_home_stmt(self, items):
         return ("home", items[0])
 
+    def quote_by(self, items): return "by", items[0]
+    def quote_on(self, items): return "on", items[0]
+    def quote_to(self, items): return "to", items[0]
+    def quote_about(self, items): return "about", items[0]
+    def quote_source(self, items): return "source", items[0]
+
+    @v_args(meta=True)
+    def quote_decl(self, meta, items):
+        return _with_source_span(model.Quote(items[0], items[1], tuple(items[2:])), meta)
+
     def person_owned_item(self, items):
         return items[0]
 

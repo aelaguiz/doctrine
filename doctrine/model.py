@@ -68,7 +68,7 @@ from doctrine._model.core import (
     SectionBodyRef,
     SourceSpan,
 )
-from doctrine._model.declarations import Declaration, Person, PromptFile
+from doctrine._model.declarations import Declaration, Person, Quote, PromptFile
 from doctrine._model.io import (
     AnyRecordItem,
     EnumDecl,

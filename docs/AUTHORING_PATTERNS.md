@@ -41,6 +41,12 @@ Several people can own the same declaration. A file glob can cover declarations
 in that file and declarations that read it with `from`. See
 [example 189](../examples/189_person_and_ownership).
 
+## Keep Words With Their Source
+
+Use `quote` when the same words appear in several places. For one use, write
+an inline quote. Add `source:` when you have a link or record to check later.
+`doctrine sources` finds quotes with no source.
+
 ## What To Preserve When You Port
 
 Doctrine works best when you preserve five things:

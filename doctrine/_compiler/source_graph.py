@@ -21,14 +21,13 @@ def declarations_in(session):
                 if isinstance(declaration, model.ImportDecl):
                     continue
                 name = ".".join((*unit.module_parts, declaration.name))
-                declarations[name] = (unit, declaration)
+                declarations[name, type(declaration)] = (unit, declaration)
                 if isinstance(declaration, model.Team):
                     declarations.update(
-                        (f"{name}.{member.key}", (unit, member))
+                        ((f"{name}.{member.key}", type(member)), (unit, member))
                         for member in declaration.fields if isinstance(member, model.Member)
                     )
     return declarations
-
 
 
 def model_walk(value):
@@ -96,7 +95,7 @@ def declaration_match(context, ref, unit):
 
 
 def dependency_graph(context, sources):
-    graph = {}
+    graph, visited = {}, set()
 
     def visit(decl, owner):
         if isinstance(decl, model.Member):
@@ -108,10 +107,20 @@ def dependency_graph(context, sources):
             name = ".".join((*owner.module_parts, team.name, decl.key))
         else:
             name = ".".join((*owner.module_parts, decl.name))
-        if name in graph:
+        identity = (name, type(decl))
+        if identity in visited:
             return name
-        dependencies = set()
-        graph[name] = (owner, decl, dependencies)
+        visited.add(identity)
+        if name not in graph:
+            graph[name] = (owner, decl, set())
+        dependencies = graph[name][2]
+        if isinstance(decl, model.Quote):
+            for field, ref in decl.fields:
+                if field == "by":
+                    for target in context._decl_lookup_targets(ref, unit=owner):
+                        match = lookup_flow_registry_decl(context.session.flow_for_unit(target.unit), registry_name="people_by_name", declaration_name=target.declaration_name)
+                        if match:
+                            dependencies.add(visit(match[1], match[0]))
         for value in model_walk(decl):
             refs = []
             reads_members = isinstance(value, model.ReadableBlock) and value.kind == "roster"
@@ -128,15 +137,30 @@ def dependency_graph(context, sources):
                         visit(member, member.scope_unit or team_unit)
                         for member in team_members(context, team, unit=team_unit)
                     )
+            if isinstance(value, model.SectionBodyRef):
+                ref = value.ref.root
+                match = declaration_match(context, ref, owner)
+                if match:
+                    match = lookup_flow_registry_decl(context.session.flow_for_unit(match[0]), registry_name="quotes_by_name", declaration_name=match[1].name)
+                if match:
+                    dependencies.add(visit(match[1], match[0]))
             if isinstance(value, model.NameRef):
                 refs.append(value)
             elif isinstance(value, str):
                 for match in _INTERPOLATION_RE.finditer(value):
                     if LATE_ROOT.fullmatch(match[0]):
                         continue
-                    ref = context._parse_interpolation_expr_ref(match[1])
+                    match_text = match[1]
+                    expression = match_text.split(",", 1)[0] if "," in match_text else match_text
+                    ref = context._parse_interpolation_expr_ref(expression)
                     if ref is not None and ref.root is not None:
                         refs.append(ref.root)
+                        match = declaration_match(context, ref.root, owner)
+                        if match:
+                            registry = "people_by_name" if "," in match_text else "quotes_by_name"
+                            typed = lookup_flow_registry_decl(context.session.flow_for_unit(match[0]), registry_name=registry, declaration_name=match[1].name)
+                            if typed:
+                                dependencies.add(visit(typed[1], typed[0]))
             refs.extend(
                 model.NameRef(ref.module_parts[:i], part, scope_unit=ref.scope_unit)
                 for ref in tuple(refs) for i, part in enumerate(ref.module_parts)

@@ -69,6 +69,7 @@ class UnitDeclarations:
     agents_by_name: dict[str, model.Agent]
     teams_by_name: dict[str, model.Team]
     people_by_name: dict[str, model.Person]
+    quotes_by_name: dict[str, model.Quote]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -143,6 +144,7 @@ class IndexedFlow:
     agents_by_name: dict[str, model.Agent]
     teams_by_name: dict[str, model.Team]
     people_by_name: dict[str, model.Person]
+    quotes_by_name: dict[str, model.Quote]
     rules_by_name: dict[str, model.RuleDecl]
     receipts_by_name: dict[str, model.ReceiptDecl]
     stages_by_name: dict[str, model.StageDecl]
@@ -743,6 +745,7 @@ def index_unit(
     agents_by_name: dict[str, model.Agent] = {}
     teams_by_name: dict[str, model.Team] = {}
     people_by_name: dict[str, model.Person] = {}
+    quotes_by_name: dict[str, model.Quote] = {}
     enums_by_name: dict[str, model.EnumDecl] = {}
     rules_by_name: dict[str, model.RuleDecl] = {}
     receipts_by_name: dict[str, model.ReceiptDecl] = {}
@@ -754,6 +757,11 @@ def index_unit(
         if isinstance(declaration, (model.Agent, model.WorkflowDecl)) and declaration.markdown_path:
             declaration = read_markdown(declaration, source_path=prompt_file.source_path,
                 project_path=session.project_config.path, prompt_root=prompt_root)
+        if isinstance(declaration, model.Quote):
+            _register_decl(quotes_by_name, declaration, declaration.name, module_parts,
+                           source_path=prompt_file.source_path)
+            quotes_by_name[declaration.name] = declaration
+            continue
         if isinstance(declaration, model.Person):
             _register_decl(people_by_name, declaration, declaration.name, module_parts,
                            source_path=prompt_file.source_path)
@@ -1128,6 +1136,7 @@ def index_unit(
         agents_by_name=agents_by_name,
         teams_by_name=teams_by_name,
         people_by_name=people_by_name,
+        quotes_by_name=quotes_by_name,
         rules_by_name=rules_by_name,
         receipts_by_name=receipts_by_name,
         stages_by_name=stages_by_name,

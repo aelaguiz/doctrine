@@ -131,4 +131,4 @@ class ResolveSectionBodiesMixin:
             ambiguous_label="workflow section declaration ref",
             missing_local_label="workflow section body",
         )
-        return ResolvedSectionRef(label=value.text)
+        return model.AuthoredProse(value.text) if value.kind == "quote" else ResolvedSectionRef(label=value.text)

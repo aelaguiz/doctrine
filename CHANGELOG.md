@@ -8,8 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-### Ownership (6.0.0; language 6.0)
+### Provenance (6.0.0; language 6.0)
 
+- `quote` records words and their source. Named and inline quotes render with
+  their speaker and date. `sources` lists citations and home reach. `W305`
+  reports unused named quotes.
 - `person` names owners with declaration refs or file globs. `check` validates
   ownership lists. `diff` reports changed owned declarations and people, using
   owners from both sides of the comparison.

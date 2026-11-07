@@ -38,7 +38,7 @@ A prompt file may contain imports and any mix of shipped declarations:
 - `receipt`, `artifact`, `stage`, `skill_flow`, `skill_graph`
 - `input`, `inputs`, `input source`
 - `output`, `outputs`, `output target`, `output shape`, `output schema`
-- `enum`, `person`
+- `enum`, `person`, `quote`
 
 The normal agent entrypoints are `AGENTS.prompt` and `SOUL.prompt`. The normal
 skill-package entrypoint is `SKILL.prompt`. The normal standalone graph
@@ -79,6 +79,24 @@ owner also owns its members. Owners add up; ownership does not pass to child
 declarations. `check` and `diff` validate these lists. `diff` reports changed
 owned declarations and changed people, even when they reach no home. It reads
 owners from both sides of the comparison. Builds do not read ownership lists.
+
+## Quotes
+
+A `quote` keeps words, their speaker, and their date in one place:
+
+```prompt
+person Speaker: "The speaker"
+quote Shared: "Keep it plain"
+    by: Speaker
+    on: "2026-11-05"
+    source: "session:123"
+```
+
+Use `{{Shared}}` in prose or put `Shared` on a section body line. Both render
+the words with the speaker and date. A quote may also have `to:` and `about:`.
+For a quote used once, write `{{Speaker, 2026-11-05: "Keep it plain"}}` inside
+a triple-quoted string. `doctrine sources` lists quotes and where they reach.
+Use `--person` to filter or `--json` for the full source record.
 
 ## Agents
 

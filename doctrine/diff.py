@@ -148,12 +148,13 @@ def compare_homes(before, after, selectors):
 
 def build_result(before, after, comparison, base):
     changed, owned = [], []
-    for name in sorted(before["hashes"].keys() | after["hashes"].keys()):
-        if before["hashes"].get(name) == after["hashes"].get(name):
+    for key in sorted(before["hashes"].keys() | after["hashes"].keys(), key=lambda key: key[0]):
+        name = key[0]
+        if before["hashes"].get(key) == after["hashes"].get(key):
             continue
-        owners = sorted(before["owners"].get(name, set()) | after["owners"].get(name, set()))
-        side = after if name in after["declarations"] else before
-        unit, declaration = side["declarations"][name]
+        owners = sorted(before["owners"].get(key, set()) | after["owners"].get(key, set()))
+        side = after if key in after["declarations"] else before
+        unit, declaration = side["declarations"][key]
         if owners or isinstance(declaration, model.Person):
             owned.append({"name": name, "owners": owners})
         reached = []

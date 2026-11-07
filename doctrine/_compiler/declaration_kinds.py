@@ -16,7 +16,6 @@ class DeclarationKind:
 
 
 DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
-    DeclarationKind("person", "person declaration", "people_by_name", model.Person, False, False),
     DeclarationKind(
         name="team",
         label="team declaration",
@@ -257,6 +256,8 @@ DECLARATION_KINDS: tuple[DeclarationKind, ...] = (
         readable=False,
         addressable_root=False,
     ),
+    DeclarationKind("quote", "quote declaration", "quotes_by_name", model.Quote, True, True),
+    DeclarationKind("person", "person declaration", "people_by_name", model.Person, False, False),
 )
 
 

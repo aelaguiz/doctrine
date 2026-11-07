@@ -4,6 +4,7 @@ import argparse
 
 from doctrine.home_commands import build, check, load, where, run_command
 from doctrine.diff import diff
+from doctrine.sources import sources
 
 
 def main(argv=None):
@@ -36,11 +37,17 @@ def main(argv=None):
         else:
             command.add_argument("--runtime")
             command.add_argument("--full", action="store_true")
+    source_command = commands.add_parser("sources")
+    source_command.add_argument("--pyproject")
+    source_command.add_argument("--target")
+    source_command.add_argument("--json", action="store_true")
+    source_command.add_argument("--person")
+    source_command.set_defaults(rev=None, overlays=[])
     args = parser.parse_args(argv)
     if args.overlays and not args.rev and args.command != "diff":
         parser.error("--with needs --rev")
     return run_command(args, {
-        "build": build, "check": check, "load": load, "diff": diff, "where": where
+        "build": build, "check": check, "load": load, "diff": diff, "where": where, "sources": sources
     }[args.command])
 
 
