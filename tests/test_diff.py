@@ -638,7 +638,7 @@ export abstract team Pod: "Pod"
         )
 
     def test_team_scope_on_abstract_team_is_rule001(self):
-        for target in ("Pod", "roles.Foreign"):
+        for target in ("Pod", "roles.Foreign", "Missing"):
             with self.subTest(target=target):
                 root = self.project('''import roles
 abstract team Pod: "Pod"
@@ -664,7 +664,10 @@ rule R: "Rule"
                 code, _, error = self.cli(root, "check")
                 self.assertEqual(code, 1, error)
                 self.assertIn("RULE001", error)
-                self.assertEqual(self.cli(root, "build", "T.qa")[0], 1)
+                code, _, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 1, error)
+                self.assertIn("RULE001", error)
+                self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
 
     def test_shipped_assertions_skip_teams(self):
         for scope in ('home: "**"', 'file_tree: "**"'):

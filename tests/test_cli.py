@@ -19,6 +19,40 @@ from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_selected_build_checks_only_its_members_rules(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + '''rule AnalystWork: "Analyst work"
+    scope:
+        member: analyst
+    assertions:
+        requires declare work
+    message: "Add work."
+''')
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        code, _, error = self.cli(root, "build", "GrowthPod.analyst")
+        self.assertEqual(code, 1, error)
+        self.assertIn("RULE005", error)
+
+    def test_selected_build_with_rule_ignores_broken_sibling_team(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text() + '''team Other[Nope]: "Other"
+    home: "pods/feature"
+rule AnalystWork: "Analyst work"
+    scope:
+        member: analyst
+    assertions:
+        requires declare work
+    message: "Add work."
+''')
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertIn("E299", error)
+
     def test_broken_parent_team_stops_selected_build_and_check(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)

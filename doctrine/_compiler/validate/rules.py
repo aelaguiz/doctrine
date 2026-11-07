@@ -36,22 +36,23 @@ class ValidateRulesMixin:
         flow,
         rule_unit: IndexedUnit,
     ) -> None:
+        chosen = self.session.rule_agents
+        if chosen is None:
+            agents = [(flow.declaration_owner_units_by_id[id(agent)], agent) for agent in flow.agents_by_name.values()]
+            for team in flow.teams_by_name.values():
+                if not team.abstract:
+                    owner = flow.declaration_owner_units_by_id[id(team)]
+                    agents.extend((owner, member) for member in team_members(self, team, unit=owner))
+        else:
+            agents = [(unit, agent) for unit, agent in chosen if self.session.flow_for_unit(unit) is flow]
+        matched = [(unit, agent) for unit, agent in agents if self._agent_matches_rule_scope(
+            agent, agent_unit=unit, rule=rule, flow=flow
+        )]
+        if chosen is not None and not matched:
+            return
         self._validate_rule_scope_targets(rule, flow=flow, rule_unit=rule_unit)
         self._validate_rule_assertion_targets(rule, flow=flow, rule_unit=rule_unit)
-
-        agents = [(flow.declaration_owner_units_by_id[id(agent)], agent) for agent in flow.agents_by_name.values()]
-        for team in flow.teams_by_name.values():
-            if not team.abstract:
-                owner = flow.declaration_owner_units_by_id[id(team)]
-                agents.extend((owner, member) for member in team_members(self, team, unit=owner))
-        for agent_unit, agent in agents:
-            if not self._agent_matches_rule_scope(
-                agent,
-                agent_unit=agent_unit,
-                rule=rule,
-                flow=flow,
-            ):
-                continue
+        for agent_unit, agent in matched:
             for assertion in rule.assertions:
                 self._evaluate_rule_assertion(
                     assertion,
@@ -133,7 +134,7 @@ class ValidateRulesMixin:
                         return True
                     rule_unit = flow.declaration_owner_units_by_id[id(rule)]
                     target = declaration_match(self, predicate.target, rule_unit)
-                    if (match[0].prompt_file.source_path, match[1].name) == (
+                    if target is not None and (match[0].prompt_file.source_path, match[1].name) == (
                         target[0].prompt_file.source_path, target[1].name
                     ):
                         return True

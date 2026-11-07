@@ -187,6 +187,10 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         if whole or is_level(home, selected):
             raise failure
         print(failure, file=sys.stderr)
+    session.rule_agents = None if whole else [
+        (data["unit"], data["owner"]) for home, data in homes.items()
+        if home in selected and not isinstance(data["owner"], model.Team)
+    ]
     needed = {home for home in homes if is_level(home, selected)}
     for home, owner, unit, plan in owners:
         if home in needed and homes[home]["owner"] is not owner:

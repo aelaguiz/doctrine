@@ -117,7 +117,8 @@ edits only. A warning fails `check` only with `--strict`.
 A selected build writes only the homes it selects. First run `doctrine build .`.
 Loaded levels and their local companions must be current. A selected build
 checks shared `_details/` files exist without comparing their bytes. A whole check compares
-them. A semantic error in another home cannot stop a selected build. A parse
+them. A semantic error in another home cannot stop a selected build. A rule
+that reaches no selected home doesn't run. A parse
 error anywhere in the flow stops it. Use `--rev HEAD` to leave uncommitted edits
 out. `--out DIR` uses a separate output root.
 

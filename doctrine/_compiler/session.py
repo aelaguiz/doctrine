@@ -151,6 +151,7 @@ class CompilationSession:
 
         self.project_config = resolved_project_config
         self.evaluate_rules = evaluate_rules
+        self.rule_agents = None
         self.value_reads: set[tuple[Path, int]] = set()
         self.emit_paths: dict[str, Path] = {}
         self.emit_root: Path | None = None
