@@ -44,7 +44,7 @@ IO section refs."""
 import shared.workflows
 import chains.deep.levels.one.two.entry as deep_chain
 """
-        "After an import, every declaration in that module can be cited with the dotted path:"
+        "After an import, exported declarations in that module can be cited with the dotted path:"
         code:
             language: prompt-fragment
             text: """agent HelloWorldGreeter[shared.greeters.PoliteGreeter]:
@@ -257,5 +257,8 @@ Runtime agent packages and `SKILL.prompt` skill packages are different surfaces.
         "**Load when:** the author is splitting files across modules, wiring a ref across packages, picking fields with `inherit { ... }`, using `self:` inside a declaration, or setting up a directory-backed runtime agent package."
 
     section lone_modules: "Lone Module Files"
-        "A file-backed module.prompt import has one prompt file as its full flow surface when no flow entrypoint sits at or above it inside its prompt root. Other files in that folder do not join it. Paths outside any prompt root still fail with E292. Same-flow imports still fail with E315. See example 172."
-        "A paragraph has a normal keyed address, such as Habits:test_plan. Read its title with `Habits:test_plan.title` when Habits is declared in your flow. See example 166."
+        "A file-backed module.prompt import has one prompt file as its full flow surface when no flow entrypoint sits at or above it inside its prompt root. Other files in that folder do not join it. Paths outside any prompt root still fail with E292. Same-flow imports still fail with E315. See `examples/172_lone_module_import`."
+        "A paragraph has a normal keyed address, such as Habits:test_plan. Read its title with `Habits:test_plan.title` when Habits is declared in your flow. See `examples/166_paragraph_blocks`."
+    section exports_and_provenance: "Exports And Provenance Across Flows"
+        "A flow entrypoint and its sibling prompt files share a namespace. Use bare refs within it. Across flows, mark a declaration `export` and import it by module or name. See `examples/03_imports` and `examples/172_lone_module_import`."
+        "`person` and `quote` can also be exported across flows. A quote's `by:` names a person; `owns:` names declarations or files. See the declarations in `examples/189_person_and_ownership` and `examples/190_quotes`."

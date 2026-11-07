@@ -509,3 +509,6 @@ itself:"""
         """**Load when:** the author is shaping the turn's typed answer, wiring a
 `route field`, inheriting an output, or configuring structured-final
 emission."""
+    section messages: "Messages"
+        "A `Message` is an `output` with `target: Message` and a required `to:` naming an agent, member, team, or string. The sender lists it in `outputs:`; the receiver can list the same output in `inputs:`. Both see the same prose. See `examples/191_message_outputs`."
+        "A message cannot have `shape`, `requirement`, `schema`, `structure`, or `files`; these raise `E660`. `W303` warns when a sent message names an agent or team but nobody in its scope reads it. A string recipient is not checked. For a message across flows, declare it in the receiver's flow so the sender can import it."

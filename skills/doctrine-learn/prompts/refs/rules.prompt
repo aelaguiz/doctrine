@@ -155,8 +155,8 @@ concrete agents, retiring an ancestor that must never be inherited again, or
 requiring a named slot across a role class."""
 
     section reach: "See what a change reaches"
-        "Copy examples 185 and 186 for team scopes and load rules. Example 187 shows `doctrine diff` and `doctrine where`."
+        "See `examples/185_rule_team_scopes` for team scopes, `examples/186_rule_load_assertions` for load rules, and `examples/187_doctrine_diff` for `doctrine diff` and `doctrine where`."
         "`doctrine diff --base HEAD` reports changed declarations and the homes they reach. `--base-tree DIR` compares project folders. Repeat `--with PATH` to compare only those working files against the base."
         "Size changes count a home's full always-on load in UTF-16 characters. Details have their own change. JSON `outputs` lists only files whose bytes changed. New sections from `inherit *` get their own list."
         "`doctrine where \"some words\"` finds the source of text and the homes that read it. Case and whitespace do not matter. Use `--home PATH` to limit the search."
-        "Example 188 shows project warnings for near copies, double loads, and unused values. `check --strict` fails on warnings. Set `[tool.doctrine.check] disable = [\"W301\"]` to turn a code off."
+        "`examples/188_project_warnings` shows project warnings for near copies, double loads, and unused values. `check --strict` fails on warnings. Set `[tool.doctrine.check] disable = [\"W301\"]` to turn a code off."

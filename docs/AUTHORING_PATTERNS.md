@@ -1,7 +1,8 @@
 # Doctrine Authoring Patterns
 
-This guide answers one question:
-If you need to do this, do it this way in Doctrine.
+Start with the result you want or what went wrong.
+[Doctrine Learn](DOCTRINE_LEARN.md) teaches how to get good results, then
+helps you pick the language surface. This guide maps common jobs to that surface.
 
 Use this guide when you are porting a prose-heavy agent system into Doctrine,
 or when you know the syntax exists but do not yet know which surface to pick.

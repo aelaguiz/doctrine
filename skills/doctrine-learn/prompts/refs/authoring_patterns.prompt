@@ -4,15 +4,7 @@ Doctrine surface owns it. This file is a task-first chooser, not a second
 syntax reference. It maps common jobs to the one surface that should own
 them, then cites the shipped example to copy from.
 
-Keep these rules in front of every choice:"""
-
-    bullets rules:
-        """Typed truth beats prose truth. If the compiler can own an exact rule,
-  let it."""
-        "Always-on context is a budget. Every line must earn its keep."
-        "The harness owns runtime. Doctrine owns authoring."
-        """Fail loud. If you are about to write something the compiler will reject,
-  stop and use the error path."""
+For the judgment behind these choices, read `references/getting-good-results.md` first: it covers shared roles, where lessons land, thin homes, prose and types, and patterns that drift. The chooser below maps other jobs to their language surfaces."""
 
     section chooser: "Task-First Chooser"
         """Each row names one real job, one Doctrine surface, and one shipped example
@@ -274,31 +266,7 @@ should land once."""
     section anti_patterns: "Anti-Patterns"
         "These shapes compile but push against the principles. Fix them early."
 
-        section copy_paste: "Copy-Paste Across Agents"
-            bullets items:
-                """Do not restate the same skills, inputs, outputs, or note structure in
-  every role."""
-                """Move the shared shape into a top-level `skills`, `inputs`, or
-  `outputs` block and inherit it."""
-                """When the copy spans whole agent declaration blocks (`inputs`,
-  `skills`, `outputs`, `output schema`, `output shape`), hoist the scaffold
-  into an `abstract agent` base. Children override only the parts that
-  differ. See `examples/25_abstract_agent_io_override`."""
-                """See `examples/21_first_class_skills_blocks` and
-  `examples/23_first_class_io_blocks`."""
-
-        section prose_vs_typed: "Prose Where Typed Truth Belongs"
-            bullets items:
-                """Do not keep currentness, invalidation, verdicts, failing gates, or
-  route owner in prose when the compiler can own them."""
-                "Use `law`, `review`, `trust_surface`, and `route.*` instead."
-
-        section harness_leakage: "Harness Leakage"
-            bullets items:
-                """Doctrine does not own runtime state, memory, scheduling, tools, or
-  session control."""
-                """If a rule is really about run state, put it in the harness. Do not
-  smuggle it into `law` or output prose."""
+        "For copied roles, prose versus types, and harness boundaries, see `references/getting-good-results.md`."
 
         section vague_names: "Vague Names And Descriptions"
             bullets items:

@@ -1,7 +1,7 @@
 document ExamplesLadder: "Examples Ladder"
     """Load this when the author wants a guided reading order or is looking for
 the closest example to copy. The numbered corpus under `examples/` runs
-from `01_hello_world` through `164_skill_graph_artifacts`. It is
+from `01_hello_world` through `193_small_team_end_to_end`. It is
 both the teaching surface and the verification corpus.
 
 This ladder does not list every example. It curates the short path
@@ -230,6 +230,39 @@ before the capstone graph bundle."""
 receipts and durable artifacts through graph emit without hand-maintained
 Markdown registries."""
 
+    section teams_and_homes_rung: "Teams, Homes, And Change"
+        "Read these in order for the new home and team surfaces, then the capstone."
+        bullets items:
+            "`examples/165_every_string_a_paragraph` — strings render as paragraphs."
+            "`examples/166_paragraph_blocks` — addressable paragraphs."
+            "`examples/167_inherited_head_prose` — inherit or drop head prose."
+            "`examples/168_role_and_typed_field_accounting` — account for roles and typed fields."
+            "`examples/169_drop_with_reason` — drop with a reason."
+            "`examples/170_inherit_wildcard` — keep remaining inherited items."
+            "`examples/171_patch_paths` — patch nested items."
+            "`examples/172_lone_module_import` — import a one-file flow."
+            "`examples/173_late_bound_values` — share a role with values."
+            "`examples/174_team_members` — teams and members."
+            "`examples/175_team_value_precedence` — value precedence."
+            "`examples/176_team_assembly` — reuse a team and its members."
+            "`examples/177_roster` — member roster tables."
+            "`examples/178_team_contract` — team contract output."
+            "`examples/179_markdown_backed_declarations` — compose Markdown with from."
+            "`examples/180_home_tree` — build the home tree."
+            "`examples/181_details` — move longer cases to details."
+            "`examples/182_shared_details` — share details companions."
+            "`examples/183_load_budgets` — measure load and budgets."
+            "`examples/184_doctrine_build_modes` — build modes."
+            "`examples/185_rule_team_scopes` — scope rules to homes."
+            "`examples/186_rule_load_assertions` — require or forbid loaded text."
+            "`examples/187_doctrine_diff` — find text and compare its reach."
+            "`examples/188_project_warnings` — project warnings."
+            "`examples/189_person_and_ownership` — people and ownership."
+            "`examples/190_quotes` — quotes and sources."
+            "`examples/191_message_outputs` — shared message outputs."
+            "`examples/192_doctrine_import` — port Markdown to source."
+            "`examples/193_small_team_end_to_end` — put the pieces together."
+
     section pick_next: "How To Pick Your Next Example"
         "Use this short rule-set."
         bullets rules:
@@ -246,7 +279,7 @@ Markdown registries."""
 
     section related: "Related References"
         bullets refs:
-            """`references/principles.md` — the thin-harness rule and the nine
+            """`references/principles.md` — the thin-harness rule and the ten
   principles."""
             """`references/language-overview.md` — the shipped grammar shape and
   core declaration vocabulary."""
