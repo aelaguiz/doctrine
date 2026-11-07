@@ -13,3 +13,8 @@ team Pod: "Pod"
             "Use {{Checklist}}."
     member analyst: "analyst"
         role: "Read first: {{load:Guide}}"
+
+team Deep: "Deep team"
+    home: "pod/deep"
+    member qa: "QA"
+        role: "Before testing, read {{Guide}}."

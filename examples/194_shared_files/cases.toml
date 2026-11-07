@@ -24,4 +24,144 @@ expected_file_lines = { "pod/qa/AGENTS.md" = [
   "If your session started in this folder, you are Pod's analyst. If not, this only describes that role.",
   "",
   "Read first: @../../shared/guide.md",
+], "pod/deep/qa/AGENTS.md" = [
+  "If your session started in this folder, you are Deep team's QA. If not, this only describes that role.",
+  "",
+  "Before testing, read [Test design](../../../shared/guide.md).",
 ] }
+
+[[cases]]
+name = "a hand edit to a built file fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { "shared/checklist.md" = "A hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "shared/checklist.md"]
+
+[[cases]]
+name = "a kept file may have repeated headings"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "shared/guide.md" = "# Guide\n\n## Notes\nFirst.\n\n## Notes\nSecond.\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "shared/guide.md" = ["# Guide", "", "## Notes", "First.", "", "## Notes", "Second."] }
+
+[[cases]]
+name = "a missing kept file fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"missing.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Guide}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E652", "which doesn't exist"]
+
+[[cases]]
+name = "a load must end its line"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"shared/guide.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{load:Guide}} now.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E655", "must end its line"]
+
+[[cases]]
+name = "two files cannot write one path"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file A: \"A\"\n    path: \"shared/a.md\"\n    \"A.\"\nfile B: \"B\"\n    path: \"shared/a.md\"\n    \"B.\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{A}} and {{B}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E607", "both land at"]
+
+[[cases]]
+name = "requires load accepts a load"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"shared/guide.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    member qa: \"QA\"\n        role: \"Read {{load:Guide}}\"\nrule R: \"Load guide\"\n    scope:\n        member: qa\n    assertions:\n        requires load Guide\n    message: \"Read it.\"\n" }
+args = ["build", "."]
+expected_exit = 0
+
+[[cases]]
+name = "requires load rejects a link"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"shared/guide.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    member qa: \"QA\"\n        role: \"Read {{Guide}}.\"\nrule R: \"Load guide\"\n    scope:\n        member: qa\n    assertions:\n        requires load Guide\n    message: \"Read it.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["RULE006"]
+
+[[cases]]
+name = "a dead link fails the build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read [missing](missing.md).\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E636", "points at missing.md, which does not exist."]
+
+[[cases]]
+name = "the file limit warns on compiled levels"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nruntimes = [\"claude\", \"codex\"]\n[tool.doctrine.runtimes.claude]\nfile_limit = 10\n" }
+args = ["build", "."]
+expected_exit = 0
+stderr_contains = ["W309 long file:", "of 10 on claude."]
+
+[[cases]]
+name = "Claude follows a loaded shared file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load", "pod/analyst", "--runtime", "claude"]
+expected_exit = 0
+stdout_contains = ["shared/guide.md", "import"]
+
+[[cases]]
+name = "Codex lists a shared file as read first"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load", "pod/analyst", "--runtime", "codex"]
+expected_exit = 0
+stdout_contains = ["shared/guide.md", "read first"]
+
+[[cases]]
+name = "load lists shared files for each runtime"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load"]
+expected_exit = 0
+stdout_contains = ["Shared files:", "claude", "codex", "Homes", "shared/guide.md", "shared/checklist.md"]
+
+[[cases]]
+name = "Claude counts hand-written levels and external imports"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nruntimes = [\"claude\", \"codex\"]\n[tool.doctrine.runtimes.claude]\nexternal = [{path=\"external.md\"}]\n", "CLAUDE.md" = "Hand-written root.\n", "external.md" = "External.\n@shared/import.md\n", "shared/import.md" = "Imported guide.\n" }
+args = ["load", "pod/qa", "--runtime", "claude"]
+expected_exit = 0
+stdout_contains = ["CLAUDE.md", "hand-written", "shared/import.md", "import"]
+
+[[cases]]
+name = "diff shows shared file growth and readers"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["diff", "--base-tree", "base"]
+expected_exit = 0
+stdout_contains = ["Shared files changed:", "shared/guide.md", "read by 3 homes"]

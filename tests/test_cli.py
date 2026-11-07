@@ -8,6 +8,7 @@ import tomllib
 import unittest
 from contextlib import chdir
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from tests.home_support import HomeProject
@@ -15,6 +16,9 @@ from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.parser import parse_file
+from doctrine.project_config import ProjectConfig
+from doctrine.renderer import render_markdown
+from doctrine.runtime_load import home_loads
 from doctrine._compiler.home_map import build_home_map
 from doctrine.emit_docs import _build_previous_turn_contexts, emit_target
 from doctrine.emit_common import load_emit_targets
@@ -1111,6 +1115,11 @@ team T: "Team"
             if case.kind not in ("parse_fail", "cli_contract")
         }
         count = 0
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        target = SimpleNamespace(output_dir=directory, runtimes=("claude",),
+                                 project_config=ProjectConfig(path=directory / "pyproject.toml"))
         for path in sorted(prompts):
             try:
                 session = CompilationSession(parse_file(path), evaluate_rules=False)
@@ -1137,7 +1146,12 @@ team T: "Team"
                                 )
                             except DoctrineError:
                                 continue
-                            build_home_map(compiled)
+                            home_map = build_home_map(compiled)
+                            home = {"owner": agent, "map": home_map, "budgets": [[]],
+                                    "pointers": [], "file_refs": []}
+                            files = {"CLAUDE.md": render_markdown(compiled).encode()}
+                            home_loads(target, {".": home}, files,
+                                       {"claude": {"external": [], "limit": 150000}}, {"."})
                             count += 1
         self.assertGreater(count, 350)
 

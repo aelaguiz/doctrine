@@ -12,8 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Name shared files and link to them or ask a role to read them first. Files
   without bodies stay on disk; files with bodies are written by the build.
-- Load reports list on-demand text. `doctrine diff --base-tree` reports changes
-  to shared files. `doctrine where` and `W301` read kept files.
+- Load reports count hand-written levels and Claude imports. They list
+  on-demand text and shared file sizes. `doctrine diff --base-tree` reports
+  changes to shared files. `doctrine where` and `W301` read kept files.
 
 ### Super in overrides
 

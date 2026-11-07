@@ -10,6 +10,20 @@ from tests.home_support import HomeProject
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_guide_is_charged_only_to_the_home_that_loads_it(self):
+        root = self.project(example="194_shared_files")
+        code, output, error = self.cli(root, "load", "--json")
+        self.assertEqual(code, 0, error)
+        homes = {home["home"]: home for home in json.loads(output)["homes"]}
+        for name in ("pod/qa", "pod/deep/qa"):
+            report = homes[name]["runtimes"]["claude"]
+            self.assertNotIn("shared/guide.md", [row["path"] for row in report["files"]])
+            self.assertIn("shared/guide.md", [row["path"] for row in report["on_demand"]])
+        report = homes["pod/analyst"]["runtimes"]["claude"]
+        guide = next(row for row in report["files"] if row["path"] == "shared/guide.md")
+        self.assertEqual(guide["kind"], "import")
+        self.assertEqual(report["total"], sum(row["size"] for row in report["files"]))
+
     def test_shared_files_report_uses_each_runtime_and_sorts_by_first(self):
         source = '''file Letters: "Letters"
     path: "letters.md"
