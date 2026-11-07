@@ -165,3 +165,13 @@ project = "project"
 args = ["diff", "--base-tree", "base"]
 expected_exit = 0
 stdout_contains = ["Shared files changed:", "shared/guide.md", "read by 3 homes"]
+
+[[cases]]
+name = "revision loads its hand-written level and import"
+status = "active"
+kind = "cli_contract"
+project = "project_revision"
+edit = { "pods/CLAUDE.md" = "Changed parent.\n", "shared/guide.md" = "Changed guide.\n" }
+args = ["load", "pods/team/qa", "--runtime", "claude", "--rev", "HEAD", "--full"]
+expected_exit = 0
+stdout_contains = ["pods/CLAUDE.md", "Revision parent.", "shared/guide.md", "Guide at revision."]
