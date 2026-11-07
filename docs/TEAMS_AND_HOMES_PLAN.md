@@ -1234,7 +1234,8 @@ disable = ["W301"]
 - Only pairs in different declarations count. A parent and child do count, because an
   override that changes two words is a value in disguise.
 - Findings group by declaration pair, with the first three examples shown and the total
-  count. Each `near` example shows the differing words. JSON carries all of them.
+  count. Each `near` example shows the differing words. In `check --json`, a `W301` warning
+  also carries `examples`, a list of `{"sites": [...], "words": [...]}` with every pair.
 
 ```text
 W301 near copy: GrowthQa and FeatureQa share 12 paragraphs that differ by a few words.
