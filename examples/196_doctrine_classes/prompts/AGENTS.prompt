@@ -13,22 +13,31 @@ abstract agent WebQA[QA]: "How web QA works"
 abstract agent AppQA[QA]: "How app QA works"
     inherit *
 
-team Growth: "growth"
+abstract team Pod: "A team that ships work"
+    abstract win
+
+team Growth[Pod]: "growth"
     home: "pods/growth"
+    win: "Win"
+        "Grow."
     values:
         unit: "bet"
         audience: "new users"
     member qa[WebQA]: "QA"
 
-team Feature: "feature"
+team Feature[Pod]: "feature"
     home: "pods/feature"
+    win: "Win"
+        "Ship."
     values:
         unit: "feature"
         audience: "players"
     member qa[AppQA]: "QA"
 
-team Product: "product"
+team Product[Pod]: "product"
     home: "pods/product"
+    win: "Win"
+        "Improve."
     values:
         unit: "change"
         audience: "players"
