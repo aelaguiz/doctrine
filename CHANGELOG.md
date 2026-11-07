@@ -11,13 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Markdown import (6.0.0; language 6.0)
 
 - `doctrine import` prints agent or workflow source from a Markdown file.
-- `Message` is a built-in output target. Rename any project's own
-  `output target Message` and its references.
 
 ### Messages (6.0.0; language 6.0)
 
 - A `Message` output renders the same prose for the sender and receiver. The
   receiver may list it in `inputs:`. `W303` reports a message with no reader.
+- `Message` is a built-in output target. Rename any project's own
+  `output target Message` and its references.
 
 ### Provenance (6.0.0; language 6.0)
 

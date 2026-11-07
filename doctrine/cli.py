@@ -48,6 +48,7 @@ def main(argv=None):
     import_command.add_argument("path")
     import_command.add_argument("--name", required=True)
     import_command.add_argument("--kind", choices=("workflow", "agent"), required=True)
+    import_command.add_argument("--check", action="store_true")
     import_command.set_defaults(rev=None, overlays=[])
     args = parser.parse_args(argv)
     if args.overlays and not args.rev and args.command != "diff":

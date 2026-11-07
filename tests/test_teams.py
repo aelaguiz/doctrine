@@ -342,6 +342,24 @@ team T: "Team"
 
 
 class TeamHomeTests(HomeProject, unittest.TestCase):
+    def test_roster_on_a_team_with_a_chained_parent(self):
+        root = self.project('''abstract team Level:
+    role: "Team."
+abstract team Pod[Level]:
+    inherit role
+    work: "Work"
+        roster people: "People"
+            who: "Who" = "{{agent:title}}"
+    member qa: "QA"
+        role: "Test."
+team G[Pod]: "Group"
+    home: "g"
+    inherit *
+''')
+        code, _, error = self.cli(root, 'build', '.')
+        self.assertEqual(code, 0, error)
+        self.assertIn('| QA |', (root / 'g' / 'AGENTS.md').read_text())
+
     def test_team_contract_order_and_sections(self):
         root = HomeProject.project(self, 'abstract team Base:\n    member qa: "QA"\n        role: "Test."\n        work: "Work"\n            "Test it."\nteam T[Base]: "Team"\n    home: "t"\n    member lead: "Lead"\n        role: "Lead."\n')
         target = load_emit_targets(root / 'pyproject.toml')['homes']

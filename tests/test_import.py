@@ -26,6 +26,29 @@ class ImportTests(HomeProject, unittest.TestCase):
         source = self.convert("## Craft\n\n**Make a plan.** Start early.\n")
         self.assertIn('paragraph make_a_plan: "Make a plan."\n            "Start early."', source)
 
+    def test_check_passes_on_lossless(self):
+        for kind, markdown in (
+            ("agent", "# Title\n\nRole.\n\n## Work\n\nText.\n"),
+            ("agent", "# Title\n\n## Work\n\nText.\n"),
+            ("workflow", "# Title\n\nIntro.\n\n## Work\n\nText.\n"),
+        ):
+            with self.subTest(kind=kind, markdown=markdown):
+                (self.root / "source.md").write_text(markdown)
+                code, output, error = self.cli(
+                    self.root, "import", "source.md", "--name", "Guide", "--kind", kind, "--check"
+                )
+                self.assertEqual(code, 0, error)
+                self.assertTrue(output.startswith("abstract agent Guide:" if kind == "agent" else 'workflow Guide: "Title"'))
+
+    def test_check_reports_first_difference(self):
+        (self.root / "source.md").write_text("# Title\n\n## Work\nText.\n")
+        code, output, error = self.cli(
+            self.root, "import", "source.md", "--name", "Guide", "--kind", "agent", "--check"
+        )
+        self.assertEqual(code, 1)
+        self.assertTrue(output.startswith("abstract agent Guide:"))
+        self.assertEqual(error, "Line 4 differs.\n  Markdown: Text.\n  Render: \n")
+
     def test_text_after_keyed_item_gets_untitled_paragraph(self):
         source = self.convert("## Craft\n\n**Plan.** Start.\n\nThen work.\n")
         self.assertIn('paragraph text_1:\n            "Then work."', source)
@@ -49,3 +72,11 @@ class ImportTests(HomeProject, unittest.TestCase):
             with self.subTest(kind=kind):
                 source = self.convert("Intro.\n\n## Craft\n\n**Plan.** Start.\n", kind)
                 self.assertTrue(parse_text(source).declarations)
+        markdown = 'Say "hello" at C:\\work and """end""".\n'
+        source = self.convert(markdown)
+        self.assertIn('Say "hello" at C:\\\\work', source)
+        self.assertTrue(parse_text(source).declarations)
+        code, _, error = self.cli(
+            self.root, "import", "source.md", "--name", "Guide", "--kind", "workflow", "--check"
+        )
+        self.assertEqual(code, 0, error)
