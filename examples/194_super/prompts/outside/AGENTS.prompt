@@ -1,0 +1,4 @@
+agent Child:
+    role: "Role."
+    work: "Work"
+        super

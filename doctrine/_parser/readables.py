@@ -474,7 +474,7 @@ class ReadableNodeTransformerMixin:
                     )
                 item_schema = item.value
                 continue
-            if isinstance(item, model.ReadableListItem):
+            if isinstance(item, (model.ReadableListItem, model.SuperItem)):
                 rendered_items.append(item)
                 continue
             rendered_items.append(model.ReadableListItem(key=None, text=item))

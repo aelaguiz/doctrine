@@ -24,8 +24,8 @@ The release version for this major language move is 6.0.0.
 4. New keywords cannot be keys where their forms can start. Rename a `drop`
    or `paragraph` key in a patchable body, while keeping its rendered title.
    `member` and `home` as agent slots, `values` in agent bodies, and `roster`
-   in readable bodies, plus `budget` and `details`, are also reserved where
-   their forms can start. If a workflow has head prose, rename any section
+   in readable bodies, plus `budget`, `details`, and `super`, are also reserved
+   where their forms can start. If a workflow has head prose, rename any section
    keyed `preamble` so a child can inherit it.
 5. `Message` is now a built-in output target, like `File`. Rename any
    project's own `output target Message` and update its references.

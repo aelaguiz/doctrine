@@ -99,6 +99,10 @@ class ToAst(
     def inherit_all(self, meta, _items):
         return _with_source_span(model.InheritAll(), meta)
 
+    @v_args(meta=True)
+    def super_stmt(self, meta, _items):
+        return _with_source_span(model.SuperItem(), meta)
+
     def patch_path(self, items):
         return tuple(items)
 

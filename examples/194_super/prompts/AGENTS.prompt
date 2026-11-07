@@ -1,0 +1,73 @@
+abstract agent Base:
+    role: "You lead the work."
+    components: "Components"
+        "The engineer picks the component."
+        checks: "Checks"
+            "Check it fits."
+
+agent Lead[Base]: "Lead"
+    override components:
+        "Start here."
+        super
+        "Keep the current look."
+        notes: "Notes"
+            "Write down the choice."
+    inherit *
+
+workflow Shared: "Shared"
+    steps: "Steps"
+        "Parent step."
+
+workflow First[Shared]: "First"
+    override steps:
+        super
+        "Child step."
+
+workflow Middle[Shared]: "Middle"
+    override steps: "Steps"
+        "Before."
+        super
+        "After."
+
+workflow Last[Shared]: "Last"
+    override steps:
+        "Child step."
+        super
+
+agent WithFirst:
+    role: "Role."
+    work: First
+
+agent WithMiddle:
+    role: "Role."
+    work: Middle
+
+agent WithLast:
+    role: "Role."
+    work: Last
+
+agent Patched[Base]:
+    override components:
+        super
+        "Child text."
+    override components.checks:
+        "Updated check."
+    inherit *
+
+abstract agent ListBase:
+    role: "Role."
+    work: "Work"
+        bullets steps:
+            "Parent item."
+        extra: "Extra"
+            "Not needed."
+
+agent WithList[ListBase]:
+    override work:
+        super
+        "Child text."
+    override work.steps:
+        super
+        "Child item."
+    drop work.extra: "Not needed."
+    inherit *

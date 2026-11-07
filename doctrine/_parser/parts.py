@@ -411,7 +411,7 @@ def _positioned_enum_member_field(meta: object, key: str, value: str) -> EnumMem
 def _body_prose_value(item: object) -> model.ProseLine | None:
     if isinstance(item, BodyProsePart):
         return item.value
-    if isinstance(item, (str, model.EmphasizedLine)):
+    if isinstance(item, (str, model.EmphasizedLine, model.SuperItem)):
         return item
     return None
 

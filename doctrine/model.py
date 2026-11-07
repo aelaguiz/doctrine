@@ -68,6 +68,7 @@ from doctrine._model.core import (
     RouteLine,
     SectionBodyRef,
     SourceSpan,
+    SuperItem,
 )
 from doctrine._model.declarations import Declaration, Person, Quote, PromptFile
 from doctrine._model.io import (

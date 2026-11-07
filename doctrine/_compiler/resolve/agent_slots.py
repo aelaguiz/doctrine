@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from doctrine import model
 from dataclasses import replace
-from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, keep_details
+from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, merge_override, reject_super
 from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
@@ -21,6 +21,7 @@ from doctrine._compiler.resolved_types import (
     ResolvedAgentSlotState,
     ResolvedTypedAgentSlot,
     ResolvedWorkflowBody,
+    ResolvedSectionItem,
 )
 from doctrine._compiler.support_files import _dotted_decl_name
 
@@ -418,14 +419,23 @@ class ResolveAgentSlotsMixin:
                             hints=("Define the slot directly with `slot_key: ...`.",),
                         )
                     accounted_parent_concrete_keys.add(field.key)
+                    origin = field.origin
+                    if origin and isinstance(field.value, model.WorkflowBody) and field.value.title is None:
+                        origin = replace(origin, headings=(*origin.headings[:-1], parent_slot.body.title))
                     body = self._resolve_slot_value(
-                        field.value, origin=field.origin, unit=unit,
+                        field.value, origin=origin, unit=unit,
                         owner_label=f"agent {agent.name} slot {field.key}",
                         owner_source_span=field.source_span,
                     )
+                    if any(isinstance(item, model.SuperItem) for item in body.preamble):
+                        body = replace(body, law=body.law if body.law is not None else parent_slot.body.law,
+                                       drops=(*parent_slot.body.drops, *body.drops))
+                    preamble, items = merge_override(parent_slot.body.items, body.items,
+                        agent.name, field.key, unit, field.source_span, parent_slot.body.origin,
+                        parent_slot.body.preamble, body.preamble)
                     resolved_slots.append(ResolvedAgentSlot(key=field.key, body=replace(
-                        body, items=keep_details(parent_slot.body.items, body.items,
-                                                agent.name, field.key, unit, field.source_span, parent_slot.body.origin))))
+                        body, title=body.title if body.title is not None else parent_slot.body.title,
+                        preamble=preamble, items=items)))
 
             missing_parent_keys = [
                 parent_slot.key
@@ -456,6 +466,9 @@ class ResolveAgentSlotsMixin:
                     resolved_slots.append(parent_slot)
 
             resolved = tuple(resolved_slots)
+            for slot in resolved:
+                if isinstance(slot, ResolvedAgentSlot):
+                    reject_super((slot.body.preamble, tuple(item for item in slot.body.items if isinstance(item, (ResolvedSectionItem, model.ReadableBlock)))), agent.name, unit)
             self._resolved_agent_slot_cache[agent_key] = resolved
             return resolved
         finally:

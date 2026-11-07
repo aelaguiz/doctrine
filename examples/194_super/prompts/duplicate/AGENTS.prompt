@@ -1,0 +1,9 @@
+abstract agent Base:
+    role: "Role."
+    work: "Work"
+        "Parent."
+agent Child[Base]:
+    override work:
+        super
+        super
+    inherit *

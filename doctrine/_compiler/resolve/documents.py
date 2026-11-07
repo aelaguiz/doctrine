@@ -3,7 +3,7 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.home_map import source_origin, child_origin, drop_records
 from doctrine._compiler.resolve.patches import (
-    mark_wildcard, prepare_body_patches, apply_path_patches, keep_details,
+    mark_wildcard, prepare_body_patches, apply_path_patches, merge_override, reject_super,
 )
 from dataclasses import replace
 
@@ -114,6 +114,7 @@ class ResolveDocumentsMixin:
                     else parent_document.render_profile if parent_document is not None else None
                 ),
             )
+            reject_super(resolved.items, _dotted_decl_name(unit.module_parts, document_decl.name), unit)
             self._resolved_document_cache[document_key] = resolved
             return resolved
         finally:
@@ -248,7 +249,7 @@ class ResolveDocumentsMixin:
                             item.title
                             if item.title is not None
                             else None
-                            if item.kind in {"sequence", "bullets", "checklist"}
+                            if item.kind in {"sequence", "bullets", "checklist"} and not any(isinstance(part, model.SuperItem) for part in item.payload)
                             else parent_item.title
                         ),
                         payload=item.payload,
@@ -273,8 +274,8 @@ class ResolveDocumentsMixin:
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
                 )
-            if item.kind in {"section", "paragraph", "guard"}:
-                resolved = replace(resolved, payload=keep_details(parent_item.payload, resolved.payload,
+            if item.kind in {"section", "paragraph", "guard", "sequence", "bullets", "checklist"}:
+                resolved = replace(resolved, payload=merge_override(parent_item.payload, resolved.payload,
                                                                    owner_label, key, unit, item.source_span, parent_item.origin))
             resolved_items.append(resolved)
 

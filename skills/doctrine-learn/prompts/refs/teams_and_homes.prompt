@@ -21,6 +21,9 @@ agent GrowthQa[PodQa]: "QA"
         "A value may read another value or an ordinary checked ref. A checked ref keeps its source module. Values add no logic. Put a sentence for one team in that team's override."
         "The compiler lists missing values together and names value cycles. Code stays literal. Skills, emitted documents, and machine output schemas have no home values."
 
+    section adding: "Add To A Shared Idea"
+        "Use a value to change a word. Use `super` inside an override to keep the parent's text and add your own, as in `examples/194_super`. Use a plain override when the idea really differs. If you copy a block to add one line, use `super` instead."
+
     section teams: "Put Teams And Members In Homes"
         "A team holds shared doctrine in a folder. Its members live below it. This is from `examples/174_team_members`."
         "Write a team title as words that read well in a sentence. The build uses it to say who the file is for."
