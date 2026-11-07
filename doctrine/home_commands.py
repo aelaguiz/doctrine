@@ -30,6 +30,7 @@ from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
+    text_size, padded_rows,
 )
 
 
@@ -188,6 +189,22 @@ def load(args):
         homes, files, selected, _ = compile_homes(
             target, session=session, selectors=args.selectors
         )
+        generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
+                     if isinstance(content, bytes)}
+        shared = {}
+        for home in sorted(selected):
+            for _, level in loaded_levels(homes, home):
+                for ref, _ in level["file_refs"]:
+                    path = Path(ref[2])
+                    name = relpath(path, target.project_config.config_dir)
+                    if name not in shared:
+                        text = (generated[path] if path in generated else path.read_bytes()).decode()
+                        shared[name] = {"path": name, "sizes": {
+                            runtime: text_size(text, runtime) for runtime in target.runtimes}, "homes": []}
+                    if home not in shared[name]["homes"]:
+                        shared[name]["homes"].append(home)
+        shared_files = sorted(shared.values(), key=lambda row: (
+            -row["sizes"][target.runtimes[0]], row["path"]))
         if live_root:
             output = live_root / target.output_dir.relative_to(target.project_config.config_dir)
             for values in settings.values():
@@ -222,7 +239,7 @@ def load(args):
                         {key: value for key, value in file.items() if key != "text"}
                         for file in runtime["files"]
                     ]
-            print(json.dumps({"format_version": 1, "homes": loads}))
+            print(json.dumps({"format_version": 1, "homes": loads, "shared_files": shared_files}))
         elif args.full and len(selected) == 1:
             for runtime in loads[0]["runtimes"].values():
                 for file in runtime["files"]:
@@ -231,6 +248,11 @@ def load(args):
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))
+            if shared_files:
+                rows = [("  Path", *target.runtimes, "Homes")]
+                rows.extend(("  " + row["path"], *(f"{row['sizes'][runtime]:,}"
+                    for runtime in target.runtimes), str(len(row["homes"]))) for row in shared_files)
+                print("\nShared files:\n" + padded_rows(rows))
         return 0
 
 

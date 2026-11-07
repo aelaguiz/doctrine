@@ -10,6 +10,57 @@ from tests.home_support import HomeProject
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_shared_files_report_uses_each_runtime_and_sorts_by_first(self):
+        source = '''file Letters: "Letters"
+    path: "letters.md"
+file Faces: "Faces"
+    path: "faces.md"
+team T: "Team"
+    home: "t"
+    member qa: "QA"
+        role: "Read {{Letters}}."
+    member analyst: "Analyst"
+        role: "Read {{Letters}}."
+        work: "Work"
+            "Read first: {{load:Faces}}"
+'''
+        for runtimes, first in (('["claude", "codex"]', "letters.md"),
+                                ('["codex", "claude"]', "faces.md")):
+            with self.subTest(runtimes=runtimes):
+                root = self.project(source, runtimes=runtimes)
+                (root / "letters.md").write_text("aaaaaa")
+                (root / "faces.md").write_text("🙂🙂")
+                code, output, error = self.cli(root, "load", "--json")
+                self.assertEqual(code, 0, error)
+                rows = json.loads(output)["shared_files"]
+                self.assertEqual(rows[0]["path"], first)
+                self.assertEqual({row["path"]: row["sizes"] for row in rows}, {
+                    "letters.md": {"claude": 6, "codex": 6},
+                    "faces.md": {"claude": 4, "codex": 8}})
+                self.assertEqual(next(row for row in rows if row["path"] == "letters.md")["homes"],
+                                 ["t/analyst", "t/qa"])
+                code, output, error = self.cli(root, "load")
+                self.assertEqual(code, 0, error)
+                self.assertIn("Shared files:\n  Path", output)
+                self.assertIn("Homes", output)
+
+    def test_shared_files_with_equal_sizes_sort_by_path(self):
+        root = self.project('''file Z: "Z"
+    path: "z.md"
+file A: "A"
+    path: "a.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Z}} and {{A}}."
+''')
+        (root / "z.md").write_text("same")
+        (root / "a.md").write_text("same")
+        code, output, error = self.cli(root, "load", "--runtime", "codex", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["shared_files"]
+        self.assertEqual([row["path"] for row in rows], ["a.md", "z.md"])
+        self.assertEqual(rows[0]["sizes"], {"claude": 4, "codex": 4})
+
     def test_exported_file_keeps_its_project_path(self):
         root = self.project('''from shared import Guide
 team T: "Team"
