@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 import tempfile
+from datetime import datetime
 from itertools import zip_longest
 from pathlib import Path
 
@@ -23,6 +24,37 @@ def import_markdown(args):
     stack = [{"keys": {}, "keyed": False, "text": 0}]
     pending = []
     paragraph = False
+    people = {}
+    quote_originals = {}
+    converted = set()
+
+    def replace_quote(match):
+        name, written_date, context, words = match.groups()
+        try:
+            day = datetime.strptime(written_date, "%B %d, %Y")
+        except ValueError:
+            return match[0]
+        if written_date != f"{day.strftime('%B')} {day.day}, {day.year}":
+            return match[0]
+        parts = context.split(",") if context else []
+        seen = set()
+        for part in parts:
+            key, _, value = part.strip().partition(" ")
+            if key in {"to", "about", "source"}:
+                if key == "source" or key in seen or not value.strip():
+                    return match[0]
+                seen.add(key)
+        if context and context != ", ".join(part.strip() for part in parts):
+            return match[0]
+        key = "".join(word[0].upper() + word[1:] for word in name.split())
+        if key in people and people[key] != name:
+            return match[0]
+        people[key] = name
+        converted.add((number, match.start(4) - 1))
+        extra = f", {context}" if context else ""
+        result = f'{{{{{key}, {day:%Y-%m-%d}{extra}: "{words}"}}}}'
+        quote_originals[result] = match[0]
+        return result
 
     def flush():
         nonlocal paragraph
@@ -54,6 +86,8 @@ def import_markdown(args):
             output.append(f'{indent}{source_string(text)}')
 
     def key_for(title, *, paragraph=False):
+        for quote, original in quote_originals.items():
+            title = title.replace(quote, original)
         key = heading_key(" ".join(title.split()[:4]))
         sample = ('agent Probe:\n    role: "Role."\n' if args.kind == "agent"
                   else 'workflow Probe: "Probe"\n')
@@ -78,7 +112,11 @@ def import_markdown(args):
         keys[key] = count
         return f"{key}_{count}" if count > 1 else key
 
-    for _, line, inside_fence, heading in markdown_lines(lines, path=args.path, start=start):
+    for number, line, inside_fence, heading in markdown_lines(lines, path=args.path, start=start):
+        if not inside_fence and not heading:
+            line = re.sub(r'(?:^|(?<=\()|(?<=[.!?] ))([A-Z][a-zA-Z0-9]*(?: [A-Z][a-zA-Z0-9]*){0,2}), '
+                          r'([A-Z][a-z]+ \d{1,2}, \d{4})(?:, ([^\n{}]+?))?: "([^"{}]*)"(?=$|[\s).,;:!?])',
+                          replace_quote, line)
         if not inside_fence:
             if heading:
                 flush()
@@ -104,6 +142,13 @@ def import_markdown(args):
                 continue
         pending.append(line)
     flush()
+    original = "\n".join(([f"# {title}"] if start == 2 else []) + lines)
+    for quote in re.finditer(r'"((?:[^"]|(?<=\s)"(?=\S)[^"]*")*)"', original):
+        number = original.count("\n", 0, quote.start()) + 1
+        column = quote.start() - original.rfind("\n", 0, quote.start()) - 1
+        if (number, column) not in converted and len(quote[1].split()) >= 6:
+            print(f"Quote left as prose at line {number}.", file=sys.stderr)
+    output[:0] = [f'person {key}: {title_string(name)}' for key, name in people.items()]
     print("\n".join(output))
     if args.check:
         return check_render(args, output, lines, start)
@@ -114,9 +159,9 @@ def check_render(args, output, lines, start):
     source = "\n".join(output) + "\n"
     if args.kind == "agent":
         source = source.replace("abstract agent ", "agent ", 1)
-        stand_in = not any(line.startswith("    role:") for line in output[1:2])
+        stand_in = not any(line.startswith("    role:") for line in output)
         if stand_in:
-            source = source.replace("\n", '\n    role: "Stand-in."\n', 1)
+            source = source.replace(f'agent {args.name}:', f'agent {args.name}:\n    role: "Stand-in."', 1)
         agent = args.name
     else:
         agent = args.name + "Check"

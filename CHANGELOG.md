@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Quotes
 
 - Quotes keep free words after the date and render without added parentheses.
+- Markdown import turns matching dated quotes into typed quotes and lists long quotes left as prose.
 
 ### Scope lines
 

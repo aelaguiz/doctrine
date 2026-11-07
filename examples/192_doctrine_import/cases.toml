@@ -33,6 +33,19 @@ expected_exit = 0
 stderr_contains = ["Render matches."]
 
 [[cases]]
+name = "import converts dated quotes and lists quotes left as prose"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["import", "old/quotes.md", "--name", "Quotes", "--kind", "agent", "--check"]
+expected_exit = 0
+stdout_contains = [
+  'person JaneDoe: "Jane Doe"',
+  '({{JaneDoe, 2026-11-05, asking for you: "Keep this lesson for later use."}})',
+]
+stderr_contains = ["Quote left as prose at line 5.", "Render matches."]
+
+[[cases]]
 name = "import keys paragraphs in the opening"
 status = "active"
 kind = "cli_contract"

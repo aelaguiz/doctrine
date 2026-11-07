@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -95,6 +96,99 @@ class ImportTests(HomeProject, unittest.TestCase):
         code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
         self.assertEqual(code, 0, error)
         self.assertIn('paragraph who:', source)
+
+    def test_import_quotes_and_report_unconverted_spans(self):
+        text = ('# Title\n\nJane Doe, November 5, 2026, asking for you: "Keep this lesson for later use."\n\n'
+                '(Jane Doe, November 6, 2026: "Keep the next lesson too.")\n\n'
+                'Please ask Jane Doe, November 5, 2026: "This quote has six words in it."\n'
+                'A short "one two three four five" quote.\n')
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertTrue(source.startswith('person JaneDoe: "Jane Doe"\n'))
+        self.assertEqual(source.count('person JaneDoe:'), 1)
+        self.assertIn('{{JaneDoe, 2026-11-05, asking for you: "Keep this lesson for later use."}}', source)
+        self.assertIn('({{JaneDoe, 2026-11-06: "Keep the next lesson too."}})', source)
+        self.assertIn('paragraph jane_doe_november_5:', source)
+        self.assertEqual(error, 'Quote left as prose at line 7.\nRender matches.\n')
+        project = self.project(source + '\nteam Root: "Root"\n    home: "."\n    member reader[Guide]: "Reader"\n')
+        code, output, error = self.cli(project, 'sources', '--json')
+        self.assertEqual(code, 0, error)
+        self.assertIn('Jane Doe', output)
+        self.assertEqual([quote['on'] for quote in json.loads(output)['people'][0]['quotes']],
+                         ['2026-11-05', '2026-11-06'])
+
+    def test_quote_boundaries_and_person_order(self):
+        text = ('Ada, January 1, 2026: "First quote."\n'
+                'Done. Jane Doe, November 5, 2026: "Second quote."\n'
+                'Done! Ada, January 2, 2026: "Third quote."\n'
+                'Done? Mary Ann Lee, February 3, 2026, at 10:30: "Fourth quote."\n')
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'workflow', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertTrue(source.startswith('person Ada: "Ada"\nperson JaneDoe: "Jane Doe"\nperson MaryAnnLee: "Mary Ann Lee"\n'))
+        self.assertEqual(source.count('{{'), 4)
+
+    def test_quote_warnings_include_fences_and_each_span(self):
+        text = ('Role.\n\n```text\nJane Doe, November 5, 2026: "one two three four five six"\n```\n\n'
+                '"one two three four five six" and "one two three four five six seven"\n')
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertNotIn('person JaneDoe:', source)
+        self.assertEqual(error, 'Quote left as prose at line 4.\nQuote left as prose at line 7.\n'
+                                'Quote left as prose at line 7.\nRender matches.\n')
+
+    def test_quotes_that_cannot_render_exactly_stay_prose(self):
+        text = ('Jane Doe, November 5, 2026, source session: "one two three four five six"\n'
+                'Jane Doe, November 05, 2026: "one two three four five six"\n'
+                'Jane Doe, February 30, 2026: "one two three four five six"\n')
+        (self.root / 'source.md').write_text(text)
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertNotIn('person JaneDoe:', source)
+        self.assertEqual(error, ''.join(f'Quote left as prose at line {n}.\n' for n in (1, 2, 3)) + 'Render matches.\n')
+
+    def test_unconverted_multiline_quote_reports_its_first_line(self):
+        (self.root / 'source.md').write_text('"one two three\nfour five six"\n')
+        code, _, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(error, 'Quote left as prose at line 1.\nRender matches.\n')
+
+    def test_check_with_quote_in_agent_without_opening(self):
+        (self.root / 'source.md').write_text('## Work\n\nJane Doe, November 5, 2026: "Work carefully."\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertTrue(source.startswith('person JaneDoe: "Jane Doe"\n'))
+        self.assertEqual(error, 'Render matches.\n')
+
+    def test_same_person_key_keeps_first_spelling(self):
+        (self.root / 'source.md').write_text(
+            'Ann Lee, November 5, 2026: "First quote."\n'
+            'AnnLee, November 6, 2026: "This quote has six words in it."\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(source.count('person AnnLee:'), 1)
+        self.assertTrue(source.startswith('person AnnLee: "Ann Lee"\n'))
+        self.assertIn('AnnLee, November 6, 2026: "This quote has six words in it.', source)
+        self.assertEqual(error, 'Quote left as prose at line 2.\nRender matches.\n')
+
+    def test_nested_quote_stays_prose_and_is_listed(self):
+        (self.root / 'source.md').write_text(
+            'Jane Doe, November 5, 2026: "Keep "this" lesson for later use."\n')
+        code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+        self.assertEqual(code, 0, error)
+        self.assertNotIn('person JaneDoe:', source)
+        self.assertEqual(error, 'Quote left as prose at line 1.\nRender matches.\n')
+
+    def test_quote_closing_boundary(self):
+        for ending in ('', ' ', ')', '.', ',', ';', ':', '!', '?'):
+            with self.subTest(ending=ending):
+                (self.root / 'source.md').write_text(
+                    f'Jane Doe, November 5, 2026: "Keep this lesson."{ending}\n')
+                code, source, error = self.cli(self.root, 'import', 'source.md', '--name', 'Guide', '--kind', 'agent', '--check')
+                self.assertEqual(code, 0, error)
+                self.assertIn('{{JaneDoe, 2026-11-05: "Keep this lesson."}}', source)
 
     def test_printed_source_parses(self):
         for kind in ("agent", "workflow"):
