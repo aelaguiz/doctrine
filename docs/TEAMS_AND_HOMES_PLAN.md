@@ -796,9 +796,9 @@ section title. Doing so is `E621`, with the hint: "Move this into the team or me
 write it in words that fit every reader."
 
 **Elsewhere.** `details` is legal in an agent, team, member, workflow, or document that a
-home reads. In a skill package, an emitted document, or an `input` or `output` body it is
-`E620`, and so is any `details` that reaches `python -m doctrine.emit_docs`, which writes no
-companions. Use `doctrine build`.
+home reads. In a skill package, an emitted document, a `skill`, an `input` or `output` body,
+or a document used as an output's `structure:` it is `E620`, and so is any `details` that
+reaches `python -m doctrine.emit_docs`, which writes no companions. Use `doctrine build`.
 
 ```prompt
 abstract agent Waiter:
@@ -910,12 +910,13 @@ told otherwise:
 
 Compiles the selected homes and the levels they load, and writes only the selected homes'
 folders, plus any `_details/` file they point to when the build selects the whole tree. It
-evaluates no `rule` declarations and fails on no budget. An error in a home that wasn't
-selected can't stop it. A level that won't compile prints its error to stderr and is left
-alone. `--target` looks only at targets sharing that target's `output_dir`.
+evaluates no `rule` declarations and fails on no budget. An error in a home, team, or plan
+that wasn't selected can't stop it, and neither can bad settings or a file someone else wrote.
+A level that won't compile prints its error to stderr and is left alone. Shared companions
+are written only by a whole-tree build and aren't compared on a selected one. `--target` looks only at targets sharing that target's `output_dir`.
 
-- Everything else the selected homes load (levels above, shared companions) is compared,
-  never written. A level that differs, or a Doctrine file this build no longer emits, prints
+- The levels above the selected homes are compared, never written. A level that differs, or a
+  Doctrine file this build no longer emits, prints
   `W307 stale level` with its path. A selected home is never a stale level, and a hand-written
   file with no Doctrine header isn't one either. Those files are shared by every session in a
   checkout, so one launch must not rewrite them.
@@ -1219,7 +1220,7 @@ disable = ["W301"]
 | `W304` | unused_value | A `values:` key no text in any home reads |
 | `W305` | unused_quote | A `quote` nothing cites |
 | `W306` | near_budget | A home is at or past `warn_at`, or over budget during `build` |
-| `W307` | stale_level | A level or shared companion a selected home loads differs from this build |
+| `W307` | stale_level | A level a selected home loads differs from this build |
 
 **`W301` method.** Fixed values, no config.
 
@@ -1642,6 +1643,7 @@ fence holding a shorter one, a fence with an info string inside a fence, inline 
 6.3), `test_e620_in_skill_package`, `test_one_pointer_line_per_home`, `test_companion_keeps_headings_and_depth`,
 `test_repeat_headings_get_suffix_anchors`, `test_details_not_in_load`,
 `test_details_in_document_section`, `test_e620_in_input_and_output`, `test_e620_in_emit_docs`,
+`test_e620_in_output_structure`, `test_e620_in_skill`,
 `test_shared_companion_bytes_ignore_consumers` (two members reorder and retitle one inherited
 section, and one `_details/` file results).
 
@@ -1658,6 +1660,8 @@ section, and one `_details/` file results).
 `test_bad_budget_or_external_cannot_stop_build`, `test_build_warns_only_for_selected_homes`,
 `test_broken_unrelated_target_cannot_stop_build`, `test_rule_in_soul_cannot_stop_build`,
 `test_w307_skips_selected_and_hand_written_files`, `test_check_json_is_only_json`,
+`test_broken_team_elsewhere_cannot_stop_build`, `test_malformed_settings_are_e632`,
+`test_binary_level_file_cannot_stop_build`, `test_target_with_no_emit_table_exits_2`,
 `test_unknown_target_with_rev_exits_2`, `test_with_outside_repo_exits_2`,
 `test_e634_heading_from_prose`, `test_e634_names_the_markdown_source`,
 `test_build_writes_only_selected_folders`, `test_build_prints_w307_for_stale_level`,
@@ -1737,7 +1741,7 @@ earlier one passes its gate.
 | --- | --- | --- | --- |
 | 1 | Sol 6.1 at xhigh | 900 | Touches 15 resolvers and every render; several parts |
 | 2 | Sol 6.1 at xhigh | 1,400 | New pass across compile; several parts |
-| 3 | Sol 6.1 at xhigh | 1,850 | Emit, config, CLI; several parts |
+| 3 | Sol 6.1 at xhigh | 1,900 | Emit, config, CLI; several parts |
 | 4 | Sol 6.1 at xhigh | 1,100 | New algorithms: map, diff, near-copy |
 | 5 | Terra 6.1 at xhigh | 400 | One piece from a full spec, with a check that proves it |
 | 6 | Terra 6.1 at xhigh | 200 | One piece from a full spec, with a check that proves it |
