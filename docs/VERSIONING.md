@@ -49,7 +49,7 @@ Markdown-backed declarations and `doctrine import` accept runtime import lines.
 `E654` is retired.
 
 Shared `file` declarations can link to a kept file or write a document body.
-Load JSON adds `on_demand`; diff JSON adds `shared_files`.
+Load JSON adds `on_demand`; diff JSON with `--base-tree` adds `shared_files`.
 Builds and checks report `E636` for missing destinations in compiled files.
 
 Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
