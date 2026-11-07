@@ -8,6 +8,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tests.ws3_support import HomeProject
+from doctrine import model
+from doctrine.compiler import CompilationSession
+from doctrine.diagnostics import DoctrineError
+from doctrine.parser import parse_file
+from doctrine._compiler.home_map import build_home_map
+from doctrine.emit_docs import _build_previous_turn_contexts
+from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
@@ -371,4 +378,207 @@ team T: "Team"
         self.assertIn("E634 compile error: Hand edit in a compiled file", error)
         self.assertIn("`pods/growth/AGENTS.md` was written by hand.", error)
         self.assertEqual(path.read_text(), "Hand text.\n")
+        self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())
+
+    def test_every_compiling_corpus_agent_builds(self):
+        examples = Path(__file__).resolve().parents[1] / "examples"
+        prompts = {
+            case.prompt_path
+            for manifest in examples.glob("*/cases.toml")
+            if int(manifest.parent.name.split("_")[0]) <= 184
+            for case in _load_manifest(manifest)
+            if case.kind not in ("parse_fail", "cli_contract")
+        }
+        count = 0
+        for path in sorted(prompts):
+            try:
+                session = CompilationSession(parse_file(path), evaluate_rules=False)
+            except DoctrineError:
+                continue
+            for unit in session.root_flow.units_by_path.values():
+                for agent in unit.prompt_file.declarations:
+                    if isinstance(agent, model.Agent) and not agent.abstract:
+                        with self.subTest(path=path, agent=agent.name):
+                            try:
+                                roots = tuple(
+                                    (owner, declaration.name)
+                                    for owner in session.root_flow.units_by_path.values()
+                                    for declaration in owner.prompt_file.declarations
+                                    if isinstance(declaration, model.Agent)
+                                    and not declaration.abstract
+                                )
+                                compiled = session.compile_agent_from_unit(
+                                    unit,
+                                    agent.name,
+                                    previous_turn_contexts=_build_previous_turn_contexts(
+                                        session, agent_roots=roots
+                                    ),
+                                )
+                            except DoctrineError:
+                                continue
+                            build_home_map(compiled, ".")
+                            count += 1
+        self.assertGreater(count, 350)
+
+    def test_error_in_unselected_home_cannot_stop_build(self):
+        root = self.project()
+        path = root / "prompts/AGENTS.prompt"
+        path.write_text(path.read_text().replace("Analyst text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "pods/growth/qa")
+        self.assertEqual(code, 0, error)
+        self.assertTrue((root / "pods/growth/qa/AGENTS.md").exists())
+        self.assertFalse((root / "pods/growth/analyst/AGENTS.md").exists())
+        path.write_text(path.read_text().replace("Team text.", "{{agent:missing}}"))
+        code, _, error = self.cli(root, "build", "pods/growth/qa")
+        self.assertEqual(code, 0, error)
+        self.assertIn("E601", error)
+        self.assertFalse((root / "pods/growth/AGENTS.md").exists())
+
+    def test_bad_budget_or_external_cannot_stop_build(self):
+        for budget, settings, diagnostic in (
+            ("        codex: 0\n", "", "E631"),
+            ("", "[tool.doctrine.runtimes.codex]\nlimt = 10\n", "E632"),
+            ("", '[tool.doctrine.runtimes.codex]\nexternal = [{path="missing.md"}]\n', "E633"),
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                source = 'team T: "Team"\n    home: "t"\n    role: "Test."\n'
+                root = self.project(
+                    source + ("    budget:\n" + budget if budget else ""), settings=settings
+                )
+                code, output, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 0, error)
+                self.assertIn(diagnostic, error)
+                self.assertIn("built 1 home", output)
+                self.assertTrue((root / "t/AGENTS.md").is_file())
+                self.assertNotIn("W306", error)
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+            runtimes='["codex"]',
+            settings=('[tool.doctrine.runtimes.claude]\nexternal = [{path="absent.md"}]\n'),
+        )
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("E633", error)
+
+    def test_build_warns_only_for_selected_homes(self):
+        root = self.project()
+        path = root / "pyproject.toml"
+        path.write_text(path.read_text() + "[tool.doctrine.runtimes.codex]\nlimit = 10\n")
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertIn("W306 near budget: pods/growth/qa loads", error)
+        self.assertNotIn("W306 near budget: pods/growth loads", error)
+        self.assertNotIn("W306 near budget: pods/growth/analyst loads", error)
+
+    def test_broken_unrelated_target_cannot_stop_build(self):
+        root = self.project()
+        path = root / "pyproject.toml"
+        path.write_text(
+            path.read_text() + "\n[[tool.doctrine.emit.targets]]\n"
+            'name = "broken"\nentrypoint = "absent/AGENTS.prompt"\n'
+            'output_dir = "other"\n'
+        )
+        with patch("doctrine.home_commands.CompilationSession", wraps=CompilationSession) as make:
+            code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(make.call_count, 1)
+
+    def test_rule_in_soul_cannot_stop_build(self):
+        root = self.project("import worker\n")
+        package = root / "prompts/worker"
+        package.mkdir()
+        (package / "AGENTS.prompt").write_text('export agent A:\n    role: "Test."\n')
+        (package / "SOUL.prompt").write_text("""rule HasWork: "Has Work"
+    scope:
+        agent_tag: A
+    assertions:
+        requires declare work
+    message: "Keep work."
+agent A:
+    role: "Soul."
+""")
+        code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 0, error)
+        self.assertIn("Soul.", (root / "worker/SOUL.md").read_text())
+        code, _, error = self.cli(root, "check", "--target", "homes")
+        self.assertEqual(code, 1)
+        self.assertIn("RULE005", error)
+
+    def test_w307_skips_selected_and_hand_written_files(self):
+        root = self.project()
+        path = root / "AGENTS.md"
+        path.write_text("Hand written.\n")
+        code, _, error = self.cli(root, "build", "pods/growth", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("W307", error)
+        self.assertEqual(path.read_text(), "Hand written.\n")
+
+    def test_check_json_is_only_json(self):
+        root = self.project()
+        code, output, error = self.cli(root, "build", ".", "--check", "--json")
+        self.assertEqual(code, 1, error)
+        result = json.loads(output)
+        self.assertEqual(set(result), {"format_version", "paths"})
+        self.assertEqual(result["format_version"], 1)
+        self.assertTrue(result["paths"])
+        for path in result["paths"]:
+            self.assertEqual(set(path), {"path", "state"})
+            self.assertEqual(path["state"], "missing")
+        self.assertFalse((root / "HOMES.contract.json").exists())
+
+    def test_unknown_target_with_rev_exits_2(self):
+        root = self.project()
+        self.git_project(root)
+        for verb in ("build", "check", "load"):
+            code, _, error = self.cli(root, verb, "--rev", "HEAD", "--target", "nope")
+            self.assertEqual(code, 2)
+            self.assertEqual(error, "Unknown target: nope\n")
+
+    def test_with_outside_repo_exits_2(self):
+        root = self.project()
+        self.git_project(root)
+        for verb in ("build", "check", "load"):
+            code, _, error = self.cli(root, verb, "--rev", "HEAD", "--with", "../outside.prompt")
+            self.assertEqual(code, 2)
+            self.assertIn("outside the repository", error)
+
+    def test_e634_heading_from_prose(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    role: """Role.\n\n## Prose\n\nText.\n"""\n'
+        )
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        path = root / "t/AGENTS.md"
+        path.write_text(path.read_text().replace("Text.", "Hand edit."))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("\n  - Prose\n", error)
+        self.assertNotIn("Prose:", error)
+
+    def test_e634_names_the_markdown_source(self):
+        root = self.project(
+            'abstract agent Craft from "craft.md"\n'
+            'team T: "Team"\n    home: "t"\n    member qa[Craft]: "QA"\n'
+        )
+        (root / "craft.md").write_text("# Craft\nRole.\n\n## Work\nText.\n")
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        path = root / "t/qa/AGENTS.md"
+        path.write_text(path.read_text().replace("Text.", "Hand edit."))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("- Work: Craft at craft.md:4", error)
+
+    def test_team_name_selects_its_members(self):
+        for selector in ("GrowthPod", "pods/growth"):
+            with self.subTest(selector=selector):
+                root = self.project()
+                code, _, error = self.cli(root, "build", selector)
+                self.assertEqual(code, 0, error)
+                for home in ("pods/growth", "pods/growth/qa", "pods/growth/analyst"):
+                    self.assertTrue((root / home / "AGENTS.md").is_file())
+                contract = json.loads((root / "pods/growth/TEAM.contract.json").read_text())
+                self.assertEqual([item["key"] for item in contract["members"]], ["qa", "analyst"])
+                self.assertFalse((root / "HOMES.contract.json").exists())
+        root = self.project()
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 0, error)
         self.assertFalse((root / "pods/growth/TEAM.contract.json").exists())

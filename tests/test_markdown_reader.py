@@ -118,3 +118,16 @@ class MarkdownReaderTests(unittest.TestCase):
         text = '[case](cases.md#today)'
         rendered = render_markdown(self.markdown('Role.\n## Work\n' + text + '\n').compile_agent('A'))
         self.assertIn(text, rendered)
+
+    def test_footnotes_and_prose_keep_their_text(self):
+        text = '[^1]: See the old guide.\n[prose]: See the old guide.\n[ref]: guide.md "Guide"'
+        files, _ = self.rebased(text)
+        body = files['pods/core/qa/AGENTS.md'].decode()
+        self.assertIn('[^1]: See the old guide.', body)
+        self.assertIn('[prose]: See the old guide.', body)
+        self.assertIn('[ref]: ../../../shared/guide.md "Guide"', body)
+
+    def test_stray_backticks_stop_at_a_blank_line(self):
+        text = 'A stray ` here.\n\n[case](cases.md)\n\nAnother ` here.'
+        files, _ = self.rebased(text)
+        self.assertIn(b'[case](../../../shared/cases.md)', files['pods/core/qa/AGENTS.md'])

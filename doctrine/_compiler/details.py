@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import fields, is_dataclass, replace
 from pathlib import PurePosixPath
 
+from doctrine import model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledCodeBlock, CompiledGuardBlock
@@ -10,11 +11,10 @@ from doctrine.renderer import render_readable_block
 
 
 def reject_details(value, surface):
-    if isinstance(value, CompiledSection) and value.kind == "details":
+    if isinstance(value, (CompiledSection, model.ReadableBlock)) and value.kind == "details":
         raise compile_error(
-            code="E620", summary="Details outside a home",
-            detail=f"`details` can't be used in {surface}. "
-                   "It only works in text that lands in a home.",
+            code="E620", summary="Details not allowed here",
+            detail=f"`details` can't be used in {surface}.",
         )
     if isinstance(value, tuple):
         for item in value:
@@ -89,7 +89,8 @@ def validate_shared_details(value):
             for item in value:
                 read(item, companion)
         elif is_dataclass(value):
-            if isinstance(value, CompiledSection) and value.kind == "details" and value.origin:
+            if (isinstance(value, CompiledSection) and value.kind == "details"
+                    and value.origin):
                 companion = value.origin.companion or companion
                 read(value.origin.headings, companion)
             for field in fields(value):

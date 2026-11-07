@@ -9,6 +9,8 @@ import unittest
 from pathlib import Path
 
 from doctrine.homes import HEADER
+from doctrine.emit_common import load_emit_targets
+from doctrine.emit_docs import emit_target
 from tests.ws3_support import HomeProject
 
 
@@ -90,18 +92,33 @@ class HomeTreeTests(HomeProject, unittest.TestCase):
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.assertEqual(before, {path: path.lstat().st_mtime_ns for path in before})
 
-    def test_files_outside_team_tree_unchanged(self):
-        root = self.project(
-            (
-                'team T: "Team"\n    home: "t"\n    role: "Team text."\nagent A:\n    '
-                'role: "Ordinary text."\n'
-            )
-        )
-        self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        ordinary = root / "a/AGENTS.md"
-        self.assertEqual(ordinary.read_bytes(), b"Ordinary text.\n")
-        self.assertEqual(self.cli(root, "build", ".")[0], 0)
-        self.assertEqual(ordinary.read_bytes(), b"Ordinary text.\n")
+    def test_emit_docs_output_unchanged(self):
+        root = self.project('agent A:\n    role: "Ordinary text."\n')
+        emit_target(load_emit_targets(root / "pyproject.toml")["homes"])
+        self.assertEqual((root / "a/AGENTS.md").read_bytes(), b"Ordinary text.\n")
+
+    def test_plain_agent_gets_header_and_guard(self):
+        root = self.project('agent A:\n    role: "Ordinary text."\n')
+        self.assertEqual(self.cli(root, "build", "--target", "homes")[0], 0)
+        path = root / "a/AGENTS.md"
+        self.assertIsNotNone(HEADER.match(path.read_text()))
+        path.write_text("Hand edit.\n")
+        code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 1)
+        self.assertIn("E634", error)
+        self.assertEqual(path.read_text(), "Hand edit.\n")
+
+    def test_written_files_follow_umask(self):
+        root = self.project()
+        previous = os.umask(0o022)
+        try:
+            code, _, error = self.cli(root, "build", ".")
+        finally:
+            os.umask(previous)
+        self.assertEqual(code, 0, error)
+        for path in root.rglob("*"):
+            if path.is_file() and not path.is_symlink() and path.suffix in (".md", ".json"):
+                self.assertEqual(path.stat().st_mode & 0o777, 0o644, path)
 
     def test_contract_files_have_no_guard(self):
         root = self.project()

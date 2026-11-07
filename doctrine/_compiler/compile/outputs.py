@@ -4,6 +4,7 @@ import re
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._compiler.details import reject_details
 from doctrine._compiler.naming import _humanize_key
 from doctrine._compiler.output_diagnostics import output_compile_error, output_related_site
 from doctrine._compiler.resolved_types import (
@@ -28,6 +29,7 @@ class CompileOutputsMixin:
     """Input and output surface compile helpers for CompilationContext."""
 
     def _compile_input_decl(self, decl: model.InputDecl, *, unit: IndexedUnit) -> CompiledSection:
+        reject_details(decl.items, "an input body")
         scalar_items, _section_items, extras = self._split_record_items(
             decl.items,
             scalar_keys={"source", "shape", "requirement"},
@@ -154,6 +156,7 @@ class CompileOutputsMixin:
         review_semantics: ReviewSemanticContext | None = None,
         route_semantics: RouteSemanticContext | None = None,
     ) -> CompiledSection:
+        reject_details(decl.items, "an output body")
         self._validate_output_declaration_structure(decl, unit=unit)
         self._validate_output_guard_sections(
             decl,
@@ -1262,6 +1265,7 @@ class CompileOutputsMixin:
                 render_profile=render_profile,
             )
             for line in lines
+            if not isinstance(line, model.ReadableBlock) or line.kind != "details"
         ]
         text = " ".join(line.strip() for line in rendered if line.strip()).strip()
         return text or None

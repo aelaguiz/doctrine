@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import unittest
 
 from doctrine.compiler import CompilationSession
@@ -230,3 +232,72 @@ team T: "Team"
         text = (root / "_details/child.md").read_text()
         self.assertIn("## Work\n\n### Child\n\n#### Inner\n\nLong case.", text)
         self.assertFalse((root / "_details/base.md").exists())
+
+    def test_details_in_document_section(self):
+        root = self.project("""document D: "Document"
+    section work: "Work"
+        "Brief."
+        details:
+            "Long case."
+input I: "Input"
+    source: Prompt
+    shape: MarkdownDocument
+    requirement: Required
+    structure: D
+agent A:
+    role: "Test."
+    inputs: "Inputs"
+        I
+""")
+        code, _, error = self.cli(root, "build", "--target", "homes")
+        self.assertEqual(code, 0, error)
+        self.assertIn("Long case.", (root / "_details/d.md").read_text())
+        self.assertNotIn("Long case.", (root / "a/AGENTS.md").read_text())
+
+    def test_e620_in_input_and_output(self):
+        for kind, surface, field in (("input", "input", "inputs"), ("output", "output", "outputs")):
+            with self.subTest(kind=kind):
+                root = self.project(f"""{kind} Contract: "Contract"
+    details:
+        "Long case."
+agent A:
+    role: "Test."
+    {field}: "Contract"
+        Contract
+""")
+                code, _, error = self.cli(root, "build", "--target", "homes")
+                self.assertEqual(code, 1)
+                self.assertIn("E620 compile error: Details not allowed here", error)
+                self.assertIn(f"`details` can't be used in an {surface} body.", error)
+
+    def test_e620_in_emit_docs(self):
+        for soul in (False, True):
+            with self.subTest(soul=soul):
+                source = """agent A:
+    role: "Test."
+    work: "Work"
+        details:
+            "Long case."
+"""
+                root = self.project("import worker\n" if soul else source)
+                if soul:
+                    package = root / "prompts/worker"
+                    package.mkdir()
+                    (package / "AGENTS.prompt").write_text('export agent A:\n    role: "Test."\n')
+                    (package / "SOUL.prompt").write_text(source)
+                process = subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "doctrine.emit_docs",
+                        "--pyproject",
+                        str(root / "pyproject.toml"),
+                        "--target",
+                        "homes",
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(process.returncode, 1, process.stderr)
+                self.assertIn("E620 compile error: Details not allowed here", process.stderr)
+                self.assertFalse((root / ("worker" if soul else "a") / "AGENTS.md").exists())

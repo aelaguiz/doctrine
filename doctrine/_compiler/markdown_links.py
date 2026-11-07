@@ -9,14 +9,22 @@ from doctrine._compiler.markdown_reader import fenced_lines
 
 
 def rebase_markdown(text, folder):
-    visible = "".join(" " * len(line) if inside else line
-                      for line, inside in fenced_lines(text.splitlines(keepends=True)))
-    visible = re.sub(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)",
-                     lambda match: " " * len(match[0]), visible, flags=re.S)
+    visible = "".join(
+        re.sub(r"[^\n]", " ", line) if inside else line
+        for line, inside in fenced_lines(text.splitlines(keepends=True))
+    )
+    visible = re.sub(
+        r"(?<![\\`])(`+)(?!`)((?:(?!\n[ \t]*\n).)*?)(?<!`)\1(?!`)",
+        lambda match: " " * len(match[0]),
+        visible,
+        flags=re.S,
+    )
     destination = r"(?:<([^<>\n]+)>|((?:\\.|[^()\s\\]|\((?:\\.|[^()\\])*\))+))"
     patterns = (
         r"(?<!\\)\]\([ \t\n]*" + destination + r"\s*(?:[\"'][^\"']*[\"']\s*)?\)",
-        r"^ {0,3}\[(?:\\.|[^\]\\\n])+\]:[ \t\n]*" + destination,
+        r"^ {0,3}\[(?!\^)(?:\\.|[^\]\\\n])+\]:[ \t\n]*"
+        + destination
+        + r"[ \t]*(?:[\"'][^\"'\n]*[\"'][ \t]*)?$",
     )
     changes = []
     for pattern in patterns:

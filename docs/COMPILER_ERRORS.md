@@ -344,7 +344,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. |
 | `E603` | Value cycle | `Values read each other:` followed by the full cycle, such as `a -> b -> a`. |
 | `E604` | Value sets a fact | `values:` sets a key the compiler supplies. |
-| `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is invalid, a typed agent field is on a team, or a team uses one key twice. |
+| `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |
 | `E608` | Value set twice | `values:` sets one key twice in the same body, in one block or across two. |
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
 | `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
@@ -356,7 +356,7 @@ shows the canonical formatted shape for one shipped compile error.
 | Code | Summary | When |
 | --- | --- | --- |
 | `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
-| `E620` | Details outside a home | Details are in a skill package or an emitted document. |
+| `E620` | Details not allowed here | Details are in an input or output body, a skill package, an emitted document, or `python -m doctrine.emit_docs`. |
 | `E621` | Shared details read one agent's words | A shared companion reads an agent or team value, in text or a title. |
 | `E630` | Over load budget | A check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |

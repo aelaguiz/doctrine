@@ -75,7 +75,7 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
                 parent["keys"][key] = number
                 node = {
                     "key": key, "title": literal(match[2]), "lines": [],
-                    "children": [], "keys": {},
+                    "children": [], "keys": {}, "span": model.SourceSpan(number, 1),
                 }
                 parent["children"].append(node)
                 stack.append(node)
@@ -85,7 +85,8 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
     def body(node):
         prose = (literal("\n".join(node["lines"]).strip("\n")),) if node["lines"] and any(node["lines"]) else ()
         children = tuple(
-            model.LocalSection(key=child["key"], title=child["title"], items=body(child))
+            model.LocalSection(key=child["key"], title=child["title"],
+                               items=body(child), source_span=child["span"])
             for child in node["children"]
         )
         return (*prose, *children)
@@ -95,7 +96,8 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
     sections = tuple(item for item in items if not isinstance(item, str))
     if isinstance(declaration, model.Agent):
         fields = tuple(
-            model.AuthoredSlotField(key=section.key, value=model.WorkflowBody(
+            model.AuthoredSlotField(
+                key=section.key, source_span=section.source_span, value=model.WorkflowBody(
                 title=section.title,
                 preamble=tuple(item for item in section.items if isinstance(item, str)),
                 items=tuple(item for item in section.items if not isinstance(item, str)),

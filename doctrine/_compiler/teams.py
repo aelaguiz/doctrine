@@ -42,8 +42,15 @@ def validate_team(agent, *, unit):
             raise error(f"Abstract team `{agent.name}` can't have `home:`.", agent)
         if not agent.abstract and agent.home is None:
             raise error(f"Team `{agent.name}` needs `home:`.", agent)
-        if agent.home is not None and (agent.home.startswith("/") or ".." in agent.home.split("/") or agent.home.endswith("/")):
-            raise error(f'`home: "{agent.home}"` must be a relative path with no `..` and no trailing `/`.', agent)
+        if agent.home is not None and (
+            PurePosixPath(agent.home).is_absolute()
+            or ".." in PurePosixPath(agent.home).parts
+            or str(PurePosixPath(agent.home)) != agent.home
+        ):
+            raise error(
+                f'`home: "{agent.home}"` must be a plain relative path, such as `pods/growth`.',
+                agent,
+            )
         keys = set()
         for field in agent.fields:
             key = field[0] if isinstance(field, tuple) else "role" if isinstance(field, (model.RoleScalar, model.RoleBlock)) else getattr(field, "key", None)

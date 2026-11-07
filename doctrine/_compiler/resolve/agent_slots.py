@@ -590,6 +590,7 @@ class ResolveAgentSlotsMixin:
 
         preamble: list[model.ProseLine] = [f"Emit {output_decl.title}."]
         return ResolvedWorkflowBody(
+            origin=source_origin(self, decl, unit, (), decl.source_span),
             title=decl.body.title,
             preamble=tuple(preamble),
             items=(),
@@ -638,6 +639,7 @@ class ResolveAgentSlotsMixin:
             )
 
         return ResolvedWorkflowBody(
+            origin=source_origin(self, decl, unit, (), decl.source_span),
             title=decl.body.title,
             preamble=tuple(preamble),
             items=(),

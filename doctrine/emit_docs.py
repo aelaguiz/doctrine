@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.details import reject_details
 from doctrine.compiler import CompilationSession
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
@@ -192,7 +193,9 @@ def emit_target(
         compiled_agents,
         strict=True,
     ):
-        for path, content in runtime_files(plan, compiled, target).items():
+        for path, content in runtime_files(
+            plan, compiled, target, surface="`python -m doctrine.emit_docs`"
+        ).items():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
             emitted_paths.append(path)
@@ -200,16 +203,24 @@ def emit_target(
     return tuple(emitted_paths)
 
 
-def runtime_files(plan, compiled, target):
+def runtime_files(plan, compiled, target, *, evaluate_rules=True, surface=None):
+    if surface is not None:
+        reject_details(compiled, surface)
     files = {plan.markdown_path: render_markdown(compiled).encode()}
     final_output = compiled.final_output
-    if final_output is not None and final_output.generated_schema_relpath is not None and final_output.lowered_schema is not None:
-        files[plan.markdown_path.parent / final_output.generated_schema_relpath] = (json.dumps(final_output.lowered_schema, indent=2) + "\n").encode()
+    if (final_output is not None and final_output.generated_schema_relpath is not None
+            and final_output.lowered_schema is not None):
+        files[plan.markdown_path.parent / final_output.generated_schema_relpath] = (
+            json.dumps(final_output.lowered_schema, indent=2) + "\n").encode()
     contract = _final_output_contract_payload(plan=plan, compiled=compiled, target=target)
     if contract is not None:
-        files[plan.markdown_path.parent / FINAL_OUTPUT_CONTRACT_FILENAME] = (json.dumps(contract, indent=2) + "\n").encode()
+        files[plan.markdown_path.parent / FINAL_OUTPUT_CONTRACT_FILENAME] = (
+            json.dumps(contract, indent=2) + "\n").encode()
     if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
-        files[plan.soul_output_path] = render_markdown(_compile_runtime_package_soul(plan, target=target)).encode()
+        soul = _compile_runtime_package_soul(plan, target=target, evaluate_rules=evaluate_rules)
+        if surface is not None:
+            reject_details(soul, surface)
+        files[plan.soul_output_path] = render_markdown(soul).encode()
     for bundled_file in plan.bundled_files:
         files[plan.markdown_path.parent / bundled_file.path] = bundled_file.content
     return files
@@ -760,6 +771,7 @@ def _compile_runtime_package_soul(
     plan: RuntimeEmitPlan,
     *,
     target: EmitTarget,
+    evaluate_rules=True,
 ):
     if plan.soul_prompt_path is None:
         raise CompileError.from_parts(
@@ -769,7 +781,9 @@ def _compile_runtime_package_soul(
             hints=("This is a compiler bug, not a prompt authoring error.",),
         )
     prompt_file = parse_file(plan.soul_prompt_path)
-    session = CompilationSession(prompt_file, project_config=target.project_config)
+    session = CompilationSession(
+        prompt_file, project_config=target.project_config, evaluate_rules=evaluate_rules
+    )
     concrete_agents = tuple(
         agent_name
         for agent_name, agent in session.root_flow.agents_by_name.items()

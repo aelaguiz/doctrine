@@ -235,10 +235,14 @@ team T: "Team"
         self.assertIn('| QA |', render_markdown(session.compile_agent('T.qa')))
 
     def test_team_home_and_field_errors(self):
+        for home in ("./pods/growth", "pods//growth", "pods/growth/", ""):
+            with self.subTest(home=home), self.assertRaises(CompileError) as caught:
+                self.session(f'team T: "Team"\n    home: "{home}"\n').compile_agent("T")
+            self.assertEqual(caught.exception.code, "E606")
         for source, detail in (
-            ('team T: "Team"\n    home: "../t"\n', '`home: "../t"` must be a relative path with no `..` and no trailing `/`.'),
-            ('team T: "Team"\n    home: "/t"\n', '`home: "/t"` must be a relative path with no `..` and no trailing `/`.'),
-            ('team T: "Team"\n    home: "t/"\n', '`home: "t/"` must be a relative path with no `..` and no trailing `/`.'),
+            ('team T: "Team"\n    home: "../t"\n', '`home: "../t"` must be a plain relative path, such as `pods/growth`.'),
+            ('team T: "Team"\n    home: "/t"\n', '`home: "/t"` must be a plain relative path, such as `pods/growth`.'),
+            ('team T: "Team"\n    home: "t/"\n', '`home: "t/"` must be a plain relative path, such as `pods/growth`.'),
             ('abstract team T:\n    home: "t"\n', "Abstract team `T` can't have `home:`."),
             ('team T: "Team"\n    home: "t"\n    inputs: "Inputs"\n        "Wrong."\n', "Team `T` can't hold `inputs`. A team takes `role`, `values`, `budget`, slots, and members."),
             ('team T: "Team"\n    home: "t"\n    qa: "Work"\n        "Work."\n    member qa: "QA"\n        role: "QA."\n', 'Team `T` uses key `qa` twice.'),

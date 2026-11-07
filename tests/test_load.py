@@ -305,3 +305,65 @@ team T[Template]: "Team"
                 self.assertEqual(code, 1)
                 self.assertIn("E631 compile error: Invalid budget", error)
                 self.assertIn(detail, error)
+
+    def test_role_budget_is_a_default(self):
+        source = """abstract agent Role:
+    role: "Test."
+    budget:
+        codex: 1000
+abstract agent Parent[Role]:
+    inherit *
+    budget:
+        codex: 1500
+team T: "Team"
+    home: "t"
+    budget:
+        codex: 2000
+    member qa[Parent]: "QA"
+"""
+        root = self.project(source)
+        self.assertEqual(self.loads(root)[1]["runtimes"]["codex"]["limit"], 2000)
+        path = root / "prompts/AGENTS.prompt"
+        path.write_text(source.replace("    budget:\n        codex: 2000\n", ""))
+        self.assertEqual(self.loads(root)[1]["runtimes"]["codex"]["limit"], 1500)
+        path.write_text(path.read_text() + "        budget:\n            codex: 2500\n")
+        self.assertEqual(self.loads(root)[1]["runtimes"]["codex"]["limit"], 2500)
+
+        root = self.project("""abstract team OuterRole:
+    budget:
+        codex: 6000
+abstract team TeamRole:
+    budget:
+        codex: 2000
+abstract agent Role:
+    role: "Test."
+    budget:
+        codex: 1000
+team Root[OuterRole]: "Root"
+    home: "."
+team T[TeamRole]: "Team"
+    home: "t"
+    member qa[Role]: "QA"
+""")
+        loads = {home["home"]: home for home in self.loads(root)}
+        self.assertEqual(loads["t"]["runtimes"]["codex"]["limit"], 2000)
+        self.assertEqual(loads["t/qa"]["runtimes"]["codex"]["limit"], 2000)
+
+    def test_unknown_runtime_setting_is_e632(self):
+        root = self.project(SOURCE, settings="[tool.doctrine.runtimes.codex]\nlimt = 10\n")
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1)
+        self.assertIn("E632", error)
+        self.assertIn("limt", error)
+
+    def test_bad_reserve_is_e632(self):
+        root = self.project(
+            SOURCE,
+            settings=(
+                '[tool.doctrine.runtimes.codex]\nexternal = [{path="absent.md", reserve="many"}]\n'
+            ),
+        )
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1)
+        self.assertIn("E632", error)
+        self.assertIn("reserve", error)

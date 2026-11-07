@@ -13,17 +13,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Team targets emit home trees, runtime files, and `TEAM.contract.json`.
   Whole builds record paths in `HOMES.contract.json` and remove obsolete files.
   A record with a merge conflict counts as missing and is rebuilt.
-  Headers guard hand edits. Equal bytes skip writes; writes are atomic.
+  Every built Markdown file guards hand edits, including plain agents.
+  Equal bytes skip writes; atomic writes follow the umask. Legacy emit output
+  stays the same and rejects details without companions.
 - `details` moves longer cases into local or shared companions. A paragraph
   can hold details. Shared companions keep their owner's words and headings.
 - Runtime settings and `budget:` measure externals plus each loaded level.
   `build` writes without running rules or failing budgets; `check` judges them.
+  Selected launches compile only their homes and shared levels. Bad budgets,
+  runtime settings, and missing externals cannot stop a build. Role budgets
+  serve as defaults. Unknown runtime settings fail loudly.
 - `load` reports team and member homes, loaded files, source sizes, and drop
   reasons. Nested entries count each line once. `check --json` returns findings.
 - The `doctrine` and `doctrine-agents` scripts share the CLI. Build selectors,
   `--check`, `--force`, `--out`, `--rev`, and `--with` control home builds.
+  A team name selects the team and its members; a member build writes no contract.
 - Relative links from Markdown-backed declarations follow their text into
-  each home. Rename `budget` and `details` keys where their new forms start.
+  each home. Footnotes and prose keep their text. Hand-edit reports name
+  Markdown sources and heading lines. `build --check --json` prints only JSON.
+  Rename `budget` and `details` keys where their new forms start.
 
 
 ### Values and teams (6.0.0; language 6.0)
