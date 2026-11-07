@@ -434,8 +434,9 @@ member_body: _INDENT agent_field+ _DEDENT
 Rules:
 
 - A concrete team needs `home:`. An abstract team may not have one. Breaking either is `E606`.
-- `home:` is a relative POSIX path from the emit output root. `.` means the root. It may
-  not be absolute, hold `..`, or end in `/`. Breaking this is `E606`.
+- `home:` is a plain relative POSIX path from the emit output root. `.` means the root. It
+  must equal its own normal form, so `./pods`, `pods//growth`, `pods/growth/`, and an empty
+  string are out, and it may not be absolute or hold `..`. Breaking this is `E606`.
 - The tree comes from the paths. Team A is above team B when A's home is a path prefix
   of B's. No declaration names its parent level.
 - A target's tree is the concrete teams in its entrypoint's flow, which is every `.prompt`
@@ -689,8 +690,9 @@ composition, so it is inlined.
 `sha256` is the first 12 hex digits of the hash of the file's bytes after the header.
 `source` is the file of the team or member, relative to the pyproject folder. Claude Code
 strips the comment before injecting the file. Companions (`DETAILS.md`, `_details/*.md`)
-carry the same header, with their owner's source. Files outside a team tree get no header,
-so today's output does not change.
+carry the same header, with their owner's source. `doctrine build` puts this header on every
+Markdown file it writes, a plain agent's included, so the guard covers them all. The
+`python -m doctrine.emit_*` commands write what they always did.
 
 The header makes each file its own receipt, so the guard below works the same whether
 compiled files are committed or built at launch.
@@ -738,8 +740,8 @@ loading, because the runtimes read whatever is in the folder. A whole-tree build
 obsolete files after the guard passes, and leaves their folders alone. Scanning the tree
 instead would be too slow for a commit tool to run in a large repository.
 
-**Atomic writes.** Write a temp file in the same folder, then `os.replace`, so nobody reads
-half a file. Skip the write when the bytes already match. Builds of one source write
+**Atomic writes.** Write a temp file in the same folder, created the ordinary way so the
+user's umask sets its mode, then `os.replace`, so nobody reads half a file. Skip the write when the bytes already match. Builds of one source write
 identical bytes, so 16 launches at once are safe. Builds from different sources, such as a
 launch from `HEAD` beside an author's working tree, can leave one home with files from both
 until the next build, and `--check` shows it. There is no lock, because a launch must never
@@ -793,8 +795,10 @@ points at it, so it may not read `{{agent:...}}` or `{{team:...}}`. That include
 section title. Doing so is `E621`, with the hint: "Move this into the team or member, or
 write it in words that fit every reader."
 
-**Elsewhere.** `details` is legal only in text that lands in a home. In a skill package or
-an emitted document it is `E620`.
+**Elsewhere.** `details` is legal in an agent, team, member, workflow, or document that a
+home reads. In a skill package, an emitted document, or an `input` or `output` body it is
+`E620`, and so is any `details` that reaches `python -m doctrine.emit_docs`, which writes no
+companions. Use `doctrine build`.
 
 ```prompt
 abstract agent Waiter:
@@ -840,14 +844,17 @@ budget_item: CNAME ":" SIGNED_NUMBER _NL?
 `budget_block` joins `agent_field` and `team_item`. `budget` joins the reserved keys. A key
 is a runtime name.
 
-The limit for a home is the first found of: its own `budget:`, its team's, teams above by
-folder, the runtime's `limit`. A budget that is not a positive integer, exceeds the
-runtime's `limit`, or names an unknown runtime is `E631`.
+The limit for a home follows the same order as values: its own `budget:`, its team's, teams
+above by folder, its parents' as defaults, nearest first, then the runtime's `limit`. A budget
+that is not a positive integer, exceeds the runtime's `limit`, or names an unknown runtime is
+`E631`.
 
 `doctrine check` judges budgets. At or past `warn_at` of the limit is `W306`. Past the
 limit is `E630`, or `W306` when the runtime sets `over = "warn"`. `doctrine build` never
-fails on a budget. It prints the same finding as `W306` and writes the file, because a team
-that can't start is worse than one over budget. The failure belongs on the author's change.
+fails on a budget. It prints the same finding as `W306` for the homes it selected and writes
+the file, because a team that can't start is worse than one over budget. A bad budget, a bad
+runtime setting, or a missing external is the same: `build` prints the error to stderr, skips
+the budget report, and keeps going. The failure belongs on the author's change.
 
 `E630` reads:
 
@@ -900,14 +907,17 @@ told otherwise:
 
 **`doctrine build [SELECTOR...] [--out DIR] [--check] [--force] [--rev REV] [--with PATH]`**
 
-Compiles the selected homes and writes only those homes' folders, plus any `_details/` file
-they point to when the build selects the whole tree. It evaluates no `rule` declarations
-and fails on no budget.
+Compiles the selected homes and the levels they load, and writes only the selected homes'
+folders, plus any `_details/` file they point to when the build selects the whole tree. It
+evaluates no `rule` declarations and fails on no budget. An error in a home that wasn't
+selected can't stop it. A level that won't compile prints its error to stderr and is left
+alone. `--target` looks only at targets sharing that target's `output_dir`.
 
 - Everything else the selected homes load (levels above, shared companions) is compared,
-  never written. A level that differs, or that this build no longer emits, prints
-  `W307 stale level` with its path. Those files are shared by every session in a checkout,
-  so one launch must not rewrite them.
+  never written. A level that differs, or a Doctrine file this build no longer emits, prints
+  `W307 stale level` with its path. A selected home is never a stale level, and a hand-written
+  file with no Doctrine header isn't one either. Those files are shared by every session in a
+  checkout, so one launch must not rewrite them.
 - `doctrine build .` selects everything, so it writes everything and removes obsolete files
   (section 6.2).
 - `--out DIR` writes under `DIR` instead of the target's `output_dir`, with its own record.
@@ -915,7 +925,8 @@ and fails on no budget.
   and exits 1 if any is. Output is deterministic, so a clean exit means the files match the
   source. `obsolete` needs the whole tree, so only a whole-tree `--check` prints it.
 - With `--json` it prints `{"format_version": 1, "written": [...], "unchanged": [...],
-  "removed": [...], "stale_levels": [...]}`.
+  "removed": [...], "stale_levels": [...]}`. With `--check --json` it prints only
+  `{"format_version": 1, "paths": [{"path": "...", "state": "stale"}]}`.
 
 Prints `built <N> homes, <M> files changed` on success, with `home` and `file` singular at
 1. A symlink, a contract, and a removed file each count as a file.
@@ -1611,14 +1622,16 @@ hints each kind gets.
 `test_relative_link_rebased_per_home`, `test_anchor_kept_on_rebased_link`,
 `test_scheme_root_and_anchor_links_left_alone`, `test_links_in_code_left_alone`,
 `test_reference_definition_rebased`, `test_out_dir_keeps_rebased_bytes`,
-`test_no_emit_target_keeps_links_as_written`, `test_fence_rules_follow_commonmark` (a longer
+`test_no_emit_target_keeps_links_as_written`, `test_footnotes_and_prose_keep_their_text`,
+`test_stray_backticks_stop_at_a_blank_line`, `test_fence_rules_follow_commonmark` (a longer
 fence holding a shorter one, a fence with an info string inside a fence, inline backticks),
 `test_reserved_heading_gets_final_underscore`.
 
 **`tests/test_home_tree.py`**: `test_claude_md_is_relative_symlink`,
 `test_header_hash_matches_body`, `test_emit_is_deterministic` (two builds, identical bytes),
 `test_no_import_lines_emitted`, `test_concurrent_builds_are_safe` (8 processes),
-`test_write_skipped_when_bytes_match` (mtime kept), `test_files_outside_team_tree_unchanged`,
+`test_write_skipped_when_bytes_match` (mtime kept), `test_emit_docs_output_unchanged`,
+`test_plain_agent_gets_header_and_guard`, `test_written_files_follow_umask`,
 `test_contract_files_have_no_guard`, `test_claude_md_link_left_alone`,
 `test_real_claude_md_goes_through_guard`, `test_other_claude_md_link_is_e634`,
 `test_record_lists_every_emitted_path_sorted`, `test_missing_record_means_nothing_obsolete`,
@@ -1627,16 +1640,25 @@ fence holding a shorter one, a fence with an info string inside a fence, inline 
 **`tests/test_details.py`**: `test_owner_table` (one test per row of the table in section
 6.3), `test_e620_in_skill_package`, `test_one_pointer_line_per_home`, `test_companion_keeps_headings_and_depth`,
 `test_repeat_headings_get_suffix_anchors`, `test_details_not_in_load`,
+`test_details_in_document_section`, `test_e620_in_input_and_output`, `test_e620_in_emit_docs`,
 `test_shared_companion_bytes_ignore_consumers` (two members reorder and retitle one inherited
 section, and one `_details/` file results).
 
 **`tests/test_load.py`**: `test_claude_counts_utf16_units` (with an astral character),
 `test_codex_counts_bytes`, `test_codex_limit_read_from_project_config`,
 `test_external_present_counts_real_size`, `test_external_absent_counts_reserve`,
-`test_e633_absent_no_reserve`, `test_nearest_budget_wins`, `test_e631_over_runtime_limit`,
+`test_e633_absent_no_reserve`, `test_nearest_budget_wins`, `test_role_budget_is_a_default`,
+`test_unknown_runtime_setting_is_e632`, `test_bad_reserve_is_e632`, `test_e631_over_runtime_limit`,
 `test_biggest_parts_order_and_smaller_row`, `test_full_prints_every_file_in_order`.
 
 **`tests/test_cli.py`**: exit codes 0, 1, 2 for each verb;
+`test_every_compiling_corpus_agent_builds` (each agent the corpus compiles goes through
+`build_home_map`), `test_error_in_unselected_home_cannot_stop_build`,
+`test_bad_budget_or_external_cannot_stop_build`, `test_build_warns_only_for_selected_homes`,
+`test_broken_unrelated_target_cannot_stop_build`, `test_rule_in_soul_cannot_stop_build`,
+`test_w307_skips_selected_and_hand_written_files`, `test_check_json_is_only_json`,
+`test_unknown_target_with_rev_exits_2`, `test_with_outside_repo_exits_2`,
+`test_e634_heading_from_prose`, `test_e634_names_the_markdown_source`,
 `test_build_writes_only_selected_folders`, `test_build_prints_w307_for_stale_level`,
 `test_build_never_fails_on_budget_or_rule`, `test_check_fails_on_budget_and_rule`,
 `test_check_mode_reports_stale_edited_missing`, `test_e634_names_section_and_origin`,
@@ -1714,7 +1736,7 @@ earlier one passes its gate.
 | --- | --- | --- | --- |
 | 1 | Sol 6.1 at xhigh | 900 | Touches 15 resolvers and every render; several parts |
 | 2 | Sol 6.1 at xhigh | 1,400 | New pass across compile; several parts |
-| 3 | Sol 6.1 at xhigh | 1,600 | Emit, config, CLI; several parts |
+| 3 | Sol 6.1 at xhigh | 1,750 | Emit, config, CLI; several parts |
 | 4 | Sol 6.1 at xhigh | 1,100 | New algorithms: map, diff, near-copy |
 | 5 | Terra 6.1 at xhigh | 400 | One piece from a full spec, with a check that proves it |
 | 6 | Terra 6.1 at xhigh | 200 | One piece from a full spec, with a check that proves it |
@@ -1810,14 +1832,14 @@ site beyond what this table names. Where a row lists several details, each is on
 | `E604` | `Value sets a fact` | `` `values:` can't set `<key>`. The compiler supplies it. `` |
 | `E605` | `Code fence split across strings` | `` A string in <owner> opens a code fence it doesn't close. `` Hint: ``Put the whole fence in one `"""` string, or use a `code` block.`` |
 | `E608` | `Value set twice` | `` `values:` sets `<key>` twice. `` |
-| `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a relative path with no `..` and no trailing `/`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
+| `E606` | `Invalid team` | `` Team `<name>` needs `home:`. ``; `` Abstract team `<name>` can't have `home:`. ``; `` `home: "<value>"` must be a plain relative path, such as `pods/growth`. ``; `` Team `<name>` can't hold `<field>`. A team takes `role`, `values`, `budget`, slots, and members. ``; `` Team `<name>` uses key `<key>` twice. `` |
 | `E607` | `Two homes, one path` | `` `<owner a>` and `<owner b>` both land at `<path>`. ``; `` Targets `<a>` and `<b>` share output folder `<dir>`. `` |
 | `E609` | `Invalid roster` | `` `roster <key>` needs a team, and this home has none. ``; `` Column `<column>` has no `{{agent:...}}` in its cell. ``; `` `rows:` names unknown column `<column>`. ``; `` Row `<row>` leaves column `<column>` empty. `` |
 | `E610` | `Missing patch target` | `` `<owner>` patches `<path>`, but its parent has no such key. ``; `` `<owner>` writes `inherit *`, but it has nothing to inherit. `` |
 | `E611` | `Invalid patch path` | `` `<owner>`: `<path>` steps through `<step>`, which has no keyed items. ``; `` `<owner>`: `override <path>` targets a `<kind>`. Override the section that holds it. ``; `` `<owner>`: `override <path>` gives a paragraph a body it can't hold. A paragraph takes prose and `details`. `` |
 | `E612` | `Conflicting patches` | `` `<owner>` patches `<path>` twice. ``; `` `<owner>` writes `inherit <key>` beside a patch under `<key>`. The patch already accounts for it. ``; `` `<owner>` patches `<path>` under `<parent>`, which it already dropped or overrode. ``; `` `<owner>` can't drop `role`. Write `role:` to replace it, or `inherit role` to keep it. `` |
 | `E613` | `Duplicate inherit *` | `` `<owner>` writes `inherit *` more than once. `` |
-| `E620` | `Details outside a home` | `` `details` can't be used in <surface>. It only works in text that lands in a home. `` |
+| `E620` | `Details not allowed here` | `` `details` can't be used in <surface>. `` |
 | `E621` | `Shared details read one agent's words` | `` `_details/<slug>.md` serves every home that points at it, so it can't read `{{<root>:<key>}}`. `` Hint: section 6.3 |
 | `E630` | `Over load budget` | Section 6.4 |
 | `E631` | `Invalid budget` | `` `budget` for `<key>` must be a positive integer. ``; `` `budget` for `<key>` is over the runtime's limit of <limit>. ``; `` `budget` names unknown runtime `<key>`. `` |
