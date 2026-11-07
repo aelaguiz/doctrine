@@ -729,7 +729,8 @@ goes through the guard and then becomes the link. Any other link is `E634`.
 
 `files` is every path the build emitted, sorted, without the record itself. A whole-tree
 build is `doctrine build .` or `doctrine build` with no selector. No other build reads or
-writes the record, and a missing record means nothing is obsolete.
+writes the record. A missing record means nothing is obsolete, and so does one that won't
+parse, because two commits can leave it in a merge conflict and the build is what repairs it.
 
 A path in the record that this build doesn't emit is **obsolete**: a removed member, a
 moved team, or a team that no longer renders any text. Its text would otherwise keep
@@ -1620,7 +1621,8 @@ fence holding a shorter one, a fence with an info string inside a fence, inline 
 `test_write_skipped_when_bytes_match` (mtime kept), `test_files_outside_team_tree_unchanged`,
 `test_contract_files_have_no_guard`, `test_claude_md_link_left_alone`,
 `test_real_claude_md_goes_through_guard`, `test_other_claude_md_link_is_e634`,
-`test_record_lists_every_emitted_path_sorted`, `test_missing_record_means_nothing_obsolete`.
+`test_record_lists_every_emitted_path_sorted`, `test_missing_record_means_nothing_obsolete`,
+`test_conflicted_record_counts_as_missing`.
 
 **`tests/test_details.py`**: `test_owner_table` (one test per row of the table in section
 6.3), `test_e620_in_skill_package`, `test_one_pointer_line_per_home`, `test_companion_keeps_headings_and_depth`,
