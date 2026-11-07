@@ -131,6 +131,10 @@ def home_selectors(teams, selectors):
     return tuple(homes.get(selector, selector) for selector in selectors)
 
 
+def is_level(home, selected):
+    return home in selected or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
+
+
 def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     selectors = home_selectors(session.root_flow.teams_by_name.values(), selectors)
     whole = not selectors or "." in selectors
@@ -152,23 +156,17 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             owners.append((home, owner, unit, plan))
         except DoctrineError as exc:
             home = entrypoint_relative_dir(root.unit.prompt_file.source_path).as_posix()
-            if whole or any(matches_home(home, root.agent_name, selector) for selector in selectors):
-                raise
-            failures.append(exc)
+            owner = session.flow_for_unit(root.unit).agents_by_name[root.agent_name]
+            owners.append((home, owner, root.unit, None))
+            failures.append((home, exc))
     for team in session.root_flow.teams_by_name.values():
         if not team.abstract:
             unit = session.root_flow.declaration_owner_units_by_id[id(team)]
             try:
                 members = team_members(context, team, unit=unit)
             except DoctrineError as exc:
-                if whole or any(
-                    matches_home(team.home, team.name, selector)
-                    or matches_home(selector, "", team.home)
-                    or selector.startswith(team.name + ".")
-                    for selector in selectors
-                ):
-                    raise
-                failures.append(exc)
+                owners.append((team.home, team, unit, None))
+                failures.append((team.home, exc))
                 continue
             owners.append((team.home, team, unit, None))
             owners.extend(
@@ -183,16 +181,13 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         selected = select_homes(((home, owner) for home, owner, _, _ in owners), selectors)
     except DoctrineError:
         if failures:
-            raise failures[0]
+            raise failures[0][1]
         raise
-    for failure in failures:
+    for home, failure in failures:
+        if whole or is_level(home, selected):
+            raise failure
         print(failure, file=sys.stderr)
-    needed = {
-        home
-        for home in homes
-        if home in selected
-        or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
-    }
+    needed = {home for home in homes if is_level(home, selected)}
     for home, owner, unit, plan in owners:
         if home in needed and homes[home]["owner"] is not owner:
             raise compile_error(
@@ -344,8 +339,12 @@ def needed_files(root, homes, files, selected, wanted):
                     if state != "unchanged":
                         yield home, "loads", path, state
         for path in dict.fromkeys(path for _, data in levels for path in data["pointers"]):
-            if path not in wanted and not (root / path).is_file():
-                yield home, "links to", path, "missing"
+            if path not in wanted:
+                disk = root / path
+                state = ("missing" if not disk.is_file() else "unchanged"
+                         if path.startswith("_details/") else file_state(disk, files[path]))
+                if state != "unchanged":
+                    yield home, "links to", path, state
 
 
 def build_homes(
@@ -358,8 +357,11 @@ def build_homes(
     if whole:
         if record.exists():
             try:
-                obsolete = set(json.loads(record.read_bytes())["files"]) - set(files)
-            except json.JSONDecodeError:
+                obsolete = {
+                    name for name in set(json.loads(record.read_bytes())["files"]) - set(files)
+                    if (root / name).exists() or (root / name).is_symlink()
+                }
+            except (json.JSONDecodeError, KeyError):
                 pass
         files = {
             **files,
@@ -410,9 +412,8 @@ def build_homes(
         if read_only:
             continue
         if name in obsolete:
-            if (root / name).exists() or (root / name).is_symlink():
-                (root / name).unlink()
-                result["removed"].append(name)
+            (root / name).unlink()
+            result["removed"].append(name)
         elif state == "unchanged":
             result["unchanged"].append(name)
         else:

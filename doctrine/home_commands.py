@@ -6,7 +6,7 @@ import sys
 import subprocess
 from contextlib import contextmanager, nullcontext
 from dataclasses import replace
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
@@ -22,7 +22,7 @@ from doctrine.project_config import load_project_config
 from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
-    runtime_settings, home_loads, budget_findings, render_load, loaded_levels,
+    RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
 )
 
 
@@ -170,6 +170,11 @@ def load(args):
                 for file in values["external"]:
                     file["on_disk"] = (live_root / Path(file["path"]).expanduser()).is_file()
         loads = home_loads(target, homes, files, settings, selected)
+        for home in loads:
+            for runtime, load in home["runtimes"].items():
+                for file in load["files"]:
+                    if file["kind"] == "home" and not file["on_disk"]:
+                        file["path"] = str(PurePosixPath(file["path"]).parent / RUNTIMES[runtime][0])
         if args.runtime and args.runtime not in settings:
             raise compile_error(
                 code="E632",
@@ -194,7 +199,8 @@ def load(args):
         elif args.full and len(selected) == 1:
             for runtime in loads[0]["runtimes"].values():
                 for file in runtime["files"]:
-                    print(f"===== {file['path']} ({file['size']:,}) =====")
+                    missing = " missing" if is_missing(file) else ""
+                    print(f"===== {file['path']} ({file['size']:,}){missing} =====")
                     print(file["text"], end="" if file["text"].endswith("\n") else "\n")
         else:
             print(render_load(loads))

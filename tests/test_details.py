@@ -13,6 +13,25 @@ from tests.home_support import HomeProject
 
 
 class DetailsTests(HomeProject, unittest.TestCase):
+    def test_selected_build_compares_parent_local_companion(self):
+        root = self.project('''team GrowthPod: "Growth"
+    home: "pods/growth"
+    work: "Work"
+        details:
+            "Old detail."
+    member qa: "QA"
+        role: "Test."
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Old detail.", "New detail."))
+        code, _, error = self.cli(root, "build", "GrowthPod.qa")
+        self.assertEqual(code, 1, error)
+        self.assertIn("links to `pods/growth/DETAILS.md`, which is out of date.", error)
+        code, _, error = self.cli(root, "check", "GrowthPod.qa")
+        self.assertEqual(code, 1, error)
+        self.assertIn("stale pods/growth/DETAILS.md", error)
+
     def test_details_override_keeps_its_lexical_owner(self):
         source = """workflow Parent: "Parent"
     details cases: "Cases"

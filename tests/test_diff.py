@@ -20,6 +20,14 @@ team T: "Team"
 
 
 class DiffTests(HomeProject, unittest.TestCase):
+    def test_built_tree_has_no_changes_from_head(self):
+        root = self.project(SOURCE)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        code, output, error = self.cli(root, "diff", "--base", "HEAD")
+        self.assertEqual(code, 0, error)
+        self.assertIn("0 homes changed.", output)
+
     def compare(self, old, new, *args):
         before, after = self.project(old), self.project(new)
         result = self.cli(after, "diff", "--base-tree", str(before), *args)

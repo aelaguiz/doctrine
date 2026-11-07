@@ -162,8 +162,7 @@ def home_loads(target, homes, files, settings, selected):
                     if isinstance(content, Path):
                         target_path = str(PurePosixPath(level) / str(content))
                         content = files[target_path]
-                        if on_disk:
-                            path = target_path
+                        path = target_path
                     for entry in item["map"].entries:
                         if entry.always_on:
                             size = entry.size_utf16 if runtime == "claude" else entry.size_bytes
@@ -255,6 +254,10 @@ def has_home_file(load):
     return any(file["kind"] == "home" for file in load["files"])
 
 
+def is_missing(file):
+    return not file["on_disk"] and file["kind"] != "reserved"
+
+
 def render_load(loads):
     if len(loads) != 1:
         rows = [("Home", "Runtime", "Load", "Limit", "Headroom")]
@@ -296,7 +299,7 @@ def render_load(loads):
                 (
                     "  " + file["path"],
                     f"{file['size']:,}",
-                    "missing" if file["kind"] == "home" and not file["on_disk"]
+                    "missing" if is_missing(file)
                     else "" if file["kind"] == "home" else file["kind"],
                 )
                 for file in load["files"]

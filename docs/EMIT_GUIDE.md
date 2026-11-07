@@ -115,8 +115,8 @@ and hand edits. A build writes nothing if a check fails. `--force` allows hand
 edits only. A warning fails `check` only with `--strict`.
 
 A selected build writes only the homes it selects. First run `doctrine build .`.
-Loaded levels must be current, and linked companions must exist. A selected build
-checks shared files exist without comparing their bytes. A whole check compares
+Loaded levels and their local companions must be current. A selected build
+checks shared `_details/` files exist without comparing their bytes. A whole check compares
 them. A semantic error in another home cannot stop a selected build. A parse
 error anywhere in the flow stops it. Use `--rev HEAD` to leave uncommitted edits
 out. `--out DIR` uses a separate output root.
@@ -134,7 +134,8 @@ reasons. Any smaller parts share one last row. A missing external with a
 reserve is marked `reserved`. Headers and joining blank lines count toward
 load, but belong to no source entry. Nested entries never count text twice.
 Use `--runtime NAME` to filter, `--full` to read one home's loaded files in
-order, or `--json` for the versioned report. Companions have a separate size.
+order, or `--json` for the versioned report. A `--full` header marks missing
+files. Companions have a separate size.
 
 The hand-edit report matches sections by title and then by order when titles
 repeat. A removed section says `no longer in source`. A companion names its

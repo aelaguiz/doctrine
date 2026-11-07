@@ -19,6 +19,57 @@ from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_broken_parent_team_stops_selected_build_and_check(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        original = source.read_text()
+        for home, expected in ((".", 1), ("pods/feature", 0)):
+            source.write_text(original + f'team Other[Nope]: "Other"\n    home: "{home}"\n')
+            for command in ("build", "check"):
+                with self.subTest(home=home, command=command):
+                    code, _, error = self.cli(root, command, "GrowthPod.qa")
+                    self.assertEqual(code, expected, error)
+                    self.assertIn("E299", error)
+
+    def test_check_handles_record_missing_files_key(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        (root / "HOMES.contract.json").write_text("{}")
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1, error)
+        self.assertIn("stale HOMES.contract.json", error)
+        code, output, error = self.cli(root, "check", "--json")
+        self.assertEqual(code, 1, error)
+        self.assertIn({"path": "HOMES.contract.json", "state": "stale"}, json.loads(output)["paths"])
+
+    def test_check_does_not_report_already_deleted_obsolete_file(self):
+        root = self.project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().split('    member analyst:')[0])
+        (root / "pods/growth/analyst/AGENTS.md").unlink()
+        code, _, error = self.cli(root, "check")
+        self.assertEqual(code, 1, error)
+        self.assertNotIn("obsolete pods/growth/analyst/AGENTS.md", error)
+
+    def test_load_revision_marks_deleted_external_in_rows_and_full_headers(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    member qa: "QA"\n        role: "Test."\n',
+            settings='[tool.doctrine.runtimes.codex]\nexternal = [{path="outside.md"}]\n',
+        )
+        (root / "outside.md").write_text("External.\n")
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        (root / "outside.md").unlink()
+        for extra in ((), ("--full",)):
+            code, output, error = self.cli(root, "load", "T.qa", "--runtime", "codex", "--rev", "HEAD", *extra)
+            self.assertEqual(code, 0, error)
+            if extra:
+                self.assertIn("===== outside.md (10) missing =====", output)
+            else:
+                self.assertRegex(output, r"outside\.md\s+10\s+missing")
+
     def test_exit_codes_for_build_check_and_load(self):
         for command in (("build",), ("check",), ("load", "GrowthPod.qa", "--full")):
             with self.subTest(command=command):
@@ -46,6 +97,11 @@ class CliTests(HomeProject, unittest.TestCase):
         self.assertEqual(code, 0, error)
         self.assertIn("pods/growth/qa/CLAUDE.md", output)
         self.assertIn("missing", output)
+        code, output, error = self.cli(
+            root, "load", "GrowthPod.qa", "--runtime", "claude", "--full"
+        )
+        self.assertEqual(code, 0, error)
+        self.assertRegex(output, r"===== pods/growth/qa/CLAUDE\.md \(\d+\) missing =====")
 
     def test_load_revision_checks_the_live_runtime_link(self):
         root = self.project()

@@ -7,6 +7,16 @@ from tests.home_support import HomeProject
 
 
 class ProjectWarningTests(HomeProject, unittest.TestCase):
+    def test_w302_is_the_same_before_and_after_build(self):
+        root = self.project(example="188_project_warnings")
+        before = self.cli(root, "check", "--json")
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        after = self.cli(root, "check", "--json")
+        first = [item["text"] for item in json.loads(before[1])["warnings"] if item["code"] == "W302"]
+        second = [item["text"] for item in json.loads(after[1])["warnings"] if item["code"] == "W302"]
+        self.assertTrue(first)
+        self.assertEqual(first, second)
+
     def warnings(self, root, *args):
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         result = self.cli(root, "check", "--json", *args)

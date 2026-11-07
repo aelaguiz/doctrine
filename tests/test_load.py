@@ -104,6 +104,9 @@ class LoadTests(HomeProject, unittest.TestCase):
         self.assertEqual(code, 0, error)
         self.assertIn("outside.md", output)
         self.assertIn("reserved", output)
+        code, output, error = self.cli(root, "load", "T.qa", "--runtime", "claude", "--full")
+        self.assertEqual(code, 0, error)
+        self.assertIn("===== outside.md (99) =====", output)
 
     def test_e633_absent_no_reserve(self):
         root = self.project(
