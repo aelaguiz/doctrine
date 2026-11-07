@@ -847,3 +847,27 @@ team T: "Team"
             (tuple(entry["path"]), entry["origin"], entry["status"])
             for entry in home["entries"]
         }, {(("work",), "T.qa", "removed"), (("work",), "Craft", "added")})
+
+    def test_uncommitted_member_drop_reports_member_and_case(self):
+        root = self.project('''abstract agent Base:
+    role: "Test."
+    work: "Work"
+        details one: "One"
+            "Case."
+team T: "Team"
+    home: "t"
+    member a[Base]: "A"
+    member b[Base]: "B"
+''')
+        self.git_project(root)
+        path = root / 'prompts/AGENTS.prompt'
+        path.write_text(path.read_text().replace('    member a[Base]: "A"\n', '    member a[Base]: "A"\n        drop work.one: "Reason"\n'))
+        code, text, error = self.cli(root, 'diff', '--base', 'HEAD')
+        self.assertEqual(code, 0, error)
+        self.assertIn('1 declaration changed. 1 home changed.', text)
+        self.assertIn('T.a', text)
+        code, output, error = self.cli(root, 'diff', '--base', 'HEAD', '--json')
+        self.assertEqual(code, 0, error)
+        result = json.loads(output)
+        self.assertIn('T.a', [item['name'] for item in result['changed_declarations']])
+        self.assertIn(('work', 'one'), [tuple(entry['path']) for home in result['homes'] for entry in home['entries'] if entry['status'] == 'removed'])

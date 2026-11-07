@@ -175,6 +175,7 @@ class ReadableBlock:
     row_schema: ReadableInlineSchemaData | None = None
     anonymous: bool = False
     legacy_section: bool = False
+    patch: tuple | None = _field(default=None, compare=False, kw_only=True)
     origin: Origin | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 

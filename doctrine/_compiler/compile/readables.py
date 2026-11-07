@@ -324,7 +324,8 @@ class CompileReadablesMixin:
     ) -> CompiledReadableBlock:
         if block.kind == "details":
             unit = block.origin.scope_unit if block.origin else unit
-            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block), body=self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span))
+            body = self._compile_document_section_payload(block.payload, unit=unit, owner_label=f"details {block.key}", source_span=block.source_span)
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block, body, block.title), body=body)
         when_text = self._readable_guard_text(block.when_expr, unit=unit)
         if block.anonymous:
             title = None

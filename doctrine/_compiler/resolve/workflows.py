@@ -889,10 +889,9 @@ class ResolveWorkflowsMixin:
                     ResolvedSectionItem(
                         key=key,
                         title=item.title if item.title is not None else parent_item.title,
-                        items=self._resolve_addressable_section_body_items(
-                            item.items,
-                            unit=unit,
-                        ),
+                        items=keep_details(parent_item.items, self._resolve_addressable_section_body_items(
+                            item.items, unit=unit,
+                        ), owner_label, key, unit, item.source_span, parent_item.origin),
                         source_span=item.source_span,
                     )
                 )
@@ -1264,7 +1263,7 @@ class ResolveWorkflowsMixin:
             key=item.key,
             title=self._workflow_root_readable_override_title(item, parent_item=parent_item),
             payload=keep_details(parent_item.payload, item.payload, owner_label, key, unit, item.source_span, parent_item.origin)
-            if item.kind in {"section", "paragraph"} else item.payload,
+            if item.kind in {"section", "paragraph", "guard"} else item.payload,
             requirement=(
                 item.requirement
                 if item.requirement is not None

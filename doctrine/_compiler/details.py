@@ -7,7 +7,7 @@ from doctrine import model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledGuardBlock
+from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -70,7 +70,7 @@ def render_companion(parts):
     return "\n\n".join(output) + "\n"
 
 
-def details_origin(block):
+def details_origin(block, body, title):
     def reads(value):
         if isinstance(value, str):
             return bool(LATE_ROOT.search(value))
@@ -81,11 +81,13 @@ def details_origin(block):
                 return True
             if value.kind == "code":
                 return reads(value.title)
+        if isinstance(value, CompiledCodeBlock):
+            return reads(value.title)
         if is_dataclass(value):
             return any(reads(getattr(value, field.name)) for field in fields(value)
                        if field.name != "origin")
         return False
     origin = block.origin
-    if origin and origin.companion and (reads(origin.headings) or reads(block)):
+    if origin and origin.companion and (reads(origin.headings) or reads(block) or reads(body) or reads(title)):
         return replace(origin, companion=None)
     return origin

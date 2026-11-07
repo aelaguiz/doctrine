@@ -335,7 +335,8 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
             if isinstance(node, model.ReadableBlock):
                 if node.kind != "details":
                     items = keep_details(node.payload, items, owner_label, path, unit, patch.source_span, node.origin)
-                return replace(node, title=title, payload=items, origin=replacement_origin)
+                return replace(node, title=title, payload=items, origin=replacement_origin,
+                               patch=(path, ".".join(short)) if short else None)
             if isinstance(node, ResolvedSectionItem):
                 items = context._resolve_section_body_items(items, unit=unit, owner_label=owner_label, origin=replacement_origin)
             return replace(node, title=title, origin=replacement_origin,
@@ -350,7 +351,7 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
             children = node.body.items
         elif isinstance(node, (ResolvedSectionItem, model.LocalSection)):
             children = node.items
-        elif isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph"}:
+        elif isinstance(node, model.ReadableBlock) and node.kind in {"section", "paragraph", "guard"}:
             children = node.payload
         else:
             if short and not isinstance(patch, model.DetailsPath):
@@ -369,7 +370,9 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
         if isinstance(patch, model.DetailsPath) and len(tail) == 1:
             if matched is not None:
                 raise error("E612", "Conflicting patches", f"`{owner_label}` adds the case `{path}`, which it already has. Write `override {path}` to replace it.")
-            children = (*children, replace(patch.value, origin=child_origin(replacement_origin, tail[0], patch.source_span)))
+            children = (*children, replace(patch.value,
+                origin=child_origin(replacement_origin, tail[0], patch.source_span),
+                patch=(path, ".".join(short)) if short else None))
             if isinstance(node, ResolvedAgentSlot):
                 return replace(node, body=replace(node.body, items=children))
             return replace(node, **{"payload" if isinstance(node, model.ReadableBlock) else "items": children})
@@ -416,7 +419,7 @@ def apply_path_patches(context, parent_items, paths, *, owner_label, unit, origi
                 source_span=patch.source_span,
             )
         item = result[path[0]]
-        title = item.body.title if isinstance(item, ResolvedAgentSlot) else None
+        title = item.body.title if isinstance(item, ResolvedAgentSlot) else item.title if isinstance(item, (ResolvedSectionItem, model.LocalSection)) else None
         result[path[0]] = walk(item, path[1:], (path[0],), patch,
                                child_origin(patch.origin or origin, path[0], patch.source_span, title))
     return result
@@ -433,11 +436,15 @@ def keep_details(old, new, owner, path, unit, span, origin):
                 elif item.kind in {"section", "paragraph", "guard"}:
                     yield from cases(item.payload, False, item_origin)
             elif isinstance(item, (ResolvedSectionItem, model.LocalSection)):
-                yield from cases(item.items, False, item.origin)
+                yield from cases(item.items, False, item.origin or child_origin(origin, item.key, item.source_span, item.title))
     replaced = {item.key for item in new if isinstance(item, model.ReadableBlock) and item.kind == "details"}
     keys = {patch_item_key(item) for item in new}
     kept = []
     for case, direct in cases(old, True, origin):
+        if case.key in keys and case.patch and case.patch[1] == path:
+            patched, short = case.patch
+            raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
+                source_span=span, detail=f"`{owner}` patches `{patched}`, and `override {short}` writes `{case.key}` too. Keep one.")
         if direct and case.key in replaced:
             continue
         if case.key in keys:

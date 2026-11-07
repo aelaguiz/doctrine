@@ -73,7 +73,8 @@ class CompileReadableBlocksMixin:
         render_profile: ResolvedRenderProfile | None = None,
     ) -> CompiledReadableBlock:
         if block.kind == "details":
-            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block), body=section_body_compiler(block.payload, owner_label))
+            body = section_body_compiler(block.payload, owner_label)
+            return CompiledSection(kind="details", title=block.title, key=block.key, origin=details_origin(block, body, block.title), body=body)
         if block.kind == "roster":
             return compile_roster(self, block, unit=unit)
         if block.when_expr is not None:

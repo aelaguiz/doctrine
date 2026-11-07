@@ -264,14 +264,16 @@ move to the end of the new body. A new case with the same key replaces a
 direct child case. If kept cases would share a key with another kept case or
 with a block in the new body, the override fails with `E612`. Drop one case
 with a reason or give the cases different keys. A case patch can sit beside an
-override of its parent. It uses the case's inherited path.
+override of its parent. It uses the case's inherited path. A case in a workflow
+reached by `use` belongs to that workflow, so removing the `use` removes the case.
 
 The lexical owner chooses the companion. Teams and members use their own
 `DETAILS.md`. A concrete agent uses `DETAILS.md` beside its emitted file.
 Abstract agents, abstract teams, workflows, and documents use one shared
 `_details/<owner-slug>.md` for cases that do not read a home's values.
 Imported module names join the owner with `-`. A shared companion keeps its
-owner's headings and order even when homes reorder or retitle that text.
+owner's headings and order even when homes reorder or retitle that text. A case
+dropped by one home stays in the shared file while another home keeps it.
 A case that reads agent or team values in its text, title, or parent heading
 goes to each home's `DETAILS.md`. A case with a roster does too. Code text
 does not count as a value read. Skills, skill packages, input or output bodies, output structures,

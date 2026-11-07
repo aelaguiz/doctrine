@@ -273,7 +273,7 @@ class ResolveDocumentsMixin:
                     unit=unit,
                     owner_label=f"{owner_label}.{key}",
                 )
-            if item.kind in {"section", "paragraph"}:
+            if item.kind in {"section", "paragraph", "guard"}:
                 resolved = replace(resolved, payload=keep_details(parent_item.payload, resolved.payload,
                                                                    owner_label, key, unit, item.source_span, parent_item.origin))
             resolved_items.append(resolved)
