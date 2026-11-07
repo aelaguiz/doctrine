@@ -58,6 +58,10 @@ def resolve_target(args):
             yield None, None, live_root
             return
         target = targets[args.target] if args.target else team_targets[0]
+        if target.name not in sessions:
+            print(f"Target {target.name} has no homes.", file=sys.stderr)
+            yield None, None, live_root
+            return
         for other in team_targets:
             if other.name != target.name and other.output_dir == target.output_dir:
                 raise compile_error(

@@ -18,10 +18,10 @@ from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
     _build_runtime_emit_plan,
     _build_previous_turn_contexts,
-    runtime_files,
+    runtime_files, RuntimeEmitPlan,
 )
 from doctrine.diagnostics import DoctrineError
-from doctrine.emit_common import entrypoint_relative_dir
+from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown
 from doctrine.runtime_load import home_budgets
 
@@ -54,9 +54,7 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
     if plan is not None:
         files = runtime_files(plan, compiled, target, evaluate_rules=evaluate_rules)
         files[plan.markdown_path] = text.encode()
-        source = unit.prompt_file.source_path.relative_to(
-            target.project_config.config_dir
-        ).as_posix()
+        source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
         return {
             path.relative_to(target.output_dir).as_posix(): with_header(
                 content.decode(), source
@@ -68,14 +66,21 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, evaluate_rul
     files = {}
     if text.strip():
         source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
-        source = source_unit.prompt_file.source_path.relative_to(
-            target.project_config.config_dir
-        ).as_posix()
+        source = os.path.relpath(source_unit.prompt_file.source_path, target.project_config.config_dir)
         runtimes = target.runtimes or ("codex",)
         filename = "CLAUDE.md" if runtimes == ("claude",) else "AGENTS.md"
         files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
         if "claude" in runtimes and "codex" in runtimes:
             files[str(PurePosixPath(home) / "CLAUDE.md")] = Path("AGENTS.md")
+    if isinstance(owner, model.Member):
+        member_plan = RuntimeEmitPlan(
+            root=RuntimeEmitRoot(unit=unit, agent_name=owner.name),
+            markdown_path=target.output_dir / home / "AGENTS.md",
+            provider_root=None,
+        )
+        for path, content in runtime_files(member_plan, compiled, target).items():
+            if path != member_plan.markdown_path:
+                files[path.relative_to(target.output_dir).as_posix()] = content
     return files
 
 

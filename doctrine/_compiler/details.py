@@ -91,7 +91,7 @@ def validate_shared_details(value):
             for item in value:
                 read(item, companion)
         elif is_dataclass(value):
-            if (isinstance(value, CompiledSection) and value.kind == "details"
+            if (isinstance(value, (CompiledSection, model.ReadableBlock)) and value.kind == "details"
                     and value.origin):
                 companion = value.origin.companion or companion
                 read(value.origin.headings, companion)

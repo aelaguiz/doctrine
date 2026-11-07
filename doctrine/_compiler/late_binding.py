@@ -54,12 +54,12 @@ def value_reading_sites(context, root, key):
     return readings
 
 
-def bind_home(context, compiled, agent, *, unit):
+def bind_home(context, compiled, agent, *, unit, _stack=None):
     validate_shared_details(compiled)
     team_match = find_home_team(context, agent, unit=unit)
     team_unit, team = team_match if team_match else (None, None)
     missing = []
-    stack = []
+    stack = [] if _stack is None else _stack
     def no_owner(root, key, why):
         raise compile_error(
             code="E602", summary="Value has no owner here",
@@ -81,6 +81,26 @@ def bind_home(context, compiled, agent, *, unit):
     team_values = [values(decl, owner) for decl, owner in team_sources]
 
     def read(root, key):
+        identity = (root, key, agent.name)
+        if identity in stack:
+            cycle = " -> ".join(item[1] for item in [*stack[stack.index(identity):], identity])
+            readings = [
+                (source.prompt_file.source_path, span.line)
+                for environment in (agent_values if root == "agent" else team_values)
+                for name, (_, source, span) in environment.items() if name == key
+            ]
+            raise compile_error(
+                code="E603", summary="Value cycle",
+                detail=f"Values read each other: `{cycle}`",
+                path=readings[0][0] if readings else unit.prompt_file.source_path,
+                source_span=model.SourceSpan(readings[0][1], 1) if readings else agent.source_span)
+        stack.append(identity)
+        try:
+            return read_value(root, key)
+        finally:
+            stack.pop()
+
+    def read_value(root, key):
         if root == "team" and team is None:
             no_owner(root, key, "this agent is outside any team")
         owner = agent if root == "agent" else team
@@ -99,25 +119,13 @@ def bind_home(context, compiled, agent, *, unit):
             if key == "others" and isinstance(agent, model.Team):
                 no_owner(root, key, "a team's own file has no others")
             names = [
-                bind_home(context, member.title, member, unit=team_unit)
+                bind_home(context, member.title, member, unit=team_unit, _stack=stack)
                 for member in team_members(context, team, unit=team_unit)
                 if key == "members" or member.name != agent.name
             ]
             if names:
                 return ", ".join(names[:-1]) + " and " + names[-1] if len(names) > 1 else names[0]
         identity = (root, key)
-        if identity in stack:
-            cycle = " -> ".join(item[1] for item in [*stack[stack.index(identity):], identity])
-            readings = [
-                (source.prompt_file.source_path, span.line)
-                for environment in (agent_values if root == "agent" else team_values)
-                for name, (_, source, span) in environment.items() if name == key
-            ]
-            raise compile_error(
-                code="E603", summary="Value cycle",
-                detail=f"Values read each other: `{cycle}`",
-                path=readings[0][0] if readings else unit.prompt_file.source_path,
-                source_span=model.SourceSpan(readings[0][1], 1) if readings else agent.source_span)
         environments = agent_values if root == "agent" else team_values
         for environment in environments:
             if key in environment:
@@ -129,10 +137,7 @@ def bind_home(context, compiled, agent, *, unit):
                 text = context._interpolate_authored_prose_string(
                     text, unit=source,
                     owner_label=f"value {key}", surface_label="value text")
-                stack.append(identity)
-                result = substitute(text)
-                stack.pop()
-                return result
+                return substitute(text)
         if identity not in missing:
             missing.append(identity)
         return ""

@@ -275,10 +275,12 @@ class CompileOutputsMixin:
                     title = recipient.value
                 else:
                     owner, agent = match
-                    title = agent.title or agent.name
+                    from doctrine._compiler.late_binding import bind_home
+                    title = bind_home(self, agent.title or agent.name, agent, unit=owner)
                     if isinstance(agent, model.Member):
-                        _, team = find_home_team(self, agent, unit=owner)
-                        title = f"{team.title}'s {title}"
+                        team_unit, team = find_home_team(self, agent, unit=owner)
+                        team_title = bind_home(self, team.title, team, unit=team_unit)
+                        title = f"{team_title}'s {title}"
                 body.append(f"Send this to {title}.")
             elif files_section is not None:
                 contract_rows = [
