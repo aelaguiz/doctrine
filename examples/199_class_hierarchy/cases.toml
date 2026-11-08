@@ -8,8 +8,12 @@ kind = "cli_contract"
 project = "project"
 args = ["build", "."]
 expected_exit = 0
-stdout_contains = ["built 8 homes"]
-expected_file_lines = { "AGENTS.md" = [
+stdout_contains = ["built 9 homes"]
+expected_file_lines = { "analyst/AGENTS.md" = [
+  "If your session started in this folder, you are the analyst. If not, this only describes that role.",
+  "", "Help the team ship its work.", "", "## Planning", "", "Plan the work with the team.", "", "## Analysis", "",
+  "Answer the team's questions with numbers.",
+], "AGENTS.md" = [
   "## Principles", "", "Read first: @shared/handbook.md",
 ], "pods/AGENTS.md" = [
   "This file loads for every session started under `pods/`. If yours started there, you are a member of the pods. If not, it only describes them.",
@@ -49,6 +53,7 @@ expected_exit = 0
 expected_stdout_lines = [
   "Agents",
   "Member  (abstract)  abstract craft",
+  "├── Analyst  analyst",
   "├── Contributor  (abstract)",
   "│   ├── Growth.contributor  pods/growth/contributor",
   "│   └── Product.contributor  pods/product/contributor",

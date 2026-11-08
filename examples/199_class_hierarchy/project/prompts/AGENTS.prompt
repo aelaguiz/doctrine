@@ -66,6 +66,11 @@ team Product[Pod]: "the product pod"
     values:
         unit: "feature"
 
+agent Analyst[Member]: "the analyst"
+    inherit *
+    craft: "Analysis"
+        "Answer the team's questions with numbers."
+
 rule EveryQaInheritsQa: "Every team's QA uses the QA class"
     scope:
         member: qa
