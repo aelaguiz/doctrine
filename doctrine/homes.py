@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -9,9 +8,9 @@ from pathlib import Path, PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.details import split_details, render_companion, reject_details
+from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
-from doctrine._compiler.late_binding import bind_home, map_text, reject_late_roots
+from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
@@ -25,23 +24,10 @@ from doctrine.emit_docs import (
 )
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
-from doctrine.renderer import render_markdown, render_readable_block
+from doctrine.renderer import render_markdown
 from doctrine.project_config import project_file_path
 from doctrine.runtime_load import home_budgets, loaded_levels
-
-
-HEADER = re.compile(
-    r"^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. "
-    r'Run: doctrine where "<words>" -->\n\n'
-)
-
-
-def with_header(text, source):
-    digest = hashlib.sha256(text.encode()).hexdigest()[:12]
-    return (
-        f"<!-- doctrine sha256={digest} source={source}. Do not edit. "
-        f'Run: doctrine where "<words>" -->\n\n{text}'
-    )
+from doctrine.shared_files import HEADER, compile_shared_files, file_state, with_header
 
 
 def home_files(target, home, owner, unit, compiled, pointers, plan, context):
@@ -261,39 +247,15 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             raise compile_error(code="E652", summary="Missing Markdown source",
                 detail=f"`{decl.name}` names `{decl.path}`, which doesn't exist.",
                 path=unit.prompt_file.source_path, source_span=decl.source_span)
-    written = {}
-    pending = [(unit, decl) for unit, decl in declarations if decl.body is not None and (
-        (whole and session.flow_for_unit(unit) is session.root_flow)
-        or (target.output_dir / decl.path).resolve() in referenced)]
-    while pending:
-        unit, decl = pending.pop(0)
-        path = str(PurePosixPath(decl.path))
-        if path in written:
-            if written[path] is not decl:
-                raise compile_error(code="E607", summary="Two homes, one path",
-                    detail=f"`{decl.name}` and `{written[path].name}` both land at `{path}`.")
-            continue
-        if path in files:
-            raise compile_error(code="E607", summary="Two homes, one path",
-                detail=f"`{decl.name}` and another output both land at `{path}`.")
-        written[path] = decl
-        reject_details(decl.body, "a shared file")
-        reject_late_roots(decl.body, unit=unit, why="a shared file belongs to no home")
-        document = model.DocumentDecl(decl.name, decl.body, render_profile_ref=decl.render_profile_ref,
-                                      source_span=decl.source_span)
-        body = context._compile_document_decl(document, unit=unit)
-        raw = render_readable_block(body, depth=1) + "\n"
-        for match in re.finditer(r"\x1e([^\x1f]+)\x1f", raw):
-            referenced.add(Path(json.loads(match[1])[2]))
-        pending.extend((other_unit, other) for other_unit, other in declarations
-                       if other.body is not None and other.path not in written
-                       and (target.output_dir / other.path).resolve() in referenced)
-        source = os.path.relpath(unit.prompt_file.source_path, target.project_config.config_dir)
-        files[path] = with_header(render_file_refs(raw, (target.output_dir / path).parent, target.project_config), source).encode()
+    written, links = compile_shared_files(target, context, files, declarations, referenced, whole)
     for data in homes.values():
         data["shared_files"] = [str(Path(ref[2]).relative_to(target.output_dir))
             for ref, _ in data["file_refs"] if Path(ref[2]).is_relative_to(target.output_dir)
             and str(Path(ref[2]).relative_to(target.output_dir)) in written]
+        for path in data["shared_files"]:
+            for child in links[path]:
+                if child in written and child not in data["shared_files"]:
+                    data["shared_files"].append(child)
     return homes, files, selected, whole
 
 
@@ -313,28 +275,6 @@ def select_homes(owners, selectors):
             )
         selected.update(matches)
     return selected
-
-
-def file_state(path, fresh):
-    if path.is_symlink():
-        if path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
-            return "unchanged" if isinstance(fresh, Path) else "stale"
-        return "edited"
-    if not path.exists():
-        return "missing"
-    content = path.read_bytes()
-    if path.suffix == ".md":
-        try:
-            text = content.decode()
-        except UnicodeDecodeError:
-            return "edited"
-        match = HEADER.match(text)
-        if (
-            match is None
-            or hashlib.sha256(text[match.end() :].encode()).hexdigest()[:12] != match[1]
-        ):
-            return "edited"
-    return "unchanged" if content == fresh else "stale"
 
 
 def atomic_write(path, content):

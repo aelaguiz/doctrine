@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from doctrine import model
@@ -13,6 +14,7 @@ from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.load_rules import validate_load_rules
 from doctrine._compiler.late_binding import map_text
 from doctrine._compiler.markdown_links import render_file_refs
+from doctrine._compiler.naming import model_walk
 from doctrine.compiler import CompilationSession
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
@@ -38,9 +40,10 @@ from doctrine.emit_common import (
     path_location,
     resolve_pyproject_path,
 )
-from doctrine.project_config import ProvidedPromptRoot
+from doctrine.project_config import ProvidedPromptRoot, project_file_path
 from doctrine.parser import parse_file
 from doctrine.renderer import render_markdown
+from doctrine.shared_files import compile_shared_files, file_state
 
 FINAL_OUTPUT_CONTRACT_FILENAME = "final_output.contract.json"
 FINAL_OUTPUT_CONTRACT_VERSION = 1
@@ -178,7 +181,7 @@ def emit_target(
 
     try:
         session.emit_paths = {plan.root.agent_name: target.output_dir / plan.markdown_path.relative_to(output_root) for plan in planned_emits}
-        session.emit_root = target.output_dir
+        session.emit_root = output_root
         previous_turn_contexts = _build_previous_turn_contexts(
             session,
             agent_roots=tuple((plan.root.unit, plan.root.agent_name) for plan in planned_emits),
@@ -203,7 +206,7 @@ def emit_target(
     }
     validate_load_rules(CompilationContext(session), homes, homes, True)
 
-    emitted_paths: list[Path] = []
+    files = {}
     for plan, compiled in zip(
         planned_emits,
         compiled_agents,
@@ -212,11 +215,22 @@ def emit_target(
         for path, content in runtime_files(
             plan, compiled, target, surface="`python -m doctrine.emit_docs`"
         ).items():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(content)
-            emitted_paths.append(path)
+            files[path.relative_to(output_root).as_posix()] = content
 
-    return tuple(emitted_paths)
+    declarations = [(unit, decl) for unit in session.units() for decl in unit.declarations.files_by_name.values()]
+    referenced = {project_file_path(target.project_config, json.loads(match[1])[2])
+                  for text in model_walk(compiled_agents) if isinstance(text, str)
+                  for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)}
+    written, _ = compile_shared_files(replace(target, output_dir=output_root), CompilationContext(session), files, declarations, referenced, False)
+    for name in written:
+        if file_state(output_root / name, files[name]) == "edited":
+            raise compile_error(code="E634", summary="Hand edit in a compiled file", detail=f"`{name}` was edited by hand.")
+    for name, content in files.items():
+        path = output_root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
+    return tuple(output_root / name for name in files)
 
 
 def runtime_files(plan, compiled, target, *, evaluate_rules=True, surface=None):

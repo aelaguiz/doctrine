@@ -8,6 +8,7 @@ from pathlib import Path
 
 from tests.home_support import HomeProject
 from doctrine.emit_common import load_emit_targets
+from doctrine.diagnostics import DoctrineError
 from doctrine.emit_docs import emit_target
 from doctrine.emit_flow import emit_target_flow
 
@@ -582,3 +583,47 @@ team T: "Team"
         for command in (("build", "."), ("build", "t")):
             code, _, error = self.cli(root, *command)
             self.assertEqual(code, 0, error)
+
+    def test_emit_docs_writes_built_shared_files_it_links_to(self):
+        root = self.project('''file Guide: "Guide"
+    path: "shared/guide.md"
+    "See {{More}}."
+file More: "More"
+    path: "shared/more.md"
+    "More guidance."
+agent Writer:
+    role: "Read {{Guide}}."
+''')
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "out"'))
+        target = load_emit_targets(config)["homes"]
+        paths = emit_target(target)
+        self.assertIn((root / "out/shared/guide.md").resolve(), paths)
+        self.assertIn((root / "out/shared/more.md").resolve(), paths)
+        self.assertIn("[Guide](../shared/guide.md)", (root / "out/writer/AGENTS.md").read_text())
+        self.assertIn("[More](more.md)", (root / "out/shared/guide.md").read_text())
+        self.assertTrue((root / "out/shared/more.md").read_text().startswith("<!-- doctrine sha256="))
+        (root / "out/shared/more.md").write_text("Hand edit.\n")
+        with self.assertRaises(DoctrineError) as error:
+            emit_target(target)
+        self.assertIn("E634", str(error.exception))
+
+    def test_selected_build_and_check_follow_nested_built_files(self):
+        root = self.project('''file A: "A"
+    path: "shared/a.md"
+    "Read {{B}}."
+file B: "B"
+    path: "shared/b.md"
+    "More."
+team T: "Team"
+    home: "t"
+    member one: "One"
+        role: "Read {{A}}."
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        (root / "shared/b.md").unlink()
+        for command in ("build", "check"):
+            code, output, error = self.cli(root, command, "t/one")
+            self.assertEqual(code, 1, error)
+            self.assertIn("shared/b.md", output + error)
