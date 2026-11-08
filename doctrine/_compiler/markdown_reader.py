@@ -20,7 +20,10 @@ def heading_anchor(text, seen):
         parts[index] = re.sub(r"!?\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
         parts[index] = re.sub(r"<[^>]*>", "", parts[index])
     text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
-    text = re.sub(r"(?<!\w)_+|_+(?!\w)", "", text.replace("*", ""))
+    text = text.replace("*", "")
+    text = re.sub(r"_+", lambda match: match[0] if match.start() and match.end() < len(text)
+                  and unicodedata.category(text[match.start() - 1])[0] in "LMN"
+                  and unicodedata.category(text[match.end()])[0] in "LMN" else "", text)
     anchor = "".join(c for c in text if unicodedata.category(c)[0] in "LMN" or c in " -_").replace(" ", "-")
     seen[anchor] = seen.get(anchor, 0) + 1
     return anchor

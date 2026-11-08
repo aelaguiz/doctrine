@@ -74,6 +74,7 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
         self.assertEqual(heading_anchor("memmove-able", {}), "memmove-able")
         self.assertEqual(heading_anchor("C++ tips & tricks", {}), "c-tips--tricks")
         self.assertEqual(heading_anchor("Snake_case: a guide", {}), "snake_case-a-guide")
+        self.assertEqual(heading_anchor("हिन्दी_नियम", {}), "हिन्दी_नियम")
 
     def test_case_anchors_use_rendered_heading_text(self):
         titles = (("हिन्दी नियम", "हिन्दी-नियम"), ("The _first_ tick", "the-first-tick"),
