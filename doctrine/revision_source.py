@@ -49,7 +49,9 @@ def revision_source(args):
     revision = valid.stdout.decode().strip()
     relative = config.relative_to(root)
     with tempfile.TemporaryDirectory() as temporary:
-        scratch = Path(temporary)
+        scratch = Path(temporary).resolve()
+        paths = (root, scratch, config.parent, revision,
+                 tuple((Path.cwd() / path).resolve() for path in args.overlays))
 
         def extract(paths):
             present = [
@@ -80,7 +82,7 @@ def revision_source(args):
         if args.target:
             selected = next((target for target in targets if target["name"] == args.target), None)
             if selected is None:
-                yield project, (), config.parent
+                yield project, (), config.parent, paths
                 return
             targets = [
                 target for target in targets if target["output_dir"] == selected["output_dir"]
@@ -98,6 +100,10 @@ def revision_source(args):
         for prompt_root in prompt_roots:
             for path in (scratch / prompt_root).rglob("*.prompt"):
                 for declaration in parse_file(path).declarations:
+                    if isinstance(declaration, model.FileDecl) and declaration.body is None:
+                        file_path = (config.parent / Path(declaration.path).expanduser()).resolve()
+                        if file_path.is_relative_to(root):
+                            extra.add(file_path.relative_to(root))
                     if (
                         isinstance(declaration, (model.Agent, model.WorkflowDecl))
                         and declaration.markdown_path
@@ -106,10 +112,9 @@ def revision_source(args):
                             Path(os.path.normpath(relative.parent / declaration.markdown_path))
                         )
         for runtime in raw.get("runtimes", {}).values():
-            extra.update(
-                Path(os.path.normpath(relative.parent / item["path"]))
-                for item in runtime.get("external", [])
-                if not item["path"].startswith("~")
-            )
+            for item in runtime.get("external", []):
+                file_path = (config.parent / Path(item["path"]).expanduser()).resolve()
+                if file_path.is_relative_to(root):
+                    extra.add(file_path.relative_to(root))
         extract(list(extra))
-        yield project, tuple(target["name"] for target in targets), config.parent
+        yield project, tuple(target["name"] for target in targets), config.parent, paths

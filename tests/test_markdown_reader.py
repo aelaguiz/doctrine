@@ -37,11 +37,12 @@ class MarkdownReaderTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 'E653')
         self.assertEqual(caught.exception.diagnostic.detail, '`craft.md` has two sibling headings with key `a_call`, at lines 3 and 5.')
 
-    def test_e654_import_line(self):
-        with self.assertRaises(CompileError) as caught:
-            self.markdown('# Craft\nRole.\n@shared.md\n')
-        self.assertEqual(caught.exception.code, 'E654')
-        self.assertEqual(caught.exception.diagnostic.detail, '`craft.md` line 3 is a runtime import, and its path would break once inlined. Declare that file too and compose it.')
+    def test_import_line_keeps_its_target(self):
+        files, _ = self.rebased('Read @guide.md and @more\\ notes.md first.\n\n`@inline.md`\n\n```\n@code.md\n```')
+        body = files['pods/core/qa/AGENTS.md'].decode()
+        self.assertIn('Read @guide.md and @more\\ notes.md first.', body)
+        self.assertIn('`@inline.md`', body)
+        self.assertIn('```\n@code.md\n```', body)
 
     def test_role_from_text_before_first_heading(self):
         session = self.markdown('# Title dropped\nRole line.\n\nSecond paragraph with {{literal}}.\n## Work\nWork.\n')

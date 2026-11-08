@@ -276,6 +276,7 @@ from doctrine._model.readable import (
     DocumentBlock,
     DocumentBody,
     DocumentDecl,
+    FileDecl,
     DocumentItem,
     DocumentOverrideBlock,
     ReadableBlock,

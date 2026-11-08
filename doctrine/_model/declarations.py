@@ -20,7 +20,7 @@ from doctrine._model.io import (
     SkillDecl,
     SkillPackageDecl,
 )
-from doctrine._model.readable import DocumentDecl, TableDecl
+from doctrine._model.readable import DocumentDecl, FileDecl, TableDecl
 from doctrine._model.receipts import ReceiptDecl
 from doctrine._model.review import ReviewDecl
 from doctrine._model.rule import RuleDecl
@@ -60,6 +60,7 @@ Declaration: _TypeAlias = (
     | SchemaDecl
     | TableDecl
     | DocumentDecl
+    | FileDecl
     | WorkflowDecl
     | RouteOnlyDecl
     | GroundingDecl

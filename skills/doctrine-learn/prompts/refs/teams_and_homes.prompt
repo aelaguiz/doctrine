@@ -118,7 +118,29 @@ agent PodQa[QaCraft]: "Pod QA"
     inherit *
 """
         "Text before the first level-two heading becomes the role or preamble. Level-two and level-three headings become keys. Deeper headings and fenced headings stay text."
-        "A heading key is lower case; runs of punctuation and spaces become underscores. Duplicate sibling keys fail with both line numbers. Use `drop`, `override`, dotted patches, and checked title refs on these sections. Text stays verbatim, including double braces. A runtime import line fails; declare that file too and compose it."
+        "A heading key is lower case; runs of punctuation and spaces become underscores. Duplicate sibling keys fail with both line numbers. Use `drop`, `override`, dotted patches, and checked title refs on these sections. Text stays verbatim, including double braces. Runtime import paths move with the text."
+
+    section shared_files: "Share A File"
+        "A file without a body stays on disk, so agents can add notes to it. A file with a document body is written by the build. This is from `examples/197_shared_files`."
+        code:
+            language: prompt
+            text: """file Guide: "Test design"
+    path: "shared/guide.md"
+
+file Checklist: "Checklist"
+    path: "shared/checklist.md"
+    "Check the result."
+
+team Pod: "Pod"
+    home: "pod"
+    member qa: "QA"
+        role: "Before testing, read {{Guide}}."
+        work: "Work"
+            "Use {{Checklist}}."
+    member analyst: "analyst"
+        role: "Read first: {{load:Guide}}"
+"""
+        "A plain reference makes a link; the surrounding words say when to open it. A load reference ends its line and makes a runtime import. Add a title projection to use the title alone. Use `requires load` when a role must load the file."
 
     section companions: "Keep Longer Cases Nearby"
         "Use `details` to keep the short idea in the home and put longer cases in a companion. This is from `examples/181_details`."

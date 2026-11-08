@@ -5,6 +5,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 from contextlib import chdir, redirect_stderr, redirect_stdout
 from pathlib import Path
@@ -18,6 +19,11 @@ def run_cli_contract(case):
     with tempfile.TemporaryDirectory() as directory:
         project = Path(directory) / "project"
         shutil.copytree(case.example_dir / spec["project"], project, symlinks=True)
+        if "--rev" in spec["args"]:
+            for args in (("init", "-q"), ("add", "."),
+                         ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.com",
+                          "commit", "-qm", "Fixture [skip ci]")):
+                subprocess.run(["git", *args], cwd=project, check=True, capture_output=True)
         with chdir(project):
             for args in (*spec.get("setup", []), spec["args"]):
                 if args is spec["args"]:

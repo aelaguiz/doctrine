@@ -21,6 +21,57 @@ SOURCE = (
 
 
 class LoadTests(HomeProject, unittest.TestCase):
+    def test_claude_walks_imports_and_hand_written_levels_once(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Read {{load:Guide}}"
+''', settings='[tool.doctrine.runtimes.claude]\nexternal = [{path="external.md"}]\n')
+        (root / "pods").mkdir()
+        (root / "CLAUDE.md").write_text("Root.\n")
+        (root / "pods/CLAUDE.md").write_bytes(b"Parent \xff.\n@../one.md\n")
+        (root / "pods/AGENTS.md").write_text("Codex parent.\n@../ignored.md\n")
+        (root / "external.md").write_text("External.\n@one.md\n")
+        (root / "guide.md").write_text("Guide.\n@one.md\n")
+        (root / "one.md").write_text("One.\n@two.md\n`@missing.md`\n```\n@missing.md\n```\n")
+        (root / "two.md").write_text("Two.\n@three.md\n")
+        (root / "three.md").write_text("Three.\n@four.md\n")
+        (root / "four.md").write_text("Four.\n@five.md\n")
+        (root / "five.md").write_text("Five.\n")
+        code, output, error = self.cli(root, "load", "T.qa", "--json")
+        self.assertEqual(code, 0, error)
+        reports = json.loads(output)["homes"][0]["runtimes"]
+        rows = reports["claude"]["files"]
+        self.assertEqual([(r["path"], r["kind"]) for r in rows], [
+            ("external.md", "external"), ("one.md", "import"), ("two.md", "import"),
+            ("three.md", "import"), ("four.md", "import"),
+            ("CLAUDE.md", "level"), ("pods/CLAUDE.md", "level"),
+            ("pods/team/qa/CLAUDE.md", "home"), ("guide.md", "import"),
+        ])
+        self.assertEqual(reports["claude"]["total"], sum(row["size"] for row in rows))
+        self.assertEqual([r["path"] for r in reports["codex"]["files"] if r["kind"] == "level"],
+                         ["pods/AGENTS.md"])
+        self.assertNotIn("import", [r["kind"] for r in reports["codex"]["files"]])
+        code, output, error = self.cli(root, "load", "T.qa", "--runtime", "claude")
+        self.assertEqual(code, 0, error)
+        self.assertIn("hand-written", output)
+        self.assertIn("import", output)
+
+    def test_external_compiled_level_uses_compiled_text_once(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Compiled text."
+''', settings='[tool.doctrine.runtimes.claude]\nexternal = [{path="t/AGENTS.md"}]\n')
+        (root / "t").mkdir()
+        (root / "t/AGENTS.md").write_bytes(b"Old binary: \xff\n")
+        code, output, error = self.cli(root, "load", "t", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(len(report["files"]), 1)
+        self.assertEqual(report["files"][0]["kind"], "home")
+
     def test_selected_build_ignores_another_homes_budget(self):
         source = '''team T: "Team"
     home: "t"

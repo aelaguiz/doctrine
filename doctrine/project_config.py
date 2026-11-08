@@ -28,6 +28,24 @@ class ProjectConfigError(ValueError):
         super().__init__(message)
 
 
+def real_project_path(config, path):
+    if config.revision:
+        root, scratch, _, _, _ = config.revision
+        if path.is_relative_to(scratch):
+            return root / path.relative_to(scratch)
+    return path
+
+
+def project_file_path(config, path):
+    path = Path(path).expanduser()
+    if config.revision:
+        root, scratch, live, _, _ = config.revision
+        path = real_project_path(config, path) if path.is_absolute() else live / path
+        path = path.resolve()
+        return scratch / path.relative_to(root) if path.is_relative_to(root) else path
+    return (config.config_dir / path).resolve()
+
+
 @dataclass(slots=True, frozen=True)
 class ProvidedPromptRoot:
     name: str
@@ -49,6 +67,7 @@ class ProjectConfig:
     raw_check: object = None
     provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = ()
     raw_text: str | None = _field(default=None, compare=False, repr=False)
+    revision: tuple[Path, Path, Path, str, tuple[Path, ...]] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -138,6 +157,7 @@ class ProjectConfig:
                 *tuple(provided_prompt_roots),
             ),
             raw_text=self.raw_text,
+            revision=self.revision,
         )
 
     def _compile_config_error(

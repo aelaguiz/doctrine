@@ -7,7 +7,8 @@ from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
-from doctrine._compiler.late_binding import reject_late_roots
+from doctrine._compiler.late_binding import map_text, reject_late_roots
+from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.indexing import (
     FlowLoadKey,
@@ -213,10 +214,11 @@ class CompilationSession:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(
+            compiled = CompilationContext(
                 self,
                 previous_turn_contexts=previous_turn_contexts,
             ).compile_agent(agent_name)
+            return map_text(compiled, lambda text: render_file_refs(text, self.project_config.config_dir, self.project_config)) if self.emit_root is None and self.project_config else compiled
         except DoctrineError as exc:
             # Trace frames add session context, but only fill the primary site
             # when the inner diagnostic did not already prove one.
@@ -235,10 +237,11 @@ class CompilationSession:
         from doctrine._compiler.context import CompilationContext
 
         try:
-            return CompilationContext(
+            compiled = CompilationContext(
                 self,
                 previous_turn_contexts=previous_turn_contexts,
             ).compile_agent_from_unit(unit, agent_name)
+            return map_text(compiled, lambda text: render_file_refs(text, self.project_config.config_dir, self.project_config)) if self.emit_root is None and self.project_config else compiled
         except DoctrineError as exc:
             source_path = unit.prompt_file.source_path
             dotted_name = ".".join((*unit.module_parts, agent_name)) or agent_name
@@ -356,7 +359,7 @@ class CompilationSession:
             )
             reject_details(compiled, "an emitted document")
             reject_late_roots(compiled, unit=self.root_flow.entrypoint_unit, why="an emitted document has no home")
-            return compiled
+            return map_text(compiled, lambda text: render_file_refs(text, self.project_config.config_dir, self.project_config)) if self.emit_root is None and self.project_config else compiled
         except DoctrineError as exc:
             raise exc.prepend_trace(
                 f"compile {declaration_kind} declaration `{declaration_name}`",

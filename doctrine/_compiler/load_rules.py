@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections import deque
+import os
+from pathlib import Path
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
@@ -43,6 +45,12 @@ def validate_load_rules(context, homes, selected, whole):
                         entry.always_on and entry.origin == target
                         for _, level in levels for entry in level["map"].entries
                     )
+                    if isinstance(declaration, model.FileDecl):
+                        base = (context.session.emit_root if declaration.body is not None
+                                else context.session.project_config.config_dir)
+                        path = Path(os.path.abspath(base / Path(declaration.path).expanduser()))
+                        present = any(ref[0] == "load" and ref[2] == str(path) and always_on
+                            for _, level in levels for ref, always_on in level["file_refs"])
                     required = isinstance(assertion, model.RequiresLoadAssertion)
                     if present == required:
                         continue

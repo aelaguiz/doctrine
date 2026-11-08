@@ -12,6 +12,23 @@ error_code = "E652"
 location_line = 1
 
 [[cases]]
+name = "a runtime import follows Markdown to its home"
+status = "active"
+kind = "cli_contract"
+project = "project_imports"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pod/qa/AGENTS.md" = [
+  "If your session started in this folder, you are Pod's QA. If not, this only describes that role.",
+  "",
+  "A role.",
+  "",
+  "## Rules",
+  "",
+  "@../../shared/other.md",
+] }
+
+[[cases]]
 name = "duplicate_heading fails loud"
 status = "active"
 kind = "compile_fail"
@@ -19,16 +36,6 @@ prompt = "prompts/invalid_duplicate_heading/AGENTS.prompt"
 agent = "A"
 exception_type = "CompileError"
 error_code = "E653"
-location_line = 1
-
-[[cases]]
-name = "import_line fails loud"
-status = "active"
-kind = "compile_fail"
-prompt = "prompts/invalid_import_line/AGENTS.prompt"
-agent = "A"
-exception_type = "CompileError"
-error_code = "E654"
 location_line = 1
 
 [[cases]]

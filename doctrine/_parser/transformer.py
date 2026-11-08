@@ -511,6 +511,15 @@ class SchemaDocumentTransformerMixin:
         return "preamble"
 
     @v_args(meta=True, inline=True)
+    def file_decl(self, meta, name, title, path, body=None):
+        return _with_source_span(model.FileDecl(
+            name=name, title=title, path=path,
+            body=model.DocumentBody(title=title, preamble=body.preamble, items=body.items)
+            if body is not None else None,
+            render_profile_ref=body.render_profile_ref if body is not None else None,
+        ), meta)
+
+    @v_args(meta=True, inline=True)
     def document_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title

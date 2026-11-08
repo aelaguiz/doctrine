@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 from doctrine.compiler import CompilationSession
+from doctrine._compiler.late_binding import map_text
+from doctrine._compiler.markdown_links import render_file_refs
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import (
     DOCS_ENTRYPOINTS,
@@ -78,6 +80,7 @@ def emit_target_flow(
         )
 
     output_root = (output_dir_override or target.output_dir).resolve()
+    session.emit_root = output_root
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
     output_name = f"{target.entrypoint.stem}.flow"
     d2_path = emitted_dir / f"{output_name}.d2"
@@ -94,7 +97,7 @@ def emit_target_flow(
         )
 
     emitted_dir.mkdir(parents=True, exist_ok=True)
-    d2_source = render_flow_d2(graph)
+    d2_source = render_flow_d2(map_text(graph, lambda text: render_file_refs(text, emitted_dir, target.project_config)))
     d2_path.write_text(d2_source)
     emitted_paths = [d2_path]
 

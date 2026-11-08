@@ -93,6 +93,16 @@ expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
 ] }
 
 [[cases]]
+name = "a dead link stops the build"
+status = "active"
+kind = "cli_contract"
+project = "project_links"
+args = ["build", "."]
+edit = { "specialists/qa/AGENTS.md" = "You test what users meet.\n\n## Older work\n\nSee [missing](missing.md).\n" }
+expected_exit = 1
+stderr_contains = ["E636 compile error: Dead link", "points at", "which does not exist."]
+
+[[cases]]
 name = "a class's default beats a folder's value"
 status = "active"
 kind = "cli_contract"

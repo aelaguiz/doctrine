@@ -1,0 +1,4 @@
+team Pod: "Pod"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Test changes."

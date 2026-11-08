@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -11,7 +10,9 @@ from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
-from doctrine._compiler.late_binding import bind_home
+from doctrine._compiler.late_binding import bind_home, map_text
+from doctrine._compiler.markdown_links import render_file_refs
+from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import fenced_lines
 from doctrine._compiler.teams import team_members, team_contract, member_home, find_home_team
@@ -24,21 +25,9 @@ from doctrine.emit_docs import (
 from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown
+from doctrine.project_config import project_file_path
 from doctrine.runtime_load import home_budgets, loaded_levels
-
-
-HEADER = re.compile(
-    r"^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. "
-    r'Run: doctrine where "<words>" -->\n\n'
-)
-
-
-def with_header(text, source):
-    digest = hashlib.sha256(text.encode()).hexdigest()[:12]
-    return (
-        f"<!-- doctrine sha256={digest} source={source}. Do not edit. "
-        f'Run: doctrine where "<words>" -->\n\n{text}'
-    )
+from doctrine.shared_files import HEADER, compile_shared_files, file_state, with_header
 
 
 def home_files(target, home, owner, unit, compiled, pointers, plan, context):
@@ -106,28 +95,37 @@ def compile_home(target, session, context, home, owner, unit, plan):
         (compiled,) = session.compile_agents_from_units(
             roots, previous_turn_contexts=_build_previous_turn_contexts(session, agent_roots=roots)
         )
-    home_map = build_home_map(compiled)
+    home_map = build_home_map(map_text(
+        compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config)))
     compiled, parts, pointers = split_details(compiled, home)
+    refs = [(json.loads(match[1]), always_on)
+            for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
+            for text in model_walk(value) if isinstance(text, str)
+            for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
+    contract_compiled = compiled
+    compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
     files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
     data = {
         "owner": owner,
         "unit": unit,
         "compiled": compiled,
+        "contract_compiled": contract_compiled,
         "map": home_map,
         "files": list(files),
         "pointers": pointers,
         "budgets": home_budgets(owner, unit, context),
+        "file_refs": refs,
     }
     return data, files, parts
 
 
-def companion_files(homes, companions):
+def companion_files(homes, companions, target):
     files = {}
     for path, parts in companions.items():
         if path.startswith("_details/"):
             parts.sort(key=lambda part: part[1].origin.line)
         source = parts[0][1].origin.site.rsplit(":", 1)[0]
-        text = render_companion(parts)
+        text = render_file_refs(render_companion(parts), (target.output_dir / path).parent, target.project_config)
         local = [
             data for home, data in homes.items() if str(PurePosixPath(home) / "DETAILS.md") == path
         ]
@@ -223,7 +221,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
         data, content, parts = compile_home(target, session, context, home, owner, unit, plan)
         homes[home] = data
         files.update(content)
-        compiled[owner.name] = data["compiled"]
+        compiled[owner.name] = data["contract_compiled"]
         for companion, content in parts.items():
             collected = companions.setdefault(companion, [])
             collected.extend([
@@ -239,10 +237,31 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             and team_members(context, owner, unit=data["unit"])
         ):
             path = str(PurePosixPath(home) / "TEAM.contract.json")
-            contract = team_contract(context, owner, unit=data["unit"], compiled_members=compiled)
+            contract = team_contract(context, owner, unit=data["unit"], compiled_members={
+                name: map_text(value, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
+                for name, value in compiled.items()})
             files[path] = (json.dumps(contract, indent=2) + "\n").encode()
             data["files"].append(path)
-    files.update(companion_files(homes, companions))
+    files.update(companion_files(homes, companions, target))
+    declarations = [(unit, decl) for unit in session.units()
+                    for decl in unit.declarations.files_by_name.values()]
+    referenced = {project_file_path(target.project_config, ref[2]) for data in homes.values() for ref, _ in data["file_refs"]}
+    for unit, decl in declarations:
+        path = project_file_path(target.project_config, decl.path)
+        if (decl.body is None and (path in referenced or whole and session.flow_for_unit(unit) is session.root_flow)
+                and not path.is_file()):
+            raise compile_error(code="E652", summary="Missing Markdown source",
+                detail=f"`{decl.name}` names `{decl.path}`, which doesn't exist.",
+                path=unit.prompt_file.source_path, source_span=decl.source_span)
+    written, links = compile_shared_files(target, context, files, declarations, referenced, whole)
+    for data in homes.values():
+        data["shared_files"] = [str(Path(ref[2]).relative_to(target.output_dir))
+            for ref, _ in data["file_refs"] if Path(ref[2]).is_relative_to(target.output_dir)
+            and str(Path(ref[2]).relative_to(target.output_dir)) in written]
+        for path in data["shared_files"]:
+            for child in links[path]:
+                if child in written and child not in data["shared_files"]:
+                    data["shared_files"].append(child)
     return homes, files, selected, whole
 
 
@@ -262,28 +281,6 @@ def select_homes(owners, selectors):
             )
         selected.update(matches)
     return selected
-
-
-def file_state(path, fresh):
-    if path.is_symlink():
-        if path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
-            return "unchanged" if isinstance(fresh, Path) else "stale"
-        return "edited"
-    if not path.exists():
-        return "missing"
-    content = path.read_bytes()
-    if path.suffix == ".md":
-        try:
-            text = content.decode()
-        except UnicodeDecodeError:
-            return "edited"
-        match = HEADER.match(text)
-        if (
-            match is None
-            or hashlib.sha256(text[match.end() :].encode()).hexdigest()[:12] != match[1]
-        ):
-            return "edited"
-    return "unchanged" if content == fresh else "stale"
 
 
 def atomic_write(path, content):
@@ -368,6 +365,10 @@ def needed_files(root, homes, files, selected, wanted):
                          if path.startswith("_details/") else file_state(disk, files[path]))
                 if state != "unchanged":
                     yield home, "links to", path, state
+        for path in dict.fromkeys(path for _, data in levels for path in data["shared_files"]):
+            state = file_state(root / path, files[path])
+            if state != "unchanged":
+                yield home, "links to", path, state
 
 
 def build_homes(

@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+
 from doctrine import model
+from doctrine.project_config import project_file_path, real_project_path
 from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.provenance import render_inline_quotes
+from doctrine._compiler.naming import _name_ref_from_dotted_name
+from doctrine._compiler.source_graph import declaration_match
 from doctrine._compiler.readable_diagnostics import invalid_readable_block_error
 from doctrine._compiler.resolved_types import (
     IndexedUnit,
@@ -147,6 +154,41 @@ class ValidateSchemaHelpersMixin:
                     source_span=None,
                 )
             parts.append(between)
+            expression = match.group(1).strip()
+            name, separator, projection = expression.partition(":")
+            is_load = name == "load" and bool(separator)
+            ref_name = projection if is_load else name
+            file_match = declaration_match(self, _name_ref_from_dotted_name(ref_name), unit)
+            if file_match is not None and isinstance(file_match[1], model.FileDecl) and (
+                is_load or not separator or projection == "title"
+            ):
+                file_unit, file_decl = self._resolve_addressable_root_decl(
+                    _name_ref_from_dotted_name(ref_name), unit=unit, owner_label=owner_label,
+                    ambiguous_label=ambiguous_label or surface_label,
+                    missing_local_label=surface_label,
+                )
+                if self._active_skill_package_host_context() is not None:
+                    raise authored_compile_error(code="E655", summary="File ref can't go here",
+                        detail=f"A skill package has no home to link from, so it can't read `{{{{{ref_name}}}}}`.", unit=unit, source_span=None)
+                if is_load and value[match.end():].split("\n", 1)[0].strip():
+                    raise authored_compile_error(code="E655", summary="File ref can't go here",
+                        detail=f"`{{{{load:{ref_name}}}}}` must end its line.", unit=unit, source_span=None)
+                if is_load and any(c.isspace() for c in file_decl.path):
+                    raise authored_compile_error(code="E655", summary="File ref can't go here",
+                        detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
+                base = (self.session.emit_root or self.session.project_config.config_dir) if file_decl.body is not None else self.session.project_config.config_dir
+                path = Path(os.path.abspath(base / Path(file_decl.path).expanduser()))
+                for parent in path.parents:
+                    if parent.resolve() == real_project_path(self.session.project_config, base):
+                        path = base / path.relative_to(parent)
+                        break
+                if file_decl.body is None and not project_file_path(self.session.project_config, path).is_file():
+                    raise authored_compile_error(code="E652", summary="Missing Markdown source",
+                        detail=f"`{file_decl.name}` names `{file_decl.path}`, which doesn't exist.", unit=file_unit, source_span=file_decl.source_span)
+                parts.append(file_decl.title if projection == "title" and not is_load else
+                    "\x1e" + json.dumps(["load" if is_load else "link", file_decl.title, str(path), None]) + "\x1f")
+                cursor = match.end()
+                continue
             parts.append(
                 self._resolve_authored_prose_interpolation_expr(
                     match.group(1),

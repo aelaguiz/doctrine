@@ -116,7 +116,9 @@ def dependency_graph(context, sources):
                 for match in _INTERPOLATION_RE.finditer(value):
                     if LATE_ROOT.fullmatch(match[0]):
                         continue
-                    ref = context._parse_interpolation_expr_ref(match[1].split(",", 1)[0])
+                    expression = match[1].split(",", 1)[0].strip()
+                    ref = context._parse_interpolation_expr_ref(
+                        expression[5:] if expression.startswith("load:") else expression)
                     if ref is not None and ref.root is not None:
                         refs.append(ref.root)
             refs.extend(

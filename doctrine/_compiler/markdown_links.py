@@ -3,12 +3,30 @@ from __future__ import annotations
 import os
 import posixpath
 import re
+import json
+from pathlib import Path
 
 from doctrine import model
+from doctrine.project_config import real_project_path
 from doctrine._compiler.markdown_reader import fenced_lines
 
 
-def rebase_markdown(text, folder):
+def render_file_refs(text, folder, config):
+    def render(match):
+        mode, title, path, anchor = json.loads(match[1])
+        relative = os.path.relpath(real_project_path(config, Path(path)),
+                                   real_project_path(config, folder)).replace(os.sep, "/")
+        if anchor:
+            relative += "#" + anchor
+        if mode == "load":
+            return "@" + relative
+        destination = "<" + relative + ">" if any(c.isspace() for c in relative) else relative
+        return f"[{title}]({destination})"
+    result = re.sub(r"\x1e([^\x1f]+)\x1f", render, text)
+    return model.AuthoredProse(result) if isinstance(text, model.AuthoredProse) else result
+
+
+def markdown_destinations(text):
     visible = "".join(
         re.sub(r"[^\n]", " ", line) if inside else line
         for line, inside in fenced_lines(text.splitlines(keepends=True))
@@ -25,17 +43,26 @@ def rebase_markdown(text, folder):
         r"^ {0,3}\[(?!\^)(?:\\.|[^\]\\\n])+\]:[ \t\n]*"
         + destination
         + r"[ \t]*(?:[\"'][^\"'\n]*[\"'][ \t]*)?$",
+        r"(?<!\S)@([^\s\[\]()]+)",
     )
-    changes = []
     for pattern in patterns:
         for match in re.finditer(pattern, visible, re.M):
             start, end = match.span(match.lastindex)
-            dest = text[start:end]
-            if dest.startswith(("/", "#", "~")) or re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", dest):
-                continue
-            path, separator, anchor = dest.partition("#")
-            relative = os.path.relpath(text.source_path.parent / path, folder).replace(os.sep, "/")
-            changes.append((start, end, posixpath.normpath(relative) + separator + anchor))
+            yield start, end, pattern == patterns[-1]
+
+
+def rebase_markdown(text, folder):
+    changes = []
+    for start, end, is_import in markdown_destinations(text):
+        dest = text[start:end]
+        if dest.startswith(("/", "#", "~")) or re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", dest):
+            continue
+        path, separator, anchor = dest.partition("#")
+        if is_import and text[end:].split("\n", 1)[0].strip():
+            continue
+        relative = os.path.relpath(text.source_path.parent / path, folder).replace(os.sep, "/")
+        rebased = posixpath.normpath(relative) + separator + anchor
+        changes.append((start, end, rebased))
     result = str(text)
     for start, end, dest in sorted(changes, reverse=True):
         result = result[:start] + dest + result[end:]
