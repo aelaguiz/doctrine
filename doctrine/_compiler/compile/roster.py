@@ -71,7 +71,8 @@ def compile_roster(context, block, *, unit):
             for cell in row.cells
         )
         rows.append(CompiledTableRow(key=row.key, cells=cells))
-    return CompiledTableBlock(title=block.title, table=CompiledTableData(
+    untitled = not block.title
+    return CompiledTableBlock(title=None if untitled else block.title, anonymous=untitled, table=CompiledTableData(
         columns=tuple(CompiledTableColumn(key=column.key, title=column.title, body=()) for column in columns),
         rows=tuple(rows),
     ))

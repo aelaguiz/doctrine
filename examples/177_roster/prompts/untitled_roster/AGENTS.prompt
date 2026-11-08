@@ -1,0 +1,31 @@
+# A roster with an empty title has no heading of its own, so it can be a section's whole body.
+
+abstract agent Lead:
+    role: "You lead."
+    values:
+        calls: "Which bet to take"
+
+
+abstract agent Qa:
+    role: "You test."
+    values:
+        calls: "Whether a change passes"
+
+
+abstract agent Watcher:
+    role: "You watch."
+
+
+team GrowthPod: "the growth pod"
+    home: "pods/growth"
+    calls: "Who makes each call"
+        roster calls: ""
+            call: "The call" = "{{agent:calls}}"
+            who: "Who makes it" = "{{agent:title}}"
+            rows:
+                owner:
+                    call: "The goal and the money"
+                    who: "the owner"
+    member lead[Lead]: "lead"
+    member qa[Qa]: "QA"
+    member watcher[Watcher]: "watcher"

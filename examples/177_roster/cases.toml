@@ -28,3 +28,20 @@ agent = "Alone"
 exception_type = "CompileError"
 error_code = "E609"
 location_line = 3
+
+[[cases]]
+name = "a roster with an empty title is its section's whole body"
+status = "active"
+kind = "render_contract"
+prompt = "prompts/untitled_roster/AGENTS.prompt"
+agent = "GrowthPod"
+assertion = "exact_lines"
+expected_lines = [
+  "## Who makes each call",
+  "",
+  "| The call | Who makes it |",
+  "| --- | --- |",
+  "| Which bet to take | lead |",
+  "| Whether a change passes | QA |",
+  "| The goal and the money | the owner |",
+]
