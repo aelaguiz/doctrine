@@ -80,5 +80,5 @@ def compile_project_skills(target, files, passages):
                 raise compile_error(code="E607", summary="Two outputs, one path",
                                     detail=f"Skill output `{relative}` shares a path with another output.")
             result[relative] = content
-        sources.append((entry, compiled.name, markdown, session))
+        sources.append((entry, compiled.name, markdown, session, os.path.relpath(dest, root)))
     return result, sources

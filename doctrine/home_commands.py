@@ -112,7 +112,7 @@ def check_homes(target, session, selectors):
         checkout = git_root, scratch
     dead_links = []
     for name, content in files.items():
-        if name in session.project_skill_files or not name.endswith(".md") or isinstance(content, Path):
+        if not name.endswith(".md") or isinstance(content, Path):
             continue
         text = content.decode()
         for start, end, is_import in markdown_destinations(text):
@@ -400,7 +400,7 @@ def where_source(args):
                         result.append({"origin": f"passage {declaration.name}",
                             "site": f"{relpath(path, target.project_config.config_dir)}:{declaration.source_span.line}",
                             "homes": []})
-            for entry, name, markdown, skill_session in session.project_skill_sources:
+            for entry, name, markdown, skill_session, install in session.project_skill_sources:
                 if needle not in " ".join(markdown.casefold().split()):
                     continue
                 for unit in skill_session.units():
@@ -418,7 +418,7 @@ def where_source(args):
                             if needle in " ".join(text.casefold().split()):
                                 result.append({"origin": f"skill package {name}",
                                     "site": f"{relpath(source, target.project_config.config_dir)}:{line}",
-                                    "homes": []})
+                                    "homes": [], "installs": install})
         generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
                      if isinstance(content, bytes)}
         for unit, declaration in declarations_in(session).values():
@@ -481,6 +481,9 @@ def where(args):
             print(f"{match['origin']}  {match['site']}")
             if "text" in match:
                 print(f"  {match['text']}")
+            if "installs" in match:
+                print(f"  installs at {match['installs']}")
+                continue
             reach = f"  reaches {count} {'home' if count == 1 else 'homes'}"
             print(reach + (": " + ", ".join(match["homes"]) if count else ""))
     return 0 if result["matches"] else 1
