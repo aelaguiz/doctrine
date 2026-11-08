@@ -21,6 +21,19 @@ team T: "Team"
         self.assertEqual(warning["code"], "W301")
         self.assertIn("prompts/guide.md:3", warning["text"])
 
+    def test_w301_skips_headings(self):
+        title = "Every number we show sits beside its own kind at the same age and size"
+        root = self.project(f'''file Cases from "prompts/cases.md"
+    path: "shared/cases.md"
+team T: "Team"
+    home: "pod"
+    role: "{title}"
+''')
+        (root / "prompts/cases.md").write_text(
+            f"# Cases\n\n## {title}\n\nOn November 2 a count missed its window and the lead caught it.\n"
+        )
+        self.assertEqual(self.warnings(root), [])
+
     def test_w302_is_the_same_before_and_after_build(self):
         root = self.project(example="188_project_warnings")
         before = self.cli(root, "check", "--json")

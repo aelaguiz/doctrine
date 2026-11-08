@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- The near-copy check (`W301`) skips Markdown headings. A case log whose
+  sections share an instruction file's titles no longer warns.
+- A `--rev` build counts a link target the checkout has, as a build in place
+  does, and reads each revision file once, so a build of a large project from
+  a commit takes about half the time.
+
 - Skill packages can take their `SKILL.md` from a Markdown file and keep its bytes.
 - Doctrine now depends on PyYAML (`pyyaml>=6,<7`) to read that file's frontmatter into the package's
   name and description.

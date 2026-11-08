@@ -373,7 +373,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E633` | External file missing | A listed external is absent and has no reserve. |
 | `E634` | Hand edit in a compiled file | A header body hash or a recorded file hash does not match, or a Claude link has the wrong target. The report may name changed sections and their sources. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, a linked companion is missing, or its linked heading is out of date. Run `doctrine build .`, then build this home. |
-| `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
+| `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. A `--rev` build counts a target that isn't source when the revision or the checkout has it. Fix the link or add the file. |
 | `E637` | Dead case link | A case or file section link names a missing or untitled case, a non-case, a missing section, or a section in a kept file. A linked heading also fails if it repeats in its file. |
 | `E640` | No home matches | A selector matches no home path or agent name, or no class, team, member, or home in `doctrine classes`. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |

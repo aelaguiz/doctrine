@@ -31,7 +31,7 @@ prints to stderr and fails a check only with `--strict`.
 
 | Code | Key | Meaning |
 | --- | --- | --- |
-| `W301` | `near_copy` | Paragraphs in two source declarations are copies or differ by a few words. |
+| `W301` | `near_copy` | Paragraphs in two source declarations are copies or differ by a few words. Headings don't count, since files that point at each other share section names. |
 | `W302` | `double_load` | The same rendered text from the same declaration and path reaches a home from two files in its load. |
 | `W303` | `message_without_reader` | A sent message names an agent or team, but no one in its scope reads it. |
 | `W304` | `unused_value` | No home reads a `values:` key. |
