@@ -111,3 +111,17 @@ team Pod: "pod"
         self.assertEqual(code, 0, error)
         self.assertIn('class C_AppQA["AppQA"] {\n        <<abstract>>\n        agent:phone\n        testing()\n    }', output)
 
+    def test_inline_slot_does_not_use_workflow_with_class_name(self):
+        root = self.project('''workflow QA: "Workflow"
+    "Workflow text."
+abstract agent QA:
+    role: "Role."
+    testing: "Tests"
+        "Test."
+team Pod: "pod"
+    home: "pod"
+''')
+        code, output, error = self.cli(root, "classes", "QA", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["uses"], [])
+

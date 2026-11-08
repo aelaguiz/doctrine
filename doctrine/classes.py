@@ -177,7 +177,7 @@ def source_pieces(context, fields, unit):
             origin = getattr(item, "origin", None)
             if origin:
                 scope = origin.scope_unit
-            if isinstance(item, ResolvedWorkflowBody) and origin:
+            if isinstance(item, ResolvedWorkflowBody) and origin and not origin.path:
                 workflow = scope.declarations.workflows_by_name.get(origin.declaration.rsplit(".", 1)[-1])
                 if workflow:
                     name = class_name(context.session, scope, workflow)
