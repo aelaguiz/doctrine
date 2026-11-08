@@ -121,7 +121,7 @@ Doctrine treats that directory as the package tree it owns:
   package-local module and a repo-wide prompt module with the same dotted
   path.
 - Any bundled file that is not a `.prompt` file copies through under the same
-  relative paths, byte for byte.
+  relative paths, byte for byte, and an executable file stays executable.
 - Prompt files outside `agents/**/*.prompt` do not copy through as raw files.
   Use `emit:` when those prompt files should turn into bundled `.md` docs.
 - Relative Markdown links should therefore be authored against the source tree
@@ -456,7 +456,9 @@ This is the clean thin-harness pattern:
 ### Ordinary bundled files
 
 Any bundled file under the package source root that is not a `.prompt` file
-copies through under the same relative path, byte for byte.
+copies through under the same relative path, byte for byte. A file whose
+source is executable is written executable. A check calls a built copy with
+the wrong executable bit stale, and the next build sets it back.
 
 Examples:
 

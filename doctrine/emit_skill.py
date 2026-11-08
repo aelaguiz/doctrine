@@ -23,6 +23,7 @@ from doctrine.emit_common import (
 from doctrine.parser import parse_file
 from doctrine.passages import place_passages
 from doctrine.renderer import render_readable_block
+from doctrine.shared_files import set_executable
 from doctrine.skill_source_receipts import (
     SOURCE_RECEIPT_FILE_NAME,
     build_skill_source_receipt_payload,
@@ -126,6 +127,7 @@ def emit_target_skill(
         bundled_path = emitted_dir / Path(bundled_file.path)
         bundled_path.parent.mkdir(parents=True, exist_ok=True)
         bundled_path.write_bytes(bundled_file.content)
+        set_executable(bundled_path, bundled_file.executable)
         emitted_paths.append(bundled_path)
     source_receipt_payload = build_skill_source_receipt_payload(
         target=target,

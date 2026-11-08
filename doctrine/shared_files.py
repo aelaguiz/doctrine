@@ -29,18 +29,31 @@ def header_match(text, *, frontmatter=False):
     return HEADER.match(text)
 
 
-def file_state(path, fresh, recorded_hash=None):
+class Executable(bytes):
+    """A built file's bytes, written with the executable bit its source has."""
+
+
+def set_executable(path, executable):
+    mode = path.stat().st_mode & 0o777
+    os.chmod(path, mode | (mode & 0o444) >> 2 if executable else mode & ~0o111)
+
+
+def file_state(path, fresh, recorded=()):
+    # A file without a header counts as built when a contract records its hash: the working
+    # tree's, or the one committed at the checkout's HEAD.
+    known = {recorded} if isinstance(recorded, str) else {value for value in recorded or () if value}
     if path.is_symlink():
-        if recorded_hash is None and path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
+        if not known and path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
             return "unchanged" if isinstance(fresh, Path) else "stale"
         return "edited"
     if not path.exists():
         return "missing"
     content = path.read_bytes()
-    if recorded_hash is not None:
-        if hashlib.sha256(content).hexdigest() != recorded_hash:
-            return "edited"
-        return "unchanged" if content == fresh else "stale"
+    if isinstance(fresh, bytes) and content == fresh:
+        executable = bool(path.stat().st_mode & 0o100)
+        return "unchanged" if executable == isinstance(fresh, Executable) else "stale"
+    if known:
+        return "stale" if hashlib.sha256(content).hexdigest() in known else "edited"
     if path.suffix == ".md":
         try:
             text = content.decode()
@@ -52,7 +65,7 @@ def file_state(path, fresh, recorded_hash=None):
             or hashlib.sha256(text[match.end() :].encode()).hexdigest()[:12] != match[1]
         ):
             return "edited"
-    return "unchanged" if content == fresh else "stale"
+    return "stale"
 
 
 def with_header(text, source):

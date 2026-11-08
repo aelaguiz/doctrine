@@ -4,6 +4,7 @@ import json
 import hashlib
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -30,7 +31,9 @@ from doctrine.renderer import render_markdown
 from doctrine.project_config import project_file_path
 from doctrine.project_skills import compile_project_skills
 from doctrine.runtime_load import home_budgets, loaded_levels
-from doctrine.shared_files import HEADER, compile_shared_files, file_state, header_match, with_header
+from doctrine.shared_files import (
+    HEADER, Executable, compile_shared_files, file_state, header_match, set_executable, with_header,
+)
 
 
 def home_files(target, home, owner, unit, compiled, pointers, plan, context):
@@ -301,6 +304,20 @@ def select_homes(owners, selectors):
     return selected
 
 
+def committed_hashes(record):
+    """The hashes in the contract committed at the checkout's HEAD. A commit can carry built files
+    that this working tree's contract has not recorded yet."""
+    if not record.parent.is_dir():
+        return {}
+    result = subprocess.run(["git", "-C", str(record.parent), "show", f"HEAD:./{record.name}"],
+                            capture_output=True)
+    try:
+        hashes = json.loads(result.stdout).get("hashes", {}) if not result.returncode else {}
+    except (ValueError, AttributeError):
+        return {}
+    return hashes if isinstance(hashes, dict) else {}
+
+
 def atomic_write(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}")
@@ -309,6 +326,7 @@ def atomic_write(path, content):
     else:
         with temporary.open("wb") as stream:
             stream.write(content)
+        set_executable(temporary, isinstance(content, Executable))
     os.replace(temporary, path)
 
 
@@ -440,7 +458,8 @@ def build_homes(
             ).encode(),
         }
         wanted.add("HOMES.contract.json")
-    states = {name: file_state(root / name, files.get(name), hashes.get(name))
+    committed = committed_hashes(record)
+    states = {name: file_state(root / name, files.get(name), (hashes.get(name), committed.get(name)))
               for name in sorted(wanted | obsolete)}
     if not whole:
         needed = needed_files(root, homes, files, selected, wanted)

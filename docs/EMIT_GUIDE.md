@@ -96,7 +96,11 @@ keep their current output. The build checks every file before any write. A hand 
 Writes are atomic and use your umask. Equal bytes keep their file's mtime.
 
 A whole build writes `HOMES.contract.json`, which lists every emitted path
-and hashes files without a Doctrine header.
+and hashes files without a Doctrine header. A check counts such a file as
+built when its hash is in this contract or in the one committed at the
+checkout's `HEAD`, so a commit made from a build in another folder doesn't
+make the checkout's copies look hand-edited. A file that is exactly what the
+build writes is never a hand edit.
 It removes recorded paths the new source no longer emits. It leaves their
 folders alone. A missing record means no files are obsolete. A record that
 won't parse counts as missing, so a build can repair a merge conflict.

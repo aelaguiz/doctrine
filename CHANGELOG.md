@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- A bundled skill file keeps its executable bit, in project builds and standalone
+  emits. `check` calls a built copy with the wrong bit stale.
+- A check counts a file without a header as built when the contract committed at
+  `HEAD` records its hash, and a file exactly as the build writes it is never
+  "edited". A working tree whose contract lags its last commit no longer shows
+  hand edits.
 - `E636` checks links in project-built skills, in `SKILL.md` and bundled Markdown alike.
   `doctrine where` names the folder a skill installs at, where it said it reached 0 homes.
 - Projects can declare passages once and place them in Markdown-backed skills and shared files.

@@ -493,6 +493,29 @@ class EmitSkillTests(unittest.TestCase):
             self.assertIn('[target."demo"]', lock_text)
             self.assertIn(receipt["source_tree_sha256"], lock_text)
 
+    def test_emit_skill_keeps_a_bundled_file_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir).resolve()
+            prompts = root / "prompts" / "skills" / "tool"
+            (prompts / "scripts").mkdir(parents=True)
+            (prompts / "SKILL.prompt").write_text(
+                'skill package Tool: "Tool"\n    metadata:\n        name: "tool"\n    "Run the tool."\n',
+                encoding="utf-8",
+            )
+            (prompts / "scripts" / "run").write_text("#!/bin/sh\necho ok\n", encoding="utf-8")
+            (prompts / "scripts" / "run").chmod(0o755)
+            (prompts / "scripts" / "notes.txt").write_text("Plain.\n", encoding="utf-8")
+            pyproject = root / "pyproject.toml"
+            pyproject.write_text(
+                '[[tool.doctrine.emit.targets]]\nname = "demo"\n'
+                'entrypoint = "prompts/skills/tool/SKILL.prompt"\noutput_dir = "build"\n',
+                encoding="utf-8",
+            )
+            emit_target_skill(load_emit_targets(pyproject)["demo"])
+            emitted = root / "build" / "skills" / "tool" / "scripts"
+            self.assertTrue((emitted / "run").stat().st_mode & 0o100)
+            self.assertFalse((emitted / "notes.txt").stat().st_mode & 0o111)
+
     def test_emit_skill_ignores_generated_package_cache_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir).resolve()

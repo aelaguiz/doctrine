@@ -402,6 +402,7 @@ class CompiledSkillPackage:
 class CompiledSkillPackageFile:
     path: str
     content: bytes
+    executable: bool = False
 
 
 @dataclass(slots=True, frozen=True)
