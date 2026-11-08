@@ -17,7 +17,6 @@ TEAM_FAILURES = {
     "E609": ('agent A:\n    role: "A."\n    work: "Work"\n        roster r: "Roster"\n            who: "Who" = "{{agent:title}}"\n', {}),
     "E652": ('abstract agent B from "absent.md"\nagent A[B]:\n    inherit *\n', {}),
     "E653": ('abstract agent B from "role.md"\nagent A[B]:\n    inherit *\n', {"role.md": "Role.\n## Same\nOne.\n## Same\nTwo.\n"}),
-    "E654": ('abstract agent B from "role.md"\nagent A[B]:\n    inherit *\n', {"role.md": "Role.\n@other.md\n"}),
 }
 
 

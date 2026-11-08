@@ -18,6 +18,7 @@ from doctrine._compiler.naming import model_walk
 from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
 from doctrine.runtime_load import loaded_levels
+from doctrine.project_config import project_file_path
 
 
 def near_copy_warnings(session):
@@ -58,6 +59,10 @@ def near_copy_warnings(session):
                     from_files.add(source.resolve())
                     name = ".".join((*unit.module_parts, declaration.name))
                     texts.append((name, source, 1, source.read_text()))
+            if (isinstance(declaration, model.FileDecl) and declaration.body is None
+                    and (source := project_file_path(session.project_config, declaration.path)).is_file()):
+                name = ".".join((*unit.module_parts, declaration.name))
+                texts.append((name, source, 1, source.read_text(errors="replace")))
         for name, source, line, text in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):

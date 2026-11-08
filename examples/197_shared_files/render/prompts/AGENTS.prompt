@@ -1,0 +1,6 @@
+file Guide: "Guide"
+    path: "shared/guide.md"
+    "Shared guidance."
+
+agent Writer:
+    role: "Before you write, read {{Guide}}."

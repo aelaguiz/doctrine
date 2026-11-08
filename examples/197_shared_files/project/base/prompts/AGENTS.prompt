@@ -1,0 +1,20 @@
+file Guide: "Test design"
+    path: "shared/guide.md"
+
+file Checklist: "Checklist"
+    path: "shared/checklist.md"
+    "Check the result."
+
+team Pod: "Pod"
+    home: "pod"
+    member qa: "QA"
+        role: "Before testing, read {{Guide}}."
+        work: "Work"
+            "Use {{Checklist}}."
+    member analyst: "analyst"
+        role: "Read first: {{load:Guide}}"
+
+team Deep: "Deep team"
+    home: "pod/deep"
+    member qa: "QA"
+        role: "Before testing, read {{Guide}}."

@@ -4,6 +4,7 @@ import re
 from dataclasses import replace
 
 from doctrine import model
+from doctrine._model.core import role_text
 from doctrine._compiler.naming import map_model
 from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
@@ -14,6 +15,9 @@ from doctrine._compiler.markdown_links import rebase_markdown
 
 def map_text(value, substitute, markdown=None):
     def leaf(item):
+        if isinstance(item, model.RoleScalar) and item.paragraphs:
+            paragraphs = map_text(item.paragraphs, substitute, markdown)
+            return replace(item, text=role_text(paragraphs), paragraphs=paragraphs)
         if isinstance(item, str):
             return (markdown(item) if markdown else item) if isinstance(item, model.MarkdownProse) else substitute(item)
         if isinstance(item, model.NameRef):

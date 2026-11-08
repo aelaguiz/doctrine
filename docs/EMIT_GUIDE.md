@@ -71,8 +71,15 @@ sizes use UTF-8 bytes. Its default is 32,768, or `project_doc_max_bytes`
 from `.codex/config.toml` beside the pyproject. A runtime's explicit `limit`
 wins. Do not list the Codex global file as an external: Codex does not
 charge it against that project limit. Only the target's runtimes are loaded.
-Runtime settings accept `limit`, `warn_at`, `over`, and `external`.
+Runtime settings accept `limit`, `warn_at`, `over`, `external`, and `file_limit`.
+The `file_limit` warns when one compiled level file is too long. It defaults to
+150,000 characters for Claude and has no default for Codex.
 A present external counts its real size. An absent one needs a `reserve`.
+Load reports count hand-written files between the project and each home.
+Claude also follows `@` imports four hops deep and counts each file once.
+The shared files table shows each runtime's size and the homes that read it.
+With `--rev`, files inside the repository come from that revision. Files
+outside it come from disk.
 
 Both runtimes share `AGENTS.md`, with a relative `CLAUDE.md` symlink.
 A Claude-only target writes `CLAUDE.md`. With no runtimes set, the target

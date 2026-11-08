@@ -85,6 +85,7 @@ ReadableDecl: TypeAlias = (
 )
 AddressableRootDecl: TypeAlias = (
     ReadableDecl
+    | model.FileDecl
     | model.WorkflowDecl
     | model.SkillsDecl
     | model.AnalysisDecl

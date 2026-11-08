@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Shared files
+
+- Name shared files and link to them or ask a role to read them first. Files
+  without bodies stay on disk; files with bodies are written by the build.
+- Load reports count hand-written levels and Claude imports. They list
+  on-demand text and shared file sizes. `doctrine diff --base-tree` reports
+  changes to shared files. `doctrine where` and `W301` read kept files.
+
 ### Super in overrides
 
 - Use `super` on its own line in an override to keep the parent's text and add
@@ -25,6 +33,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Markdown imports work in revision checks and can point to built files. Load
+  rules keep declared symlink paths, and flow links point to the built files.
+- Revision checks accept links to folders. Codex lists a read-first file only
+  once in each load report.
+- Shared files keep their declared paths through symlinks. Builds catch output
+  collisions, and selected checks follow links between built files.
+- Revision checks find links in the requested commit. Load reports count each
+  file once, show only files the runtime loads, and omit loaded files from
+  on-demand lists.
+- Load reports skip missing imports. Builds ignore handles in prose and report
+  all dead links at once. Shared-file links render in emitted docs and diagrams.
+- Builds and checks report `E636` when a compiled file points to a missing file.
+- Set `file_limit` for a runtime to get a `W309` warning when one compiled
+  level file is too long.
+- Markdown-backed declarations keep runtime import lines and move their paths
+  with the text. `doctrine import` also keeps those lines. `E654` is retired.
 - Role paragraphs reject repeated keys and keep their author in `where`.
   An agent cannot drop every role paragraph.
 - Markdown import keeps extra space after bold leads, leaves quotes in bold leads

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import tempfile
 import tomllib
 import unittest
 from contextlib import chdir
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from tests.home_support import HomeProject
@@ -13,13 +16,37 @@ from doctrine import model
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.parser import parse_file
+from doctrine.project_config import ProjectConfig
+from doctrine.renderer import render_markdown
+from doctrine.runtime_load import home_loads
 from doctrine._compiler.home_map import build_home_map
+from doctrine._compiler.naming import model_walk
 from doctrine.emit_docs import _build_previous_turn_contexts, emit_target
 from doctrine.emit_common import load_emit_targets
 from doctrine._verify_corpus.manifest import _load_manifest
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_dead_links_fail_build_and_check(self):
+        for link in ("[missing](missing.md)", "@missing.md"):
+            with self.subTest(link=link):
+                root = self.project(
+                    'team T: "Team"\n    home: "t"\n    role: "' + link + '"\n'
+                )
+                for command in ("build", "check"):
+                    code, _, error = self.cli(root, command)
+                    self.assertEqual(code, 1, error)
+                    self.assertIn("E636 compile error: Dead link", error)
+                    self.assertIn("t/AGENTS.md points at missing.md, which does not exist.", error)
+
+    def test_links_to_planned_files_and_code_pass(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n'
+            '    role: "[self](AGENTS.md) and `[code](missing.md)`"\n'
+        )
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+
     def test_selected_build_checks_only_its_members_rules(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
@@ -692,6 +719,143 @@ rule R: "Rule"
         self.assertEqual(set(archive_paths), {"pyproject.toml", "prompts", "craft.md"})
         self.assertIn("Role from revision.", (root / "pod/qa/AGENTS.md").read_text())
 
+    def test_rev_reads_relative_kept_file_from_revision(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        guide = root / "guide.md"
+        guide.write_text("Revision guide.\n")
+        self.git_project(root)
+        guide.write_text("Changed guide.\n")
+        code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(report["on_demand"], [{"path": "guide.md", "size": 16}])
+
+    def test_rev_reads_kept_file_outside_repository_from_disk(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            guide = Path(temporary) / "guide.md"
+            guide.write_text("Before.\n")
+            root = self.project(f'''file Guide: "Guide"
+    path: "{guide}"
+team T: "Team"
+    home: "t"
+    role: "Read {{{{Guide}}}}."
+''')
+            self.git_project(root)
+            guide.write_text("Changed on disk.\n")
+            code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            self.assertEqual(report["on_demand"][0]["size"], 17)
+
+    def test_rev_walks_revision_files_and_reads_outside_paths_from_disk(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            outside = Path(temporary) / "outside.md"
+            outside.write_text("Before.\n")
+            root = self.project()
+            guide = root / "guide.md"
+            parent = root / "pods/CLAUDE.md"
+            parent.parent.mkdir()
+            relative = os.path.relpath(outside, root)
+            (root / "prompts/AGENTS.prompt").write_text(f'''file Guide: "Guide"
+    path: "{guide}"
+file Outside: "Outside"
+    path: "{relative}"
+team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Read {{{{Outside}}}}."
+        work: "Work"
+            "Read {{{{load:Guide}}}}"
+''')
+            guide.write_text(f"Revision guide.\n@nested.md\n@{relative}\n")
+            (root / "nested.md").write_text("Revision import.\n")
+            parent.write_text("Revision parent.\n")
+            self.git_project(root)
+            guide.write_text("Changed guide.\n")
+            (root / "nested.md").write_text("Changed import.\n")
+            parent.write_text("Changed parent.\n")
+            outside.write_text("Changed outside.\n")
+            code, output, error = self.cli(root, "load", "T.qa", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            rows = {row["path"]: row for row in report["files"]}
+            self.assertEqual(rows["pods/CLAUDE.md"]["size"], len("Revision parent.\n"))
+            self.assertEqual(rows["guide.md"]["size"], len(f"Revision guide.\n@nested.md\n@{relative}\n"))
+            self.assertEqual(rows["nested.md"]["size"], len("Revision import.\n"))
+            self.assertEqual(rows[relative]["size"], len("Changed outside.\n"))
+            self.assertEqual(report["on_demand"], [])
+            code, _, error = self.cli(root, "build", "--rev", "HEAD")
+            self.assertEqual(code, 0, error)
+            link = os.path.relpath(outside, root / "pods/team/qa")
+            self.assertIn(f"[Outside]({link})", (root / "pods/team/qa/AGENTS.md").read_text())
+
+    def test_rev_external_and_imports_use_revision_and_overlays(self):
+        root = self.project('''team T: "Team"
+    home: "pods/team"
+    member qa: "QA"
+        role: "Test."
+''')
+        external = root / "external.md"
+        (root / "pyproject.toml").write_text((root / "pyproject.toml").read_text() +
+            f'\n[tool.doctrine.runtimes.claude]\nexternal = [{{path="{external}"}}]\n')
+        external.write_text("Revision external.\n@import.md\n")
+        imported = root / "import.md"
+        imported.write_text("Revision import.\n")
+        self.git_project(root)
+        external.write_text("Changed external.\n")
+        imported.write_text("Overlay import.\n")
+        (root / "pods").mkdir()
+        (root / "pods/CLAUDE.md").write_text("Untracked parent.\n")
+        code, output, error = self.cli(root, "load", "T.qa", "--rev", "HEAD", "--with", "import.md", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        self.assertEqual(rows[0]["size"], len("Revision external.\n@import.md\n"))
+        self.assertEqual(rows[1]["size"], len("Overlay import.\n"))
+        self.assertNotIn("pods/CLAUDE.md", [row["path"] for row in rows])
+
+    def test_rev_reads_a_file_outside_the_project_but_inside_the_repository(self):
+        root = self.project()
+        project = root / "project"
+        project.mkdir()
+        (root / "prompts").rename(project / "prompts")
+        (root / "pyproject.toml").rename(project / "pyproject.toml")
+        (project / "prompts/AGENTS.prompt").write_text('''file Guide: "Guide"
+    path: "../guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        (root / "guide.md").write_text("Revision guide.\n")
+        self.git_project(root)
+        (root / "guide.md").write_text("Changed guide.\n")
+        code, output, error = self.cli(project, "load", "t", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual(report["on_demand"], [{"path": "../guide.md", "size": 16}])
+
+    def test_rev_uses_resolved_path_for_a_symlink_outside_the_repository(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            outside = Path(temporary) / "outside.md"
+            outside.write_text("Before.\n")
+            root = self.project('''file Guide: "Guide"
+    path: "link.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+            (root / "link.md").symlink_to(outside)
+            self.git_project(root)
+            outside.write_text("Changed outside.\n")
+            code, output, error = self.cli(root, "load", "t", "--rev", "HEAD", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+            self.assertEqual(report["on_demand"][0]["size"], len("Changed outside.\n"))
+
     def test_rev_reads_codex_limit_from_revision(self):
         root = self.project(example="183_load_budgets")
         project = root / "pyproject.toml"
@@ -952,6 +1116,11 @@ team T: "Team"
             if case.kind not in ("parse_fail", "cli_contract")
         }
         count = 0
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        directory = Path(temporary.name)
+        target = SimpleNamespace(output_dir=directory, runtimes=("claude",),
+                                 project_config=ProjectConfig(path=directory / "pyproject.toml"))
         for path in sorted(prompts):
             try:
                 session = CompilationSession(parse_file(path), evaluate_rules=False)
@@ -978,7 +1147,14 @@ team T: "Team"
                                 )
                             except DoctrineError:
                                 continue
-                            build_home_map(compiled)
+                            self.assertFalse(any("\x1e" in item for item in model_walk(compiled)
+                                                 if isinstance(item, str)), str(path))
+                            home_map = build_home_map(compiled)
+                            home = {"owner": agent, "map": home_map, "budgets": [[]],
+                                    "pointers": [], "file_refs": []}
+                            files = {"CLAUDE.md": render_markdown(compiled).encode()}
+                            home_loads(target, {".": home}, files,
+                                       {"claude": {"external": [], "limit": 150000}}, {"."})
                             count += 1
         self.assertGreater(count, 350)
 
@@ -1032,6 +1208,17 @@ team T: "Team"
         self.assertIn("W306 over budget: pods/growth/qa loads", error)
         self.assertNotIn("budget: pods/growth loads", error)
         self.assertNotIn("budget: pods/growth/analyst loads", error)
+
+    def test_long_compiled_file_warns_with_runtime_file_limit(self):
+        root = self.project(
+            'team T: "Team"\n    home: "t"\n    role: "Test."\n',
+            settings="[tool.doctrine.runtimes.claude]\nfile_limit = 10\n",
+        )
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        size = len((root / "t/AGENTS.md").read_text().encode("utf-16-le")) // 2
+        self.assertIn(f"W309 long file: t/AGENTS.md is {size:,} of 10 on claude.", error)
+        self.assertNotIn("on codex", error)
 
     def test_broken_unrelated_target_cannot_stop_build(self):
         root = self.project()
@@ -1255,3 +1442,50 @@ output_dir = "skill"
         code, _, error = self.cli(root, 'build', '--target', 'sk')
         self.assertEqual(code, 2)
         self.assertIn('Target sk has no homes.', error)
+
+    def test_check_revision_sees_files_in_git_with_one_tree_listing(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Read [one](../one.md) and [two](../two.md)."
+''')
+        (root / "one.md").write_text("One.\n")
+        (root / "two.md").write_text("Two.\n")
+        self.git_project(root)
+        self.assertEqual(self.cli(root, "build")[0], 0)
+        (root / "one.md").unlink()
+        (root / "two.md").unlink()
+        with patch("doctrine.home_commands.subprocess.check_output", wraps=subprocess.check_output) as call:
+            code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)
+        trees = [entry for entry in call.call_args_list if entry.args[0][:2] == ["git", "ls-tree"]]
+        self.assertEqual(len(trees), 1)
+
+    def test_revision_rebases_imports_from_markdown(self):
+        root = self.project(example="179_markdown_backed_declarations", fixture="project_imports")
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('["codex"]', '["claude", "codex"]'))
+        self.git_project(root)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        code, output, error = self.cli(root, "diff", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["homes"], [])
+        code, output, error = self.cli(root, "load", "pod/qa", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        self.assertIn("shared/other.md", [row["path"] for row in rows])
+        code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)
+
+    def test_check_revision_sees_directories_in_git(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "See [docs](../docs/)."
+''')
+        (root / "docs").mkdir()
+        (root / "docs/readme.md").write_text("Docs.\n")
+        self.git_project(root)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)

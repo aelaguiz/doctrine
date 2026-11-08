@@ -353,23 +353,25 @@ shows the canonical formatted shape for one shipped compile error.
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
 | `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. Free words after an inline date are allowed. |
 | `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
-| `E652` | Missing Markdown source | A Markdown-backed declaration names a file that does not exist. |
+| `E652` | Missing Markdown source | A Markdown-backed declaration or kept file names a file that does not exist. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
-| `E654` | Import line in Markdown source | A runtime import path would break once its text is inlined. Declare that file too and compose it. |
+| `E655` | File ref can't go here | A load ref is not at the end of its line, its path has whitespace, or a skill package uses a file ref. |
 | `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
 
 ## Homes And Load
 
 | Code | Summary | When |
 | --- | --- | --- |
-| `E607` | Two homes, one path | Two home owners share a path, or two team targets share an output folder. |
+| `E607` | Two homes, one path | Two home owners share a path, a built file shares a path with a home, companion, or another built file, or two team targets share an output folder. |
 | `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Retired | Shared details can read agent and team values. |
 | `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
-| `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
+| `E632` | Invalid runtime settings | A runtime name or setting is invalid. A `file_limit` must be a positive integer. |
 | `E633` | External file missing | A listed external is absent and has no reserve. |
 | `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |
+| `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
 | `E640` | No home matches | A selector matches no home path or agent name. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
+| `W309` | Long file | A compiled level file is over the runtime's per-file limit. |

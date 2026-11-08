@@ -54,12 +54,6 @@ def opening_paragraphs(lines):
 
 def markdown_lines(lines, *, path, start, source_path=None, source_span=None):
     for number, (line, inside) in enumerate(fenced_lines(lines), start):
-        if not inside and line.startswith("@"):
-            raise compile_error(
-                code="E654", summary="Import line in Markdown source",
-                detail=f"`{path}` line {number} is a runtime import, and its path would break once inlined. Declare that file too and compose it.",
-                path=source_path, source_span=source_span,
-            )
         yield number, line, inside, None if inside else re.match(r"^(#{2,3}) (.+)$", line)
 
 

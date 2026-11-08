@@ -93,6 +93,30 @@ document GettingGoodResults: "Getting Good Results"
         "A shared role's cases can use each team's words through values. A team can add its own case with `details work.plan.local:`. An override keeps cases written in the inherited body. Use `drop` with a reason when a case no longer fits. See `examples/181_details` and `examples/182_shared_details`."
         "Leave out what an agent sees by looking: folder layout, the frameworks in use, what a linter already enforces. It will look anyway, and your copy of those facts goes stale."
         "`budget` and `doctrine load` show how close each home is to its limit, counting the parent files it reads. See `examples/183_load_budgets`. Read the limit as a sign the home says too much, not as a target. Deleting the one case that teaches, just to fit, is worse than running over. Ask what an agent would get wrong without this line. If you can't name it, cut the line."
+    section shared_text: "Where Shared Text Lives"
+        "Keep the idea and why it matters in the agent's file. Move the how to a shared file when it is only needed at a certain moment. Say when to read it: an agent opens a file only if it can tell it is in that moment."
+        markdown:
+            text: """| What you have | Where it goes |
+| --- | --- |
+| What an agent needs on most turns | Its own file, or the team that holds everyone who needs it |
+| What a few roles need at start | A `file` loaded at start |
+| A guide for a moment | A `file` named in a sentence that says when |
+| A case behind an idea | `details`, beside the idea |
+| Notes agents add to | A `file` with no body |
+"""
+        code:
+            language: prompt
+            text: """file Guide: "Test design"
+    path: "shared/guide.md"
+
+team Pod: "Pod"
+    home: "pod"
+    member qa: "QA"
+        role: "Before testing, read {{Guide}}."
+    member analyst: "analyst"
+        role: "Read first: {{load:Guide}}"
+"""
+        "This is from `examples/197_shared_files`. See Teams And Homes for more."
     section prose_or_types: "Prose Or Types"
         "Ask one question of each thing you want to say: could the right answer differ from case to case?"
         "If it can't, it's a fact, and the compiler should hold it: routes, schemas, who receives a message, what a role loads. A typed fact can't drift. A prose copy of it can, so don't restate what a type already owns."
