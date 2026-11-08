@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Load reports include existing files linked from files loaded at startup.
 - Codex load headlines show the bytes in files to read first.
 - CLI help explains every command and flag. Doctrine Learn points to the build
   command, gives one path for landing a lesson, and uses portable links.

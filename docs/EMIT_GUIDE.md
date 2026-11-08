@@ -79,6 +79,8 @@ Load reports count hand-written files between the project and each home.
 Claude also follows `@` imports four hops deep and counts each file once.
 For Codex, a home's load headline also shows the bytes it must read first.
 The shared files table shows each runtime's size and the homes that read it.
+On-demand files include links in files loaded at startup. Missing targets are
+left out.
 With `--rev`, files inside the repository come from that revision. Files
 outside it come from disk.
 

@@ -182,6 +182,41 @@ team T: "Team"
         self.assertIn("read first", output)
         self.assertIn("On demand:\n  guide.md", output)
 
+    def test_on_demand_includes_links_inside_loaded_files(self):
+        root = self.project('''file Basics: "Basics"
+    path: "shared/basics.md"
+team T: "Team"
+    home: "t"
+    role: "Read first: {{load:Basics}}"
+''')
+        (root / "shared").mkdir()
+        (root / "shared/basics.md").write_text(
+            "[Guide](guide.md) [Again](guide.md#part) [Loaded](basics.md)\n"
+            "[Missing](missing.md) [Site](https://example.com) [Here](#heading)\n"
+            "[Outside](../../outside.md) `[Code](code.md)`\n"
+            "```md\n[Hidden](hidden.md)\n```\n"
+        )
+        (root / "shared/guide.md").write_text("Guide.\n")
+        for runtime in ("claude", "codex"):
+            code, output, error = self.cli(root, "load", "t", "--runtime", runtime, "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)["homes"][0]["runtimes"][runtime]
+            self.assertEqual(report["on_demand"], [{"path": "shared/guide.md", "size": 7}])
+
+    def test_on_demand_includes_links_in_hand_written_levels_and_imports(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Work."
+''')
+        (root / "CLAUDE.md").write_text("[Level](level.md)\n@import.md\n")
+        (root / "import.md").write_text("[Imported](imported.md)\n")
+        (root / "level.md").write_text("Level.\n")
+        (root / "imported.md").write_text("Import.\n")
+        code, output, error = self.cli(root, "load", "t", "--runtime", "claude", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertEqual([item["path"] for item in report["on_demand"]], ["imported.md", "level.md"])
+
     def test_shared_file_rejects_details_and_home_values(self):
         for body, diagnostic in (
             ('    details case: "Case"\n        "More."\n', "E620"),
