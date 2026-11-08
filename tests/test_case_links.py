@@ -151,6 +151,7 @@ team T: "Team"
                   ("See [the guide](https://x.com)", "see-the-guide"),
                   ("Use `make` & <b>go</b>", "use-make--go"), ("Plan ahead ", "plan-ahead"),
                   ("Edit `__init__` first", "edit-__init__-first"),
+                  ("alpha_`beta`", "alpha_beta"), ("`one`_two", "one_two"),
                   ("When n < 3 or n > 10", "when-n--3-or-n--10"),
                   ("Visit <https://x.com> now", "visit-httpsxcom-now"),
                   ("Email <test@example.com> now", "email-testexamplecom-now"), ("Step #", "step"))

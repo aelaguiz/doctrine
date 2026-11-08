@@ -29,9 +29,13 @@ def heading_anchor(text, seen):
         parts[index] = re.sub(r"!\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
         parts[index] = re.sub(r"<([A-Za-z][A-Za-z0-9+.-]{1,31}:[^<>\s]*|[A-Za-z0-9.!#$%&'*+/=?^_{|}~-]+@[A-Za-z0-9.-]+)>", r"\1", parts[index])
         parts[index] = re.sub(r"<(?:[A-Za-z]|/)[^>]*>", "", parts[index]).lower().replace("*", "")
-        parts[index] = re.sub(r"_+", lambda match: match[0] if match.start() and match.end() < len(parts[index])
-                              and unicodedata.category(parts[index][match.start() - 1])[0] in "LMN"
-                              and unicodedata.category(parts[index][match.end()])[0] in "LMN" else "", parts[index])
+        before = parts[index - 1][-1:] if index else ""
+        after = parts[index + 2][:1] if index + 2 < len(parts) else ""
+        parts[index] = re.sub(r"_+", lambda match: match[0] if
+                              (left := (parts[index][:match.start()] or before)[-1:]) and
+                              (right := (parts[index][match.end():] or after)[:1]) and
+                              unicodedata.category(left)[0] in "LMN" and unicodedata.category(right)[0] in "LMN"
+                              else "", parts[index])
     text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
     anchor = "".join(c for c in text if unicodedata.category(c)[0] in "LMN" or c in " -_").replace(" ", "-")
     seen[anchor] = seen.get(anchor, 0) + 1
