@@ -1,0 +1,14 @@
+{
+  "contract_version": 1,
+  "package": {
+    "name": "review",
+    "title": "Review"
+  },
+  "host_contract": {
+    "draft": {
+      "family": "input",
+      "title": "Draft to review"
+    }
+  },
+  "artifacts": {}
+}

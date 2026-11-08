@@ -1041,6 +1041,8 @@ Important rules:
   `license`.
 - `source:` is optional. It may declare `id:` and a `track:` list of extra
   source files or directories.
+- `install: "path"` is optional. For a project build, it names the skill's
+  install folder relative to the project. It does not change `emit_skill`.
 - `emit:` is optional. Use it when a package should emit extra `.md` files
   from prompt-authored `document` declarations.
 - Each `emit:` entry is `"relative/path.md": DocumentRef`.

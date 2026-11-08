@@ -100,7 +100,7 @@ def check_homes(target, session, selectors):
         revision_files = {scratch / name for name in paths.decode().split("\0") if name}
     dead_links = []
     for name, content in files.items():
-        if not name.endswith(".md") or isinstance(content, Path):
+        if name in session.project_skill_files or not name.endswith(".md") or isinstance(content, Path):
             continue
         text = content.decode()
         for start, end, is_import in markdown_destinations(text):
@@ -374,6 +374,19 @@ def where_source(args):
             {"origin": ".".join((origin, *path)), "site": site, "homes": sorted(reached)}
             for (origin, path, site), reached in matches.items()
         ]
+        if not args.home:
+            for entry, name, markdown, skill_session in session.project_skill_sources:
+                if needle not in " ".join(markdown.casefold().split()):
+                    continue
+                for unit in skill_session.units():
+                    path = unit.prompt_file.source_path
+                    if path is None:
+                        continue
+                    for line, text in enumerate(path.read_text().splitlines(), 1):
+                        if needle in " ".join(text.casefold().split()):
+                            result.append({"origin": f"skill package {name}",
+                                "site": f"{relpath(path, target.project_config.config_dir)}:{line}",
+                                "homes": []})
         generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
                      if isinstance(content, bytes)}
         for unit, declaration in declarations_in(session).values():

@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "files": [
+    ".claude/skills/checklist/SKILL.md",
+    ".claude/skills/checklist/assets/sample.bin",
+    ".claude/skills/checklist/references/notes.md",
+    ".claude/skills/checklist/scripts/check.txt",
+    "custom/review/SKILL.contract.json",
+    "custom/review/SKILL.md",
+    "team/AGENTS.md"
+  ],
+  "hashes": {
+    ".claude/skills/checklist/assets/sample.bin": "6d1dc71fb8c1d9f7786ddddd833d3f60835dd60e3b86b652e4458f780c6532f6",
+    ".claude/skills/checklist/references/notes.md": "74c252986f821d55608f8006552a233212dff468be844c5ba5fa2fbe656f1db5",
+    ".claude/skills/checklist/scripts/check.txt": "4399cca0b723d0763b643e31c391241620cb65464ac13e4d3e1b5e9f4a80080c",
+    "custom/review/SKILL.contract.json": "1a9cb543bbf6054856ff9bbfb26ad5ba42ebe073e281fb7e74d5aeeff373c0fd"
+  }
+}

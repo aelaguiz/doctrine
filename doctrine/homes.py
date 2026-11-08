@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import sys
@@ -27,8 +28,9 @@ from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import entrypoint_relative_dir, RuntimeEmitRoot
 from doctrine.renderer import render_markdown
 from doctrine.project_config import project_file_path
+from doctrine.project_skills import compile_project_skills
 from doctrine.runtime_load import home_budgets, loaded_levels
-from doctrine.shared_files import HEADER, compile_shared_files, file_state, with_header
+from doctrine.shared_files import HEADER, compile_shared_files, file_state, header_match, with_header
 
 
 def home_files(target, home, owner, unit, compiled, pointers, plan, context):
@@ -275,6 +277,10 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             for child in links[path]:
                 if child in written and child not in data["shared_files"]:
                     data["shared_files"].append(child)
+    skill_files, session.project_skill_sources = compile_project_skills(target, files)
+    if whole:
+        files.update(skill_files)
+    session.project_skill_files = set(skill_files)
     return homes, files, selected, whole
 
 
@@ -328,7 +334,7 @@ def hand_edit_detail(root, name, files, homes):
     if path.is_symlink():
         return f"`{name}` is a link Doctrine didn't write."
     old = path.read_bytes().decode(errors="replace")
-    header = HEADER.match(old)
+    header = header_match(old, frontmatter=path.name == "SKILL.md")
     if header is None:
         return f"`{name}` was written by hand."
     detail = f"`{name}` was edited by hand."
@@ -399,23 +405,44 @@ def build_homes(
     wanted = set(files) if whole else {path for home in selected for path in homes[home]["files"]}
     obsolete = set()
     record = root / "HOMES.contract.json"
-    if whole:
-        if record.exists():
-            try:
+    hashes = {}
+    if record.exists():
+        try:
+            previous = json.loads(record.read_bytes())
+            hashes = previous.get("hashes", {})
+            if not isinstance(hashes, dict):
+                hashes = {}
+            if whole:
                 obsolete = {
-                    name for name in set(json.loads(record.read_bytes())["files"]) - set(files)
+                    name for name in set(previous["files"]) - set(files)
                     if (root / name).exists() or (root / name).is_symlink()
                 }
-            except (json.JSONDecodeError, KeyError):
-                pass
+        except (json.JSONDecodeError, KeyError, AttributeError, TypeError):
+            pass
+    if whole:
+        new_hashes = {}
+        for name, content in sorted(files.items()):
+            if isinstance(content, Path):
+                continue
+            try:
+                header = (header_match(content.decode(), frontmatter=Path(name).name == "SKILL.md")
+                          if name.endswith(".md") else None)
+            except UnicodeDecodeError:
+                header = None
+            if header is None:
+                new_hashes[name] = hashlib.sha256(content).hexdigest()
+        contract = {"format_version": 1, "files": sorted(files)}
+        if new_hashes:
+            contract["hashes"] = new_hashes
         files = {
             **files,
             "HOMES.contract.json": (
-                json.dumps({"format_version": 1, "files": sorted(files)}, indent=2) + "\n"
+                json.dumps(contract, indent=2) + "\n"
             ).encode(),
         }
         wanted.add("HOMES.contract.json")
-    states = {name: file_state(root / name, files.get(name)) for name in sorted(wanted | obsolete)}
+    states = {name: file_state(root / name, files.get(name), hashes.get(name))
+              for name in sorted(wanted | obsolete)}
     if not whole:
         needed = needed_files(root, homes, files, selected, wanted)
         if not read_only:

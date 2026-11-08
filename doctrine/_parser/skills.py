@@ -39,6 +39,13 @@ class _EdgeKindPart:
 
 
 @dataclass(frozen=True, slots=True)
+class _PackageInstallPart:
+    value: str
+    line: int | None
+    column: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class _EdgeWhyPart:
     value: str
     line: int | None
@@ -158,6 +165,7 @@ class SkillsTransformerMixin:
                 source=body.source,
                 emit_entries=body.emit_entries,
                 host_contract=body.host_contract,
+                install=body.install,
             ),
             meta,
         )
@@ -468,7 +476,16 @@ class SkillsTransformerMixin:
         seen_source = False
         seen_emit = False
         seen_host_contract = False
+        install = None
         for item in items:
+            if isinstance(item, _PackageInstallPart):
+                if install is not None:
+                    raise TransformParseFailure(
+                        "Skill packages may define `install:` only once.",
+                        line=item.line, column=item.column,
+                    )
+                install = item.value
+                continue
             if isinstance(item, SkillPackageMetadataBlockPart):
                 if seen_metadata:
                     raise TransformParseFailure(
@@ -520,7 +537,13 @@ class SkillsTransformerMixin:
             source=source,
             emit_entries=emit_entries,
             host_contract=host_contract,
+            install=install,
         )
+
+    @v_args(meta=True, inline=True)
+    def package_install_item(self, meta, value):
+        line, column = _meta_line_column(meta)
+        return _PackageInstallPart(value, line, column)
 
     def _skill_package_source(
         self,

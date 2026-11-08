@@ -1,0 +1,8 @@
+skill package Review: "Review"
+    install: "custom/review"
+    metadata:
+        name: "review"
+        description: "Review a draft."
+    host_contract:
+        input draft: "Draft to review"
+    "Find the main point."

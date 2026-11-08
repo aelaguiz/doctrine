@@ -248,15 +248,15 @@ Stability rules:
 | `E509` | Duplicate emit target name | Two emit targets use the same configured name. |
 | `E510` | Emit target entrypoint must match the emitter surface | `emit_docs` accepts `AGENTS.prompt` or `SOUL.prompt`, `emit_skill` accepts `SKILL.prompt`, and each emitter rejects unsupported prompt filenames. |
 | `E511` | Emit target output_dir is a file | The configured output directory path is already a file. |
-| `E512` | Emit config path does not exist | A configured emit entrypoint or referenced path does not exist. |
+| `E512` | Invalid emit config | A configured path does not exist, or skill settings lack `source` and `install`. |
 | `E513` | Emit config value must be a string | A required emit config field has the wrong TOML type. |
 | `E514` | Could not resolve prompts root | The emit pipeline could not resolve the owning `prompts/` root for an entrypoint. |
 | `E515` | Pinned D2 dependency is unavailable | `emit_flow` could not find the pinned repo-local D2 dependency needed for same-command SVG rendering. |
 | `E516` | Pinned D2 renderer failed | `emit_flow` produced `.flow.d2`, but the pinned D2 renderer failed while producing `.flow.svg`. |
 | `E517` | Emit flow CLI requires exactly one resolution mode | `emit_flow` was invoked with both configured-target mode and direct mode, or with neither mode. |
 | `E518` | Direct emit flow mode requires entrypoint and output_dir | Direct `emit_flow` mode omitted either `--entrypoint` or `--output-dir`. |
-| `E520` | Emit target output_dir must stay within project root | A configured or direct emit output directory resolved outside the owning project's root. |
-| `E521` | Emit target entrypoint must stay within project root | A configured emit target resolved its entrypoint outside the owning project's root. |
+| `E520` | Path must stay within project root | An output or project skill path is outside the project, or a skill path is not relative. |
+| `E521` | Source must stay within project root | An emit target or project skill source resolves outside the project. |
 | `E522` | Invalid release version | A Doctrine release tag or channel input does not match the shipped release-tag rules. |
 | `E523` | Missing current language version | `docs/VERSIONING.md` does not expose one parseable current Doctrine language version. |
 | `E524` | Invalid language version move | The requested Doctrine language version move does not match the chosen release class. |
@@ -285,7 +285,7 @@ Stability rules:
 | `E547` | Stage support is not a declared skill | A top-level `stage` declaration's `supports:` entry does not resolve to a declared `skill`. |
 | `E548` | Stage input type is invalid | A top-level `stage` declaration's `inputs:` value does not resolve to a top-level `receipt`, `document`, `schema`, or `table`. |
 | `E549` | Stage emit type is invalid | A top-level `stage` declaration's `emits:` value does not resolve to a top-level `receipt`. |
-| `E550` | Emit target `source_root` must be a directory | A configured skill emit target declares `source_root`, but the path is not an existing directory. |
+| `E550` | Skill source must be a directory | A configured skill source or `source_root` is not an existing folder. |
 | `E551` | Emit target source id/root pair is incomplete | A configured skill emit target declares `source_root` without `source_id`, or `source_id` without `source_root`. |
 | `E552` | Emit target entrypoint must stay within `source_root` | A configured skill emit target uses external source mode, but its entrypoint is outside the configured source root. |
 | `E553` | Emit target `lock_file` path is invalid | A configured skill emit target points `lock_file` at a directory or places it inside the emitted skill tree. |
@@ -363,14 +363,14 @@ shows the canonical formatted shape for one shipped compile error.
 
 | Code | Summary | When |
 | --- | --- | --- |
-| `E607` | Two homes, one path | Two home owners share a path, a built file shares a path with a home, companion, or another built file, or two team targets share an output folder. |
+| `E607` | Two outputs, one path | Homes, skills, or built files share a path, or two team targets share an output folder. |
 | `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Retired | Shared details can read agent and team values. |
 | `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
 | `E632` | Invalid runtime settings | A runtime name or setting is invalid. A `file_limit` must be a positive integer. |
 | `E633` | External file missing | A listed external is absent and has no reserve. |
-| `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
+| `E634` | Hand edit in a compiled file | A header body hash or a recorded file hash does not match, or a Claude link has the wrong target. The report may name changed sections and their sources. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, a linked companion is missing, or its linked heading is out of date. Run `doctrine build .`, then build this home. |
 | `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
 | `E637` | Dead case link | A case or file section link names a missing or untitled case, a non-case, a missing section, or a section in a kept file. A linked heading also fails if it repeats in its file. |

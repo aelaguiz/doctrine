@@ -69,7 +69,7 @@ Minimal entrypoint:"""
                 "If `name` is omitted, the emitter falls back to the declaration key for frontmatter."
 
         section source_receipts: "Source Receipts"
-            """Every `skill package` emits `SKILL.source.json`. Treat it like a build receipt: it proves which source files built the emitted tree. It is not the runtime host contract."""
+            """`emit_skill` writes `SKILL.source.json`. Treat it like a build receipt: it proves which source files built the emitted tree. It is not the runtime host contract."""
             code:
                 language: prompt
                 text: """skill package TrackedSourceSkill: "Tracked Source Skill"
@@ -127,7 +127,7 @@ A `reference_map` section helps a thin harness decide which reference to open fi
             "`emit:` entries turn `document` declarations into companion Markdown files"
             "ordinary bundled files copy through byte for byte"
             "`.prompt` files under `agents/` compile to Markdown agent companions"
-            "`SKILL.source.json` is emitted for every package as the source receipt"
+            "`emit_skill` writes `SKILL.source.json` as the source receipt"
             "`SKILL.contract.json` is emitted when the package has host-binding truth"
 
         section ordinary_bundled_files: "Ordinary Bundled Files"
@@ -270,7 +270,7 @@ agent BoundDemo:
             "The root `SKILL.prompt` body uses `host:slot` interpolation expressions."
             "Emitted docs and bundled agent prompts use the same `host:` root."
             "`package:`, `host_contract:`, and `bind:` do not render into Markdown."
-            "`SKILL.source.json` still emits separately as the source receipt."
+            "`emit_skill` writes `SKILL.source.json` separately as the source receipt."
             "When host-binding truth exists, Doctrine emits a `SKILL.contract.json` sidecar beside `SKILL.md`."
 
         """Supported host-slot families today: `input`, `output`, `document`, `analysis`, `schema`, `table`, `final_output`, `receipt`.
@@ -346,12 +346,13 @@ agent AuditorAgent:
         "See `examples/144_skill_binding_producer_audit_mode/` for the canonical producer/audit pattern plus fail-loud counter cases for `E540`, `E541`, `E542`, and the deprecated enum-only output-shape selector form `E543`."
 
     section install_tree_and_emit: "Install Tree And Emit"
+        "To build a project's skills with its homes, add `skills = { source = \"prompts/skills\", install = \".claude/skills\" }` to its homes target."
         "Run the emitter from the repo root to build one package tree:"
         code:
             language: bash
             text: """uv run --locked python -m doctrine.emit_skill --target <pyproject-target-name>
 """
-        "Each `skill package` needs its own entry under `[[tool.doctrine.emit.targets]]` in `pyproject.toml`:"
+        "For `emit_skill`, each package needs its own entry under `[[tool.doctrine.emit.targets]]` in `pyproject.toml`:"
         code:
             language: toml
             text: """[[tool.doctrine.emit.targets]]

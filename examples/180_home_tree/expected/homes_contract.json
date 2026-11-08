@@ -10,5 +10,8 @@
     "pods/growth/TEAM.contract.json",
     "pods/growth/qa/AGENTS.md",
     "pods/growth/qa/CLAUDE.md"
-  ]
+  ],
+  "hashes": {
+    "pods/growth/TEAM.contract.json": "4d8ca25eaa21d5ba90bbf0145080e52486e385276ba4dc79475faa738c5e2a71"
+  }
 }

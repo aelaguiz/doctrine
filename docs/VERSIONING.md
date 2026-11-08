@@ -5,6 +5,10 @@ breaking-change guidance.
 
 Current Doctrine language version: 6.0
 
+Project builds can install skill packages with homes. `HOMES.contract.json`
+keeps its version 1 file list and adds a `hashes` map for files without a
+Doctrine header. Readers can ignore the new field.
+
 Children and members can add and order role paragraphs with `inherit` lines.
 They can drop a parent paragraph inside the role block with `drop <key>: "reason"`.
 Role paragraph overrides can use `super` to keep the inherited text.

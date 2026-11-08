@@ -258,6 +258,7 @@ class SkillPackageBodyParts:
     source: model.SkillPackageSource
     emit_entries: tuple[model.SkillPackageEmitEntry, ...]
     host_contract: tuple[model.SkillPackageHostSlotItem, ...]
+    install: str | None
 
 
 @dataclass(slots=True, frozen=True)

@@ -27,6 +27,8 @@ def run_cli_contract(case):
         with chdir(project):
             for args in (*spec.get("setup", []), spec["args"]):
                 if args is spec["args"]:
+                    for name in spec.get("remove", []):
+                        (project / name).unlink()
                     for name, content in spec.get("edit", {}).items():
                         path = project / name
                         path.parent.mkdir(parents=True, exist_ok=True)
