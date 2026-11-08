@@ -33,6 +33,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Shared files keep their declared paths through symlinks. Builds catch output
+  collisions, and selected checks follow links between built files.
+- Revision checks find links in the requested commit. Load reports count each
+  file once, show only files the runtime loads, and omit loaded files from
+  on-demand lists.
 - Load reports skip missing imports. Builds ignore handles in prose and report
   all dead links at once. Shared-file links render in emitted docs and diagrams.
 - Builds and checks report `E636` when a compiled file points to a missing file.

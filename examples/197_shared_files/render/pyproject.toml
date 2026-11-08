@@ -1,1 +1,6 @@
 [tool.doctrine]
+
+[[tool.doctrine.emit.targets]]
+name = "docs"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "out"

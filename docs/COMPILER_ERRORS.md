@@ -362,7 +362,7 @@ shows the canonical formatted shape for one shipped compile error.
 
 | Code | Summary | When |
 | --- | --- | --- |
-| `E607` | Two homes, one path | Two home owners or two built files share a path, or two team targets share an output folder. |
+| `E607` | Two homes, one path | Two home owners share a path, a built file shares a path with a home, companion, or another built file, or two team targets share an output folder. |
 | `E620` | Details not allowed here | Details are in a skill, skill package, input or output body, output structure, emitted document, sibling `SOUL.prompt`, or `python -m doctrine.emit_docs`. |
 | `E621` | Retired | Shared details can read agent and team values. |
 | `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |
