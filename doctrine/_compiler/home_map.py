@@ -85,6 +85,8 @@ def stamp_agent(context, agent, unit):
         if isinstance(field, model.RoleScalar):
             keys = set()
             for paragraph in field.paragraphs:
+                if not isinstance(paragraph, model.ReadableBlock):
+                    continue
                 if paragraph.key in keys:
                     raise compile_error(code="E295", summary="Duplicate readable key",
                         detail=f"`{agent.name}` repeats role paragraph key `{paragraph.key}`.",

@@ -127,7 +127,7 @@ class AgentTransformerMixin:
 
     @v_args(meta=True)
     def role_paragraphs(self, meta, items):
-        return _with_source_span(model.RoleScalar(text=role_text(items), paragraphs=tuple(items)), meta)
+        return _with_source_span(model.RoleScalar(text=role_text(items) if all(isinstance(item, model.ReadableBlock) for item in items) else "", paragraphs=tuple(items)), meta)
 
     @v_args(meta=True, inline=True)
     def role_field(self, meta, title_or_text, body=None):

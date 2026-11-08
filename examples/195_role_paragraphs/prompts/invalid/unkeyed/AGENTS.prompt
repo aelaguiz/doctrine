@@ -1,0 +1,5 @@
+abstract agent Base:
+    role: "Plain."
+agent Child[Base]:
+    role:
+        inherit *

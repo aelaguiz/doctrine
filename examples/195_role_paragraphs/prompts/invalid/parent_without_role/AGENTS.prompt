@@ -1,0 +1,7 @@
+abstract agent Base:
+    work: "Work"
+        "Do it."
+agent Child[Base]:
+    inherit *
+    role:
+        inherit *

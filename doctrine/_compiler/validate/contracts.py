@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import prepare_body_patches, apply_path_patches
+from doctrine._compiler.resolve.patches import prepare_body_patches
+from doctrine._compiler.resolve.path_patches import apply_path_patches
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,
     authored_related_site,

@@ -1,0 +1,8 @@
+abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+agent Child[Base]:
+    role:
+        override paragraph absent:
+            "New."

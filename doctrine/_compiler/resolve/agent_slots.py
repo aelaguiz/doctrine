@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from doctrine import model
 from dataclasses import replace
-from doctrine._compiler.resolve.patches import mark_wildcard, apply_path_patches, merge_override, reject_super
+from doctrine._compiler.resolve.patches import mark_wildcard, reject_super
+from doctrine._compiler.resolve.path_patches import apply_path_patches, merge_override
 from doctrine._compiler.home_map import source_origin
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,

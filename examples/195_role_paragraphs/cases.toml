@@ -42,3 +42,125 @@ agent = "OtherQa"
 exception_type = "CompileError"
 error_code = "E610"
 location_line = 7
+
+[[cases]]
+name = "a child adds a paragraph before inherited paragraphs"
+status = "active"
+kind = "render_contract"
+agent = "AddedQa"
+assertion = "exact_lines"
+expected_lines = ["You test the app.", "", "**Who you are.** You are on the core team.", "", "Phones are in the device guide."]
+
+[[cases]]
+name = "a child orders inherited paragraphs"
+status = "active"
+kind = "render_contract"
+agent = "OrderedQa"
+assertion = "exact_lines"
+expected_lines = ["Phones are in the device guide.", "", "You test the app.", "", "**Who you are.** You are on the core team."]
+
+[[cases]]
+name = "a child overrides a paragraph with super"
+status = "active"
+kind = "render_contract"
+agent = "ExtendedQa"
+assertion = "exact_lines"
+expected_lines = ["Check the guide.", "", "Phones are in the device guide.", "", "**Who you are.** You are on the core team."]
+
+[[cases]]
+name = "a member adds a paragraph"
+status = "active"
+kind = "render_contract"
+agent = "NewPod.qa"
+assertion = "exact_lines"
+expected_lines = ["You test the app.", "", "**Who you are.** You are on the core team.", "", "Phones are in the device guide."]
+
+[[cases]]
+name = "role patch missing"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/missing/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E003"
+
+[[cases]]
+name = "role patch missing target"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/missing_target/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E610"
+
+[[cases]]
+name = "role patch duplicate add"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/duplicate_add/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E612"
+
+[[cases]]
+name = "role patch duplicate patch"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/duplicate_patch/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E612"
+
+[[cases]]
+name = "role patch duplicate wildcard"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/duplicate_wildcard/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E613"
+
+[[cases]]
+name = "role patch unkeyed"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/unkeyed/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E611"
+
+[[cases]]
+name = "role patch override only missing target"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/override_only_missing_target/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E610"
+
+[[cases]]
+name = "role patch override only omits parent"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/override_only_omits_parent/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E003"
+
+[[cases]]
+name = "role patch parent without role"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/parent_without_role/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E611"
+
+[[cases]]
+name = "role patch no parent"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/no_parent/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E611"

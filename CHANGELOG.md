@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Role paragraphs
+
+- Children and members can add role paragraphs and place inherited ones in order.
+
 ### Class hierarchy teaching
 
 - Learn how classes fit together through one small company and its teams.

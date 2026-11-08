@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
+from doctrine._compiler.resolve.patches import expand_patch_items
+from doctrine._compiler.resolve.path_patches import apply_path_patches
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
