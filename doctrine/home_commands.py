@@ -90,6 +90,11 @@ def check_homes(target, session, selectors):
     )
     root = target.project_config.config_dir.resolve()
     built = {(target.output_dir / path).resolve() for path in files}
+    revision_files = set()
+    if target.project_config.revision:
+        git_root, scratch, _, revision, _ = target.project_config.revision
+        paths = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", "-z", revision], cwd=git_root)
+        revision_files = {scratch / name for name in paths.decode().split("\0") if name}
     dead_links = []
     for name, content in files.items():
         if not name.endswith(".md") or isinstance(content, Path):
@@ -104,7 +109,7 @@ def check_homes(target, session, selectors):
                 continue
             path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
             resolved = ((target.output_dir / name).parent / Path(path).expanduser()).resolve()
-            if resolved.is_relative_to(root) and not resolved.exists() and resolved not in built:
+            if resolved.is_relative_to(root) and not resolved.exists() and resolved not in built and resolved not in revision_files:
                 dead_links.append(f"{name} points at {dest}, which does not exist.")
     if dead_links:
         raise compile_error(code="E636", summary="Dead link", detail="\n".join(dead_links))

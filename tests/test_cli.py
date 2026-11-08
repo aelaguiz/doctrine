@@ -1442,3 +1442,20 @@ output_dir = "skill"
         code, _, error = self.cli(root, 'build', '--target', 'sk')
         self.assertEqual(code, 2)
         self.assertIn('Target sk has no homes.', error)
+
+    def test_check_revision_sees_files_in_git_with_one_tree_listing(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Read [one](../one.md) and [two](../two.md)."
+''')
+        (root / "one.md").write_text("One.\n")
+        (root / "two.md").write_text("Two.\n")
+        self.git_project(root)
+        self.assertEqual(self.cli(root, "build")[0], 0)
+        (root / "one.md").unlink()
+        (root / "two.md").unlink()
+        with patch("doctrine.home_commands.subprocess.check_output", wraps=subprocess.check_output) as call:
+            code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)
+        trees = [entry for entry in call.call_args_list if entry.args[0][:2] == ["git", "ls-tree"]]
+        self.assertEqual(len(trees), 1)
