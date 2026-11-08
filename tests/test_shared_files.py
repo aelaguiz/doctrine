@@ -178,6 +178,7 @@ team T: "Team"
         self.assertEqual(report["total"], sum(row["size"] for row in report["files"] if row["kind"] == "home"))
         code, output, error = self.cli(root, "load", "t/qa", "--runtime", "codex")
         self.assertEqual(code, 0, error)
+        self.assertIn(f"{report['headroom']:,} left, plus 8 to read first", output)
         self.assertIn("read first", output)
         self.assertIn("On demand:\n  guide.md", output)
 

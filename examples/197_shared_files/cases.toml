@@ -149,7 +149,7 @@ kind = "cli_contract"
 project = "project"
 args = ["load", "pod/analyst", "--runtime", "codex"]
 expected_exit = 0
-stdout_contains = ["shared/guide.md", "read first"]
+stdout_contains = ["plus 51 to read first", "shared/guide.md", "read first"]
 
 [[cases]]
 name = "load lists shared files for each runtime"

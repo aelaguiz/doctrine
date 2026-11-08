@@ -10,6 +10,8 @@ in homes.
 
 `doctrine classes` inspects class trees and home sources. Its JSON output uses
 `format_version: 1`.
+The Codex load headline shows the bytes in files to read first. Load JSON is
+unchanged.
 
 ## Upgrade To Language 6.0
 

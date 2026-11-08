@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Codex load headlines show the bytes in files to read first.
 - CLI help explains every command and flag. Doctrine Learn points to the build
   command, gives one path for landing a lesson, and uses portable links.
 - Commands that select homes use the only home target when it has plain agents and no team, so `--target` is no longer needed there.

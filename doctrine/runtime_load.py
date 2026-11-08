@@ -398,9 +398,11 @@ def render_load(loads):
             continue
         headroom = load["headroom"]
         unit = "characters" if runtime == "claude" else "bytes"
+        read_first = [file for file in load["files"] if file["kind"] == "read_first"]
         blocks.append(
             f"{home['home']} on {runtime}: {load['total']:,} of {load['limit']:,} "
             f"{unit}, {abs(headroom):,} {'left' if headroom >= 0 else 'over'}"
+            + (f", plus {sum(file['size'] for file in read_first):,} to read first" if read_first else "")
         )
         if load["files"]:
             rows = [
