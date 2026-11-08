@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Use `super` on its own line in an override to keep the parent's text and add
   to it. `E614` reports a `super` outside an override.
+- Role paragraph overrides also accept `super`.
 
 ### Quotes
 
@@ -53,6 +54,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Teams keep named inherited slots and overrides in the order written.
+- Doctrine Learn explains how to keep shared-file links working after import.
+- The parse error for a multi-paragraph role explains how to key paragraphs.
+- Doctrine Learn explains how to cut the load from shared start-up files.
 - Load reports include existing files linked from files loaded at startup.
 - Codex load headlines show the bytes in files to read first.
 - CLI help explains every command and flag. Doctrine Learn points to the build

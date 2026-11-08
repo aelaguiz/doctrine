@@ -1,0 +1,9 @@
+abstract agent Qa:
+    role:
+        paragraph opening:
+            "You test the app."
+
+agent PodQa[Qa]:
+    override role.opening:
+        super
+        "You test the signup path too."

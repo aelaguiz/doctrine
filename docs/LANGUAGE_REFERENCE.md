@@ -252,8 +252,9 @@ agent OtherQa[Qa]:
         "Phones are with the field guide."
 ```
 
-A role paragraph override holds prose only. A missing key is `E610`. See
-`examples/195_role_paragraphs`.
+A role paragraph override holds prose and can use `super` to keep the inherited
+text in place. A missing key is `E610`. See `examples/195_role_paragraphs` and
+`examples/200_role_super`.
 
 ## Details And Budgets
 
@@ -393,7 +394,8 @@ Team and member bodies are overlays. They keep parent items not named in
 the body, as if they ended with `inherit *`. The role renders first. Own
 items come next, then the parent's remaining items. An explicit `inherit *`
 places those parent items where it stands. Ordinary agent bodies still
-account for each inherited item in full.
+account for each inherited item in full. When a team names inherited slots
+with `inherit`, its named slots and overrides stay in the order written.
 
 A team compiles only its own role and slots. That text stays out of member
 homes, because the runtime reads it from the folder above. A team needs no

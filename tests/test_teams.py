@@ -101,6 +101,35 @@ team T: "Team"
         self.assertIn('Team doctrine.', render_markdown(session.compile_agent('T')))
         self.assertEqual(render_markdown(session.compile_agent('T.qa')), 'Member only.\n')
 
+    def test_team_without_inherit_lines_keeps_inherited_order(self):
+        session = self.session('''abstract team Pod:
+    win: "Win"
+        "Win together."
+    amir: "What comes to Amir"
+        "Share the result."
+    after: "After launch"
+        "Check the result."
+team Growth[Pod]: "Growth"
+    home: "growth"
+    override amir:
+        super
+        "Growth adds a card."
+''')
+        self.assertEqual(render_markdown(session.compile_agent('Growth')), '''## Win
+
+Win together.
+
+## What comes to Amir
+
+Share the result.
+
+Growth adds a card.
+
+## After launch
+
+Check the result.
+''')
+
     def test_tree_from_paths_only(self):
         session = self.session('''team Outer: "Outer"
     home: "."
