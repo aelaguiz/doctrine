@@ -345,7 +345,7 @@ shows the canonical formatted shape for one shipped compile error.
 | Code | Summary | Detail |
 | --- | --- | --- |
 | `E601` | Unfilled value | `Home <home> reads values nothing fills:` followed by each blank as `<root>:<key>` and its file and line. |
-| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. |
+| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. A case link is in a case, shared file, emitted document, or skill package. |
 | `E603` | Value cycle | `Values read each other:` followed by the full cycle, such as `a -> b -> a`. |
 | `E604` | Value sets a fact | `values:` sets a key the compiler supplies. |
 | `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |
@@ -372,6 +372,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |
 | `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
+| `E637` | Dead case link | A case or file section link names a missing or untitled case, a non-case, a missing section, or a section in a kept file. A linked heading also fails if it repeats in its file. |
 | `E640` | No home matches | A selector matches no home path or agent name. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
 | `W309` | Long file | A compiled level file is over the runtime's per-file limit. |
