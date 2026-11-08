@@ -19,7 +19,7 @@ class ClassesSourceTests(HomeProject, unittest.TestCase):
                     code, _, error = self.cli(root, *args)
                     self.assertEqual(code, 0, error)
 
-    def test_reads_follow_output_and_document_declarations(self):
+    def test_reads_follow_output_but_not_typed_slot_declarations(self):
         root = self.project('''output Report: "Report for {{team:boss}}"
     target: Message
         to: "{{team:boss}}"
@@ -44,7 +44,10 @@ team Pod: "pod"
         code, output, error = self.cli(root, "classes", "QA", "--json")
         self.assertEqual(code, 0, error)
         names = [item["name"] for item in json.loads(output)["reads"]]
-        self.assertEqual(set(names), {"team:boss", "agent:inbox", "team:unit"})
+        self.assertEqual(set(names), {"team:boss", "agent:inbox"})
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("team:unit", output)
 
     def test_overridden_workflow_is_not_in_class_uses(self):
         root = self.project('''workflow Craft: "Craft"
@@ -78,7 +81,110 @@ team Pod: "pod"
         self.assertEqual(code, 0, error)
         view = json.loads(output)
         self.assertEqual(view["slots"], [{"key": "craft", "title": "Craft", "abstract": False}])
-        self.assertEqual(view["reads"][0]["name"], "team:unit")
+        self.assertEqual(view["reads"], [])
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("team:unit", output)
+        code, output, error = self.cli(root, "classes", "Pod.qa", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["values"], [])
+
+    def test_sibling_source_uses_root_flow_names(self):
+        root = self.project('''team Pod: "pod"
+    home: "pod"
+    member qa[QA]: "QA"
+''')
+        (root / "prompts/shared").mkdir()
+        (root / "prompts/shared/roles.prompt").write_text('''abstract agent QA:
+    role: "Test."
+''')
+        code, output, error = self.cli(root, "classes", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["agents"][0]["name"], "QA")
+        code, output, error = self.cli(root, "classes", "QA", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["name"], "QA")
+        code, output, error = self.cli(root, "classes", "Pod.qa", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["order"], ["Pod.qa", "QA"])
+        self.assertEqual(json.loads(output)["sections"][0]["from"], "QA")
+
+    def test_title_references_do_not_read_or_use_their_declarations(self):
+        root = self.project('''document Guide: "Guide"
+    section a: "A"
+        "Read {{team:secret}}."
+workflow Steps: "Steps"
+    "Step {{team:hidden}}."
+abstract agent QA:
+    role: "See {{Guide:title}}, {{Steps:title}}, {{Guide}} and {{Steps}}."
+team Pod: "pod"
+    home: "pod"
+    member qa[QA]: "QA"
+''')
+        code, output, error = self.cli(root, "classes", "QA", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["reads"], [])
+        self.assertEqual(json.loads(output)["uses"], [])
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("team:secret", output)
+        self.assertNotIn("team:hidden", output)
+
+    def test_typed_slot_does_not_use_same_named_workflow(self):
+        root = self.project('''workflow Guide: "Workflow guide"
+    "Read {{team:hidden}}."
+document Guide: "Document guide"
+    section a: "A"
+        "Read {{team:secret}}."
+abstract agent Shape:
+    role: "Test."
+    abstract guide: Guide
+abstract agent QA[Shape]:
+    inherit role
+    guide: Guide
+team Pod: "pod"
+    home: "pod"
+    member qa[QA]: "QA"
+''')
+        code, output, error = self.cli(root, "classes", "QA", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["uses"], [])
+        self.assertEqual(json.loads(output)["reads"], [])
+        code, output, error = self.cli(root, "classes", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["agents"][0]["children"][0]["uses"], [])
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("team:hidden", output)
+        self.assertNotIn("W_Guide", output)
+
+    def test_class_reads_omit_builtin_facts_but_agent_values_keep_them(self):
+        root = self.project('''abstract agent QA:
+    role: "{{agent:key}} {{agent:title}} {{agent:home}} {{agent:folder}} {{team:members}} {{team:others}} {{team:unit}}"
+team Pod: "pod"
+    home: "pod"
+    values:
+        unit: "games"
+    member qa[QA]: "QA"
+    member dev: "Dev"
+        role: "Build."
+''')
+        code, output, error = self.cli(root, "classes", "QA", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual([x["name"] for x in json.loads(output)["reads"]], ["team:unit"])
+        code, output, error = self.cli(root, "classes", "Pod.qa", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual([x["name"] for x in json.loads(output)["values"]], [
+            "agent:key", "agent:title", "agent:home", "agent:folder", "team:members", "team:others", "team:unit"])
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("agent:title", output)
+        self.assertIn("team:unit", output)
+        root = self.project(example="193_small_team_end_to_end", fixture="project")
+        code, output, error = self.cli(root, "classes", "Pod", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("team:members", [x["name"] for x in json.loads(output)["reads"]])
+        self.assertNotIn("agent:title", [x["name"] for x in json.loads(output)["reads"]])
 
     def test_effective_and_own_workflow_reads(self):
         root = self.project('''workflow Detail: "Detail"

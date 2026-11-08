@@ -7,19 +7,32 @@ from os.path import relpath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.constants import LATE_ROOT, _INTERPOLATION_RE
+from doctrine._compiler.constants import LATE_ROOT
 from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.naming import model_walk, _dotted_ref_name
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedTypedAgentSlot, ResolvedUseItem, ResolvedWorkflowBody
 from doctrine._compiler.source_graph import declarations_in, declaration_match
-from doctrine._compiler.teams import agent_parents, home_value_sources, team_members
+from doctrine._compiler.teams import FACT_KEYS, agent_parents, home_value_sources, team_members
 from doctrine.homes import compile_homes, home_owners
 
 
 def class_name(session, unit, decl):
     if isinstance(decl, model.Member):
         unit = decl.team_unit
-    return ".".join((*(unit.module_parts if unit is not session.root_flow.entrypoint_unit else ()), decl.name))
+    return ".".join((*(unit.module_parts if session.flow_for_unit(unit) is not session.root_flow else ()), decl.name))
+
+
+def typed_slots(context, owner, unit):
+    keys, seen = set(), set()
+    unit = owner.scope_unit or unit if isinstance(owner, model.Member) else unit
+    while (unit.module_parts, owner.name) not in seen:
+        seen.add((unit.module_parts, owner.name))
+        keys.update(field.key for field in owner.fields if isinstance(field, model.AuthoredSlotAbstract) and field.declared_type)
+        match = declaration_match(context, owner.parent_ref, unit) if owner.parent_ref else None
+        if not match or not isinstance(match[1], model.Agent):
+            break
+        unit, owner = match
+    return keys
 
 
 def class_tree(target, session):
@@ -59,7 +72,7 @@ def class_tree(target, session):
                 if isinstance(item, model.WorkflowUse):
                     visit(item.target, source)
         for field in decl.fields:
-            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)):
+            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and field.key not in typed_slots(context, decl, unit):
                 if isinstance(field.value, model.NameRef):
                     visit(field.value, unit)
                 else:
@@ -167,6 +180,13 @@ def walk_classes(nodes):
 def source_pieces(context, fields, unit):
     pieces, uses, seen = [], [], set()
     def visit(value, scope):
+        if isinstance(value, (model.MarkdownProse, model.AuthoredSlotAbstract)):
+            return
+        if isinstance(value, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and isinstance(value.value, model.NameRef):
+            if context._ref_exists_in_registry(value.value, unit=scope, registry_name="workflows_by_name"):
+                owner, workflow = context._resolve_workflow_ref(value.value, unit=scope)
+                visit(workflow, owner)
+            return
         if isinstance(value, ResolvedUseItem):
             visit(value.workflow_decl, value.target_unit)
         elif isinstance(value, (tuple, list)):
@@ -190,20 +210,13 @@ def source_pieces(context, fields, unit):
             refs = []
             if isinstance(item, str):
                 pieces.append(str(item))
-                for match in _INTERPOLATION_RE.finditer(item):
-                    if not LATE_ROOT.fullmatch(match[0]):
-                        ref = context._parse_interpolation_expr_ref(match[1].split(",", 1)[0])
-                        if ref and ref.root:
-                            refs.append(ref.root)
             elif isinstance(item, model.NameRef):
                 refs.append(item)
             elif isinstance(item, model.WorkflowUse):
                 refs.append(item.target)
-            elif isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and isinstance(item.value, model.NameRef):
-                refs.append(item.value)
             for ref in refs:
                 match = declaration_match(context, ref, scope)
-                if (isinstance(item, model.WorkflowUse) or isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and match and isinstance(match[1], model.Agent)) and context._ref_exists_in_registry(ref, unit=scope, registry_name="workflows_by_name"):
+                if isinstance(item, model.WorkflowUse) and context._ref_exists_in_registry(ref, unit=scope, registry_name="workflows_by_name"):
                     match = context._resolve_workflow_ref(ref, unit=scope)
                 if match and not isinstance(match[1], (model.Agent, model.Team)):
                     owner, decl = match
@@ -230,10 +243,10 @@ def class_view(session, tree, declarations, parents, name):
     typed = {slot.key: slot for slot in slots if isinstance(slot, ResolvedTypedAgentSlot)}
     expanded, _ = context._expand_agent_patches(owner, unit=unit)
     fields = (resolved[field.key] if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in resolved else field
-              for field in expanded.fields if not isinstance(field, (model.ValuesField, model.Member)))
+              for field in expanded.fields if not isinstance(field, (model.ValuesField, model.Member)) and not (isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in typed))
     pieces, uses = source_pieces(context, tuple(fields), unit)
     team = isinstance(owner, model.Team)
-    reads = read_values(context, tuple(pieces), chain, chain if team else [])
+    reads = [read for read in read_values(context, pieces, chain, chain if team else []) if read["name"].split(":", 1)[1] not in FACT_KEYS]
     members = []
     if team:
         for member in team_members(context, owner, unit=unit):
@@ -275,7 +288,7 @@ def agent_view(target, session, name, unit, owner, home):
                        or (isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride))
                            and item.key == key)), None)
         source = class_name(session, writer[1], writer[0]) if writer else field.origin.declaration
-        if not writer and field.origin.scope_unit is session.root_flow.entrypoint_unit:
+        if not writer and session.flow_for_unit(field.origin.scope_unit) is session.root_flow:
             source = source.removeprefix(".".join((*field.origin.scope_unit.module_parts, "")))
         sections.append({"key": key, "from": source})
     teams = [team_sources[0], *agent_parents(context, *team_sources[0])] if team_sources else []
@@ -347,7 +360,7 @@ def render_mermaid(session, tree, declarations, parents, selector):
     if not nodes:
         return ""
     context = CompilationContext(session)
-    reads = {node["name"]: read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member))), unit)[0], [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
+    reads = {node["name"]: [read for read in read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member)) and not (isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and field.key in typed_slots(context, decl, unit))), unit)[0], [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) if read["name"].split(":", 1)[1] not in FACT_KEYS] for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
     workflows = sorted({use for node in nodes for use in node["uses"]})
     ids = {}
     for prefix, names in (("C_", [node["name"] for node in nodes]), ("W_", workflows)):
@@ -381,7 +394,7 @@ def render_mermaid(session, tree, declarations, parents, selector):
             lines.append(f'    {ids["C_", parents[name]]} <|-- {ids["C_", name]}')
         unit, decl, _ = declarations[name]
         for field in decl.fields:
-            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)):
+            if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and field.key not in typed_slots(context, decl, unit):
                 refs = [field.value] if isinstance(field.value, model.NameRef) else [item.target for item in model_walk(field.value) if isinstance(item, model.WorkflowUse)]
                 for ref in refs:
                     if not context._ref_exists_in_registry(ref, unit=unit, registry_name="workflows_by_name"):

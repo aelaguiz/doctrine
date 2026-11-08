@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Class views now use root flow names and list only values a home must supply.
 - Commands that select homes now use the only home target when it has plain agents and no team.
 
 ### Class inspection
