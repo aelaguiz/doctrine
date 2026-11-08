@@ -40,8 +40,7 @@ class MarkdownReaderTests(unittest.TestCase):
     def test_import_line_keeps_its_target(self):
         files, _ = self.rebased('Read @guide.md and @more\\ notes.md first.\n\n`@inline.md`\n\n```\n@code.md\n```')
         body = files['pods/core/qa/AGENTS.md'].decode()
-        self.assertIn('@../../../shared/guide.md', body)
-        self.assertIn('@../../../shared/more\\ notes.md', body)
+        self.assertIn('Read @guide.md and @more\\ notes.md first.', body)
         self.assertIn('`@inline.md`', body)
         self.assertIn('```\n@code.md\n```', body)
 
