@@ -66,10 +66,12 @@ def near_copy_warnings(session):
         for name, source, line, text, kept in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):
-                paragraph = re.sub(
-                    r"(?<!\w)(_+)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", paragraph, flags=re.S
+                # A heading names a section, and files that point at each other share their names.
+                prose = re.sub(r"^ {0,3}#{1,6}(?:[ \t].*)?$", "", paragraph, flags=re.M)
+                prose = re.sub(
+                    r"(?<!\w)(_+)(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", prose, flags=re.S
                 )
-                tokens = re.findall(r"\w+", paragraph.casefold())
+                tokens = re.findall(r"\w+", prose.casefold())
                 if len(tokens) >= 12:
                     paragraphs.append((name, f"{relpath(source, base)}:{line + offset}", tokens, kept))
                 offset += paragraph.count("\n")

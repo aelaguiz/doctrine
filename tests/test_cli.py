@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import tomllib
@@ -768,6 +769,26 @@ rule R: "Rule"
         self.assertEqual(result[0], 0, result)
         self.assertEqual(set(archive_paths), {"pyproject.toml", "prompts", "craft.md"})
         self.assertIn("Role from revision.", (root / "pod/qa/AGENTS.md").read_text())
+
+    def test_rev_check_reads_link_targets_from_the_checkout(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Read [the notes](../local/notes.md) and [the new page](../new.md)."
+''')
+        (root / ".gitignore").write_text("local/\n")
+        self.git_project(root)
+        (root / "local").mkdir()
+        (root / "local/notes.md").write_text("Only on this machine.\n")
+        (root / "new.md").write_text("Added with this commit.\n")
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out)
+        code, _, error = self.cli(root, "build", ".", "--rev", "HEAD", "--out", out)
+        self.assertEqual(code, 0, error)
+        (root / "new.md").unlink()
+        code, _, error = self.cli(root, "build", ".", "--rev", "HEAD", "--out", out)
+        self.assertIn("E636", error)
+        self.assertIn("new.md", error)
+        self.assertNotIn("notes.md", error)
 
     def test_rev_reads_relative_kept_file_from_revision(self):
         root = self.project('''file Guide: "Guide"

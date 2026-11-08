@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tomllib
 import subprocess
+from functools import cache
 import os
 import re
 from html import unescape
@@ -164,6 +165,7 @@ def home_loads(target, homes, files, settings, selected):
                 }
             )
         values["external"] = external
+    @cache  # homes share files, and a revision build reads each one through git
     def file_text(path):
         path = project_file_path(config, path)
         if path in generated:
