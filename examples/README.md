@@ -27,6 +27,8 @@ Example `194_super` keeps a parent's text inside an override.
 Example `195_role_paragraphs` shows how to patch one part of a role.
 Example `196_doctrine_classes` shows titled abstract agents shared by teams.
 Example `197_shared_files` names a shared file once, then links or loads it.
+Example `198_case_links` links a sentence to a case or a shared file's section.
+Example `199_class_hierarchy` builds one small company as a class hierarchy.
 
 - Read the examples in numeric order. The sequence is intentional.
 - The manifest is the proof surface. A checked-in ref file is not proof on its

@@ -52,14 +52,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- Heading links handle closing hash marks, code, and autolinks. Builds keep
-  private-use characters in authored text.
-- Case links reject titles and output outside a home. Selected builds catch
-  stale case headings. Deep headings and nested file links stay usable.
-- Heading links use the rendered Markdown text, including Unicode marks.
-  Skill packages reject links to shared file sections.
-- Case links keep emphasis and code in titles, and use the label of a title's
-  Markdown link. Verbatim blocks keep case-link syntax as written.
+- CLI help explains every command and flag. Doctrine Learn points to the build
+  command, gives one path for landing a lesson, and uses portable links.
 - Commands that select homes use the only home target when it has plain agents and no team, so `--target` is no longer needed there.
 - Markdown imports work in revision checks and can point to built files. Load
   rules keep declared symlink paths, and flow links point to the built files.
