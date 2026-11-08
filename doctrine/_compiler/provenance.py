@@ -22,7 +22,7 @@ def declaration_owners(context, declarations, base):
             if isinstance(item, str):
                 owned = [key for key, (owner, declaration) in declarations.items()
                          if PurePath(relpath(owner.prompt_file.source_path, base)).full_match(item)
-                         or (isinstance(declaration, (model.Agent, model.WorkflowDecl))
+                         or (isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl))
                              and declaration.markdown_path
                              and PurePath(declaration.markdown_path).full_match(item))]
                 if not owned:

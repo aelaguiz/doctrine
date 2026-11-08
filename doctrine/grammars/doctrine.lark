@@ -23,6 +23,7 @@ prompt_file: _NL* declaration+ _NL*
                        | table_decl
                        | document_decl
                        | file_decl
+                       | file_markdown
                        | workflow_decl
                        | route_only_decl
                        | grounding_decl
@@ -74,6 +75,7 @@ schema_decl: "schema" CNAME inheritance? ":" string _NL _INDENT schema_body _DED
 table_decl: "table" CNAME ":" string _NL _INDENT table_decl_body _DEDENT
 document_decl: "document" CNAME inheritance? ":" string _NL _INDENT document_body _DEDENT
 file_decl: "file" CNAME ":" string _NL _INDENT "path" ":" string _NL document_body? _DEDENT
+file_markdown: "file" CNAME "from" string _NL _INDENT "path" ":" string _NL _DEDENT
 workflow_decl: "workflow" CNAME inheritance? ":" string _NL _INDENT workflow_body _DEDENT
 route_only_decl: "route_only" CNAME ":" string _NL _INDENT route_only_body _DEDENT
 grounding_decl: "grounding" CNAME ":" string _NL _INDENT grounding_body _DEDENT

@@ -100,12 +100,12 @@ def revision_source(args):
         for prompt_root in prompt_roots:
             for path in (scratch / prompt_root).rglob("*.prompt"):
                 for declaration in parse_file(path).declarations:
-                    if isinstance(declaration, model.FileDecl) and declaration.body is None:
+                    if isinstance(declaration, model.FileDecl) and declaration.body is None and not declaration.markdown_path:
                         file_path = (config.parent / Path(declaration.path).expanduser()).resolve()
                         if file_path.is_relative_to(root):
                             extra.add(file_path.relative_to(root))
                     if (
-                        isinstance(declaration, (model.Agent, model.WorkflowDecl))
+                        isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl))
                         and declaration.markdown_path
                     ):
                         extra.add(

@@ -70,6 +70,17 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
             raise compile_error(code="E607", summary="Two homes, one path",
                 detail=f"`{decl.name}` and another output both land at `{path}`.")
         written[path] = decl
+        if decl.markdown_path:
+            source_path = (target.project_config.config_dir / decl.markdown_path).resolve()
+            if source_path == (target.output_dir / path).resolve():
+                raise compile_error(code="E656", summary="Markdown source is the output",
+                    detail=f"`{decl.name}` reads and writes `{decl.path}`. Choose a different source or output path.",
+                    path=unit.prompt_file.source_path, source_span=decl.source_span)
+            raw = source_path.read_bytes().decode("utf-8")
+            links[path] = []
+            source = os.path.relpath(source_path, target.project_config.config_dir)
+            files[path] = with_header(raw, source).encode()
+            continue
         reject_details(decl.body, "a shared file")
         reject_case_links(decl.body, unit=unit)
         reject_late_roots(decl.body, unit=unit, why="a shared file belongs to no home")

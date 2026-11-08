@@ -1,0 +1,9 @@
+file Runbook from "prompts/guides/deploy.md"
+    path: "guides/deploy.md"
+
+team Pod: "Pod"
+    home: "pod"
+    member qa: "QA"
+        role: "Read {{Runbook:checks}}."
+    member writer: "Writer"
+        role: "Read first: {{load:Runbook}}"

@@ -110,6 +110,13 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
             path=source_path, source_span=declaration.source_span,
         )
 
+    if isinstance(declaration, model.FileDecl) and path.is_file():
+        try:
+            path.read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            raise error("E652", "Invalid Markdown source",
+                        f"`{declaration.markdown_path}` is not UTF-8. Save it as UTF-8.") from None
+
     lines, title, start = markdown_head(
         path, declaration.name, declaration.markdown_path,
         source_path=source_path, source_span=declaration.source_span,
@@ -161,6 +168,13 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
     items = body(root)
     preamble = tuple(item for item in items if isinstance(item, str))
     sections = tuple(item for item in items if not isinstance(item, str))
+    if isinstance(declaration, model.FileDecl):
+        def readable(section):
+            return model.ReadableBlock("section", section.key, section.title,
+                tuple(readable(item) if isinstance(item, model.LocalSection) else item
+                      for item in section.items), source_span=section.source_span)
+        return replace(declaration, title=title, body=model.DocumentBody(
+            title=title, preamble=preamble, items=tuple(readable(section) for section in sections)))
     if isinstance(declaration, model.Agent):
         fields = tuple(
             model.AuthoredSlotField(

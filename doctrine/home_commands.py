@@ -365,6 +365,7 @@ def where_source(args):
         for unit, declaration in declarations_in(session).values():
             if not isinstance(declaration, model.FileDecl):
                 continue
+            declaration = unit.declarations.files_by_name[declaration.name]
             base = target.output_dir if declaration.body is not None else target.project_config.config_dir
             path = ((base / declaration.path).resolve() if declaration.body is not None
                     else project_file_path(target.project_config, declaration.path))

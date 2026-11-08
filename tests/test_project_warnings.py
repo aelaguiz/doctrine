@@ -7,6 +7,20 @@ from tests.home_support import HomeProject
 
 
 class ProjectWarningTests(HomeProject, unittest.TestCase):
+    def test_w301_compares_markdown_backed_files(self):
+        root = self.project('''file Guide from "prompts/guide.md"
+    path: "shared/guide.md"
+team T: "Team"
+    home: "pod"
+    role: "Read every change with care and test each part that a user will meet today."
+''')
+        (root / "prompts/guide.md").write_text(
+            "# Guide\n\nRead every change with care and test each part that a reader will meet today.\n"
+        )
+        warning, = self.warnings(root)
+        self.assertEqual(warning["code"], "W301")
+        self.assertIn("prompts/guide.md:3", warning["text"])
+
     def test_w302_is_the_same_before_and_after_build(self):
         root = self.project(example="188_project_warnings")
         before = self.cli(root, "check", "--json")

@@ -520,6 +520,11 @@ class SchemaDocumentTransformerMixin:
         ), meta)
 
     @v_args(meta=True, inline=True)
+    def file_markdown(self, meta, name, source, path):
+        return _with_source_span(model.FileDecl(name=name, title=name, path=path,
+                                               markdown_path=source), meta)
+
+    @v_args(meta=True, inline=True)
     def document_decl(self, meta, name, parent_ref_or_title, title_or_body, body=None):
         parent_ref: model.NameRef | None = None
         title = parent_ref_or_title

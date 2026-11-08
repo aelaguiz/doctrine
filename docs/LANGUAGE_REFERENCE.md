@@ -459,6 +459,13 @@ These keys support `drop`, `override`, and dotted patches.
 A Markdown workflow also supports `{{Decl:key.title}}` on its keys.
 See [example 179](../examples/179_markdown_backed_declarations).
 
+A shared file can use `file Runbook from "prompts/runbook.md"` with a
+`path:` line. Its title and section keys come from the Markdown page, and
+the build copies the page as written. Write its relative links from `path:`,
+where readers open the file. An agent or workflow can land in many homes,
+so Doctrine moves its links from the source instead. The source and output
+cannot be the same file (`E656`). See [example 202](../examples/202_markdown_backed_files).
+
 ## Workflows
 
 `workflow` is Doctrine's reusable instruction surface.

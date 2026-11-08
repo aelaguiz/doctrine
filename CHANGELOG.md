@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- Shared files can take their body from a Markdown page, with checked section links and the page kept as written.
+
 ### Rosters
 
 - A roster with an empty title renders no heading of its own, so it can be the

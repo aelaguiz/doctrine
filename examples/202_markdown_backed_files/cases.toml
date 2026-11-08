@@ -1,0 +1,99 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "build copies the page with a header and keeps links relative to its output"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "guides/deploy.md" = "expected/deploy.md" }
+expected_file_lines = { "pod/qa/AGENTS.md" = [
+  "If your session started in this folder, you are Pod's QA. If not, this only describes that role.",
+  "",
+  "Read [Checks](../../guides/deploy.md#checks).",
+], "pod/writer/AGENTS.md" = [
+  "If your session started in this folder, you are Pod's Writer. If not, this only describes that role.",
+  "",
+  "Read first: @../../guides/deploy.md",
+] }
+
+[[cases]]
+name = "hand edits to the built file are refused"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { "guides/deploy.md" = "A hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "guides/deploy.md"]
+
+[[cases]]
+name = "a dead link is checked from the output folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/guides/deploy.md" = "# Deploy guide\n\n## Checks\n\n[Missing](missing.md)\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E636", "guides/deploy.md points at missing.md"]
+
+[[cases]]
+name = "a link valid only from the output folder passes"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "guides/deploy.md" = ["# Deploy guide", "", "Keep this page as written.", "", "## Checks", "", "Read the [plan](plan.md) before release.", "", "### Roll back", "", "Keep the old version ready.", "", "| Step | Action |", "| --- | --- |", "| 1 | Check |", "", "```text", "## This is not a section", "{{keep this}}", "```"] }
+
+[[cases]]
+name = "a section link is checked and rendered"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Runbook from \"prompts/guides/deploy.md\"\n    path: \"guides/deploy.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Runbook:checks.roll_back}}.\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pod/AGENTS.md" = ["This file loads for every session started under `pod/`. If yours started there, it is part of who you are. If not, it only describes the agents there.", "", "Read [Roll back](../guides/deploy.md#roll-back)."] }
+
+[[cases]]
+name = "a missing section fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Runbook from \"prompts/guides/deploy.md\"\n    path: \"guides/deploy.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Runbook:missing}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "has no section `missing`"]
+
+[[cases]]
+name = "source and output cannot be the same file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Runbook from \"prompts/guides/deploy.md\"\n    path: \"prompts/guides/deploy.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Runbook}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E656", "reads and writes"]
+
+[[cases]]
+name = "a missing Markdown source fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Runbook from \"prompts/guides/missing.md\"\n    path: \"guides/deploy.md\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Runbook}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E652", "prompts/guides/missing.md"]
+
+[[cases]]
+name = "where finds lines in the built file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "Keep the old version ready."]
+expected_exit = 0
+stdout_contains = ["file Runbook", "guides/deploy.md:13"]
