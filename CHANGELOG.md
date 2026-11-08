@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `doctrine classes` shows class trees, reads, slots, changes, and the sources
   of an agent's sections and values. It can also print JSON or a Mermaid diagram.
+- Class trees, views, and diagrams show shared files a class loads or links.
 
 ### Abstract agent titles
 

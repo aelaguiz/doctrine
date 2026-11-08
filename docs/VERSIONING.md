@@ -9,7 +9,7 @@ Abstract agents can have titles. These describe the class and do not render
 in homes.
 
 `doctrine classes` inspects class trees and home sources. Its JSON output uses
-`format_version: 1`.
+`format_version: 1`. Tree nodes and class views include `loads` and `links` lists.
 The Codex load headline shows the bytes in files to read first. Load JSON is
 unchanged.
 
