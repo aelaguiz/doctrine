@@ -99,6 +99,7 @@ class CompilationSession:
         skill_package_host_context: SkillPackageHostCompileContext | None = None,
         evaluate_rules: bool = True,
         passages: dict[str, str] | None = None,
+        prompt_files: dict[Path, model.PromptFile] | None = None,
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
         resolved_project_config = project_config
@@ -184,11 +185,9 @@ class CompilationSession:
             prompt_file.source_path,
             prompt_root=self.prompt_root,
         )
-        prompt_file_overrides = (
-            {}
-            if prompt_file.source_path is None
-            else {prompt_file.source_path.resolve(): prompt_file}
-        )
+        prompt_file_overrides = dict(prompt_files or {})
+        if prompt_file.source_path is not None:
+            prompt_file_overrides[prompt_file.source_path.resolve()] = prompt_file
         self.root_flow = build_indexed_flow(
             prompt_root=self.prompt_root,
             entrypoint_path=root_entrypoint,

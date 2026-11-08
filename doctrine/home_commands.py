@@ -20,6 +20,8 @@ from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
 from doctrine._compiler.markdown_links import markdown_destinations
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.flow_boundary import discover_flow_members, flow_boundary_kind_for_path, resolve_flow_entrypoint
+from doctrine._compiler.support import resolve_prompt_root
 from doctrine._compiler.provenance import declaration_owners
 from doctrine._compiler.source_graph import declarations_in
 from doctrine.diagnostics import DoctrineError
@@ -35,6 +37,17 @@ from doctrine.runtime_load import (
     text_size, padded_rows,
 )
 from doctrine.classes import agent_view, class_tree, class_view, render_agent, render_class, render_mermaid, render_tree
+
+
+def homes_session(target):
+    """A homes build's session. Each file of the entrypoint's flow is parsed once, and any of them may declare passages."""
+    entry = resolve_flow_entrypoint(target.entrypoint, prompt_root=resolve_prompt_root(target.entrypoint))
+    root = entry.parent if flow_boundary_kind_for_path(entry) is not None else entry
+    files = {path.resolve(): parse_file(path) for path in discover_flow_members(root, entrypoint_path=entry)}
+    return CompilationSession(
+        files[target.entrypoint.resolve()], project_config=target.project_config,
+        passages=collect_passages(files.values(), target.project_config.config_dir), prompt_files=files,
+    )
 
 
 @contextmanager
@@ -59,11 +72,7 @@ def resolve_target(args):
         sessions, team_targets = {}, []
         for target in targets.values():
             if target.entrypoint.name in ("AGENTS.prompt", "SOUL.prompt"):
-                prompt = parse_file(target.entrypoint)
-                passages = collect_passages(prompt, target.project_config.config_dir)
-                session = CompilationSession(
-                    prompt, project_config=target.project_config, passages=passages,
-                )
+                session = homes_session(target)
                 sessions[target.name] = session
                 if any(not team.abstract for team in session.root_flow.teams_by_name.values()):
                     team_targets.append(target)
@@ -381,15 +390,16 @@ def where_source(args):
             for (origin, path, site), reached in matches.items()
         ]
         if not args.home:
-            for declaration in session.root_flow.entrypoint_unit.prompt_file.declarations:
-                if not isinstance(declaration, model.PassageDecl):
-                    continue
-                text = session.passages[declaration.name]
-                if needle in " ".join(text.casefold().split()):
-                    path = session.root_flow.entrypoint_unit.prompt_file.source_path
-                    result.append({"origin": f"passage {declaration.name}",
-                        "site": f"{relpath(path, target.project_config.config_dir)}:{declaration.source_span.line}",
-                        "homes": []})
+            for unit in session.root_flow.units_by_path.values():
+                for declaration in unit.prompt_file.declarations:
+                    if not isinstance(declaration, model.PassageDecl):
+                        continue
+                    text = session.passages[declaration.name]
+                    if needle in " ".join(text.casefold().split()):
+                        path = unit.prompt_file.source_path
+                        result.append({"origin": f"passage {declaration.name}",
+                            "site": f"{relpath(path, target.project_config.config_dir)}:{declaration.source_span.line}",
+                            "homes": []})
             for entry, name, markdown, skill_session in session.project_skill_sources:
                 if needle not in " ".join(markdown.casefold().split()):
                     continue

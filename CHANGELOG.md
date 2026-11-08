@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## Unreleased
 
 - Projects can declare passages once and place them in Markdown-backed skills and shared files.
+  The near-copy check (`W301`) now reads project-built skills too, and counts a
+  passage once, where it is declared.
 - The near-copy check (`W301`) skips Markdown headings. A case log whose
   sections share an instruction file's titles no longer warns.
 - A `--rev` build counts a link target the checkout has, as a build in place

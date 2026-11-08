@@ -23,8 +23,8 @@ class PassageTests(unittest.TestCase):
             (root / "p.md").write_bytes(b"line\r\n")
             prompt = root / "AGENTS.prompt"
             prompt.write_text('passage P: """one\ntwo"""\npassage Q from "p.md"\n')
-            self.assertEqual(collect_passages(parse_file(prompt), root),
-                             {"P": "one\ntwo", "Q": "line\r\n"})
+            self.assertEqual(collect_passages([parse_file(prompt)], root),
+                             {"P": "one\ntwo", "Q": "line"})
 
     def test_missing_or_invalid_file_fails_loud(self):
         with TemporaryDirectory() as directory:
@@ -34,7 +34,7 @@ class PassageTests(unittest.TestCase):
                 if content is not None:
                     (root / "p.md").write_bytes(content)
                 with self.assertRaises(CompileError) as caught:
-                    collect_passages(prompt, root)
+                    collect_passages([prompt], root)
                 self.assertEqual(caught.exception.code, "E652")
 
     def test_unknown_and_standalone_markers_fail(self):

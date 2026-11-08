@@ -117,3 +117,13 @@ edit = { "prompts/AGENTS.prompt" = "passage Shared: \"Read every change with car
 args = ["build", "--rev", "HEAD", "--with", "prompts/AGENTS.prompt", "."]
 expected_exit = 0
 expected_files = { "guides/guide.md" = "expected/guide.md" }
+
+[[cases]]
+name = "a passage declared in another source file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/shared/more.prompt" = "passage Next: \"Name the one thing the reader should do next, and the day it is due.\"\n", "prompts/pages/guide.md" = "# Guide\n\n{{passage:Next}}\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "guides/guide.md" = ["# Guide", "", "Name the one thing the reader should do next, and the day it is due."] }
