@@ -251,3 +251,80 @@ team Growth[Pod]: "growth"
         self.assertEqual(json.loads(output)["changed_below"], [
             {"owner": "Growth", "change": "overrides", "keys": ["qa"]},
         ])
+
+    def test_name_wins_over_another_home(self):
+        root = self.project('''team Alpha: "alpha"
+    home: "Beta"
+    role: "Work."
+abstract agent Beta: "Beta class"
+    role: "Work."
+''')
+        code, output, error = self.cli(root, "classes", "Beta", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["kind"], "abstract agent")
+
+    def test_nested_entrypoint_and_imported_agent_without_home(self):
+        root = self.project('''from shared.kit import Base
+team Pod: "pod"
+    home: "pod"
+    member a[Base]: "A"
+''')
+        (root / "prompts/main").mkdir()
+        (root / "prompts/main/AGENTS.prompt").write_text((root / "prompts/AGENTS.prompt").read_text())
+        (root / "prompts/AGENTS.prompt").unlink()
+        (root / "prompts/shared").mkdir()
+        (root / "prompts/shared/kit.prompt").write_text('''export abstract agent Base: "Base"
+    role: "Base."
+export agent Tool[Base]: "Tool"
+    inherit role
+''')
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace("prompts/AGENTS.prompt", "prompts/main/AGENTS.prompt"))
+        code, output, error = self.cli(root, "classes", "--json")
+        self.assertEqual(code, 0, error)
+        tree = json.loads(output)
+        self.assertEqual(tree["agents"][0]["name"], "shared.kit.Base")
+        self.assertEqual(tree["teams"][0]["name"], "Pod")
+        code, output, error = self.cli(root, "classes", "shared.kit.Tool", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["kind"], "agent")
+
+    def test_team_chain_excludes_enclosing_teams(self):
+        root = self.project('''abstract agent QA:
+    role: "Test {{team:unit}}."
+team Outer: "outer"
+    home: "pods"
+    values:
+        unit: "games"
+team Inner: "inner"
+    home: "pods/inner"
+    member qa[QA]: "QA"
+''')
+        code, output, error = self.cli(root, "classes", "Inner.qa", "--json")
+        self.assertEqual(code, 0, error)
+        view = json.loads(output)
+        self.assertEqual(view["team"], ["Inner"])
+        self.assertEqual(view["values"][0]["set_by"], "Outer")
+
+    def test_imported_inherited_members_use_the_team_name(self):
+        root = self.project('''import roles
+team Growth[roles.Pod]: "growth"
+    home: "growth"
+    values:
+        unit: "games"
+''')
+        (root / "prompts/roles").mkdir()
+        (root / "prompts/roles/AGENTS.prompt").write_text('''export abstract agent QA:
+    role: "Test {{team:unit}}."
+export abstract team Pod: "pod"
+    member qa[QA]: "QA"
+''')
+        code, output, error = self.cli(root, "classes", "Growth", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["members"], [{"key": "qa", "class": "roles.QA"}])
+        code, output, error = self.cli(root, "classes", "Growth.qa", "--json")
+        self.assertEqual(code, 0, error)
+        view = json.loads(output)
+        self.assertEqual(view["order"], ["Growth.qa", "roles.QA"])
+        self.assertEqual(view["sections"][0]["from"], "roles.QA")
+        self.assertEqual(view["values"][0]["set_by"], "Growth")

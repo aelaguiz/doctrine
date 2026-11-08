@@ -13,17 +13,23 @@ from doctrine._compiler.teams import agent_parents, home_value_sources, team_mem
 from doctrine.homes import compile_homes, home_owners
 
 
+def class_name(session, unit, decl):
+    if isinstance(decl, model.Member):
+        unit = decl.team_unit
+    return ".".join((*(unit.module_parts if unit is not session.root_flow.entrypoint_unit else ()), decl.name))
+
+
 def class_tree(target, session):
     context = CompilationContext(session)
     owners, _ = home_owners(target, session)
     declarations = {
-        name: (unit, declaration, None)
-        for (name, _), (unit, declaration) in declarations_in(session).items()
+        class_name(session, unit, declaration): (unit, declaration, None)
+        for unit, declaration in declarations_in(session).values()
         if isinstance(declaration, (model.Agent, model.Team))
         and not isinstance(declaration, model.Member)
     }
     for home, owner, unit, _ in owners:
-        name = ".".join((*unit.module_parts, owner.name))
+        name = class_name(session, unit, owner)
         declarations[name] = (unit, owner, home)
     nodes = {}
     parents = {}
@@ -33,7 +39,7 @@ def class_tree(target, session):
         if decl.parent_ref:
             match = declaration_match(context, decl.parent_ref, unit)
             if match and isinstance(match[1], model.Team if isinstance(decl, model.Team) else model.Agent):
-                parent = ".".join((*match[0].module_parts, match[1].name))
+                parent = class_name(session, *match)
             else:
                 broken = {"name": _dotted_ref_name(decl.parent_ref), "reason": "not found"}
         parents[name] = parent
@@ -42,7 +48,7 @@ def class_tree(target, session):
             if not context._ref_exists_in_registry(ref, unit=owner, registry_name="workflows_by_name"):
                 return
             source, workflow = context._resolve_workflow_ref(ref, unit=owner)
-            workflow_name = ".".join((*source.module_parts, workflow.name))
+            workflow_name = class_name(session, source, workflow)
             if workflow_name in uses:
                 return
             uses.append(workflow_name)
@@ -137,7 +143,7 @@ def read_values(context, pieces, agent_sources, team_sources):
             source = next(((decl, scope, value) for decl, scope in sources
                            for field in decl.fields if isinstance(field, model.ValuesField)
                            for item_key, value, _ in field.items if item_key == key), None)
-            setter = ".".join((*source[1].module_parts, source[0].name)) if source else None
+            setter = class_name(context.session, source[1], source[0]) if source else None
             values.append({"name": label, "default": source[2] if source else None, "set_by": setter})
             if source:
                 text = context._interpolate_authored_prose_string(
@@ -178,7 +184,7 @@ def class_view(session, tree, declarations, parents, name):
     members = []
     if team:
         for member in team_members(context, owner, unit=unit):
-            members.append({"key": member.key, "class": _dotted_ref_name(member.parent_ref) if member.parent_ref else None})
+            members.append({"key": member.key, "class": class_name(session, *declaration_match(context, member.parent_ref, member.scope_unit or unit)) if member.parent_ref else None})
     own_slots = [{"key": field.key, "title": None if isinstance(field, model.AuthoredSlotAbstract) else
                   resolved[field.key].title if field.key in resolved else context._display_readable_decl(
                       context._resolve_decl_ref(typed[field.key].entity_ref, unit=unit,
@@ -190,9 +196,9 @@ def class_view(session, tree, declarations, parents, name):
     changed = [{"owner": child["name"], "change": kind, "keys": child[kind]}
                for child in descendants for kind in ("overrides", "adds", "drops") if child[kind]]
     uses = list(dict.fromkeys(use for decl, scope in chain
-                             for use in nodes[".".join((*scope.module_parts, decl.name))]["uses"]))
+                             for use in nodes[class_name(session, scope, decl)]["uses"]))
     return {"format_version": 1, "view": "class", "name": name,
-            "kind": "abstract team" if team and owner.abstract else "team" if team else "abstract agent",
+            "kind": "abstract team" if team and owner.abstract else "team" if team else "abstract agent" if owner.abstract else "agent",
             "site": f'{relpath(unit.prompt_file.source_path, session.project_config.config_dir)}:{owner.source_span.line}',
             "title": owner.title, "parent": parents[name], "children": [child["name"] for child in node["children"]],
             "uses": uses, "homes": sum(child["home"] is not None for child in [node, *descendants]),
@@ -217,12 +223,13 @@ def agent_view(target, session, name, unit, owner, home):
                        if (key == "role" and isinstance(item, (model.RoleScalar, model.RoleBlock)))
                        or (isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride))
                            and item.key == key)), None)
-        sections.append({"key": key, "from": ".".join((*writer[1].module_parts, writer[0].name)) if writer else field.origin.declaration})
+        sections.append({"key": key, "from": class_name(session, writer[1], writer[0]) if writer else field.origin.declaration})
+    teams = [team_sources[0], *agent_parents(context, *team_sources[0])] if team_sources else []
     return {
         "format_version": 1, "view": "agent", "name": name,
         "kind": "member" if isinstance(owner, model.Member) else "agent", "home": home,
-        "order": [".".join((*scope.module_parts, decl.name)) for decl, scope in chain],
-        "team": [".".join((*scope.module_parts, decl.name)) for decl, scope in team_sources], "sections": sections, "values": values,
+        "order": [class_name(session, scope, decl) for decl, scope in chain],
+        "team": [class_name(session, scope, decl) for decl, scope in teams], "sections": sections, "values": values,
     }
 
 

@@ -220,8 +220,9 @@ def classes(args):
         if target is None:
             return 2
         tree, declarations, parents = class_tree(target, session)
-        name, data = next(((name, data) for name, data in declarations.items()
-                           if args.selector and args.selector in (name, data[2])), (None, None))
+        name = args.selector if args.selector in declarations else next(
+            (name for name, data in declarations.items() if args.selector and args.selector == data[2]), None)
+        data = declarations.get(name)
         if args.selector and name is None:
             raise compile_error(code="E640", summary="No home matches",
                                 detail=f"`{args.selector}` matches no class, team, member or home.")
@@ -230,7 +231,7 @@ def classes(args):
         if name:
             unit, owner, home = data
             view = (class_view(session, tree, declarations, parents, name)
-                    if owner.abstract or isinstance(owner, model.Team) else agent_view(target, session, name, unit, owner, home))
+                    if owner.abstract or isinstance(owner, model.Team) or home is None else agent_view(target, session, name, unit, owner, home))
         else:
             view = tree
         print(json.dumps(view) if args.json else {"tree": render_tree, "class": render_class, "agent": render_agent}[view["view"]](view))
