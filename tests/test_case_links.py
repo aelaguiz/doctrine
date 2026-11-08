@@ -111,6 +111,20 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
         for _, anchor in titles:
             with self.subTest(anchor=anchor):
                 self.assertIn(f"DETAILS.md#{anchor})", text)
+        self.assertIn("[See the guide](DETAILS.md#see-the-guide)", text)
+
+    def test_case_link_text_keeps_emphasis_and_code(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    work: "Work"
+        "Read {{details:work.case}}."
+        details case: "_Read_ [the guide](https://x.com) with `make`"
+            "Text."
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("[_Read_ the guide with `make`](DETAILS.md#read-the-guide-with-make)",
+                      (root / "t/AGENTS.md").read_text())
 
     def test_deep_case_and_its_nested_sections_are_headings(self):
         root = self.project('''team T: "Team"

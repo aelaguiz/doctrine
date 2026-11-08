@@ -8,7 +8,7 @@ from pathlib import PurePosixPath
 from doctrine import model
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
 from doctrine._compiler.late_binding import map_text, reject_case_links
-from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor
+from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor, heading_link_text
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledReadableBlock, CompiledRuleBlock
@@ -79,7 +79,7 @@ def split_details(compiled, home, root, home_map, unit):
                     detail=f"`details:{name}` has no title to link to. Give the case a title.")
             anchor = heading_anchor(case.title, {})
             linked[key] = (path, anchor, name)
-            return "" + json.dumps(["link", case.title, str(root / path), anchor]) + ""
+            return "" + json.dumps(["link", heading_link_text(case.title), str(root / path), anchor]) + ""
         return type(text)(DETAILS_LINK.sub(resolve, text))
     def resolve_item(item, key_path, prefix=()):
         if isinstance(item, (CompiledSection, CompiledGuardBlock)):

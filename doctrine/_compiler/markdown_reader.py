@@ -14,10 +14,18 @@ def heading_key(title):
     return re.sub(r"^([0-9])", r"_\1", key)
 
 
-def heading_anchor(text, seen):
-    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", text.strip(), flags=re.S)
+def heading_link_text(text):
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", text, flags=re.S)
     for index in range(0, len(parts), 3):
-        parts[index] = re.sub(r"!?\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
+        parts[index] = re.sub(r"(?<!!)\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
+    return "".join(parts[index] + (parts[index + 1] + parts[index + 2] + parts[index + 1]
+                   if index + 1 < len(parts) else "") for index in range(0, len(parts), 3))
+
+
+def heading_anchor(text, seen):
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", heading_link_text(text.strip()), flags=re.S)
+    for index in range(0, len(parts), 3):
+        parts[index] = re.sub(r"!\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
         parts[index] = re.sub(r"<[^>]*>", "", parts[index])
     text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
     text = text.replace("*", "")
