@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT, _INTERPOLATION_EXPR_RE
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.markdown_reader import heading_anchor
@@ -424,6 +425,9 @@ class ResolveAddressablesMixin:
         )
         if isinstance(decl, model.FileDecl):
             name = _dotted_ref_name(ref.root)
+            if self._active_skill_package_host_context() is not None:
+                raise authored_compile_error(code="E655", summary="File ref can't go here",
+                    detail=f"A skill package has no home to link from, so it can't read `{{{{{name}:{'.'.join(ref.path)}}}}}`.", unit=unit, source_span=None)
             if decl.body is None:
                 raise compile_error(code="E637", summary="Dead case link",
                     detail=f"`{name}` is kept as written, so Doctrine doesn't read its sections. Link to the file.")

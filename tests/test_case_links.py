@@ -140,6 +140,21 @@ team T: "Team"
         self.assertIn("[Reviewing the plan](../../../shared/testing.md#reviewing-the-plan)",
                       (root / "pods/growth/lead/AGENTS.md").read_text())
 
+    def test_skill_package_cannot_link_to_file_section(self):
+        root = self.project('''file Testing: "Testing"
+    path: "testing.md"
+    section plans: "Plans"
+        "Text."
+skill package P: "Package"
+    "Read {{Testing:plans}}."
+''')
+        session = CompilationSession(parse_file(root / "prompts/AGENTS.prompt"))
+        with self.assertRaises(CompileError) as caught:
+            session.compile_skill_package("P")
+        self.assertEqual(caught.exception.code, "E655")
+        self.assertEqual(caught.exception.diagnostic.detail,
+            "A skill package has no home to link from, so it can't read `{{Testing:plans}}`.")
+
     def test_repeated_case_heading_full_build_gate(self):
         source = '''abstract agent R:
     role: "Test."
