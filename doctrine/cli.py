@@ -49,7 +49,7 @@ def main(argv=None):
     source_command.add_argument("--json", action="store_true", help="Print the report as JSON.")
     source_command.add_argument("--person", help="Show sources for this person.")
     source_command.set_defaults(rev=None, overlays=[])
-    classes_command = commands.add_parser("classes", help="Show class trees and home sources.")
+    classes_command = commands.add_parser("classes", help="Show the class tree, one class, or where an agent's text came from.")
     classes_command.add_argument("selector", nargs="?", help="Inspect a class, team, member, or home path.")
     classes_command.add_argument("--pyproject", help="Use this pyproject.toml file.")
     classes_command.add_argument("--target", help="Use this emit target.")
