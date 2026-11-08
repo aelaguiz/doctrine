@@ -116,6 +116,7 @@ team, member, or home path to inspect that owner. Class views show reads,
 slots, and changes below. Member and agent views show section and value sources.
 Use `--json` for structured output or `--mermaid` for a class diagram. The
 command does not write files or need a built tree.
+Teams and members can replace a class default with their own value.
 
 `build` and `check` compile the selected homes and check rules, budgets,
 and hand edits. A build writes nothing if a check fails. `--force` allows hand

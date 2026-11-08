@@ -57,7 +57,7 @@ def class_tree(target, session):
                     for item in model_walk(field.value):
                         if isinstance(item, model.WorkflowUse):
                             visit(item.target, unit)
-        overrides = [field.key for field in decl.fields if isinstance(field, model.AuthoredSlotOverride)]
+        overrides = [field.key for field in decl.fields if isinstance(field, model.AuthoredSlotOverride) or isinstance(field, model.Member) and field.override]
         overrides += [".".join(field.path) for field in decl.fields if isinstance(field, model.OverridePath)]
         nodes[name] = {
             "name": name, "abstract": decl.abstract, "home": home, "broken_parent": broken,

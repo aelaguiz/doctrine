@@ -224,3 +224,30 @@ team Growth: "growth"
             code, output, error = self.cli(root, "classes", selector, "--json")
             self.assertEqual(code, 0, error)
             self.assertIn("one   two", output)
+
+    def test_only_home_target_needs_no_team_or_flag(self):
+        root = self.project('''agent A: "Reviewer"
+    role: "Review."
+''')
+        for args in (("classes",), ("build", "."), ("check",), ("load", "A", "--runtime", "codex")):
+            with self.subTest(args=args):
+                code, _, error = self.cli(root, *args)
+                self.assertEqual(code, 0, error)
+
+    def test_overridden_member_is_a_team_change(self):
+        root = self.project('''abstract team Pod: "pod"
+    member qa: "QA"
+        role: "Test."
+team Growth[Pod]: "growth"
+    home: "growth"
+    override member qa: "QA"
+        role: "Test more."
+''')
+        code, output, error = self.cli(root, "classes")
+        self.assertEqual(code, 0, error)
+        self.assertIn("Growth  growth  overrides qa", output)
+        code, output, error = self.cli(root, "classes", "Pod", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["changed_below"], [
+            {"owner": "Growth", "change": "overrides", "keys": ["qa"]},
+        ])

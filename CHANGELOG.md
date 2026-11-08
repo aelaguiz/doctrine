@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Fixed
+
+- Commands that select homes now use the only home target when it has plain agents and no team.
+
 ### Class inspection
 
 - `doctrine classes` shows class trees, reads, slots, changes, and the sources

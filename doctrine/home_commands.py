@@ -58,6 +58,8 @@ def resolve_target(args):
                 sessions[target.name] = session
                 if any(not team.abstract for team in session.root_flow.teams_by_name.values()):
                     team_targets.append(target)
+        if not team_targets and len(targets) == 1 and len(sessions) == 1:
+            team_targets = list(targets.values())
         if args.target is None and len(team_targets) != 1:
             print("Choose a target with --target.", file=sys.stderr)
             yield None, None, live_root
