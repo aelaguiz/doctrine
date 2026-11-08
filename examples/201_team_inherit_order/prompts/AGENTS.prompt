@@ -1,0 +1,15 @@
+abstract team Pod:
+    win: "Win"
+        "Win together."
+    amir: "What comes to Amir"
+        "Share the result."
+    after: "After launch"
+        "Check the result."
+
+team Growth[Pod]: "Growth"
+    home: "growth"
+    inherit win
+    override amir: "What comes to Amir"
+        super
+        "Growth adds a card."
+    inherit after

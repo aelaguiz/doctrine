@@ -1,0 +1,14 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a team keeps written section order"
+status = "active"
+kind = "render_contract"
+agent = "Growth"
+assertion = "exact_lines"
+expected_lines = [
+  "## Win", "", "Win together.", "",
+  "## What comes to Amir", "", "Share the result.", "", "Growth adds a card.", "",
+  "## After launch", "", "Check the result.",
+]

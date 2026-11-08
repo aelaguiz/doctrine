@@ -53,6 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Teams keep named inherited slots and overrides in the order written.
 - Doctrine Learn explains how to keep shared-file links working after import.
 - The parse error for a multi-paragraph role explains how to key paragraphs.
 - Doctrine Learn explains how to cut the load from shared start-up files.

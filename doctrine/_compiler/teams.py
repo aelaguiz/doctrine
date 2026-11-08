@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.naming import patch_item_key
 
 
 def _message_target(decl):
@@ -145,6 +146,10 @@ def validate_values(agent, *, unit):
 
 
 def order_team_fields(agent, fields, *, keys, parent_fields, unit):
+    if isinstance(agent, model.Team) and any(isinstance(field, model.AuthoredSlotInherit) for field in agent.fields) and not any(isinstance(field, model.InheritAll) for field in agent.fields):
+        positions = {field.key: index for index, field in enumerate(agent.fields)
+                     if isinstance(field, (model.AuthoredSlotInherit, model.AuthoredSlotOverride, model.AuthoredSlotField))}
+        fields.sort(key=lambda field: positions.get(patch_item_key(field), len(agent.fields)))
     if isinstance(agent, (model.Member, model.Team)):
         roles = [field for field in fields if isinstance(field, (model.RoleScalar, model.RoleBlock))]
         fields = roles + [field for field in fields if not isinstance(field, (model.RoleScalar, model.RoleBlock))]
