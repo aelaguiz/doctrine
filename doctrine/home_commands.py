@@ -227,7 +227,8 @@ def classes(args):
             raise compile_error(code="E640", summary="No home matches",
                                 detail=f"`{args.selector}` matches no class, team, member or home.")
         if args.mermaid:
-            print(render_mermaid(session, tree, declarations, parents, name)); return 0
+            diagram = render_mermaid(session, tree, declarations, parents, name)
+            print(diagram, end="\n" if diagram else ""); return 0
         if name:
             unit, owner, home = data
             view = (class_view(session, tree, declarations, parents, name)

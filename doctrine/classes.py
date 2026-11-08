@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
+import re
 from os.path import relpath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.constants import LATE_ROOT
+from doctrine._compiler.constants import LATE_ROOT, _INTERPOLATION_RE
 from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.naming import model_walk, _dotted_ref_name
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedTypedAgentSlot
@@ -161,6 +163,38 @@ def walk_classes(nodes):
         yield from walk_classes(node["children"])
 
 
+def source_pieces(context, fields, unit):
+    pieces, seen = [], set()
+    def visit(value, scope):
+        for item in model_walk(value):
+            refs = []
+            if isinstance(item, str):
+                pieces.append(item)
+                for match in _INTERPOLATION_RE.finditer(item):
+                    if not LATE_ROOT.fullmatch(match[0]):
+                        ref = context._parse_interpolation_expr_ref(match[1].split(",", 1)[0])
+                        if ref and ref.root:
+                            refs.append(ref.root)
+            elif isinstance(item, model.NameRef):
+                refs.append(item)
+            elif isinstance(item, model.WorkflowUse):
+                refs.append(item.target)
+            elif isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and isinstance(item.value, model.NameRef):
+                refs.append(item.value)
+            for ref in refs:
+                match = declaration_match(context, ref, scope)
+                if (isinstance(item, model.WorkflowUse) or isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and match and isinstance(match[1], model.Agent)) and context._ref_exists_in_registry(ref, unit=scope, registry_name="workflows_by_name"):
+                    match = context._resolve_workflow_ref(ref, unit=scope)
+                if match and not isinstance(match[1], (model.Agent, model.Team)):
+                    owner, decl = match
+                    key = (owner.module_parts, type(decl), decl.name)
+                    if key not in seen:
+                        seen.add(key)
+                        visit(decl, owner)
+    visit(fields, unit)
+    return tuple(pieces)
+
+
 def class_view(session, tree, declarations, parents, name):
     context = CompilationContext(session)
     unit, owner, _ = declarations[name]
@@ -223,7 +257,10 @@ def agent_view(target, session, name, unit, owner, home):
                        if (key == "role" and isinstance(item, (model.RoleScalar, model.RoleBlock)))
                        or (isinstance(item, (model.AuthoredSlotField, model.AuthoredSlotOverride))
                            and item.key == key)), None)
-        sections.append({"key": key, "from": class_name(session, writer[1], writer[0]) if writer else field.origin.declaration})
+        source = class_name(session, writer[1], writer[0]) if writer else field.origin.declaration
+        if not writer and field.origin.scope_unit is session.root_flow.entrypoint_unit:
+            source = source.removeprefix(".".join((*field.origin.scope_unit.module_parts, "")))
+        sections.append({"key": key, "from": source})
     teams = [team_sources[0], *agent_parents(context, *team_sources[0])] if team_sources else []
     return {
         "format_version": 1, "view": "agent", "name": name,
@@ -290,26 +327,41 @@ def render_mermaid(session, tree, declarations, parents, selector):
             chosen.add(ancestor)
             ancestor = parents[ancestor]
     nodes = [node for node in nodes if node["name"] in chosen]
-    views = {node["name"]: class_view(session, tree, declarations, parents, node["name"]) for node in nodes}
-    label = lambda name: f'`{name}`' if "." in name else name
+    if not nodes:
+        return ""
+    context = CompilationContext(session)
+    reads = {node["name"]: read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member))), unit), [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
+    workflows = sorted({use for node in nodes for use in node["uses"]})
+    ids = {}
+    for prefix, names in (("C_", [node["name"] for node in nodes]), ("W_", workflows)):
+        for name in names:
+            base = prefix + re.sub(r"[^a-zA-Z0-9_]", "_", name)
+            label, number = base, 2
+            while label in ids.values():
+                label, number = f"{base}_{number}", number + 1
+            ids[prefix, name] = label
     lines = ["classDiagram"]
     for node in nodes:
-        view = views[node["name"]]
-        inherited = {read["name"] for read in views[parents[node["name"]]]["reads"]} if parents[node["name"]] in views else set()
+        name = node["name"]
+        inherited, ancestor, seen = set(), parents[name], {name}
+        while ancestor in reads and ancestor not in seen:
+            seen.add(ancestor)
+            inherited.update(item["name"] for item in reads[ancestor])
+            ancestor = parents[ancestor]
         body = (["<<abstract>>"] if node["abstract"] else [])
-        body += [read["name"] for read in view["reads"] if read["name"] not in inherited]
-        body += [slot["key"] + "()" + ("*" if slot["abstract"] else "") for slot in view["slots"]]
-        lines.append("    class " + label(node["name"]) + (" {" if body else ""))
+        body += [read["name"] for read in reads[name] if read["name"] not in inherited]
+        body += [field.key + "()" + ("*" if isinstance(field, model.AuthoredSlotAbstract) else "")
+                 for field in declarations[name][1].fields if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotAbstract))]
+        lines.append("    class " + ids["C_", node["name"]] + "[" + json.dumps(node["name"], ensure_ascii=False) + "]" + (" {" if body else ""))
         lines.extend("        " + item for item in body)
         if body:
             lines.append("    }")
-    for name in sorted({use for node in nodes for use in node["uses"]}):
-        lines.extend(("    class " + label(name) + " {", "        <<workflow>>", "    }"))
-    context = CompilationContext(session)
+    for name in workflows:
+        lines.extend(("    class " + ids["W_", name] + "[" + json.dumps(name, ensure_ascii=False) + "] {", "        <<workflow>>", "    }"))
     for node in nodes:
         name = node["name"]
         if parents[name] in chosen and not node["broken_parent"]:
-            lines.append(f"    {label(parents[name])} <|-- {label(name)}")
+            lines.append(f'    {ids["C_", parents[name]]} <|-- {ids["C_", name]}')
         unit, decl, _ = declarations[name]
         for field in decl.fields:
             if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)):
@@ -318,5 +370,5 @@ def render_mermaid(session, tree, declarations, parents, selector):
                     if not context._ref_exists_in_registry(ref, unit=unit, registry_name="workflows_by_name"):
                         continue
                     source, workflow = context._resolve_workflow_ref(ref, unit=unit)
-                    lines.append(f'    {label(name)} *-- {label(".".join((*source.module_parts, workflow.name)))}')
+                    lines.append(f'    {ids["C_", name]} *-- {ids["W_", class_name(session, source, workflow)]}')
     return "\n".join(lines)

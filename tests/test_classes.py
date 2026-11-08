@@ -198,6 +198,7 @@ team Growth: "growth"
     home: "growth"
     values:
         unit: "games"
+        subject: "team"
     member qa[Child]: "QA"
 ''')
         for name, default, setter in (("Base", "base", "Base"), ("Child", "child", "Child")):
@@ -207,6 +208,11 @@ team Growth: "growth"
                 {"name": "agent:subject", "default": default, "set_by": setter},
                 {"name": "team:unit", "default": None, "set_by": None},
             ])
+        code, output, error = self.cli(root, "classes", "Growth.qa", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["values"][0], {
+            "name": "agent:subject", "value": "team", "set_by": "Growth",
+        })
 
     def test_values_keep_whitespace_in_json_and_fold_it_in_text(self):
         root = self.project('''abstract agent Base:
@@ -265,6 +271,14 @@ abstract agent Beta: "Beta class"
 
     def test_nested_entrypoint_and_imported_agent_without_home(self):
         root = self.project('''from shared.kit import Base
+output Report: "Report"
+    target: Message
+        to: "lead"
+    "Report."
+agent Local: "Local"
+    role: "Work."
+    outputs: "Outputs"
+        Report
 team Pod: "pod"
     home: "pod"
     member a[Base]: "A"
@@ -283,11 +297,16 @@ export agent Tool[Base]: "Tool"
         code, output, error = self.cli(root, "classes", "--json")
         self.assertEqual(code, 0, error)
         tree = json.loads(output)
-        self.assertEqual(tree["agents"][0]["name"], "shared.kit.Base")
+        self.assertIn("shared.kit.Base", [item["name"] for item in tree["agents"]])
         self.assertEqual(tree["teams"][0]["name"], "Pod")
         code, output, error = self.cli(root, "classes", "shared.kit.Tool", "--json")
         self.assertEqual(code, 0, error)
         self.assertEqual(json.loads(output)["kind"], "agent")
+        code, output, error = self.cli(root, "classes", "Local", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["sections"], [
+            {"key": "role", "from": "Local"}, {"key": "outputs", "from": "Local"},
+        ])
 
     def test_team_chain_excludes_enclosing_teams(self):
         root = self.project('''abstract agent QA:
@@ -328,3 +347,52 @@ export abstract team Pod: "pod"
         self.assertEqual(view["order"], ["Growth.qa", "roles.QA"])
         self.assertEqual(view["sections"][0]["from"], "roles.QA")
         self.assertEqual(view["values"][0]["set_by"], "Growth")
+
+    def test_mermaid_uses_distinct_ids_for_keywords_and_name_clashes(self):
+        root = self.project('''workflow note: "Notes"
+    "Read {{team:unit}}."
+abstract agent note:
+    role: "Work."
+    testing: note
+abstract agent T_a:
+    role: "Work."
+team T: "team"
+    home: "t"
+    member a: "A"
+        role: "Work."
+''')
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertIn('class C_note["note"]', output)
+        self.assertIn('class W_note["note"]', output)
+        self.assertIn('C_note *-- W_note', output)
+        self.assertIn('        team:unit', output)
+        self.assertIn('class C_T_a["T.a"]', output)
+        self.assertIn('class C_T_a_2["T_a"]', output)
+
+    def test_empty_mermaid_is_empty(self):
+        root = self.project('''workflow Craft: "Craft"
+    "Work."
+''')
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(output, "")
+
+    def test_mermaid_draws_classes_with_broken_parents_and_cycles(self):
+        root = self.project('''abstract agent First[Second]:
+    role: "First."
+abstract agent Second[First]:
+    role: "Second."
+abstract agent Missing[Unknown]:
+    role: "Missing."
+abstract agent Broken:
+    role: "Broken."
+    work: "Work"
+        use missing: Nope
+team Pod: "pod"
+    home: "pod"
+''')
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        for name in ("First", "Second", "Missing", "Broken"):
+            self.assertIn(f'class C_{name}["{name}"]', output)
