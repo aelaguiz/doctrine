@@ -9,7 +9,7 @@ project = "project"
 edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Library}}.\"\n" }
 args = ["load", "pod", "--runtime", "codex"]
 expected_exit = 0
-expected_stdout_lines = ["pod on codex: 278 of 32,768 bytes, 32,490 left", "", "Files:", "  pod/AGENTS.md  278  missing", "", "Biggest parts:", "  Pod: 27"]
+expected_stdout_lines = ["pod on codex: 292 of 32,768 bytes, 32,476 left", "", "Files:", "  pod/AGENTS.md  292  missing", "", "Biggest parts:", "  Pod: 27"]
 
 [[cases]]
 name = "folder links from two depths"

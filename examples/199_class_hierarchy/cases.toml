@@ -16,7 +16,7 @@ expected_file_lines = { "analyst/AGENTS.md" = [
 ], "AGENTS.md" = [
   "## Principles", "", "Read first: @shared/handbook.md",
 ], "pods/AGENTS.md" = [
-  "This file loads for every session started under `pods/`. If yours started there, you are a member of the pods. If not, it only describes them.",
+  "This file loads for every session started under `pods/`. If yours started there, it is part of who you are. If not, it only describes the agents there.",
   "", "## Working together", "", "Share what the other pod needs to know.",
 ], "pods/growth/qa/AGENTS.md" = [
   "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",

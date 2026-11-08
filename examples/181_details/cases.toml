@@ -12,7 +12,7 @@ stdout_contains = [
   "built 2 homes",
 ]
 expected_file_lines = { "pods/growth/AGENTS.md" = [
-    "This file loads for every session started under `pods/growth/`. If yours started there, you are a member of the growth pod. If not, it only describes them.",
+    "This file loads for every session started under `pods/growth/`. If yours started there, it is part of who you are. If not, it only describes the agents there.",
     "",
     "## When to wait",
     "",
