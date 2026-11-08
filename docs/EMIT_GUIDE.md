@@ -77,7 +77,10 @@ The `file_limit` warns when one compiled level file is too long. It defaults to
 A present external counts its real size. An absent one needs a `reserve`.
 Load reports count hand-written files between the project and each home.
 Claude also follows `@` imports four hops deep and counts each file once.
+For Codex, a home's load headline also shows the bytes it must read first.
 The shared files table shows each runtime's size and the homes that read it.
+On-demand files include links in files loaded at startup. Missing targets are
+left out.
 With `--rev`, files inside the repository come from that revision. Files
 outside it come from disk.
 
@@ -120,7 +123,8 @@ Each command takes `--pyproject PATH`.
 
 `doctrine classes` shows the agent and team trees from source. Give it a class,
 team, member, or home path to inspect that owner. Class views show reads,
-slots, and changes below. Member and agent views show section and value sources.
+slots, shared files they load or link, and changes below. Member and agent views
+show section and value sources.
 Use `--json` for structured output or `--mermaid` for a class diagram. The
 command does not write files or need a built tree.
 Teams and members can replace a class default with their own value.

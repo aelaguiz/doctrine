@@ -2,7 +2,7 @@ workflow Craft: "Craft"
     "Test {{team:unit}} for {{team:audience}}."
 
 abstract agent QA: "How QA works on every team"
-    role: "Test {{agent:subject}}."
+    role: "Test {{agent:subject}}. Read {{TestGuide}}.\nRead first: {{load:AppEngineering}}"
     values:
         subject: "{{team:unit}}"
     testing: Craft
@@ -51,3 +51,11 @@ team Product[Pod]: "product"
 document AccuracyPolicy: "Accuracy Policy"
     section summary: "Summary"
         "Check the facts."
+
+file AppEngineering: "App engineering"
+    path: "app-engineering.md"
+    "Build with care."
+
+file TestGuide: "Test guide"
+    path: "test-guide.md"
+    "Check the result."

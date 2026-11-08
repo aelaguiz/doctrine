@@ -3,8 +3,11 @@ from __future__ import annotations
 import tomllib
 import subprocess
 import os
+import re
+from html import unescape
 from os.path import relpath
 from pathlib import Path, PurePosixPath
+from urllib.parse import unquote, urlsplit
 
 from doctrine import model
 
@@ -270,6 +273,22 @@ def home_loads(target, homes, files, settings, selected):
                             "size": text_size(text, runtime), "kind": "import", "text": text,
                             "on_disk": real_project_path(config, imported).is_file()})
             loaded = expanded
+            loaded_paths = {((target.output_dir if entry["kind"] == "home" else root) / entry["path"]).resolve()
+                            for entry in loaded}
+            for entry in loaded:
+                source = (target.output_dir if entry["kind"] == "home" else root) / entry["path"]
+                text = entry["text"]
+                for start, end, is_import in markdown_destinations(text):
+                    if is_import:
+                        continue
+                    url = urlsplit(text[start:end])
+                    if url.scheme or url.netloc or not url.path:
+                        continue
+                    path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
+                    resolved = (source.parent / Path(path).expanduser()).resolve()
+                    if (resolved.is_relative_to(root.resolve()) and resolved not in loaded_paths
+                            and (content := file_text(resolved)) is not None):
+                        on_demand[relpath(resolved, root)] = text_size(content, runtime)
             on_demand = {path: size for path, size in on_demand.items()
                          if not any(item["path"] == path for item in loaded)}
             limit = next(
@@ -398,9 +417,11 @@ def render_load(loads):
             continue
         headroom = load["headroom"]
         unit = "characters" if runtime == "claude" else "bytes"
+        read_first = [file for file in load["files"] if file["kind"] == "read_first"]
         blocks.append(
             f"{home['home']} on {runtime}: {load['total']:,} of {load['limit']:,} "
             f"{unit}, {abs(headroom):,} {'left' if headroom >= 0 else 'over'}"
+            + (f", plus {sum(file['size'] for file in read_first):,} to read first" if read_first else "")
         )
         if load["files"]:
             rows = [

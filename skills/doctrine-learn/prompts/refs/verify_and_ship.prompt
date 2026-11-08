@@ -193,6 +193,7 @@ Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution n
 doc, or pick the right verify command for the surface they changed."""
 
     section home_checks: "Build For Launch, Check For Change"
+        "`doctrine classes` shows shared files a class loads and links."
         "Run doctrine build to check rules, budgets, and hand edits before writing. Run doctrine check as the commit gate. It checks the same work without writing. Use --strict to fail on warnings. A selected build needs current loaded levels and linked files. Run doctrine build . first. A semantic error in another home does not stop it. A parse error anywhere in the flow does."
         "Doctrine check reports stale, edited, missing, and obsolete paths. Add --json for paths with path and state. Every Markdown file build writes has a header and a hand-edit guard. Obsolete files need a whole-tree build and its record. `examples/184_doctrine_build_modes` covers these states."
         "Use --rev HEAD to compile committed source. Repeat --with PATH for each working-tree file to overlay. Other unfinished edits stay out. The revision includes the pyproject, prompt roots, Markdown from files, runtime config, and relative externals. A --out folder keeps link bytes from the configured output root."
