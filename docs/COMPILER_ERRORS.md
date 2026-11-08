@@ -353,9 +353,9 @@ shows the canonical formatted shape for one shipped compile error.
 | `E609` | Invalid roster | A roster has no team, a cell template reads no agent value, or static rows use unknown columns or leave columns empty. |
 | `E650` | Invalid quote | A quote has a missing, repeated, or invalid field, or an inline quote is malformed. Free words after an inline date are allowed. |
 | `E651` | Invalid owner | A ref in `owns:` resolves to nothing, or a glob matches no source file. |
-| `E652` | Missing Markdown source | A Markdown-backed declaration or kept file names a file that does not exist. |
+| `E652` | Missing Markdown source | A Markdown-backed declaration or kept file names a path that does not exist, or a file with a body names a folder. |
 | `E653` | Duplicate heading key | Two sibling Markdown headings have the same key. Both source lines are named. |
-| `E655` | File ref can't go here | A load ref is not at the end of its line, its path has whitespace, or a skill package uses a file ref. |
+| `E655` | File ref can't go here | A load ref is not at the end of its line, its path has whitespace, it names a folder, or a skill package uses a file ref. |
 | `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
 
 ## Homes And Load

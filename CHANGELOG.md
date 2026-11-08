@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Shared files
 
+- A `file` without a body can link to a folder. The folder must exist and
+  cannot be loaded.
 - Name shared files and link to them or ask a role to read them first. Files
   without bodies stay on disk; files with bodies are written by the build.
 - Load reports count hand-written levels and Claude imports. They list

@@ -58,6 +58,9 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
     while pending:
         unit, decl = pending.pop(0)
         path = str(PurePosixPath(decl.path))
+        if (target.output_dir / path).is_dir():
+            raise compile_error(code="E652", summary="Missing Markdown source",
+                detail=f"`{decl.name}` has a body, so `{decl.path}` must be a file, but it's a folder.")
         if path in written:
             if written[path] is not decl:
                 raise compile_error(code="E607", summary="Two homes, one path",

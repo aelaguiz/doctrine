@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from doctrine import model
-from doctrine.project_config import real_project_path
+from doctrine.project_config import project_file_path, real_project_path
 from doctrine._compiler.constants import FILE_REF_MARKER
 from doctrine._compiler.markdown_reader import fenced_lines
 
@@ -17,6 +17,8 @@ def render_file_refs(text, folder, config):
         mode, title, path, anchor = json.loads(match[1])
         relative = os.path.relpath(real_project_path(config, Path(path)),
                                    real_project_path(config, folder)).replace(os.sep, "/")
+        if project_file_path(config, path).is_dir():
+            relative += "/"
         if anchor:
             relative += "#" + anchor
         if mode == "load":

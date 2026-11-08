@@ -210,6 +210,8 @@ def load(args):
             for _, level in loaded_levels(homes, home):
                 for ref, _ in level["file_refs"]:
                     path = Path(ref[2])
+                    if project_file_path(target.project_config, path).is_dir():
+                        continue
                     name = relpath(real_project_path(target.project_config, path),
                                    real_project_path(target.project_config, target.project_config.config_dir))
                     if name not in shared:
@@ -366,6 +368,8 @@ def where_source(args):
             base = target.output_dir if declaration.body is not None else target.project_config.config_dir
             path = ((base / declaration.path).resolve() if declaration.body is not None
                     else project_file_path(target.project_config, declaration.path))
+            if path.is_dir():
+                continue
             reached = {home for home in selected for _, level in loaded_levels(homes, home)
                        if any(project_file_path(target.project_config, ref[2]) == path for ref, _ in level["file_refs"])}
             if (args.home and not reached) or (declaration.body is not None and path not in generated):

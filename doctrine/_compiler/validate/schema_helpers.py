@@ -173,16 +173,23 @@ class ValidateSchemaHelpersMixin:
                 if is_load and value[match.end():].split("\n", 1)[0].strip():
                     raise authored_compile_error(code="E655", summary="File ref can't go here",
                         detail=f"`{{{{load:{ref_name}}}}}` must end its line.", unit=unit, source_span=None)
-                if is_load and any(c.isspace() for c in file_decl.path):
-                    raise authored_compile_error(code="E655", summary="File ref can't go here",
-                        detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
                 base = (self.session.emit_root or self.session.project_config.config_dir) if file_decl.body is not None else self.session.project_config.config_dir
                 path = Path(os.path.abspath(base / Path(file_decl.path).expanduser()))
                 for parent in path.parents:
                     if parent.resolve() == real_project_path(self.session.project_config, base):
                         path = base / path.relative_to(parent)
                         break
-                if file_decl.body is None and not project_file_path(self.session.project_config, path).is_file():
+                source = project_file_path(self.session.project_config, path)
+                if file_decl.body is not None and source.is_dir():
+                    raise authored_compile_error(code="E652", summary="Missing Markdown source",
+                        detail=f"`{file_decl.name}` has a body, so `{file_decl.path}` must be a file, but it's a folder.", unit=file_unit, source_span=file_decl.source_span)
+                if is_load and file_decl.body is None and source.is_dir():
+                    raise authored_compile_error(code="E655", summary="File ref can't go here",
+                        detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because it's a folder. Link to it with `{{{{{ref_name}}}}}`.", unit=unit, source_span=None)
+                if is_load and any(c.isspace() for c in file_decl.path):
+                    raise authored_compile_error(code="E655", summary="File ref can't go here",
+                        detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
+                if file_decl.body is None and not (source.is_file() or source.is_dir()):
                     raise authored_compile_error(code="E652", summary="Missing Markdown source",
                         detail=f"`{file_decl.name}` names `{file_decl.path}`, which doesn't exist.", unit=file_unit, source_span=file_decl.source_span)
                 parts.append(file_decl.title if projection == "title" and not is_load else

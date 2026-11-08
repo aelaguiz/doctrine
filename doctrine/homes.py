@@ -263,7 +263,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     for unit, decl in declarations:
         path = project_file_path(target.project_config, decl.path)
         if (decl.body is None and (path in referenced or whole and session.flow_for_unit(unit) is session.root_flow)
-                and not path.is_file()):
+                and not (path.is_file() or path.is_dir())):
             raise compile_error(code="E652", summary="Missing Markdown source",
                 detail=f"`{decl.name}` names `{decl.path}`, which doesn't exist.",
                 path=unit.prompt_file.source_path, source_span=decl.source_span)
