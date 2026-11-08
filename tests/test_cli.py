@@ -137,6 +137,24 @@ rule AnalystWork: "Analyst work"
         self.assertEqual(code, 1, error)
         self.assertIn({"path": "HOMES.contract.json", "state": "stale"}, json.loads(output)["paths"])
 
+    def test_build_json_reports_like_check(self):
+        root = self.project()
+        code, output, error = self.cli(root, "build", ".", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["errors"], [])
+        self.assertIn("warnings", report)
+        self.assertTrue(report["written"])
+        built = root / "pods/growth/qa/AGENTS.md"
+        built.write_text(built.read_text() + "A hand edit.\n")
+        code, output, error = self.cli(root, "build", ".", "--json")
+        self.assertEqual(code, 1, error)
+        report = json.loads(output)
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["errors"][0]["code"], "E634")
+        self.assertIn("A hand edit.", built.read_text())
+
     def test_check_does_not_report_already_deleted_obsolete_file(self):
         root = self.project()
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
@@ -1101,7 +1119,7 @@ team T: "Team"
         self.assertEqual(code, 0, error)
         result = json.loads(output)
         self.assertEqual(
-            set(result), {"format_version", "written", "unchanged", "removed"}
+            set(result), {"format_version", "ok", "homes", "errors", "warnings", "paths", "written", "unchanged", "removed"}
         )
         self.assertEqual(result["format_version"], 1)
         expected = sorted(
