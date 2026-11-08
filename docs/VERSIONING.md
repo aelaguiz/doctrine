@@ -66,6 +66,8 @@ Markdown-backed declarations and `doctrine import` accept runtime import lines.
 Shared `file` declarations can link to a kept file or write a document body.
 Load JSON adds `on_demand`; diff JSON with `--base-tree` adds `shared_files`.
 Builds and checks report `E636` for missing destinations in compiled files.
+Case links and links to sections in built files check their targets. A linked
+heading that repeats in its file fails with `E637`.
 
 Load rules run in `doctrine build`, `doctrine check`, and `emit_docs`.
 Use `check --strict` when project warnings should fail an author's change.

@@ -338,7 +338,7 @@ agent Writer:
         config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "out"'))
         target = load_emit_targets(config)["homes"]
         for path in emit_target(target):
-            self.assertNotIn(b"\x1e", path.read_bytes())
+            self.assertNotIn("".encode(), path.read_bytes())
         output = (root / "out/writer/AGENTS.md").read_text()
         self.assertIn("[Test design](../../shared/guide.md)", output)
         self.assertIn("@../../shared/guide.md", output)
@@ -377,7 +377,7 @@ agent Other:
         target = load_emit_targets(root / "pyproject.toml")["homes"]
         emitted = emit_target_flow(target, include_svg=False)
         output = emitted[0].read_text()
-        self.assertNotIn("\x1e", output)
+        self.assertNotIn("", output)
         self.assertIn("[Guide](guide.md)", output)
 
     def test_missing_imports_are_skipped_from_each_loaded_file(self):
@@ -534,7 +534,7 @@ agent Other:
         target = load_emit_targets(config)["homes"]
         output = emit_target_flow(target, include_svg=False)[0].read_text()
         self.assertIn("[Guide](guide.md)", output)
-        self.assertNotIn("\x1e", output)
+        self.assertNotIn("", output)
         emit_target(target)
         self.assertTrue((root / "out/guide.md").is_file())
 

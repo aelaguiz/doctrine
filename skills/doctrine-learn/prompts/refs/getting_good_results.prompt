@@ -102,8 +102,10 @@ document GettingGoodResults: "Getting Good Results"
 | What a few roles need at start | A `file` loaded at start |
 | A guide for a moment | A `file` named in a sentence that says when |
 | A case behind an idea | `details`, beside the idea |
+| A procedure for a moment, kept with its idea | `details` with `{{details:path}}` in a sentence that says when |
 | Notes agents add to | A `file` with no body |
 """
+        "The sentence names the moment, so a reader knows the procedure is there without opening anything. See `examples/198_case_links`."
         code:
             language: prompt
             text: """file Guide: "Test design"

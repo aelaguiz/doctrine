@@ -6,10 +6,10 @@ from dataclasses import replace
 from doctrine import model
 from doctrine._model.core import role_text
 from doctrine._compiler.naming import map_model
-from doctrine._compiler.constants import LATE_ROOT
+from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members, home_value_sources, member_home
-from doctrine._compiler.types import CompiledCodeBlock
+from doctrine._compiler.types import CompiledCodeBlock, CompiledRawTextBlock
 from doctrine._compiler.markdown_links import rebase_markdown
 
 
@@ -37,6 +37,25 @@ def reject_late_roots(value, *, unit, why):
                 path=unit.prompt_file.source_path)
         return text
     map_text(value, reject)
+
+
+def reject_case_links(value, *, unit):
+    def reject(text):
+        if match := DETAILS_LINK.search(text):
+            raise compile_error(code="E602", summary="Value has no owner here",
+                detail=f"`{match[0]}` can't be read here: a case link belongs in a sentence the agent always reads.",
+                path=unit.prompt_file.source_path)
+        return text
+    def leaf(item):
+        if isinstance(item, (CompiledCodeBlock, CompiledRawTextBlock)):
+            return replace(item, title=map_text(item.title, reject))
+        if isinstance(item, (model.ReadableCodeData, model.ReadableRawTextData)):
+            return item
+        if isinstance(item, str) and not isinstance(item, model.MarkdownProse):
+            return reject(item)
+        if isinstance(item, model.NameRef):
+            return item
+    map_model(value, leaf, {"origin", "drops"})
 
 
 def value_reading_sites(context, root, key):

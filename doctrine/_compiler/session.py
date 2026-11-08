@@ -7,7 +7,7 @@ from pathlib import Path
 
 import doctrine._model.declarations as model
 from doctrine._diagnostics.formatting import _build_excerpt
-from doctrine._compiler.late_binding import map_text, reject_late_roots
+from doctrine._compiler.late_binding import map_text, reject_case_links, reject_late_roots
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.indexing import (
@@ -158,6 +158,7 @@ class CompilationSession:
         self.value_home: str | None = None
         self.emit_paths: dict[str, Path] = {}
         self.emit_root: Path | None = None
+        self.file_section_links = set()
         self.provided_prompt_roots = compile_config.provided_prompt_roots
         self.import_root_labels = _import_root_labels(
             self.prompt_root,
@@ -358,6 +359,7 @@ class CompilationSession:
                 declaration_kind, declaration_name
             )
             reject_details(compiled, "an emitted document")
+            reject_case_links(compiled, unit=self.root_flow.entrypoint_unit)
             reject_late_roots(compiled, unit=self.root_flow.entrypoint_unit, why="an emitted document has no home")
             return map_text(compiled, lambda text: render_file_refs(text, self.project_config.config_dir, self.project_config)) if self.emit_root is None and self.project_config else compiled
         except DoctrineError as exc:

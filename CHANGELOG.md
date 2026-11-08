@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Case and section links
+
+- Link a sentence to a case or to a section in a built shared file. The build
+  checks the target and its heading, and writes a path for each home.
+
 ### Shared files
 
 - Name shared files and link to them or ask a role to read them first. Files

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass, replace
+import json
+import re
 from pathlib import PurePosixPath
 
 from doctrine import model
-from doctrine._compiler.constants import LATE_ROOT
-from doctrine._compiler.naming import model_walk
+from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
+from doctrine._compiler.late_binding import map_text, reject_case_links
+from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor, heading_link_text
+from doctrine._compiler.naming import map_model, model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock
+from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledRawTextBlock, CompiledReadableBlock, CompiledRuleBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -20,12 +24,22 @@ def reject_details(value, surface):
         )
 
 
-def split_details(compiled, home):
-    companions, pointers = {}, []
-    def visit(item, headings):
+def split_details(compiled, home, root, home_map, unit):
+    companions, pointers, cases, linked = {}, [], {}, {}
+    paths = {entry.path for entry in home_map.entries}
+    for item in model_walk(compiled):
+        if is_dataclass(item):
+            for field in fields(item):
+                if field.name.endswith("title") and isinstance(title := getattr(item, field.name), str):
+                    reject_case_links(str(title), unit=unit)
+        if isinstance(item, CompiledReadableBlock) and not isinstance(item, CompiledRuleBlock):
+            if item.origin:
+                reject_case_links(item.origin.headings, unit=unit)
+    def visit(item, headings, key_path):
         if not isinstance(item, (CompiledSection, CompiledGuardBlock)):
             return item
         if isinstance(item, CompiledSection) and item.kind == "details":
+            reject_case_links(item.body, unit=unit)
             origin = item.origin
             if origin is None:
                 reject_details(item, "a declaration without a home")
@@ -33,6 +47,7 @@ def split_details(compiled, home):
             if origin.companion:
                 headings = origin.headings
             companions.setdefault(path, []).append((headings, item))
+            cases[key_path] = (path, item)
             if path not in pointers:
                 pointers.append(path)
             return None
@@ -40,13 +55,65 @@ def split_details(compiled, home):
             isinstance(item, CompiledGuardBlock) or item.kind != "paragraph"
         ) else headings)
         return replace(item, body=tuple(result for child in item.body
-                                        if (result := visit(child, nested)) is not None))
-    compiled = replace(compiled, fields=tuple(visit(field, ()) for field in compiled.fields))
-    return compiled, companions, pointers
+            if (result := visit(child, nested, (*key_path, child.key) if isinstance(child, (CompiledSection, CompiledGuardBlock)) and child.key else key_path)) is not None))
+    compiled = replace(compiled, fields=tuple(visit(field, (), (field.key,))
+        if isinstance(field, (CompiledSection, CompiledGuardBlock)) else field for field in compiled.fields))
+    def link(text, prefix):
+        lines = list(fenced_lines(text.splitlines()))
+        for index, (line, inside) in enumerate(lines):
+            if not inside and re.match(r"^ {0,3}#{1,6}(?:\s|$)", line):
+                reject_case_links(line, unit=unit)
+            if not inside and index and re.fullmatch(r" {0,3}(?:=+|-+)\s*", line):
+                reject_case_links(lines[index - 1][0], unit=unit)
+        def resolve(match):
+            name = match[1]
+            key = (*prefix, *name.split("."))
+            if key not in cases:
+                detail = (f"`details:{name}` isn't a case." if key in paths else
+                          f"`{home}` links to `details:{name}`, which it doesn't have.")
+                hints = () if key in paths else ("Override the sentence that links to it, or keep the case.",)
+                raise compile_error(code="E637", summary="Dead case link", detail=detail, hints=hints)
+            path, case = cases[key]
+            if not case.title:
+                raise compile_error(code="E637", summary="Dead case link",
+                    detail=f"`details:{name}` has no title to link to. Give the case a title.")
+            anchor = heading_anchor(case.title, {})
+            linked[key] = (path, anchor, name)
+            return "" + json.dumps(["link", heading_link_text(case.title), str(root / path), anchor]) + ""
+        return type(text)(DETAILS_LINK.sub(resolve, text))
+    def resolve_item(item, key_path, prefix=()):
+        if isinstance(item, (CompiledSection, CompiledGuardBlock)):
+            if item.origin:
+                size = len(item.origin.path)
+                prefix = key_path[:-size] if size else key_path
+            body = tuple(resolve_item(child, (*key_path, child.key)
+                if isinstance(child, (CompiledSection, CompiledGuardBlock)) and child.key else key_path, prefix)
+                for child in item.body)
+            return replace(map_text(replace(item, body=()), lambda text: link(text, prefix)), body=body)
+        def leaf(value):
+            if isinstance(value, (CompiledCodeBlock, CompiledRawTextBlock)):
+                return replace(value, title=map_text(value.title, lambda text: link(text, prefix)))
+            if isinstance(value, (str, model.RoleScalar, model.NameRef)):
+                return map_text(value, lambda text: link(text, prefix))
+        return map_model(item, leaf, {"origin", "drops"})
+    compiled = replace(compiled, fields=tuple(resolve_item(field, (field.key,))
+        if isinstance(field, (CompiledSection, CompiledGuardBlock)) else resolve_item(field, ())
+        for field in compiled.fields))
+    unlinked = [path for path in pointers if any(case_path not in linked
+        for case_path, (companion, _) in cases.items() if companion == path)]
+    return compiled, companions, pointers, unlinked, tuple(linked.values())
 
 
 def render_companion(parts):
     output, previous, previous_path = [], (), ()
+    marker = ""
+    while any(marker in item for item in model_walk(parts) if isinstance(item, str)):
+        marker += ""
+    raw_texts = []
+    def protect(item):
+        if isinstance(item, CompiledRawTextBlock):
+            raw_texts.append("\n".join(item.text.splitlines()).rstrip())
+            return replace(item, text=f"{marker}{len(raw_texts) - 1}{marker}")
     for headings, block in parts:
         path = block.origin.path[:-1]
         offset = len(headings) - len(path)
@@ -55,19 +122,23 @@ def render_companion(parts):
             if left != right or previous_path[:index + 1 - offset] != path[:index + 1 - offset]:
                 break
             common += 1
-        output.extend("#" * (index + 2) + " " + title
+        output.extend("#" * min(index + 2, 6) + " " + title
                       for index, title in enumerate(headings) if index >= common)
+        block = map_model(block, protect, {"origin", "drops"})
         if block.title:
             output.append(render_readable_block(
-                replace(block, kind="section"), depth=len(headings) + 2
+                replace(block, kind="section"), depth=min(len(headings) + 2, 6)
             ))
         else:
             output.append(render_readable_block(
-                replace(block, kind="section", title=""), depth=len(headings) + 1
+                replace(block, kind="section", title=""), depth=min(len(headings) + 1, 6)
             ).partition("\n\n")[2])
         previous = headings
         previous_path = path
-    return "\n\n".join(output) + "\n"
+    text = "\n\n".join(output) + "\n"
+    text = "".join(re.sub(r"^#{7,} ", "###### ", line) if not inside else line
+                   for line, inside in fenced_lines(text.splitlines(keepends=True)))
+    return re.sub(marker + r"(\d+)" + marker, lambda match: raw_texts[int(match[1])], text)
 
 
 def details_origin(block, body):

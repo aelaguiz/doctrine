@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from doctrine import model
-from doctrine._compiler.late_binding import bind_home, reject_late_roots
+from doctrine._compiler.late_binding import bind_home, reject_case_links, reject_late_roots
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.indexing import unit_declarations
@@ -269,6 +269,7 @@ class CompilationContext(FlowMixin, ValidateMixin, CompileMixin, DisplayMixin, R
         self._validate_all_skill_graphs_in_flow(flow)
         compiled = self._compile_skill_package_decl(declaration, unit=owner_unit)
         reject_details(compiled, "a skill package")
+        reject_case_links(compiled, unit=owner_unit)
         reject_late_roots(compiled, unit=owner_unit, why="a skill package has no home")
         return compiled
 

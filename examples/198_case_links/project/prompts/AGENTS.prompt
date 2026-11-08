@@ -1,0 +1,31 @@
+file Testing: "How we test"
+    path: "shared/testing.md"
+    section plans: "Writing a test plan"
+        "Start from what the design promises."
+        section review: "Reviewing the plan"
+            "Check the plan."
+
+abstract agent Lead:
+    role: "Lead the work."
+    checkins: "Morning check-ins"
+        "At your first tick, read {{details:checkins.reading_answers}}."
+        details reading_answers: "Reading the answers"
+            "Take each answer in turn."
+    local: "Local work"
+        "Before work, read {{details:local.plan}}."
+        details plan: "Plan the {{team:unit}}"
+            "Use the team's words."
+    testing: "Testing"
+        "Before planning, read {{Testing:plans}}. The title is {{Testing:plans.title}}."
+
+team Growth: "Growth"
+    home: "pods/growth"
+    values:
+        unit: "feature"
+    member lead[Lead]: "Lead"
+
+team Deep: "Deep"
+    home: "pods/growth/deep"
+    values:
+        unit: "release"
+    member lead[Lead]: "Lead"

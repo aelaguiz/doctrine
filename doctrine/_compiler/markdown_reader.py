@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import replace
 
 from doctrine import model
@@ -11,6 +12,34 @@ from doctrine._model.core import role_text
 def heading_key(title):
     key = re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")
     return re.sub(r"^([0-9])", r"_\1", key)
+
+
+def heading_link_text(text):
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", text, flags=re.S)
+    for index in range(0, len(parts), 3):
+        parts[index] = re.sub(r"(?<!!)\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()\\]|\([^()]*\))*\)", r"\1", parts[index])
+    return "".join(parts[index] + (parts[index + 1] + parts[index + 2] + parts[index + 1]
+                   if index + 1 < len(parts) else "") for index in range(0, len(parts), 3))
+
+
+def heading_anchor(text, seen):
+    text = re.sub(r"\s+#+$", "", text.strip())
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", heading_link_text(text), flags=re.S)
+    for index in range(0, len(parts), 3):
+        parts[index] = re.sub(r"!\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()\\]|\([^()]*\))*\)", r"\1", parts[index])
+        parts[index] = re.sub(r"<([A-Za-z][A-Za-z0-9+.-]{1,31}:[^<>\s]*|[A-Za-z0-9.!#$%&'*+/=?^_{|}~-]+@[A-Za-z0-9.-]+)>", r"\1", parts[index])
+        parts[index] = re.sub(r"<(?:[A-Za-z]|/)[^>]*>", "", parts[index]).lower().replace("*", "")
+        before = parts[index - 1][-1:] if index else ""
+        after = parts[index + 2][:1] if index + 2 < len(parts) else ""
+        parts[index] = re.sub(r"_+", lambda match: match[0] if
+                              (left := (parts[index][:match.start()] or before)[-1:]) and
+                              (right := (parts[index][match.end():] or after)[:1]) and
+                              unicodedata.category(left)[0] in "LMN" and unicodedata.category(right)[0] in "LMN"
+                              else "", parts[index])
+    text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
+    anchor = "".join(c for c in text if unicodedata.category(c)[0] in "LMN" or c in " -_").replace(" ", "-")
+    seen[anchor] = seen.get(anchor, 0) + 1
+    return anchor
 
 
 def fenced_lines(lines):

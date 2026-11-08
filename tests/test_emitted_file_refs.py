@@ -22,8 +22,8 @@ class EmittedFileRefsTests(unittest.TestCase):
             text = data.decode("utf-8")
         except UnicodeDecodeError:
             return
-        self.assertNotIn("\x1e", text, str(name))
-        self.assertNotIn("\\u001e", text, str(name))
+        self.assertNotIn("", text, str(name))
+        self.assertNotIn("\\ue000", text, str(name))
 
     def test_all_shipped_example_targets_emit_no_internal_links(self):
         repo = Path(__file__).resolve().parents[1]
