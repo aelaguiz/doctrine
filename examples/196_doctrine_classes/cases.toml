@@ -1,0 +1,372 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "abstract agent title does not render"
+status = "active"
+kind = "render_contract"
+agent = "Growth.qa"
+assertion = "exact_lines"
+expected_lines = ["Test bet.", "", "## Craft", "", "Test bet for new users."]
+
+[[cases]]
+name = "another class keeps the shared text"
+status = "active"
+kind = "render_contract"
+agent = "Feature.qa"
+assertion = "exact_lines"
+expected_lines = ["Test feature.", "", "## Craft", "", "Test feature for players."]
+
+[[cases]]
+name = "a member overrides the shared workflow"
+status = "active"
+kind = "render_contract"
+agent = "Product.qa"
+assertion = "exact_lines"
+expected_lines = ["Test change.", "", "## Testing", "", "Test the change twice."]
+
+[[cases]]
+name = "class tree from source"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes"]
+expected_exit = 0
+expected_stdout_lines = [
+  "Agents",
+  "QA  (abstract)  uses Craft  abstract policy",
+  "├── AppQA  (abstract)",
+  "│   └── Feature.qa  pods/feature/qa",
+  "└── WebQA  (abstract)",
+  "    ├── Growth.qa  pods/growth/qa",
+  "    └── Product.qa  pods/product/qa  overrides testing",
+  "",
+  "Teams",
+  "Pod  (abstract)  abstract win",
+  "├── Feature  pods/feature  members qa",
+  "├── Growth  pods/growth  members qa",
+  "└── Product  pods/product  members qa",
+]
+
+[[cases]]
+name = "member section and value sources"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Growth.qa"]
+expected_exit = 0
+expected_stdout_lines = [
+  "Growth.qa  (member)  pods/growth/qa",
+  "Order: Growth.qa, WebQA, QA",
+  "Team: Growth, Pod",
+  "",
+  "Sections:",
+  "  role     QA",
+  "  testing  QA",
+  "",
+  "Values:",
+  "  agent:subject  bet        QA",
+  "  team:unit      bet        Growth",
+  "  team:audience  new users  Growth",
+]
+
+[[cases]]
+name = "unmatched class selector"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Missing"]
+expected_exit = 1
+stderr_contains = ["E640", "`Missing` matches no class, team, member or home."]
+
+[[cases]]
+name = "abstract agent class view"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "QA"]
+expected_exit = 0
+expected_stdout_lines = [
+  "QA  (abstract agent)  prompts/AGENTS.prompt:4",
+  "How QA works on every team",
+  "",
+  "Children: AppQA, WebQA",
+  "Uses: Craft",
+  "Homes: 3",
+  "",
+  "Reads:",
+  "  agent:subject  default {{team:unit}}, from QA",
+  "  team:unit",
+  "  team:audience",
+  "",
+  "Slots:",
+  "  testing  Craft",
+  "  policy  (abstract)",
+  "",
+  "Changed below:",
+  "  Product.qa overrides testing",
+]
+
+[[cases]]
+name = "team class view"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Growth"]
+expected_exit = 0
+expected_stdout_lines = [
+  "Growth  (team)  prompts/AGENTS.prompt:22",
+  "growth",
+  "",
+  "Parent: Pod",
+  "Homes: 1",
+  "",
+  "Slots:",
+  "  win  Win",
+  "",
+  "Members:",
+  "  qa  WebQA",
+]
+
+[[cases]]
+name = "document slot title"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "WebQA"]
+expected_exit = 0
+expected_stdout_lines = [
+  "WebQA  (abstract agent)  prompts/AGENTS.prompt:11",
+  "How web QA works",
+  "",
+  "Parent: QA",
+  "Children: Growth.qa, Product.qa",
+  "Uses: Craft",
+  "Homes: 2",
+  "",
+  "Reads:",
+  "  agent:subject  default {{team:unit}}, from QA",
+  "  team:unit",
+  "  team:audience",
+  "",
+  "Slots:",
+  "  policy  Accuracy Policy",
+  "",
+  "Changed below:",
+  "  Product.qa overrides testing",
+]
+
+[[cases]]
+name = "tree as JSON"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "--json"]
+expected_exit = 0
+expected_stdout_lines = [
+  "{\"format_version\": 1, \"view\": \"tree\", \"agents\": [{\"name\": \"QA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [\"Craft\"], \"abstract_slots\": [\"policy\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"AppQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature.qa\", \"abstract\": false, \"home\": \"pods/feature/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}, {\"name\": \"WebQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Growth.qa\", \"abstract\": false, \"home\": \"pods/growth/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product.qa\", \"abstract\": false, \"home\": \"pods/product/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [\"testing\"], \"adds\": [], \"drops\": [], \"children\": []}]}]}], \"teams\": [{\"name\": \"Pod\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [\"win\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature\", \"abstract\": false, \"home\": \"pods/feature\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Growth\", \"abstract\": false, \"home\": \"pods/growth\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product\", \"abstract\": false, \"home\": \"pods/product\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}]}",
+]
+
+[[cases]]
+name = "abstract team class view"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Pod"]
+expected_exit = 0
+expected_stdout_lines = [
+  "Pod  (abstract team)  prompts/AGENTS.prompt:19",
+  "A team that ships work",
+  "",
+  "Children: Feature, Growth, Product",
+  "Homes: 3",
+  "",
+  "Slots:",
+  "  win  (abstract)",
+]
+
+[[cases]]
+name = "abstract team class as JSON"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Pod", "--json"]
+expected_exit = 0
+expected_stdout_lines = [
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Pod\", \"kind\": \"abstract team\", \"site\": \"prompts/AGENTS.prompt:19\", \"title\": \"A team that ships work\", \"parent\": null, \"children\": [\"Feature\", \"Growth\", \"Product\"], \"uses\": [], \"homes\": 3, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": []}",
+]
+
+[[cases]]
+name = "agent class as JSON"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "QA", "--json"]
+expected_exit = 0
+expected_stdout_lines = [
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"QA\", \"kind\": \"abstract agent\", \"site\": \"prompts/AGENTS.prompt:4\", \"title\": \"How QA works on every team\", \"parent\": null, \"children\": [\"AppQA\", \"WebQA\"], \"uses\": [\"Craft\"], \"homes\": 3, \"reads\": [{\"name\": \"agent:subject\", \"default\": \"{{team:unit}}\", \"set_by\": \"QA\"}, {\"name\": \"team:unit\", \"default\": null, \"set_by\": null}, {\"name\": \"team:audience\", \"default\": null, \"set_by\": null}], \"slots\": [{\"key\": \"testing\", \"title\": \"Craft\", \"abstract\": false}, {\"key\": \"policy\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": [{\"owner\": \"Product.qa\", \"change\": \"overrides\", \"keys\": [\"testing\"]}]}",
+]
+
+[[cases]]
+name = "team class as JSON"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Growth", "--json"]
+expected_exit = 0
+expected_stdout_lines = [
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Growth\", \"kind\": \"team\", \"site\": \"prompts/AGENTS.prompt:22\", \"title\": \"growth\", \"parent\": \"Pod\", \"children\": [], \"uses\": [], \"homes\": 1, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": \"Win\", \"abstract\": false}], \"members\": [{\"key\": \"qa\", \"class\": \"WebQA\"}], \"changed_below\": []}",
+]
+
+[[cases]]
+name = "member as JSON"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "Growth.qa", "--json"]
+expected_exit = 0
+expected_stdout_lines = [
+  "{\"format_version\": 1, \"view\": \"agent\", \"name\": \"Growth.qa\", \"kind\": \"member\", \"home\": \"pods/growth/qa\", \"order\": [\"Growth.qa\", \"WebQA\", \"QA\"], \"team\": [\"Growth\", \"Pod\"], \"sections\": [{\"key\": \"role\", \"from\": \"QA\"}, {\"key\": \"testing\", \"from\": \"QA\"}], \"values\": [{\"name\": \"agent:subject\", \"value\": \"bet\", \"set_by\": \"QA\"}, {\"name\": \"team:unit\", \"value\": \"bet\", \"set_by\": \"Growth\"}, {\"name\": \"team:audience\", \"value\": \"new users\", \"set_by\": \"Growth\"}]}",
+]
+
+[[cases]]
+name = "whole Mermaid diagram"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "--mermaid"]
+expected_exit = 0
+expected_stdout_lines = [
+  "classDiagram",
+  "    class C_QA[\"QA\"] {",
+  "        <<abstract>>",
+  "        agent:subject",
+  "        team:unit",
+  "        team:audience",
+  "        testing()",
+  "        policy()*",
+  "    }",
+  "    class C_AppQA[\"AppQA\"] {",
+  "        <<abstract>>",
+  "        policy()",
+  "    }",
+  "    class C_Feature_qa[\"Feature.qa\"]",
+  "    class C_WebQA[\"WebQA\"] {",
+  "        <<abstract>>",
+  "        policy()",
+  "    }",
+  "    class C_Growth_qa[\"Growth.qa\"]",
+  "    class C_Product_qa[\"Product.qa\"] {",
+  "        testing()",
+  "    }",
+  "    class C_Pod[\"Pod\"] {",
+  "        <<abstract>>",
+  "        win()*",
+  "    }",
+  "    class C_Feature[\"Feature\"] {",
+  "        win()",
+  "    }",
+  "    class C_Growth[\"Growth\"] {",
+  "        win()",
+  "    }",
+  "    class C_Product[\"Product\"] {",
+  "        win()",
+  "    }",
+  "    class W_Craft[\"Craft\"] {",
+  "        <<workflow>>",
+  "    }",
+  "    C_QA *-- W_Craft",
+  "    C_QA <|-- C_AppQA",
+  "    C_AppQA <|-- C_Feature_qa",
+  "    C_QA <|-- C_WebQA",
+  "    C_WebQA <|-- C_Growth_qa",
+  "    C_WebQA <|-- C_Product_qa",
+  "    C_Pod <|-- C_Feature",
+  "    C_Pod <|-- C_Growth",
+  "    C_Pod <|-- C_Product",
+]
+
+[[cases]]
+name = "selected Mermaid diagram"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes", "WebQA", "--mermaid"]
+expected_exit = 0
+expected_stdout_lines = [
+  "classDiagram",
+  "    class C_QA[\"QA\"] {",
+  "        <<abstract>>",
+  "        agent:subject",
+  "        team:unit",
+  "        team:audience",
+  "        testing()",
+  "        policy()*",
+  "    }",
+  "    class C_WebQA[\"WebQA\"] {",
+  "        <<abstract>>",
+  "        policy()",
+  "    }",
+  "    class C_Growth_qa[\"Growth.qa\"]",
+  "    class C_Product_qa[\"Product.qa\"] {",
+  "        testing()",
+  "    }",
+  "    class W_Craft[\"Craft\"] {",
+  "        <<workflow>>",
+  "    }",
+  "    C_QA *-- W_Craft",
+  "    C_QA <|-- C_WebQA",
+  "    C_WebQA <|-- C_Growth_qa",
+  "    C_WebQA <|-- C_Product_qa",
+]
+
+[[cases]]
+name = "tree with missing parent"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes"]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "workflow Craft: \"Craft\"\n    \"Test {{team:unit}} for {{team:audience}}.\"\n\nabstract agent QA: \"How QA works on every team\"\n    role: \"Test {{agent:subject}}.\"\n    values:\n        subject: \"{{team:unit}}\"\n    testing: Craft\n    abstract policy: AccuracyPolicy\n\nabstract agent WebQA[QA]: \"How web QA works\"\n    inherit *\n    policy: AccuracyPolicy\n\nabstract agent AppQA[QA]: \"How app QA works\"\n    inherit *\n    policy: AccuracyPolicy\n\nabstract team Pod: \"A team that ships work\"\n    abstract win\n\nteam Growth[Pod]: \"growth\"\n    home: \"pods/growth\"\n    win: \"Win\"\n        \"Grow.\"\n    values:\n        unit: \"bet\"\n        audience: \"new users\"\n    member qa[WebQA]: \"QA\"\n\nteam Feature[Pod]: \"feature\"\n    home: \"pods/feature\"\n    win: \"Win\"\n        \"Ship.\"\n    values:\n        unit: \"feature\"\n        audience: \"players\"\n    member qa[AppQA]: \"QA\"\n\nteam Product[Pod]: \"product\"\n    home: \"pods/product\"\n    win: \"Win\"\n        \"Improve.\"\n    values:\n        unit: \"change\"\n        audience: \"players\"\n    member qa[WebQA]: \"QA\"\n        override testing: \"Testing\"\n            \"Test the change twice.\"\n\ndocument AccuracyPolicy: \"Accuracy Policy\"\n    section summary: \"Summary\"\n        \"Check the facts.\"\n\nteam Broken[Missing]: \"broken\"\n    home: \"bad\"\n    member qa: \"QA\"\n        role: \"Test.\"\n" }
+expected_stdout_lines = [
+  "Agents",
+  "QA  (abstract)  uses Craft  abstract policy",
+  "├── AppQA  (abstract)",
+  "│   └── Feature.qa  pods/feature/qa",
+  "└── WebQA  (abstract)",
+  "    ├── Growth.qa  pods/growth/qa",
+  "    └── Product.qa  pods/product/qa  overrides testing",
+  "",
+  "Teams",
+  "Broken  bad  members qa parent Missing not found",
+  "Pod  (abstract)  abstract win",
+  "├── Feature  pods/feature  members qa",
+  "├── Growth  pods/growth  members qa",
+  "└── Product  pods/product  members qa",
+]
+
+[[cases]]
+name = "tree with cycle"
+status = "active"
+kind = "cli_contract"
+project = "."
+args = ["classes"]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "workflow Craft: \"Craft\"\n    \"Test {{team:unit}} for {{team:audience}}.\"\n\nabstract agent QA: \"How QA works on every team\"\n    role: \"Test {{agent:subject}}.\"\n    values:\n        subject: \"{{team:unit}}\"\n    testing: Craft\n    abstract policy: AccuracyPolicy\n\nabstract agent WebQA[QA]: \"How web QA works\"\n    inherit *\n    policy: AccuracyPolicy\n\nabstract agent AppQA[QA]: \"How app QA works\"\n    inherit *\n    policy: AccuracyPolicy\n\nabstract team Pod: \"A team that ships work\"\n    abstract win\n\nteam Growth[Pod]: \"growth\"\n    home: \"pods/growth\"\n    win: \"Win\"\n        \"Grow.\"\n    values:\n        unit: \"bet\"\n        audience: \"new users\"\n    member qa[WebQA]: \"QA\"\n\nteam Feature[Pod]: \"feature\"\n    home: \"pods/feature\"\n    win: \"Win\"\n        \"Ship.\"\n    values:\n        unit: \"feature\"\n        audience: \"players\"\n    member qa[AppQA]: \"QA\"\n\nteam Product[Pod]: \"product\"\n    home: \"pods/product\"\n    win: \"Win\"\n        \"Improve.\"\n    values:\n        unit: \"change\"\n        audience: \"players\"\n    member qa[WebQA]: \"QA\"\n        override testing: \"Testing\"\n            \"Test the change twice.\"\n\ndocument AccuracyPolicy: \"Accuracy Policy\"\n    section summary: \"Summary\"\n        \"Check the facts.\"\n\nabstract agent First[Second]:\n    role: \"First.\"\nabstract agent Second[First]:\n    role: \"Second.\"\n" }
+expected_stdout_lines = [
+  "Agents",
+  "First  (abstract) parent Second makes a cycle",
+  "QA  (abstract)  uses Craft  abstract policy",
+  "├── AppQA  (abstract)",
+  "│   └── Feature.qa  pods/feature/qa",
+  "└── WebQA  (abstract)",
+  "    ├── Growth.qa  pods/growth/qa",
+  "    └── Product.qa  pods/product/qa  overrides testing",
+  "Second  (abstract) parent First makes a cycle",
+  "",
+  "Teams",
+  "Pod  (abstract)  abstract win",
+  "├── Feature  pods/feature  members qa",
+  "├── Growth  pods/growth  members qa",
+  "└── Product  pods/product  members qa",
+]

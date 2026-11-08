@@ -21,6 +21,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   on-demand text and shared file sizes. `doctrine diff --base-tree` reports
   changes to shared files. `doctrine where` and `W301` read kept files.
 
+### Class inspection
+
+- `doctrine classes` shows class trees, reads, slots, changes, and the sources
+  of an agent's sections and values. It can also print JSON or a Mermaid diagram.
+
+### Abstract agent titles
+
+- Abstract agents can have a title that describes the class without adding it
+  to a home.
+
 ### Super in overrides
 
 - Use `super` on its own line in an override to keep the parent's text and add
@@ -38,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Commands that select homes use the only home target when it has plain agents and no team, so `--target` is no longer needed there.
 - Markdown imports work in revision checks and can point to built files. Load
   rules keep declared symlink paths, and flow links point to the built files.
 - Revision checks accept links to folders. Codex lists a read-first file only

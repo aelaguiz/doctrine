@@ -373,6 +373,6 @@ shows the canonical formatted shape for one shipped compile error.
 | `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |
 | `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
 | `E637` | Dead case link | A case or file section link names a missing or untitled case, a non-case, a missing section, or a section in a kept file. A linked heading also fails if it repeats in its file. |
-| `E640` | No home matches | A selector matches no home path or agent name. |
+| `E640` | No home matches | A selector matches no home path or agent name, or no class, team, member, or home in `doctrine classes`. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
 | `W309` | Long file | A compiled level file is over the runtime's per-file limit. |
