@@ -152,7 +152,8 @@ team T: "Team"
                   ("Use `make` & <b>go</b>", "use-make--go"), ("Plan ahead ", "plan-ahead"),
                   ("Edit `__init__` first", "edit-__init__-first"),
                   ("When n < 3 or n > 10", "when-n--3-or-n--10"),
-                  ("Visit <https://x.com> now", "visit-httpsxcom-now"), ("Step #", "step"))
+                  ("Visit <https://x.com> now", "visit-httpsxcom-now"),
+                  ("Email <test@example.com> now", "email-testexamplecom-now"), ("Step #", "step"))
         links = "".join(f'        "Read {{{{details:work.c{index}}}}}."\n' for index in range(len(titles)))
         cases = "".join(f'        details c{index}: "{title}"\n            "Text."\n'
                         for index, (title, _) in enumerate(titles))
