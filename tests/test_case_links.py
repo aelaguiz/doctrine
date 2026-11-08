@@ -198,11 +198,11 @@ skill package P: "Package"
         source = '''abstract agent R:
     role: "Test."
     first: "First"
-        details old: "Case"
+        details old: "Other"
             "First case."
     second: "Second"
         "Read {{details:second.old}}."
-        details old: "Other"
+        details old: "Case"
             "Second case."
 team T: "Team"
     home: "t"
@@ -225,6 +225,30 @@ team T: "Team"
             code, _, error = self.cli(root, command, ".")
             self.assertEqual(code, 1)
             self.assertIn("`details:second.old` shares its heading with another in `_details/r.md`. Give it a title of its own.", error)
+
+    def test_selected_build_rejects_stale_shared_case_heading(self):
+        root = self.project('''abstract agent R:
+    role: "Test."
+    work: "Work"
+        "Read {{details:work.case}}."
+        details case: "Old title"
+            "Text."
+team T: "Team"
+    home: "t"
+    member qa[R]: "QA"
+''')
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace("Old title", "New title"))
+        code, _, error = self.cli(root, "build", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("E635", error)
+        self.assertIn("links to `_details/r.md`, which is out of date", error)
+        code, _, error = self.cli(root, "check", "T.qa")
+        self.assertEqual(code, 1)
+        self.assertIn("stale _details/r.md", error)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
 
     def test_repeated_file_heading(self):
         root = self.project('''file Testing: "Testing"

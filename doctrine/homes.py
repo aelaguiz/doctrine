@@ -378,6 +378,14 @@ def needed_files(root, homes, files, selected, wanted):
                          if path.startswith("_details/") else file_state(disk, files[path]))
                 if state != "unchanged":
                     yield home, "links to", path, state
+        for _, data in levels:
+            for path, anchor, _ in data["case_links"]:
+                disk = root / path
+                if path.startswith("_details/") and path not in wanted and disk.is_file():
+                    headings = [heading_anchor(match[1], {}) for line, inside in fenced_lines(disk.read_text().splitlines())
+                                if not inside and (match := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line))]
+                    if anchor not in headings:
+                        yield home, "links to", path, "stale"
         for path in dict.fromkeys(path for _, data in levels for path in data["shared_files"]):
             state = file_state(root / path, files[path])
             if state != "unchanged":
