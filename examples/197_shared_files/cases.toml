@@ -149,7 +149,7 @@ kind = "cli_contract"
 project = "project"
 args = ["load", "pod/analyst", "--runtime", "codex"]
 expected_exit = 0
-stdout_contains = ["shared/guide.md", "read first"]
+stdout_contains = ["plus 51 to read first", "shared/guide.md", "read first"]
 
 [[cases]]
 name = "load lists shared files for each runtime"
@@ -159,6 +159,16 @@ project = "project"
 args = ["load"]
 expected_exit = 0
 stdout_contains = ["Shared files:", "claude", "codex", "Homes", "shared/guide.md", "shared/checklist.md"]
+
+[[cases]]
+name = "load lists links inside a loaded file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "shared/guide.md" = "[Checklist](checklist.md)\n[Missing](missing.md)\n[Self](guide.md)\n[Site](https://example.com)\n", "shared/checklist.md" = "Check it.\n" }
+args = ["load", "pod/analyst", "--runtime", "codex"]
+expected_exit = 0
+stdout_contains = ["On demand:\n  shared/checklist.md"]
 
 [[cases]]
 name = "Claude counts hand-written levels and external imports"

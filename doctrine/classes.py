@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import fields as dataclass_fields, is_dataclass
 from os.path import relpath
 
 from doctrine import model
 from doctrine._compiler.context import CompilationContext
-from doctrine._compiler.constants import LATE_ROOT
+from doctrine._compiler.constants import FILE_REF_MARKER, LATE_ROOT, _INTERPOLATION_RE
 from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.naming import model_walk, _dotted_ref_name
 from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedTypedAgentSlot, ResolvedUseItem, ResolvedWorkflowBody
@@ -81,9 +82,12 @@ def class_tree(target, session):
                             visit(item.target, unit)
         overrides = [field.key for field in decl.fields if isinstance(field, model.AuthoredSlotOverride) or isinstance(field, model.Member) and field.override]
         overrides += [".".join(field.path) for field in decl.fields if isinstance(field, model.OverridePath)]
+        own_fields = tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member)))
+        own_text = ((item, unit) for item in model_walk(own_fields) if isinstance(item, str) and not isinstance(item, model.MarkdownProse))
+        files = file_references(context, own_text)
         nodes[name] = {
             "name": name, "abstract": decl.abstract, "home": home, "broken_parent": broken,
-            "uses": uses,
+            "uses": uses, **files,
             "abstract_slots": [field.key for field in decl.fields if isinstance(field, model.AuthoredSlotAbstract)],
             "members": [field.key for field in decl.fields if isinstance(field, model.Member) and not field.override],
             "overrides": overrides,
@@ -127,7 +131,7 @@ def render_tree(tree):
                 text += "  (abstract)"
             if node["home"] is not None:
                 text += "  " + node["home"]
-            for key, label in (("uses", "uses"), ("abstract_slots", "abstract"), ("members", "members"),
+            for key, label in (("uses", "uses"), ("loads", "loads"), ("links", "links"), ("abstract_slots", "abstract"), ("members", "members"),
                                ("overrides", "overrides"), ("adds", "adds"), ("drops", "drops")):
                 if node[key] and (key not in ("overrides", "adds", "drops") or not node["abstract"]):
                     text += "  " + label + " " + ", ".join(node[key])
@@ -177,8 +181,35 @@ def walk_classes(nodes):
         yield from walk_classes(node["children"])
 
 
+def file_references(context, pieces):
+    result = {"loads": [], "links": []}
+    paths = {os.path.abspath(os.path.join(context.session.emit_root or context.session.project_config.config_dir, os.path.expanduser(decl.path))): class_name(context.session, unit, decl)
+             for unit, decl in declarations_in(context.session).values() if isinstance(decl, model.FileDecl)}
+    for text, scope in pieces:
+        for match in _INTERPOLATION_RE.finditer(text):
+            expression = match[1].strip()
+            root, separator, target = expression.partition(":")
+            load = root == "load" and bool(separator)
+            ref = context._parse_interpolation_expr_ref(target if load else expression)
+            if ref is None or ref.root is None or not load and ref.path and ref.path[-1] == "title":
+                continue
+            found = declaration_match(context, ref.root, scope)
+            if found and isinstance(found[1], model.FileDecl):
+                name = class_name(context.session, *found)
+                key = "loads" if load else "links"
+                if name not in result[key]:
+                    result[key].append(name)
+        for match in FILE_REF_MARKER.finditer(text):
+            mode, _, path, _ = json.loads(match[1])
+            name = paths[path]
+            key = "loads" if mode == "load" else "links"
+            if name not in result[key]:
+                result[key].append(name)
+    return result
+
+
 def source_pieces(context, fields, unit):
-    pieces, uses, seen = [], [], set()
+    pieces, uses, seen, scoped = [], [], set(), []
     def visit(value, scope):
         if isinstance(value, (model.MarkdownProse, model.AuthoredSlotAbstract)):
             return
@@ -210,6 +241,7 @@ def source_pieces(context, fields, unit):
             refs = []
             if isinstance(item, str):
                 pieces.append(str(item))
+                scoped.append((item, scope))
             elif isinstance(item, model.NameRef):
                 refs.append(item)
             elif isinstance(item, model.WorkflowUse):
@@ -229,7 +261,7 @@ def source_pieces(context, fields, unit):
                     if field.compare and field.name not in ("origin", "drops"):
                         visit(getattr(item, field.name), scope)
     visit(fields, unit)
-    return tuple(pieces), uses
+    return tuple(pieces), uses, scoped
 
 
 def class_view(session, tree, declarations, parents, name):
@@ -244,7 +276,7 @@ def class_view(session, tree, declarations, parents, name):
     expanded, _ = context._expand_agent_patches(owner, unit=unit)
     fields = (resolved[field.key] if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in resolved else field
               for field in expanded.fields if not isinstance(field, (model.ValuesField, model.Member)) and not (isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in typed))
-    pieces, uses = source_pieces(context, tuple(fields), unit)
+    pieces, uses, scoped = source_pieces(context, tuple(fields), unit)
     team = isinstance(owner, model.Team)
     reads = [read for read in read_values(context, pieces, chain, chain if team else []) if read["name"].split(":", 1)[1] not in FACT_KEYS]
     members = []
@@ -265,7 +297,7 @@ def class_view(session, tree, declarations, parents, name):
             "kind": "abstract team" if team and owner.abstract else "team" if team else "abstract agent" if owner.abstract else "agent",
             "site": f'{relpath(unit.prompt_file.source_path, session.project_config.config_dir)}:{owner.source_span.line}',
             "title": owner.title, "parent": parents[name], "children": [child["name"] for child in node["children"]],
-            "uses": uses, "homes": sum(child["home"] is not None for child in [node, *descendants]),
+            "uses": uses, **file_references(context, scoped), "homes": sum(child["home"] is not None for child in [node, *descendants]),
             "reads": reads, "slots": own_slots, "members": members, "changed_below": changed}
 
 
@@ -322,7 +354,7 @@ def render_class(view):
     if view["title"]:
         lines.append(view["title"])
     lines.append("")
-    for label, key in (("Parent", "parent"), ("Children", "children"), ("Uses", "uses")):
+    for label, key in (("Parent", "parent"), ("Children", "children"), ("Uses", "uses"), ("Loads", "loads"), ("Links", "links")):
         if view[key]:
             value = ", ".join(view[key]) if isinstance(view[key], list) else view[key]
             lines.append(f"{label}: {value}")
@@ -362,8 +394,9 @@ def render_mermaid(session, tree, declarations, parents, selector):
     context = CompilationContext(session)
     reads = {node["name"]: [read for read in read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member)) and not (isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride)) and field.key in typed_slots(context, decl, unit))), unit)[0], [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) if read["name"].split(":", 1)[1] not in FACT_KEYS] for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
     workflows = sorted({use for node in nodes for use in node["uses"]})
+    files = sorted({name for node in nodes for key in ("loads", "links") for name in node[key]})
     ids = {}
-    for prefix, names in (("C_", [node["name"] for node in nodes]), ("W_", workflows)):
+    for prefix, names in (("C_", [node["name"] for node in nodes]), ("W_", workflows), ("F_", files)):
         for name in names:
             base = prefix + re.sub(r"[^a-zA-Z0-9_]", "_", name)
             label, number = base, 2
@@ -388,6 +421,8 @@ def render_mermaid(session, tree, declarations, parents, selector):
             lines.append("    }")
     for name in workflows:
         lines.extend(("    class " + ids["W_", name] + "[" + json.dumps(name, ensure_ascii=False) + "] {", "        <<workflow>>", "    }"))
+    for name in files:
+        lines.extend(("    class " + ids["F_", name] + "[" + json.dumps(name, ensure_ascii=False) + "] {", "        <<file>>", "    }"))
     for node in nodes:
         name = node["name"]
         if parents[name] in chosen and not node["broken_parent"]:
@@ -401,4 +436,7 @@ def render_mermaid(session, tree, declarations, parents, selector):
                         continue
                     source, workflow = context._resolve_workflow_ref(ref, unit=unit)
                     lines.append(f'    {ids["C_", name]} *-- {ids["W_", class_name(session, source, workflow)]}')
+        for key, arrow in (("loads", "*--"), ("links", "..>")):
+            for file in node[key]:
+                lines.append(f'    {ids["C_", name]} {arrow} {ids["F_", file]} : {key}')
     return "\n".join(lines)

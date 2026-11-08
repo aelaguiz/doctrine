@@ -8,6 +8,64 @@ from tests.home_support import HomeProject
 
 
 class ClassesTests(HomeProject, unittest.TestCase):
+    def test_files_in_own_and_inherited_class_text(self):
+        root = self.project('''file Guide: "Guide title"
+    path: "guide.md"
+    section steps: "Steps"
+        "Check."
+file Basics: "Basics title"
+    path: "basics.md"
+    "Read."
+file TitleOnly: "Only a title"
+    path: "title.md"
+    "Read."
+abstract agent Base:
+    role: """Read {{Guide:steps}} and {{TitleOnly:title}}.
+Read first: {{load:Basics}}"""
+abstract agent Child[Base]:
+    inherit *
+team T: "Team"
+    home: "t"
+    member qa[Child]: "QA"
+''')
+        code, output, error = self.cli(root, "classes", "--json")
+        self.assertEqual(code, 0, error)
+        base = json.loads(output)["agents"][0]
+        self.assertEqual((base["loads"], base["links"]), (["Basics"], ["Guide"]))
+        self.assertEqual((base["children"][0]["loads"], base["children"][0]["links"]), ([], []))
+        code, output, error = self.cli(root, "classes", "Child", "--json")
+        self.assertEqual(code, 0, error)
+        view = json.loads(output)
+        self.assertEqual((view["loads"], view["links"]), (["Basics"], ["Guide"]))
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertIn('class F_Basics["Basics"] {\n        <<file>>', output)
+        self.assertIn("C_Base *-- F_Basics : loads", output)
+        self.assertIn("C_Base ..> F_Guide : links", output)
+        self.assertNotIn("F_TitleOnly", output)
+
+    def test_inherited_file_keeps_its_module_scope(self):
+        root = self.project('''from roles import Base
+file Guide: "Other guide"
+    path: "other.md"
+    "Other."
+abstract agent Child[Base]:
+    inherit *
+team T: "Team"
+    home: "t"
+    member qa[Child]: "QA"
+''')
+        (root / "prompts/roles").mkdir()
+        (root / "prompts/roles/AGENTS.prompt").write_text('''file Guide: "Role guide"
+    path: "role.md"
+    "Role."
+export abstract agent Base:
+    role: "Read {{Guide}}."
+''')
+        code, output, error = self.cli(root, "classes", "Child", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["links"], ["roles.Guide"])
+
     def project_with_classes(self, suffix=""):
         source = (Path(__file__).resolve().parents[1] /
                   "examples/196_doctrine_classes/prompts/AGENTS.prompt").read_text()
@@ -19,7 +77,7 @@ class ClassesTests(HomeProject, unittest.TestCase):
         self.assertEqual(code, 0, error)
         self.assertEqual(output.splitlines(), [
             "Agents",
-            "QA  (abstract)  uses Craft  abstract policy",
+            "QA  (abstract)  uses Craft  loads AppEngineering  links TestGuide  abstract policy",
             "├── AppQA  (abstract)",
             "│   └── Feature.qa  pods/feature/qa",
             "└── WebQA  (abstract)",

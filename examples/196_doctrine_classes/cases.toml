@@ -7,7 +7,7 @@ status = "active"
 kind = "render_contract"
 agent = "Growth.qa"
 assertion = "exact_lines"
-expected_lines = ["Test bet.", "", "## Craft", "", "Test bet for new users."]
+expected_lines = ["Test bet. Read [Test guide](test-guide.md).", "Read first: @app-engineering.md", "", "## Craft", "", "Test bet for new users."]
 
 [[cases]]
 name = "another class keeps the shared text"
@@ -15,7 +15,7 @@ status = "active"
 kind = "render_contract"
 agent = "Feature.qa"
 assertion = "exact_lines"
-expected_lines = ["Test feature.", "", "## Craft", "", "Test feature for players."]
+expected_lines = ["Test feature. Read [Test guide](test-guide.md).", "Read first: @app-engineering.md", "", "## Craft", "", "Test feature for players."]
 
 [[cases]]
 name = "a member overrides the shared workflow"
@@ -23,7 +23,7 @@ status = "active"
 kind = "render_contract"
 agent = "Product.qa"
 assertion = "exact_lines"
-expected_lines = ["Test change.", "", "## Testing", "", "Test the change twice."]
+expected_lines = ["Test change. Read [Test guide](test-guide.md).", "Read first: @app-engineering.md", "", "## Testing", "", "Test the change twice."]
 
 [[cases]]
 name = "class tree from source"
@@ -34,7 +34,7 @@ args = ["classes"]
 expected_exit = 0
 expected_stdout_lines = [
   "Agents",
-  "QA  (abstract)  uses Craft  abstract policy",
+  "QA  (abstract)  uses Craft  loads AppEngineering  links TestGuide  abstract policy",
   "├── AppQA  (abstract)",
   "│   └── Feature.qa  pods/feature/qa",
   "└── WebQA  (abstract)",
@@ -92,6 +92,8 @@ expected_stdout_lines = [
   "",
   "Children: AppQA, WebQA",
   "Uses: Craft",
+  "Loads: AppEngineering",
+  "Links: TestGuide",
   "Homes: 3",
   "",
   "Reads:",
@@ -142,6 +144,8 @@ expected_stdout_lines = [
   "Parent: QA",
   "Children: Growth.qa, Product.qa",
   "Uses: Craft",
+  "Loads: AppEngineering",
+  "Links: TestGuide",
   "Homes: 2",
   "",
   "Reads:",
@@ -164,7 +168,7 @@ project = "."
 args = ["classes", "--json"]
 expected_exit = 0
 expected_stdout_lines = [
-  "{\"format_version\": 1, \"view\": \"tree\", \"agents\": [{\"name\": \"QA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [\"Craft\"], \"abstract_slots\": [\"policy\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"AppQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature.qa\", \"abstract\": false, \"home\": \"pods/feature/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}, {\"name\": \"WebQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Growth.qa\", \"abstract\": false, \"home\": \"pods/growth/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product.qa\", \"abstract\": false, \"home\": \"pods/product/qa\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [\"testing\"], \"adds\": [], \"drops\": [], \"children\": []}]}]}], \"teams\": [{\"name\": \"Pod\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [\"win\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature\", \"abstract\": false, \"home\": \"pods/feature\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Growth\", \"abstract\": false, \"home\": \"pods/growth\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product\", \"abstract\": false, \"home\": \"pods/product\", \"broken_parent\": null, \"uses\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}]}",
+  "{\"format_version\": 1, \"view\": \"tree\", \"agents\": [{\"name\": \"QA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [\"Craft\"], \"loads\": [\"AppEngineering\"], \"links\": [\"TestGuide\"], \"abstract_slots\": [\"policy\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"AppQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature.qa\", \"abstract\": false, \"home\": \"pods/feature/qa\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}, {\"name\": \"WebQA\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Growth.qa\", \"abstract\": false, \"home\": \"pods/growth/qa\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product.qa\", \"abstract\": false, \"home\": \"pods/product/qa\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [], \"overrides\": [\"testing\"], \"adds\": [], \"drops\": [], \"children\": []}]}]}], \"teams\": [{\"name\": \"Pod\", \"abstract\": true, \"home\": null, \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [\"win\"], \"members\": [], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": [{\"name\": \"Feature\", \"abstract\": false, \"home\": \"pods/feature\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Growth\", \"abstract\": false, \"home\": \"pods/growth\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}, {\"name\": \"Product\", \"abstract\": false, \"home\": \"pods/product\", \"broken_parent\": null, \"uses\": [], \"loads\": [], \"links\": [], \"abstract_slots\": [], \"members\": [\"qa\"], \"overrides\": [], \"adds\": [], \"drops\": [], \"children\": []}]}]}",
 ]
 
 [[cases]]
@@ -193,7 +197,7 @@ project = "."
 args = ["classes", "Pod", "--json"]
 expected_exit = 0
 expected_stdout_lines = [
-  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Pod\", \"kind\": \"abstract team\", \"site\": \"prompts/AGENTS.prompt:19\", \"title\": \"A team that ships work\", \"parent\": null, \"children\": [\"Feature\", \"Growth\", \"Product\"], \"uses\": [], \"homes\": 3, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": []}",
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Pod\", \"kind\": \"abstract team\", \"site\": \"prompts/AGENTS.prompt:19\", \"title\": \"A team that ships work\", \"parent\": null, \"children\": [\"Feature\", \"Growth\", \"Product\"], \"uses\": [], \"loads\": [], \"links\": [], \"homes\": 3, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": []}",
 ]
 
 [[cases]]
@@ -204,7 +208,7 @@ project = "."
 args = ["classes", "QA", "--json"]
 expected_exit = 0
 expected_stdout_lines = [
-  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"QA\", \"kind\": \"abstract agent\", \"site\": \"prompts/AGENTS.prompt:4\", \"title\": \"How QA works on every team\", \"parent\": null, \"children\": [\"AppQA\", \"WebQA\"], \"uses\": [\"Craft\"], \"homes\": 3, \"reads\": [{\"name\": \"agent:subject\", \"default\": \"{{team:unit}}\", \"set_by\": \"QA\"}, {\"name\": \"team:unit\", \"default\": null, \"set_by\": null}, {\"name\": \"team:audience\", \"default\": null, \"set_by\": null}], \"slots\": [{\"key\": \"testing\", \"title\": \"Craft\", \"abstract\": false}, {\"key\": \"policy\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": [{\"owner\": \"Product.qa\", \"change\": \"overrides\", \"keys\": [\"testing\"]}]}",
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"QA\", \"kind\": \"abstract agent\", \"site\": \"prompts/AGENTS.prompt:4\", \"title\": \"How QA works on every team\", \"parent\": null, \"children\": [\"AppQA\", \"WebQA\"], \"uses\": [\"Craft\"], \"loads\": [\"AppEngineering\"], \"links\": [\"TestGuide\"], \"homes\": 3, \"reads\": [{\"name\": \"agent:subject\", \"default\": \"{{team:unit}}\", \"set_by\": \"QA\"}, {\"name\": \"team:unit\", \"default\": null, \"set_by\": null}, {\"name\": \"team:audience\", \"default\": null, \"set_by\": null}], \"slots\": [{\"key\": \"testing\", \"title\": \"Craft\", \"abstract\": false}, {\"key\": \"policy\", \"title\": null, \"abstract\": true}], \"members\": [], \"changed_below\": [{\"owner\": \"Product.qa\", \"change\": \"overrides\", \"keys\": [\"testing\"]}]}",
 ]
 
 [[cases]]
@@ -215,7 +219,7 @@ project = "."
 args = ["classes", "Growth", "--json"]
 expected_exit = 0
 expected_stdout_lines = [
-  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Growth\", \"kind\": \"team\", \"site\": \"prompts/AGENTS.prompt:22\", \"title\": \"growth\", \"parent\": \"Pod\", \"children\": [], \"uses\": [], \"homes\": 1, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": \"Win\", \"abstract\": false}], \"members\": [{\"key\": \"qa\", \"class\": \"WebQA\"}], \"changed_below\": []}",
+  "{\"format_version\": 1, \"view\": \"class\", \"name\": \"Growth\", \"kind\": \"team\", \"site\": \"prompts/AGENTS.prompt:22\", \"title\": \"growth\", \"parent\": \"Pod\", \"children\": [], \"uses\": [], \"loads\": [], \"links\": [], \"homes\": 1, \"reads\": [], \"slots\": [{\"key\": \"win\", \"title\": \"Win\", \"abstract\": false}], \"members\": [{\"key\": \"qa\", \"class\": \"WebQA\"}], \"changed_below\": []}",
 ]
 
 [[cases]]
@@ -275,7 +279,15 @@ expected_stdout_lines = [
   "    class W_Craft[\"Craft\"] {",
   "        <<workflow>>",
   "    }",
+  "    class F_AppEngineering[\"AppEngineering\"] {",
+  "        <<file>>",
+  "    }",
+  "    class F_TestGuide[\"TestGuide\"] {",
+  "        <<file>>",
+  "    }",
   "    C_QA *-- W_Craft",
+  "    C_QA *-- F_AppEngineering : loads",
+  "    C_QA ..> F_TestGuide : links",
   "    C_QA <|-- C_AppQA",
   "    C_AppQA <|-- C_Feature_qa",
   "    C_QA <|-- C_WebQA",
@@ -314,7 +326,15 @@ expected_stdout_lines = [
   "    class W_Craft[\"Craft\"] {",
   "        <<workflow>>",
   "    }",
+  "    class F_AppEngineering[\"AppEngineering\"] {",
+  "        <<file>>",
+  "    }",
+  "    class F_TestGuide[\"TestGuide\"] {",
+  "        <<file>>",
+  "    }",
   "    C_QA *-- W_Craft",
+  "    C_QA *-- F_AppEngineering : loads",
+  "    C_QA ..> F_TestGuide : links",
   "    C_QA <|-- C_WebQA",
   "    C_WebQA <|-- C_Growth_qa",
   "    C_WebQA <|-- C_Product_qa",

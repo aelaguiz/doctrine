@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `doctrine classes` shows class trees, reads, slots, changes, and the sources
   of an agent's sections and values. It can also print JSON or a Mermaid diagram.
+- Class trees, views, and diagrams show shared files a class loads or links.
 
 ### Abstract agent titles
 
@@ -52,6 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Load reports include existing files linked from files loaded at startup.
+- Codex load headlines show the bytes in files to read first.
 - CLI help explains every command and flag. Doctrine Learn points to the build
   command, gives one path for landing a lesson, and uses portable links.
 - Commands that select homes use the only home target when it has plain agents and no team, so `--target` is no longer needed there.
