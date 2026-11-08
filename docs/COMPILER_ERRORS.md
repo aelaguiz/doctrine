@@ -192,7 +192,7 @@ Stability rules:
 | `E605` | Code fence split across strings | A prose string opens a code fence it does not close. Put the whole fence in one triple-quoted string or a `code` block. |
 | `E610` | Missing patch target | A drop, dotted override, role paragraph, or case path names a key the parent lacks, or `inherit *` has nothing to inherit. |
 | `E611` | Invalid patch path | A path steps through an item with no keyed children or a role with no keyed paragraphs, an override targets the wrong block kind or gives a paragraph a nested block, a case attaches to a block that cannot hold it, or a list override has a body that is not a list. |
-| `E612` | Conflicting patches | Two patches account for one item, a case key already exists, a case patch conflicts with a case in an override, kept cases would repeat a key, a whole-item account conflicts with a deeper patch, a child adds a role paragraph it already inherits, a child drops `role`, `super` is repeated or brings a key also written in the override, or a member overlay inherits a member with its own body. |
+| `E612` | Conflicting patches | Two patches account for one item, including a role paragraph dropped and also inherited or overridden; a case key already exists, a case patch conflicts with a case in an override, kept cases would repeat a key, a whole-item account conflicts with a deeper patch, a child adds a role paragraph it already inherits, a child drops `role`, `super` is repeated or brings a key also written in the override, or a member overlay inherits a member with its own body. |
 | `E613` | Duplicate inherit * | A body writes `inherit *` twice. |
 | `E614` | Super outside an override | `super` appears outside an override body. |
 

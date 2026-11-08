@@ -289,7 +289,7 @@ def expand_agent_patches(context, agent, *, unit):
                 fields.append(mark_wildcard(inherited) if field.wildcard else inherited)
         else:
             if isinstance(field, model.RoleScalar) and any(
-                isinstance(item, (model.InheritItem, model.InheritAll, model.OverridePath)) for item in field.paragraphs
+                isinstance(item, (model.InheritItem, model.InheritAll, model.OverridePath, model.DropItem)) for item in field.paragraphs
             ):
                 parent_role = parent_fields.get("role", [None])[0]
                 if not isinstance(parent_role, model.RoleScalar) or not parent_role.paragraphs:
@@ -306,11 +306,11 @@ def expand_agent_patches(context, agent, *, unit):
                     if isinstance(item, model.InheritAll):
                         items.append(item)
                         continue
-                    key = item.path[-1] if isinstance(item, model.OverridePath) else item.key
+                    key = item.path[-1] if isinstance(item, (model.OverridePath, model.DropItem)) else item.key
                     if isinstance(item, model.ReadableBlock) and key in parent_by_key:
                         raise compile_error(code="E612", summary="Conflicting patches", path=unit.prompt_file.source_path,
                             source_span=item.source_span, detail=f"`{agent.name}` adds the paragraph `role.{key}`, which it already inherits. Write `override paragraph {key}:` to replace it.")
-                    if isinstance(item, (model.InheritItem, model.OverridePath)):
+                    if isinstance(item, (model.InheritItem, model.OverridePath, model.DropItem)):
                         if key not in parent_by_key:
                             raise compile_error(code="E610", summary="Missing patch target", path=unit.prompt_file.source_path,
                                 source_span=item.source_span, detail=f"`{agent.name}` patches `role.{key}`, but its parent has no such key.")
@@ -347,7 +347,11 @@ def expand_agent_patches(context, agent, *, unit):
         )
     fields = order_team_fields(agent, fields, keys=keys, parent_fields=parent_fields, unit=unit)
     drops = (*(parent.drops if agent.parent_ref else ()),
-             *drop_records(agent.fields, ".".join((*unit.module_parts, agent.name))))
+             *drop_records(agent.fields, ".".join((*unit.module_parts, agent.name))),
+             *drop_records((replace(item, path=("role", *item.path))
+                            for field in agent.fields if isinstance(field, model.RoleScalar)
+                            for item in field.paragraphs if isinstance(item, model.DropItem)),
+                           ".".join((*unit.module_parts, agent.name))))
     return replace(agent, fields=tuple(fields), drops=drops), expansion
 
 

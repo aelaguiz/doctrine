@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Role paragraphs
 
 - Children and members can add role paragraphs and place inherited ones in order.
+- A role block can drop an inherited paragraph with `drop <key>: "reason"`.
 
 ### Class hierarchy teaching
 

@@ -255,13 +255,15 @@ agent OtherQa[Qa]:
 A child or member can also add paragraphs and order the inherited ones in a
 `role:` block. Use `inherit <key>` to keep one paragraph, or `inherit *` to
 keep the remaining paragraphs in their parent order. Use `override paragraph`
-to replace one. A role block with no `inherit` or `override paragraph` line replaces the whole role.
+to replace one, or `drop <key>: "reason"` to drop one. A role block with no
+`inherit`, `override paragraph`, or `drop` line replaces the whole role.
 
 ```prompt
-agent AddedQa[Qa]:
+agent DropQa[Qa]:
     role:
         paragraph opening:
             "You test the app."
+        drop who: "This QA is on another team."
         inherit *
 ```
 

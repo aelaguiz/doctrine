@@ -92,7 +92,9 @@ def class_tree(target, session):
             "members": [field.key for field in decl.fields if isinstance(field, model.Member) and not field.override],
             "overrides": overrides,
             "adds": [field.key for field in decl.fields if isinstance(field, model.AuthoredSlotField)] if parent else [],
-            "drops": [".".join(field.path) for field in decl.fields if isinstance(field, model.DropItem)],
+            "drops": [".".join(field.path) for field in decl.fields if isinstance(field, model.DropItem)]
+                     + ["role." + item.path[0] for field in decl.fields if isinstance(field, model.RoleScalar)
+                        for item in field.paragraphs if isinstance(item, model.DropItem)],
             "children": [],
         }
     for name in nodes:

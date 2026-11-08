@@ -29,6 +29,13 @@ agent AddedQa[Qa]:
             "You test the app."
         inherit *
 
+agent DropQa[Qa]:
+    role:
+        paragraph opening:
+            "You test the app."
+        drop who: "This QA is on another team."
+        inherit *
+
 agent OrderedQa[Qa]:
     role:
         inherit phones

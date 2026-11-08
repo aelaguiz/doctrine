@@ -88,7 +88,7 @@ def _classify_unexpected_token(
     previous = exc.token_history[-1] if exc.token_history else None
     expected = set(exc.expected or ())
     token_value = exc.token.value
-    if expected == {"INHERIT", "OVERRIDE", "PARAGRAPH", "_NL"}:
+    if expected == {"DROP", "INHERIT", "OVERRIDE", "PARAGRAPH", "_NL"}:
         return (
             "E101", "Unexpected token",
             ("Check the expected token list and the surrounding punctuation.",

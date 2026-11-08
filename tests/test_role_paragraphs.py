@@ -53,6 +53,9 @@ agent Child[Base]:
             ('        override paragraph absent:\n            "Text."\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
             ('        paragraph one:\n            "Text."\n        inherit *\n', 'E612', '`Child` adds the paragraph `role.one`, which it already inherits. Write `override paragraph one:` to replace it.'),
             ('        inherit one\n        override paragraph one:\n            "Text."\n        inherit *\n', 'E612', '`Child` patches `role.one` twice.'),
+            ('        drop absent: "Gone."\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
+            ('        drop one: "Gone."\n        inherit one\n        inherit *\n', 'E612', '`Child` patches `role.one` twice.'),
+            ('        override paragraph one:\n            "Text."\n        drop one: "Gone."\n        inherit *\n', 'E612', '`Child` patches `role.one` twice.'),
             ('        inherit *\n        inherit *\n', 'E613', '`Child` writes `inherit *` more than once.'),
         )
         for body, code, detail in cases:
@@ -67,6 +70,70 @@ agent Child[Base]:
             session.compile_agent('Child')
         self.assertEqual(caught.exception.code, 'E611')
         self.assertIn('`Child` inherits from `role`, which has no keyed paragraphs.', str(caught.exception))
+
+    def test_role_block_drop_records_the_same_as_path_drop(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+        paragraph two:
+            "Two."
+agent Child[Base]:
+    role:
+        drop one: "Gone."
+        inherit *
+agent PathChild[Base]:
+    drop role.one: "Gone."
+''')
+        child = session.compile_agent('Child')
+        path_child = session.compile_agent('PathChild')
+        self.assertEqual(render_markdown(child), 'Two.\n')
+        drop = build_home_map(child).drops[0]
+        path_drop = build_home_map(path_child).drops[0]
+        self.assertEqual((drop.path, drop.origin, drop.reason), (('role', 'one'), 'Child', 'Gone.'))
+        self.assertEqual((drop.path, drop.reason), (path_drop.path, path_drop.reason))
+
+    def test_drop_only_role_block_patches_the_parent(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+        paragraph two:
+            "Two."
+agent Child[Base]:
+    role:
+        drop one: "Gone."
+''')
+        with self.assertRaises(CompileError) as caught:
+            session.compile_agent('Child')
+        self.assertEqual(caught.exception.code, 'E003')
+        self.assertIn('Missing inherited role paragraph in agent Child: two', str(caught.exception))
+
+    def test_role_drop_in_class_tree_and_home(self):
+        root = self.project('''abstract agent Base:
+    role:
+        paragraph one:
+            "Drop these words."
+        paragraph two:
+            "Keep these words."
+abstract agent Child[Base]:
+    role:
+        drop one: "Gone."
+        inherit *
+team T: "Team"
+    home: "t"
+    member qa[Child]: "QA"
+''')
+        code, output, error = self.cli(root, 'classes', '--json')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)['agents'][0]['children'][0]['drops'], ['role.one'])
+        code, output, error = self.cli(root, 'load', 'T.qa', '--json')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)['homes'][0]['drops'], [
+            {'path': ['role', 'one'], 'origin': 'Child', 'reason': 'Gone.'}])
+        code, output, error = self.cli(root, 'where', 'Keep these words.', '--json')
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)['matches'][0]['origin'], 'Base.role.two')
 
     def test_override_only_role_block_patches_the_parent(self):
         session = self.session('''abstract agent Base:
