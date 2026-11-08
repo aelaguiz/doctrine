@@ -504,3 +504,23 @@ team T: "Team"
         load = json.loads(output)["homes"][0]["runtimes"]["claude"]
         self.assertIn("guide.md", [row["path"] for row in load["files"]])
         self.assertNotIn("guide.md", [row["path"] for row in load["on_demand"]])
+
+    def test_flow_with_a_built_file_uses_the_project_root(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+    "Guide."
+workflow Steps: "Steps"
+    next: "Next"
+        route "Read {{Guide}}" -> Other
+agent Writer:
+    role: "Write."
+    work: Steps
+agent Other:
+    role: "Review."
+''')
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "out"'))
+        target = load_emit_targets(config)["homes"]
+        output = emit_target_flow(target, include_svg=False)[0].read_text()
+        self.assertIn("[Guide](../guide.md)", output)
+        self.assertNotIn("\x1e", output)

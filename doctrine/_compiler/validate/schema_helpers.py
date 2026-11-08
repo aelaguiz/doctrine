@@ -174,7 +174,7 @@ class ValidateSchemaHelpersMixin:
                 if is_load and any(c.isspace() for c in file_decl.path):
                     raise authored_compile_error(code="E655", summary="File ref can't go here",
                         detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
-                base = self.session.emit_root if file_decl.body is not None else self.session.project_config.config_dir
+                base = (self.session.emit_root or self.session.project_config.config_dir) if file_decl.body is not None else self.session.project_config.config_dir
                 path = ((base / file_decl.path).resolve() if file_decl.body is not None
                         else project_file_path(self.session.project_config, file_decl.path))
                 if file_decl.body is None and not path.is_file():

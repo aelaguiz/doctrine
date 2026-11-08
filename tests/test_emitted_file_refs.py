@@ -13,6 +13,7 @@ from doctrine.emit_skill import emit_target_skill
 from doctrine.emit_skill_graph import emit_target_skill_graph
 from doctrine.homes import compile_homes
 from doctrine.parser import parse_file
+from doctrine.renderer import render_markdown
 
 
 class EmittedFileRefsTests(unittest.TestCase):
@@ -74,3 +75,10 @@ class EmittedFileRefsTests(unittest.TestCase):
                         self.assert_no_internal_links(path.read_bytes(), path)
                     count += 1
         self.assertGreaterEqual(count, 90)
+
+    def test_compile_api_emits_no_internal_links(self):
+        root = Path(__file__).resolve().parents[1] / "examples/197_shared_files/render"
+        session = CompilationSession(parse_file(root / "prompts/AGENTS.prompt"))
+        text = render_markdown(session.compile_agent("Writer"))
+        self.assert_no_internal_links(text.encode(), "compile API")
+        self.assertEqual(text, "Before you write, read [Guide](shared/guide.md).\n")

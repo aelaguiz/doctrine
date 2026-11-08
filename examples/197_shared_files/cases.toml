@@ -226,3 +226,12 @@ edit = { "prompts/AGENTS.prompt" = "team Pod: \"Pod\"\n    home: \"pod\"\n    ro
 args = ["build", "."]
 expected_exit = 1
 stderr_contains = ["E636", "pod/AGENTS.md points at ../missing.md, which does not exist."]
+
+[[cases]]
+name = "the compile API renders a shared file link from the project root"
+status = "active"
+kind = "render_contract"
+prompt = "render/prompts/AGENTS.prompt"
+agent = "Writer"
+assertion = "exact_lines"
+expected_lines = ["Before you write, read [Guide](shared/guide.md)."]

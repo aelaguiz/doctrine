@@ -20,6 +20,7 @@ from doctrine.project_config import ProjectConfig
 from doctrine.renderer import render_markdown
 from doctrine.runtime_load import home_loads
 from doctrine._compiler.home_map import build_home_map
+from doctrine._compiler.naming import model_walk
 from doctrine.emit_docs import _build_previous_turn_contexts, emit_target
 from doctrine.emit_common import load_emit_targets
 from doctrine._verify_corpus.manifest import _load_manifest
@@ -1146,6 +1147,8 @@ team T: "Team"
                                 )
                             except DoctrineError:
                                 continue
+                            self.assertFalse(any("\x1e" in item for item in model_walk(compiled)
+                                                 if isinstance(item, str)), str(path))
                             home_map = build_home_map(compiled)
                             home = {"owner": agent, "map": home_map, "budgets": [[]],
                                     "pointers": [], "file_refs": []}
