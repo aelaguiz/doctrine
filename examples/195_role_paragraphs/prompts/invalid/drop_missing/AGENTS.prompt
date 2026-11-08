@@ -1,0 +1,8 @@
+abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+agent Child[Base]:
+    role:
+        drop absent: "Not needed."
+        inherit *

@@ -6,6 +6,7 @@ breaking-change guidance.
 Current Doctrine language version: 6.0
 
 Children and members can add and order role paragraphs with `inherit` lines.
+They can drop a parent paragraph inside the role block with `drop <key>: "reason"`.
 Role paragraph overrides can use `super` to keep the inherited text.
 Teams keep named inherited slots and overrides in their written order.
 
