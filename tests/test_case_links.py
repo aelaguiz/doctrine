@@ -134,7 +134,10 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
     def test_case_anchors_use_rendered_heading_text(self):
         titles = (("हिन्दी नियम", "हिन्दी-नियम"), ("The _first_ tick", "the-first-tick"),
                   ("See [the guide](https://x.com)", "see-the-guide"),
-                  ("Use `make` & <b>go</b>", "use-make--go"), ("Plan ahead ", "plan-ahead"))
+                  ("Use `make` & <b>go</b>", "use-make--go"), ("Plan ahead ", "plan-ahead"),
+                  ("Edit `__init__` first", "edit-__init__-first"),
+                  ("When n < 3 or n > 10", "when-n--3-or-n--10"),
+                  ("Visit <https://x.com> now", "visit-httpsxcom-now"), ("Step #", "step"))
         links = "".join(f'        "Read {{{{details:work.c{index}}}}}."\n' for index in range(len(titles)))
         cases = "".join(f'        details c{index}: "{title}"\n            "Text."\n'
                         for index, (title, _) in enumerate(titles))
@@ -159,6 +162,19 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
         self.assertEqual(code, 0, error)
         self.assertIn("[_Read_ the guide with `make`](DETAILS.md#read-the-guide-with-make)",
                       (root / "t/AGENTS.md").read_text())
+
+    def test_file_section_link_uses_heading_anchor(self):
+        root = self.project('''file Testing: "Testing"
+    path: "testing.md"
+    section plans: "Edit `__init__` first"
+        "Text."
+team T: "Team"
+    home: "t"
+    role: "Read {{Testing:plans}}."
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("testing.md#edit-__init__-first)", (root / "t/AGENTS.md").read_text())
 
     def test_deep_case_and_its_nested_sections_are_headings(self):
         root = self.project('''team T: "Team"
@@ -366,6 +382,22 @@ team T: "Team"
         self.assertIn("stale _details/r.md", error)
         self.assertEqual(self.cli(root, "build", ".")[0], 0)
         self.assertEqual(self.cli(root, "build", "T.qa")[0], 0)
+
+    def test_selected_build_accepts_closing_hash_in_shared_case_heading(self):
+        root = self.project('''abstract agent R:
+    role: "Test."
+    work: "Work"
+        "Read {{details:work.case}}."
+        details case: "Step #"
+            "Text."
+team T: "Team"
+    home: "t"
+    member qa[R]: "QA"
+''')
+        for command, selection in (("build", "."), ("build", "T.qa"), ("check", "T.qa")):
+            code, _, error = self.cli(root, command, selection)
+            self.assertEqual(code, 0, error)
+        self.assertIn("_details/r.md#step)", (root / "t/qa/AGENTS.md").read_text())
 
     def test_repeated_file_heading(self):
         root = self.project('''file Testing: "Testing"

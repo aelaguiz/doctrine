@@ -23,15 +23,16 @@ def heading_link_text(text):
 
 
 def heading_anchor(text, seen):
-    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", heading_link_text(text.strip()), flags=re.S)
+    text = re.sub(r"\s+#+$", "", text.strip())
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", heading_link_text(text), flags=re.S)
     for index in range(0, len(parts), 3):
         parts[index] = re.sub(r"!\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
-        parts[index] = re.sub(r"<[^>]*>", "", parts[index])
+        parts[index] = re.sub(r"<([A-Za-z][A-Za-z0-9+.-]{1,31}:[^<>\s]*|[A-Za-z0-9.!#$%&'*+/=?^_{|}~-]+@[A-Za-z0-9.-]+)>", r"\1", parts[index])
+        parts[index] = re.sub(r"<(?:[A-Za-z]|/)[^>]*>", "", parts[index]).lower().replace("*", "")
+        parts[index] = re.sub(r"_+", lambda match: match[0] if match.start() and match.end() < len(parts[index])
+                              and unicodedata.category(parts[index][match.start() - 1])[0] in "LMN"
+                              and unicodedata.category(parts[index][match.end()])[0] in "LMN" else "", parts[index])
     text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
-    text = text.replace("*", "")
-    text = re.sub(r"_+", lambda match: match[0] if match.start() and match.end() < len(text)
-                  and unicodedata.category(text[match.start() - 1])[0] in "LMN"
-                  and unicodedata.category(text[match.end()])[0] in "LMN" else "", text)
     anchor = "".join(c for c in text if unicodedata.category(c)[0] in "LMN" or c in " -_").replace(" ", "-")
     seen[anchor] = seen.get(anchor, 0) + 1
     return anchor

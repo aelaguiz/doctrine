@@ -84,7 +84,7 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
     for path in written:
         seen = {}
         for line, inside in fenced_lines(files[path].decode().splitlines()):
-            if not inside and (heading := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)):
+            if not inside and (heading := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*$", line)):
                 heading_anchor(heading[1], seen)
         for linked_path, anchor, name in context.session.file_section_links:
             if Path(linked_path) == target.output_dir / path and seen.get(anchor, 0) > 1:

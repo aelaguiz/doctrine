@@ -132,7 +132,7 @@ def companion_files(homes, companions, target):
         text = render_file_refs(render_companion(parts), (target.output_dir / path).parent, target.project_config)
         seen = {}
         for line, inside in fenced_lines(text.splitlines()):
-            if not inside and (heading := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)):
+            if not inside and (heading := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*$", line)):
                 heading_anchor(heading[1], seen)
         for data in homes.values():
             for companion, anchor, name in data["case_links"]:
@@ -383,7 +383,7 @@ def needed_files(root, homes, files, selected, wanted):
                 disk = root / path
                 if path.startswith("_details/") and path not in wanted and disk.is_file():
                     headings = [heading_anchor(match[1], {}) for line, inside in fenced_lines(disk.read_text().splitlines())
-                                if not inside and (match := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line))]
+                                if not inside and (match := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*$", line))]
                     if anchor not in headings:
                         yield home, "links to", path, "stale"
         for path in dict.fromkeys(path for _, data in levels for path in data["shared_files"]):
