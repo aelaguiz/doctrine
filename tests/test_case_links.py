@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import unittest
 
 from doctrine._compiler.markdown_reader import heading_anchor
@@ -11,6 +13,43 @@ from tests.home_support import HomeProject
 
 
 class CaseLinksTests(HomeProject, unittest.TestCase):
+    def test_case_links_in_titles_and_headings_are_rejected(self):
+        token = "{{details:work.case}}"
+        source = '''team T: "Team"
+    home: "t"
+    work: "Work"
+        details case: "Case"
+            "Text."
+    member qa: "QA"
+        role: "Test."
+'''
+        for before in ('"Team"', '"QA"', '"Work"', '"Case"'):
+            with self.subTest(title=before):
+                root = self.project(source.replace(before, f'"{token}"', 1))
+                code, _, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 1)
+                self.assertIn("E602", error)
+                self.assertIn(f"`{token}` can't be read here: a case link belongs in a sentence the agent always reads.", error)
+
+    def test_case_links_in_soul_and_classic_emit_are_rejected(self):
+        source = 'agent A:\n    role: "Read {{details:work.case}}."\n'
+        for soul in (False, True):
+            with self.subTest(soul=soul):
+                root = self.project("import worker\n" if soul else source)
+                if soul:
+                    package = root / "prompts/worker"
+                    package.mkdir()
+                    (package / "AGENTS.prompt").write_text('export agent A:\n    role: "Test."\n')
+                    (package / "SOUL.prompt").write_text(source)
+                    code, _, error = self.cli(root, "build", ".")
+                    self.assertEqual(code, 1)
+                    self.assertIn("E602", error)
+                result = subprocess.run([sys.executable, "-m", "doctrine.emit_docs", "--pyproject",
+                    str(root / "pyproject.toml"), "--target", "homes"], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("E602", result.stderr)
+                self.assertIn("a case link belongs in a sentence the agent always reads.", result.stderr)
+
     def test_links_at_two_depths_and_values(self):
         root = self.project(example="198_case_links")
         code, _, error = self.cli(root, "build", ".")
@@ -114,7 +153,7 @@ team T: "Team"
         code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 1)
         self.assertIn("E602", error)
-        self.assertIn("a case link belongs in text the agent always reads", error)
+        self.assertIn("a case link belongs in a sentence the agent always reads", error)
 
     def test_file_section_errors_and_nested_link(self):
         for body, link, expected in (
@@ -234,7 +273,7 @@ team T: "Team"
                     compile_it(session)
                 self.assertEqual(caught.exception.code, "E602")
                 self.assertEqual(caught.exception.diagnostic.detail,
-                    "`{{details:work.case}}` can't be read here: a case link belongs in text the agent always reads.")
+                    "`{{details:work.case}}` can't be read here: a case link belongs in a sentence the agent always reads.")
         root = self.project('''file Guide: "Guide"
     path: "guide.md"
     "Read {{details:work.case}}."
@@ -245,7 +284,7 @@ team T: "Team"
         code, _, error = self.cli(root, "build", ".")
         self.assertEqual(code, 1)
         self.assertIn("E602", error)
-        self.assertIn("a case link belongs in text the agent always reads", error)
+        self.assertIn("a case link belongs in a sentence the agent always reads", error)
 
     def test_idea_heading_counts_as_duplicate_but_unlinked_repeats_are_fine(self):
         source = '''team T: "Team"

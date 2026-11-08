@@ -6,11 +6,11 @@ from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
-from doctrine._compiler.late_binding import map_text
+from doctrine._compiler.late_binding import map_text, reject_case_links
 from doctrine._compiler.markdown_reader import heading_anchor
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock
+from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledReadableBlock, CompiledRuleBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -23,19 +23,20 @@ def reject_details(value, surface):
         )
 
 
-def split_details(compiled, home, root, home_map):
+def split_details(compiled, home, root, home_map, unit):
     companions, pointers, cases, linked = {}, [], {}, {}
     paths = {entry.path for entry in home_map.entries}
+    for item in model_walk(compiled):
+        if isinstance(item, CompiledReadableBlock) and not isinstance(item, CompiledRuleBlock):
+            if item.title:
+                reject_case_links(str(item.title), unit=unit)
+            if item.origin:
+                reject_case_links(item.origin.headings, unit=unit)
     def visit(item, headings, key_path):
         if not isinstance(item, (CompiledSection, CompiledGuardBlock)):
             return item
         if isinstance(item, CompiledSection) and item.kind == "details":
-            def reject(text):
-                if match := DETAILS_LINK.search(text):
-                    raise compile_error(code="E602", summary="Value has no owner here",
-                        detail=f"`{match[0]}` can't be read here: a case link belongs in text the agent always reads.")
-                return text
-            map_text(item.body, reject)
+            reject_case_links(item.body, unit=unit)
             origin = item.origin
             if origin is None:
                 reject_details(item, "a declaration without a home")

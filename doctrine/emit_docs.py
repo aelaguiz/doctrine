@@ -12,7 +12,7 @@ from doctrine._compiler.details import reject_details
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.home_map import build_home_map
 from doctrine._compiler.load_rules import validate_load_rules
-from doctrine._compiler.late_binding import map_text
+from doctrine._compiler.late_binding import map_text, reject_case_links
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.naming import model_walk
 from doctrine.compiler import CompilationSession
@@ -235,6 +235,7 @@ def emit_target(
 
 def runtime_files(plan, compiled, target, *, evaluate_rules=True, surface=None):
     if surface is not None:
+        reject_case_links(compiled, unit=plan.root.unit)
         reject_details(compiled, surface)
     compiled = map_text(compiled, lambda text: render_file_refs(text, plan.markdown_path.parent, target.project_config))
     files = {plan.markdown_path: render_markdown(compiled).encode()}
@@ -249,6 +250,7 @@ def runtime_files(plan, compiled, target, *, evaluate_rules=True, surface=None):
             json.dumps(contract, indent=2) + "\n").encode()
     if plan.soul_prompt_path is not None and plan.soul_output_path is not None:
         soul = _compile_runtime_package_soul(plan, target=target, evaluate_rules=evaluate_rules)
+        reject_case_links(soul, unit=plan.root.unit)
         reject_details(soul, surface or "`SOUL.prompt`")
         soul = map_text(soul, lambda text: render_file_refs(text, plan.soul_output_path.parent, target.project_config))
         files[plan.soul_output_path] = render_markdown(soul).encode()

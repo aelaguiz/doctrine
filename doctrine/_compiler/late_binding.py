@@ -43,7 +43,7 @@ def reject_case_links(value, *, unit):
     def reject(text):
         if match := DETAILS_LINK.search(text):
             raise compile_error(code="E602", summary="Value has no owner here",
-                detail=f"`{match[0]}` can't be read here: a case link belongs in text the agent always reads.",
+                detail=f"`{match[0]}` can't be read here: a case link belongs in a sentence the agent always reads.",
                 path=unit.prompt_file.source_path)
         return text
     def leaf(item):

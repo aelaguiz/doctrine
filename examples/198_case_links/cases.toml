@@ -86,7 +86,7 @@ project = "project"
 edit = { "prompts/AGENTS.prompt" = "team T: \"Team\"\n    home: \"t\"\n    work: \"Work\"\n        details first: \"First\"\n            \"Read {{details:work.second}}.\"\n        details second: \"Second\"\n            \"A case.\"\n" }
 args = ["build", "."]
 expected_exit = 1
-stderr_contains = ["E602", "a case link belongs in text the agent always reads"]
+stderr_contains = ["E602", "a case link belongs in a sentence the agent always reads"]
 
 [[cases]]
 name = "an unlinked case keeps its companion pointer"

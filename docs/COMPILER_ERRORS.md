@@ -345,7 +345,7 @@ shows the canonical formatted shape for one shipped compile error.
 | Code | Summary | Detail |
 | --- | --- | --- |
 | `E601` | Unfilled value | `Home <home> reads values nothing fills:` followed by each blank as `<root>:<key>` and its file and line. |
-| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. A case link is in a case, shared file, emitted document, or skill package. |
+| `E602` | Value has no owner here | A late root is read in a skill package, an emitted document, or machine output schema text; an agent reads team facts outside a team; or a team's own file reads `others`. A case link is in a title, heading, case, shared file, emitted document, SOUL, or skill package. |
 | `E603` | Value cycle | `Values read each other:` followed by the full cycle, such as `a -> b -> a`. |
 | `E604` | Value sets a fact | `values:` sets a key the compiler supplies. |
 | `E606` | Invalid team | A concrete team has no home, an abstract team has one, the path is not a plain relative path, a typed agent field is on a team, or a team uses one key twice. |

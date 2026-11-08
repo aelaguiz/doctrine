@@ -10,7 +10,7 @@ from doctrine import model
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.details import split_details, render_companion
 from doctrine._compiler.home_map import build_home_map
-from doctrine._compiler.late_binding import bind_home, map_text
+from doctrine._compiler.late_binding import bind_home, map_text, reject_case_links
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
@@ -86,8 +86,11 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, context):
 
 
 def compile_home(target, session, context, home, owner, unit, plan):
-    if isinstance(owner, (model.Team, model.Member)):
-        bind_home(context, owner.title, owner, unit=unit)
+    if owner.title:
+        reject_case_links(bind_home(context, owner.title, owner, unit=unit), unit=unit)
+    if isinstance(owner, model.Member):
+        _, team = find_home_team(context, owner, unit=unit)
+        reject_case_links(bind_home(context, team.title, owner, unit=unit), unit=unit)
     if plan is None:
         compiled = session.compile_agent(owner.name)
     else:
@@ -97,7 +100,7 @@ def compile_home(target, session, context, home, owner, unit, plan):
         )
     home_map = build_home_map(map_text(
         compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config)))
-    compiled, parts, pointers, unlinked, case_links = split_details(compiled, home, target.output_dir, home_map)
+    compiled, parts, pointers, unlinked, case_links = split_details(compiled, home, target.output_dir, home_map, unit)
     refs = [(json.loads(match[1]), always_on)
             for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
             for text in model_walk(value) if isinstance(text, str)
