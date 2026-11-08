@@ -21,6 +21,7 @@ from doctrine.emit_common import (
     resolve_pyproject_path,
 )
 from doctrine.parser import parse_file
+from doctrine.passages import place_passages
 from doctrine.renderer import render_readable_block
 from doctrine.skill_source_receipts import (
     SOURCE_RECEIPT_FILE_NAME,
@@ -109,8 +110,10 @@ def emit_target_skill(
     markdown_path = emitted_dir / entrypoint_output_name(target.entrypoint)
     contract_path = emitted_dir / "SKILL.contract.json"
     source_receipt_path = emitted_dir / SOURCE_RECEIPT_FILE_NAME
-    markdown_path.parent.mkdir(parents=True, exist_ok=True)
     markdown = render_skill_package_markdown(compiled)
+    if compiled.markdown_text is not None:
+        place_passages(markdown, None, path=target.project_config.config_dir / package_decl.markdown_path)
+    markdown_path.parent.mkdir(parents=True, exist_ok=True)
     if compiled.markdown_text is not None:
         markdown_path.write_bytes(markdown.encode("utf-8"))
     else:

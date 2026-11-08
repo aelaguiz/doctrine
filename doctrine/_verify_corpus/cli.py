@@ -11,6 +11,7 @@ from contextlib import chdir, redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from doctrine.cli import main
+from doctrine.emit_skill import main as emit_skill_main
 from doctrine.homes import HEADER
 
 
@@ -36,7 +37,7 @@ def run_cli_contract(case):
                 stdout, stderr = io.StringIO(), io.StringIO()
                 with redirect_stdout(stdout), redirect_stderr(stderr):
                     try:
-                        code = main(args)
+                        code = (emit_skill_main if spec.get("command") == "emit_skill" else main)(args)
                     except SystemExit as exc:
                         code = exc.code
                 expected = spec["expected_exit"] if args is spec["args"] else 0
@@ -49,6 +50,8 @@ def run_cli_contract(case):
                 assert part in output, output
             for part in spec.get("stderr_contains", []):
                 assert part in errors, errors
+            for part in spec.get("stderr_not_contains", []):
+                assert part not in errors, errors
             for name, lines in spec.get("expected_file_lines", {}).items():
                 text = (project / name).read_text(encoding="utf-8")
                 header = HEADER.match(text)

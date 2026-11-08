@@ -26,6 +26,7 @@ from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import load_emit_targets, resolve_pyproject_path
 from doctrine.homes import compile_homes, build_homes
 from doctrine.parser import parse_file
+from doctrine.passages import collect_passages, place_passages
 from doctrine.project_config import load_project_config, project_file_path, real_project_path
 from doctrine.project_warnings import project_warnings
 from doctrine.revision_source import revision_source
@@ -58,9 +59,10 @@ def resolve_target(args):
         sessions, team_targets = {}, []
         for target in targets.values():
             if target.entrypoint.name in ("AGENTS.prompt", "SOUL.prompt"):
+                prompt = parse_file(target.entrypoint)
+                passages = collect_passages(prompt, target.project_config.config_dir)
                 session = CompilationSession(
-                    parse_file(target.entrypoint),
-                    project_config=target.project_config,
+                    prompt, project_config=target.project_config, passages=passages,
                 )
                 sessions[target.name] = session
                 if any(not team.abstract for team in session.root_flow.teams_by_name.values()):
@@ -379,6 +381,15 @@ def where_source(args):
             for (origin, path, site), reached in matches.items()
         ]
         if not args.home:
+            for declaration in session.root_flow.entrypoint_unit.prompt_file.declarations:
+                if not isinstance(declaration, model.PassageDecl):
+                    continue
+                text = session.passages[declaration.name]
+                if needle in " ".join(text.casefold().split()):
+                    path = session.root_flow.entrypoint_unit.prompt_file.source_path
+                    result.append({"origin": f"passage {declaration.name}",
+                        "site": f"{relpath(path, target.project_config.config_dir)}:{declaration.source_span.line}",
+                        "homes": []})
             for entry, name, markdown, skill_session in session.project_skill_sources:
                 if needle not in " ".join(markdown.casefold().split()):
                     continue
@@ -392,6 +403,8 @@ def where_source(args):
                                  if decl.markdown_path)
                     for source in paths:
                         for line, text in enumerate(source.read_text().splitlines(), 1):
+                            if source != path:
+                                text = place_passages(text, session.passages, path=source)
                             if needle in " ".join(text.casefold().split()):
                                 result.append({"origin": f"skill package {name}",
                                     "site": f"{relpath(source, target.project_config.config_dir)}:{line}",

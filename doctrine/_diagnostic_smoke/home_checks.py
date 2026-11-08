@@ -36,6 +36,8 @@ HOME_DIAGNOSTICS = {
     ),
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E636": ('team T: "Team"\n    home: "t"\n    role: "[Missing](missing.md)"\n', ""),
+    "E661": ('passage P: "One"\npassage P: "Two"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E658": ('file Guide from "guide.md"\n    path: "out.md"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E656": ('file Guide from "guide.md"\n    path: "guide.md"\nteam T: "Team"\n    home: "t"\n    role: "Read {{Guide}}."\n', ""),
     "E637": ('team T: "Team"\n    home: "t"\n    role: "Read {{details:missing}}."\n', ""),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
@@ -117,7 +119,9 @@ def run_home_checks():
                 + settings
             )
             args = ["check"]
-            if code == "E656":
+            if code == "E658":
+                (root / "guide.md").write_text("{{passage:Missing}}\n")
+            elif code == "E656":
                 (root / "guide.md").write_text("# Guide\n")
             elif code == "E634":
                 (root / "t").mkdir()
@@ -143,6 +147,13 @@ def run_home_checks():
                 result == (0 if code.startswith("W") else 1) and code in error.getvalue(),
                 f"expected {code}, got {result}: {error.getvalue()}",
             )
+    from doctrine.passages import place_passages
+    try:
+        place_passages("{{passage:P}}\n", None, path="SKILL.md")
+    except CompileError as error:
+        _expect(error.code == "E659", f"expected E659, got {error}")
+    else:
+        _expect(False, "expected E659")
     with TemporaryDirectory() as directory:
         path = Path(directory) / "prompts/SKILL.prompt"
         path.parent.mkdir()

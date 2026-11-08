@@ -35,6 +35,14 @@ from doctrine._model.workflow import (
 
 
 @_dataclass(slots=True, frozen=True)
+class PassageDecl:
+    name: str
+    text: str | None = None
+    markdown_path: str | None = None
+    source_span: SourceSpan | None = _field(default=None, compare=False)
+
+
+@_dataclass(slots=True, frozen=True)
 class Person:
     name: str
     title: str
@@ -52,6 +60,7 @@ class Quote:
 
 Declaration: _TypeAlias = (
     Quote
+    | PassageDecl
     | Person
     | ImportDecl
     | RenderProfileDecl

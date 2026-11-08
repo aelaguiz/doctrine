@@ -98,6 +98,7 @@ class CompilationSession:
         provided_prompt_roots: tuple[ProvidedPromptRoot, ...] = (),
         skill_package_host_context: SkillPackageHostCompileContext | None = None,
         evaluate_rules: bool = True,
+        passages: dict[str, str] | None = None,
     ):
         self.prompt_root = resolve_prompt_root(prompt_file.source_path)
         resolved_project_config = project_config
@@ -151,6 +152,7 @@ class CompilationSession:
             ) from exc
 
         self.project_config = resolved_project_config
+        self.passages = passages
         self.evaluate_rules = evaluate_rules
         self.rule_agents = None
         self.value_reads: set[tuple[Path, int]] = set()

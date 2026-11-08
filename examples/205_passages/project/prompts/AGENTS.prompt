@@ -1,0 +1,7 @@
+passage Shared: "Read every change with care and test each part that a reader will meet today."
+passage Extra from "prompts/pages/extra.md"
+file Guide from "prompts/pages/guide.md"
+    path: "guides/guide.md"
+team Team: "Team"
+    home: "team"
+    role: "Help the reader."

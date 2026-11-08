@@ -474,6 +474,13 @@ adds its header after the frontmatter. An optional block can set `install:`
 and other package items, but not body text or `metadata:`. See
 [example 204](../examples/204_markdown_backed_skills).
 
+In a project homes source, write `passage Name: "text"` or
+`passage Name from "prompts/passage.md"`. In a Markdown-backed skill or
+shared file, put `{{passage:Name}}` alone on a line to place that text.
+The build keeps the marker line ending. Other text, including partial markers,
+stays as written. Unknown names fail with `E658`; standalone skill emits
+with a marker fail with `E659`. See [example 205](../examples/205_passages).
+
 ## Workflows
 
 `workflow` is Doctrine's reusable instruction surface.

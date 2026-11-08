@@ -12,6 +12,7 @@ from doctrine._compiler.late_binding import reject_case_links, reject_late_roots
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor
 from doctrine.renderer import render_readable_block
+from doctrine.passages import place_passages
 
 
 HEADER = re.compile(
@@ -89,6 +90,8 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
                     detail=f"`{decl.name}` reads and writes `{decl.path}`. Choose a different source or output path.",
                     path=unit.prompt_file.source_path, source_span=decl.source_span)
             raw = source_path.read_bytes().decode("utf-8")
+            if context.session.passages is not None:
+                raw = place_passages(raw, context.session.passages, path=source_path)
             links[path] = []
             source = os.path.relpath(source_path, target.project_config.config_dir)
             files[path] = with_header(raw, source).encode()

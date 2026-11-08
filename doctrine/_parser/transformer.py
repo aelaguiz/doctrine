@@ -511,6 +511,14 @@ class SchemaDocumentTransformerMixin:
         return "preamble"
 
     @v_args(meta=True, inline=True)
+    def passage_decl(self, meta, name, text):
+        return _with_source_span(model.PassageDecl(name=name, text=text), meta)
+
+    @v_args(meta=True, inline=True)
+    def passage_from(self, meta, name, path):
+        return _with_source_span(model.PassageDecl(name=name, markdown_path=path), meta)
+
+    @v_args(meta=True, inline=True)
     def file_decl(self, meta, name, title, path, body=None):
         return _with_source_span(model.FileDecl(
             name=name, title=title, path=path,
