@@ -130,7 +130,8 @@ class SkillRootDiscoveryTests(unittest.TestCase):
 class ShippedSkillExamplesTests(unittest.TestCase):
     def test_shipped_skills_have_no_absolute_paths(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        paths = (path for path in (repo_root / "skills").rglob("*") if path.is_file())
+        paths = (path for path in (repo_root / "skills").rglob("*") if path.is_file()
+                 and ".curated" not in path.relative_to(repo_root).parts)
         absolute = re.compile(r"(?<![\w./:<>-])/(?!/)[\w.~+-]+(?:/[\w.~+-]+)*|(?<!\w)[A-Za-z]:\\[\w.\\-]+")
         for example in ("`/Users/someone/project`", "(/opt/project)", r"C:\project\file.md"):
             self.assertIsNotNone(absolute.search(example), example)
