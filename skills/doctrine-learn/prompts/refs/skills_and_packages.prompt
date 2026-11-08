@@ -52,6 +52,7 @@ Minimal entrypoint:"""
     "Use the [Checklist](references/checklist.md) before shipping layout work."
 """
         "See `examples/95_skill_package_minimal/` for the smallest shipping shape and `examples/96_skill_package_references/` for the ordinary reference bundle."
+        "Use `skill package Deploy from \"prompts/skills/deploy/SKILL.md\"` to keep a Markdown skill as written; see `examples/204_markdown_backed_skills/`."
 
         section metadata_block: "Metadata Block"
             "`metadata:` accepts four scalar fields today:"

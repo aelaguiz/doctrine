@@ -1,0 +1,2 @@
+skill package Deploy from "prompts/skills/deploy/source.md"
+    install: "tools/deploy"

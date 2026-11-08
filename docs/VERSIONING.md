@@ -5,6 +5,9 @@ breaking-change guidance.
 
 Current Doctrine language version: 6.0
 
+Skill packages can read `SKILL.md` from a Markdown source. Existing package
+forms keep their output. This is an additive language change.
+
 Project builds can install skill packages with homes. `HOMES.contract.json`
 keeps its version 1 file list and adds a `hashes` map for files without a
 Doctrine header. Readers can ignore the new field.

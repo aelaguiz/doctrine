@@ -4,3 +4,5 @@
 *.jpeg binary
 *.jpg binary
 *.png binary
+
+examples/204_markdown_backed_skills/expected/crlf.md binary

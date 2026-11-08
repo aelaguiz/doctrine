@@ -466,6 +466,14 @@ where readers open the file. An agent or workflow can land in many homes,
 so Doctrine moves its links from the source instead. The source and output
 cannot be the same file (`E656`). See [example 202](../examples/202_markdown_backed_files).
 
+A skill package can use `skill package Deploy from "prompts/skills/deploy/SKILL.md"`.
+The file needs `name` and `description` in YAML frontmatter. Its body has
+the same keyed sections as other Markdown sources. Doctrine copies the file as
+written and bundles the other files beside `SKILL.prompt`. A project build
+adds its header after the frontmatter. An optional block can set `install:`
+and other package items, but not body text or `metadata:`. See
+[example 204](../examples/204_markdown_backed_skills).
+
 ## Workflows
 
 `workflow` is Doctrine's reusable instruction surface.

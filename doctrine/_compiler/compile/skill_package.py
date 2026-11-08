@@ -114,6 +114,8 @@ class CompileSkillPackageMixin:
         for bundled_path in source_files:
             if bundled_path == source_path:
                 continue
+            if decl.markdown_path and bundled_path.resolve() == (self.session.project_config.config_dir / decl.markdown_path).resolve():
+                continue
             if bundled_path.suffix == ".prompt":
                 if self._is_skill_package_bundled_agent_prompt(
                     bundled_path,
@@ -516,7 +518,7 @@ class CompileSkillPackageMixin:
                 root = CompiledSection(
                     title=decl.title,
                     body=self._compile_record_support_items(
-                        decl.items,
+                        () if decl.markdown_path else decl.items,
                         unit=unit,
                         owner_label=f"skill package {decl.name}",
                         surface_label="skill package prose",
@@ -540,4 +542,5 @@ class CompileSkillPackageMixin:
             root=root,
             contract=host_context.compiled_contract(),
             files=(*emitted_docs, *bundled_files),
+            markdown_text=decl.markdown_text,
         )

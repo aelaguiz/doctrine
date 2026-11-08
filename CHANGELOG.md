@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- Skill packages can take their `SKILL.md` from a Markdown file and keep its bytes.
+
 - Project builds can install skills with homes. The homes contract adds hashes
   for files without a Doctrine header so builds and checks catch hand edits.
 

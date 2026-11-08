@@ -4,6 +4,8 @@ import re
 import unicodedata
 from dataclasses import replace
 
+import yaml
+
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._model.core import role_text
@@ -98,6 +100,18 @@ def markdown_head(path, name, display_path, *, source_path=None, source_span=Non
     return lines, title if title is not None else name, 2 if title is not None else 1
 
 
+def skill_frontmatter_end(text):
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---" or lines[0] == "---":
+        return None
+    offset = len(lines[0])
+    for line in lines[1:]:
+        offset += len(line)
+        if line.rstrip("\r\n") == "---":
+            return offset
+    return None
+
+
 def read_markdown(declaration, *, source_path, project_path, prompt_root):
     from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 
@@ -117,15 +131,46 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
             raise error("E652", "Invalid Markdown source",
                         f"`{declaration.markdown_path}` is not UTF-8. Save it as UTF-8.") from None
 
-    lines, title, start = markdown_head(
-        path, declaration.name, declaration.markdown_path,
-        source_path=source_path, source_span=declaration.source_span,
-    )
+    skill_text = None
+    skill_metadata = None
+    if isinstance(declaration, model.SkillPackageDecl):
+        if not path.is_file():
+            raise error("E652", "Missing Markdown source",
+                        f"`{declaration.name}` reads `{declaration.markdown_path}`, which does not exist.")
+        try:
+            skill_text = path.read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            raise error("E652", "Invalid Markdown source",
+                        f"`{declaration.markdown_path}` is not UTF-8. Save it as UTF-8.") from None
+        end = skill_frontmatter_end(skill_text)
+        if end is None:
+            raise error("E657", "Invalid skill frontmatter",
+                        f"`{declaration.markdown_path}` needs frontmatter with opening and closing `---` lines.")
+        header_lines = skill_text[:end].splitlines()
+        try:
+            metadata = yaml.safe_load("\n".join(header_lines[1:-1]))
+        except yaml.YAMLError as exc:
+            raise error("E657", "Invalid skill frontmatter",
+                        f"`{declaration.markdown_path}` has invalid YAML: {exc}") from None
+        if not isinstance(metadata, dict):
+            metadata = {}
+        for key in ("name", "description"):
+            if not isinstance(metadata.get(key), str) or not metadata[key].strip():
+                raise error("E657", "Invalid skill frontmatter",
+                            f"`{declaration.markdown_path}` needs a non-empty `{key}` in its frontmatter.")
+        skill_metadata = model.SkillPackageMetadata(name=metadata["name"], description=metadata["description"])
+        lines = skill_text[end:].splitlines()
+        title, start = declaration.name, len(header_lines) + 1
+    else:
+        lines, title, start = markdown_head(
+            path, declaration.name, declaration.markdown_path,
+            source_path=source_path, source_span=declaration.source_span,
+        )
 
     def literal(text):
         return model.MarkdownProse(text, path)
 
-    if start == 2:
+    if start == 2 and skill_text is None:
         title = literal(title)
     root = {"lines": [], "children": [], "keys": {}}
     stack = [root]
@@ -168,6 +213,13 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
     items = body(root)
     preamble = tuple(item for item in items if isinstance(item, str))
     sections = tuple(item for item in items if not isinstance(item, str))
+    if isinstance(declaration, model.SkillPackageDecl):
+        def readable_skill(section):
+            return model.ReadableBlock("section", section.key, section.title,
+                tuple(readable_skill(item) if isinstance(item, model.LocalSection) else item
+                      for item in section.items), source_span=section.source_span)
+        return replace(declaration, metadata=skill_metadata, markdown_text=skill_text,
+                       items=(*preamble, *(readable_skill(section) for section in sections)))
     if isinstance(declaration, model.FileDecl):
         def readable(section):
             return model.ReadableBlock("section", section.key, section.title,

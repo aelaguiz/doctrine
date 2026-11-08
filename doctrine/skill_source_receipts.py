@@ -338,6 +338,9 @@ def _collect_source_inputs(
     for path in _session_prompt_paths(session):
         source_paths[path.resolve()] = "prompt"
 
+    if package_decl.markdown_path:
+        source_paths[(target.project_config.config_dir / package_decl.markdown_path).resolve()] = "package_file"
+
     for tracked in package_decl.source.tracked_paths:
         for path in _resolve_tracked_paths(
             tracked,

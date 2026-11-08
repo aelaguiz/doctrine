@@ -395,6 +395,7 @@ class CompiledSkillPackage:
     root: CompiledSection
     contract: CompiledSkillPackageContract
     files: tuple["CompiledSkillPackageFile", ...] = ()
+    markdown_text: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

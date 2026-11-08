@@ -1,0 +1,118 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "standalone emit keeps the source bytes and bundles its other file"
+status = "active"
+kind = "build_contract"
+prompt = "prompts/SKILL.prompt"
+build_target = "example_204_markdown_backed_skills"
+
+[[cases]]
+name = "project build keeps the body bytes and installs the other file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "tools/deploy/SKILL.md" = "expected/SKILL.md", "tools/deploy/notes.txt" = "project/prompts/skills/deploy/notes.txt" }
+absent_files = ["tools/deploy/source.md", ".skills/deploy/SKILL.md"]
+
+[[cases]]
+name = "project build preserves CRLF frontmatter and body"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/source.md" = "---\r\nname: deploy\r\ndescription: Send a checked change.\r\n---\r\n\r\n## Checks\r\n\r\nKeep the old version ready.\r\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "tools/deploy/SKILL.md" = "expected/crlf.md" }
+
+[[cases]]
+name = "where finds the sentence in its Markdown source"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "Keep the old version ready."]
+expected_exit = 0
+stdout_contains = ["skill package Deploy", "prompts/skills/deploy/source.md:12"]
+
+[[cases]]
+name = "frontmatter needs a description"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/source.md" = "---\nname: deploy\n---\n\n## Checks\n\nCheck.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E657", "description"]
+
+[[cases]]
+name = "frontmatter needs a name"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/source.md" = "---\ndescription: Send a checked change.\n---\n\nCheck.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E657", "name"]
+
+[[cases]]
+name = "metadata in the package block fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/SKILL.prompt" = "skill package Deploy from \"prompts/skills/deploy/source.md\"\n    metadata:\n        name: \"deploy\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["metadata", "frontmatter"]
+
+[[cases]]
+name = "missing Markdown source is E652"
+status = "active"
+kind = "cli_contract"
+project = "project"
+remove = ["prompts/skills/deploy/source.md"]
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E652", "source.md"]
+
+[[cases]]
+name = "duplicate section keys fail loud"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/source.md" = "---\nname: deploy\ndescription: Send a checked change.\n---\n\n## Checks\n\nOne.\n\n## Checks\n\nTwo.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E653", "checks"]
+
+[[cases]]
+name = "revision build reads a Markdown source outside the prompt folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/SKILL.prompt" = "skill package Deploy from \"sources/deploy.md\"\n    install: \"tools/deploy\"\n" }
+args = ["build", "--rev", "HEAD", "--with", "prompts/skills/deploy/SKILL.prompt", "."]
+expected_exit = 0
+expected_files = { "tools/deploy/SKILL.md" = "expected/SKILL.md" }
+
+[[cases]]
+name = "source cannot be its own project output"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/SKILL.prompt" = "skill package Deploy from \"prompts/skills/deploy/SKILL.md\"\n    install: \"prompts/skills/deploy\"\n", "prompts/skills/deploy/SKILL.md" = "---\nname: deploy\ndescription: Send a change.\n---\nText.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E656", "reads and writes"]
+
+[[cases]]
+name = "invalid frontmatter fails loud"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/deploy/source.md" = "---\nname: [\ndescription: Send a change.\n---\nText.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E657", "invalid YAML"]
