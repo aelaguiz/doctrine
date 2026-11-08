@@ -43,7 +43,9 @@ def source_hash(declaration, base):
                 for field in fields(value) if field.compare},
             }
             if result.get("markdown_path"):
-                result["markdown_content"] = (base / result["markdown_path"]).read_text()
+                path = base / result["markdown_path"]
+                result["markdown_content"] = (path.read_bytes().decode("utf-8")
+                                              if isinstance(value, model.FileDecl) else path.read_text())
             return result
         if isinstance(value, tuple):
             return [data(item) for item in value if not isinstance(item, model.SourceSpan)]

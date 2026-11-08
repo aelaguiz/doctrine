@@ -71,6 +71,8 @@ Markdown-backed declarations and `doctrine import` accept runtime import lines.
 `E654` is retired.
 
 Shared `file` declarations can link to a kept file or write a document body.
+A shared file can also take its body from a Markdown source. Its relative
+links start at the output path. Source and output cannot be the same file.
 A `file` without a body can also link to a folder, but cannot load it.
 Load JSON adds `on_demand`; diff JSON with `--base-tree` adds `shared_files`.
 Builds and checks report `E636` for missing destinations in compiled files.

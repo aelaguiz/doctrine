@@ -52,14 +52,14 @@ def near_copy_warnings(session):
             name = ".".join((*unit.module_parts, declaration.name))
             texts.append((name, path, token.line, ast.literal_eval(str(token)), False))
         for declaration in declarations:
-            if (isinstance(declaration, (model.Agent, model.WorkflowDecl))
+            if (isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl))
                     and declaration.markdown_path):
                 source = base / declaration.markdown_path
                 if source.resolve() not in from_files:
                     from_files.add(source.resolve())
                     name = ".".join((*unit.module_parts, declaration.name))
                     texts.append((name, source, 1, source.read_text(), False))
-            if (isinstance(declaration, model.FileDecl) and declaration.body is None
+            if (isinstance(declaration, model.FileDecl) and declaration.body is None and not declaration.markdown_path
                     and (source := project_file_path(session.project_config, declaration.path)).is_file()):
                 name = ".".join((*unit.module_parts, declaration.name))
                 texts.append((name, source, 1, source.read_text(errors="replace"), True))

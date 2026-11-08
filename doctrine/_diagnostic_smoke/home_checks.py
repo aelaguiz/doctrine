@@ -36,6 +36,7 @@ HOME_DIAGNOSTICS = {
     ),
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E636": ('team T: "Team"\n    home: "t"\n    role: "[Missing](missing.md)"\n', ""),
+    "E656": ('file Guide from "guide.md"\n    path: "guide.md"\nteam T: "Team"\n    home: "t"\n    role: "Read {{Guide}}."\n', ""),
     "E637": ('team T: "Team"\n    home: "t"\n    role: "Read {{details:missing}}."\n', ""),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E650": ('person P: "Person"\nquote Q: "Words"\n    by: P\n    on: "bad"\nteam T: "Team"\n    home: "t"\n    role: "{{Q}}"\n', ""),
@@ -116,7 +117,9 @@ def run_home_checks():
                 + settings
             )
             args = ["check"]
-            if code == "E634":
+            if code == "E656":
+                (root / "guide.md").write_text("# Guide\n")
+            elif code == "E634":
                 (root / "t").mkdir()
                 (root / "t/AGENTS.md").write_text("Hand-written.\n")
                 args = ["build"]

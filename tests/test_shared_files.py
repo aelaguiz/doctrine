@@ -15,6 +15,52 @@ from doctrine.emit_flow import emit_target_flow
 
 
 class SharedFilesTests(HomeProject, unittest.TestCase):
+    def test_markdown_file_source_and_output_use_real_paths(self):
+        root = self.project('''file Guide from "guide.md"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        source = root / "guide.md"
+        source.write_text("# Guide\n")
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "build"'))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(source.read_text(), "# Guide\n")
+        self.assertTrue((root / "build/guide.md").is_file())
+
+        (root / "alias.md").symlink_to(source)
+        prompt = root / "prompts/AGENTS.prompt"
+        prompt.write_text(prompt.read_text().replace('path: "guide.md"', 'path: "alias.md"'))
+        config.write_text(config.read_text().replace('output_dir = "build"', 'output_dir = "."'))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("E656", error)
+        self.assertEqual(source.read_text(), "# Guide\n")
+
+    def test_markdown_file_keeps_bytes_and_rejects_invalid_utf8(self):
+        root = self.project('''file Guide from "prompts/guide.md"
+    path: "shared/guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide:checks}}."
+''')
+        source = root / "prompts/guide.md"
+        original = b"# Guide\r\n\r\n## Checks\r\n  Keep spaces.\r\n\r\nNo final newline"
+        source.write_bytes(original)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        built = (root / "shared/guide.md").read_bytes()
+        self.assertEqual(built.split(b"\n\n", 1)[1], original)
+        source.write_bytes(b"# Guide\n\xff")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 1)
+        self.assertIn("E652", error)
+        self.assertIn("prompts/guide.md", error)
+        self.assertEqual((root / "shared/guide.md").read_bytes(), built)
+
     def test_title_of_file_with_body_rejects_folder(self):
         root = self.project('''file Library: "Library"
     path: "library"
