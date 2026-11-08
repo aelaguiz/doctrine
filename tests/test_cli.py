@@ -790,6 +790,55 @@ rule R: "Rule"
         self.assertIn("new.md", error)
         self.assertNotIn("notes.md", error)
 
+    def skill_project(self):
+        root = self.project('team T: "Team"\n    home: "t"\n    role: "Help."\n',
+                            settings='skills = { source = "prompts/skills", install = ".claude/skills" }\n')
+        skill = root / "prompts/skills/tool"
+        (skill / "scripts").mkdir(parents=True)
+        (skill / "SKILL.prompt").write_text('skill package Tool: "Tool"\n    metadata:\n        name: "tool"\n'
+                                            '        description: "Run the tool."\n    "Run the tool."\n')
+        (skill / "scripts/run").write_text("#!/bin/sh\necho ok\n")
+        (skill / "scripts/run").chmod(0o755)
+        (skill / "notes.md").write_text("# Notes\n\nKeep it short.\n")
+        return root
+
+    def test_project_skill_keeps_a_bundled_file_executable(self):
+        root = self.skill_project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        run = root / ".claude/skills/tool/scripts/run"
+        self.assertTrue(run.stat().st_mode & 0o100)
+        self.assertFalse((root / ".claude/skills/tool/notes.md").stat().st_mode & 0o111)
+        self.assertEqual(self.cli(root, "check", ".")[0], 0)
+        run.chmod(0o644)
+        code, _, error = self.cli(root, "check", ".")
+        self.assertIn("stale .claude/skills/tool/scripts/run", error)
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.assertTrue(run.stat().st_mode & 0o100)
+        self.git_project(root)
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out)
+        self.assertEqual(self.cli(root, "build", ".", "--rev", "HEAD", "--out", out)[0], 0)
+        self.assertTrue((Path(out) / ".claude/skills/tool/scripts/run").stat().st_mode & 0o100)
+
+    def test_check_reads_hashes_from_the_committed_contract(self):
+        root = self.skill_project()
+        self.assertEqual(self.cli(root, "build", ".")[0], 0)
+        self.git_project(root)
+        record = root / "HOMES.contract.json"
+        contract = json.loads(record.read_text())
+        contract["hashes"] = {}
+        record.write_text(json.dumps(contract))
+        for args in (("check", "."), ("check", "--rev", "HEAD")):
+            code, _, error = self.cli(root, *args)
+            self.assertNotIn("edited", error)
+            self.assertNotIn("notes.md", error)
+        (root / "prompts/skills/tool/notes.md").write_text("# Notes\n\nKeep it shorter.\n")
+        code, _, error = self.cli(root, "check", ".")
+        self.assertIn("stale .claude/skills/tool/notes.md", error)
+        (root / ".claude/skills/tool/notes.md").write_text("# Notes\n\nA hand edit.\n")
+        code, _, error = self.cli(root, "check", ".")
+        self.assertIn("edited .claude/skills/tool/notes.md", error)
+
     def test_rev_reads_relative_kept_file_from_revision(self):
         root = self.project('''file Guide: "Guide"
     path: "guide.md"

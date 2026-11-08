@@ -139,7 +139,7 @@ class CompileSkillPackageMixin:
             ordinary_files.append(bundled_path)
 
         compiled_files.extend(
-            CompiledSkillPackageFile(path=file.path, content=file.content)
+            CompiledSkillPackageFile(path=file.path, content=file.content, executable=file.executable)
             for file in bundle_ordinary_package_files(
                 source_root,
                 ordinary_files,

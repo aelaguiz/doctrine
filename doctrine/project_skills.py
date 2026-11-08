@@ -13,7 +13,7 @@ from doctrine.emit_skill import (
     render_skill_package_markdown,
 )
 from doctrine.parser import parse_file
-from doctrine.shared_files import with_header
+from doctrine.shared_files import Executable, with_header
 
 
 def project_path(root, value, label):
@@ -69,7 +69,8 @@ def compile_project_skills(target, files, passages):
         outputs = {"SKILL.md": output.encode()}
         if _should_emit_skill_package_contract_json(compiled):
             outputs["SKILL.contract.json"] = render_skill_package_contract_json(compiled).encode()
-        outputs.update({item.path: item.content for item in compiled.files})
+        outputs.update({item.path: Executable(item.content) if item.executable else item.content
+                        for item in compiled.files})
         for name, content in outputs.items():
             path = dest / name
             if not path.resolve().is_relative_to(root):

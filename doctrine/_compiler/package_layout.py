@@ -31,6 +31,7 @@ GENERATED_PACKAGE_FILE_NAMES = frozenset({".DS_Store", "Thumbs.db"})
 class BundledPackageFile:
     path: str
     content: bytes
+    executable: bool = False
 
 
 @dataclass(slots=True)
@@ -214,7 +215,8 @@ def bundle_ordinary_package_files(
                 hints=("Keep bundled files readable during skill-package compilation.",),
             ) from exc
         bundled_files.append(
-            BundledPackageFile(path=normalized_path, content=content)
+            BundledPackageFile(path=normalized_path, content=content,
+                               executable=bool(source_path.stat().st_mode & 0o100))
         )
     return tuple(bundled_files)
 
