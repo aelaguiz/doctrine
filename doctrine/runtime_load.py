@@ -202,7 +202,7 @@ def home_loads(target, homes, files, settings, selected):
             loaded = list(setting["external"])
             parts = {}
             on_demand = {}
-            root = target.project_config.config_dir.resolve()
+            root = target.project_config.config_dir
             home_dir = target.output_dir / home
             by_folder = {(target.output_dir / level): (level, item)
                          for level, item in levels}
