@@ -21,7 +21,7 @@ judgment-first authoring review.
 
 `doctrine build` and `doctrine check` fail an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.
-`check --json` keeps the plain finding text in each warning's `text` field.
+`check --json` and `build --json` keep the plain finding text in each warning's `text` field. Both print the same report (`ok`, `errors`, `warnings` and `paths`), and `build --json` adds what it wrote, left unchanged or removed, so a script can build once and read the warnings from the same run.
 Examples 183 and 184 prove these cases.
 
 ## Project Warnings

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Build report
+
+- `build --json` prints the same report as `check --json`, with its errors and
+  warnings, plus what it wrote, left unchanged or removed. A failed check exits 1
+  without writing, as before.
+
 - Shared files can take their body from a Markdown page, with checked section links and the page kept as written.
 
 ### Rosters

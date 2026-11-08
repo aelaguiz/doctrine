@@ -134,35 +134,52 @@ def check_homes(target, session, selectors):
     return homes, files, selected, whole, findings, warnings, failed
 
 
+def report(ok, homes, selected, findings, warnings, paths=()):
+    """The report `check --json` and `build --json` share."""
+    return {"format_version": 1, "ok": ok, "homes": len(selected) if homes else 0,
+            "errors": [{"code": finding.split()[0], "text": finding} for finding in findings],
+            "warnings": warnings, "paths": list(paths)}
+
+
 def build(args):
-    with resolve_target(args) as (target, session, live_root):
-        if target is None:
-            return 2
-        homes, files, selected, whole, findings, warnings, failed = check_homes(
-            target, session, args.selectors
-        )
-        for finding in (*findings, *(warning["text"] for warning in warnings)):
-            print(finding, file=sys.stderr)
-        if failed:
-            return 1
-        output = (Path(args.out).resolve() if args.out else
-                  live_root / target.output_dir.relative_to(target.project_config.config_dir)
-                  if live_root else None)
-        result = build_homes(target, homes, files, selected=selected, whole=whole,
-                             output_dir=output, force=args.force)
-        if args.json:
-            print(json.dumps(result))
-        else:
-            count = sum(any(path.endswith(".md") for path in homes[home]["files"])
-                        for home in selected)
-            changed = len(result["written"]) + len(result["removed"])
-            print(f"built {count} {'home' if count == 1 else 'homes'}, "
-                  f"{changed} {'file' if changed == 1 else 'files'} changed")
-        return 0
+    homes, selected, findings, warnings = {}, (), [], []
+    try:
+        with resolve_target(args) as (target, session, live_root):
+            if target is None:
+                return 2
+            homes, files, selected, whole, findings, warnings, failed = check_homes(
+                target, session, args.selectors
+            )
+            if not args.json:
+                for finding in (*findings, *(warning["text"] for warning in warnings)):
+                    print(finding, file=sys.stderr)
+            if failed:
+                if args.json:
+                    print(json.dumps(report(False, homes, selected, findings, warnings)))
+                return 1
+            output = (Path(args.out).resolve() if args.out else
+                      live_root / target.output_dir.relative_to(target.project_config.config_dir)
+                      if live_root else None)
+            result = build_homes(target, homes, files, selected=selected, whole=whole,
+                                 output_dir=output, force=args.force)
+    except DoctrineError as exc:
+        if not args.json:
+            raise
+        print(json.dumps(report(False, homes, selected, [*findings, str(exc)], warnings)))
+        return 1
+    if args.json:
+        print(json.dumps({**report(True, homes, selected, findings, warnings), **result}))
+    else:
+        count = sum(any(path.endswith(".md") for path in homes[home]["files"])
+                    for home in selected)
+        changed = len(result["written"]) + len(result["removed"])
+        print(f"built {count} {'home' if count == 1 else 'homes'}, "
+              f"{changed} {'file' if changed == 1 else 'files'} changed")
+    return 0
 
 
 def check(args):
-    homes, warnings, paths = {}, [], []
+    homes, selected, warnings, paths = {}, (), [], []
     try:
         with resolve_target(args) as (target, session, live_root):
             if target is None:
@@ -181,10 +198,7 @@ def check(args):
             raise
         findings, ok = [str(exc)], False
     if args.json:
-        print(json.dumps({"format_version": 1, "ok": ok, "homes": len(selected) if homes else 0,
-                          "errors": [{"code": finding.split()[0], "text": finding}
-                                     for finding in findings],
-                          "warnings": warnings, "paths": paths}))
+        print(json.dumps(report(ok, homes, selected, findings, warnings, paths)))
     else:
         for finding in (*findings, *(warning["text"] for warning in warnings)):
             print(finding, file=sys.stderr)
