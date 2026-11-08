@@ -11,12 +11,12 @@ expected_exit = 0
 setup = [["build", "."]]
 expected_stdout_lines = [
   "Home               Runtime  Load   Limit  Headroom",
-  "pods/growth/big    codex    1,202  800    -402",
-  "pods/growth/big    claude   1,302  1,000  -302",
-  "pods/growth/small  codex    511    800    289",
-  "pods/growth/small  claude   611    1,000  389",
-  "pods/growth        codex    280    800    520",
-  "pods/growth        claude   380    1,000  620",
+  "pods/growth/big    codex    1,205  800    -405",
+  "pods/growth/big    claude   1,305  1,000  -305",
+  "pods/growth/small  codex    514    800    286",
+  "pods/growth/small  claude   614    1,000  386",
+  "pods/growth        codex    283    800    517",
+  "pods/growth        claude   383    1,000  617",
 ]
 
 [[cases]]
@@ -28,21 +28,21 @@ args = ["load", "pods/growth/small"]
 expected_exit = 0
 setup = [["build", "."]]
 expected_stdout_lines = [
-  "pods/growth/small on claude: 611 of 1,000 characters, 389 left",
+  "pods/growth/small on claude: 614 of 1,000 characters, 386 left",
   "",
   "Files:",
   "  not-here.md                  100  reserved",
-  "  pods/growth/AGENTS.md        280",
+  "  pods/growth/AGENTS.md        283",
   "  pods/growth/small/AGENTS.md  231",
   "",
   "Biggest parts:",
   "  GrowthPod: 10",
   "  GrowthPod.small: 6",
   "",
-  "pods/growth/small on codex: 511 of 800 bytes, 289 left",
+  "pods/growth/small on codex: 514 of 800 bytes, 286 left",
   "",
   "Files:",
-  "  pods/growth/AGENTS.md        280",
+  "  pods/growth/AGENTS.md        283",
   "  pods/growth/small/AGENTS.md  231",
   "",
   "Biggest parts:",
@@ -156,8 +156,8 @@ args = ["check"]
 expected_exit = 0
 setup = [["build", "."]]
 stderr_contains = [
-  "W306 over budget: pods/growth/big loads 1,302 of 1,000 on claude.",
-  "W306 over budget: pods/growth/big loads 1,202 of 800 on codex.",
+  "W306 over budget: pods/growth/big loads 1,305 of 1,000 on claude.",
+  "W306 over budget: pods/growth/big loads 1,205 of 800 on codex.",
 ]
 
 [[cases]]

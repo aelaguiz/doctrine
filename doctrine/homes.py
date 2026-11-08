@@ -59,8 +59,7 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, context):
         }
     if plan is not None or text.strip():
         if isinstance(owner, model.Team) and home != ".":
-            title = bind_home(context, owner.title, owner, unit=unit)
-            text = f"This file loads for every session started under `{home}/`. If yours started there, you are a member of {title}. If not, it only describes them.\n\n" + text
+            text = f"This file loads for every session started under `{home}/`. If yours started there, it is part of who you are. If not, it only describes the agents there.\n\n" + text
         elif isinstance(owner, model.Member):
             _, team = find_home_team(context, owner, unit=unit)
             team_title = bind_home(context, team.title, owner, unit=unit)

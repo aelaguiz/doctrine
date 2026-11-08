@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Team homes
+
+- The line that opens a team's folder file no longer uses the team's title. It
+  now reads "If yours started there, it is part of who you are. If not, it only
+  describes the agents there." A title such as a company name made the old line
+  ("you are a member of ...") read wrong.
+
 ### Role paragraphs
 
 - Children and members can add role paragraphs and place inherited ones in order.
