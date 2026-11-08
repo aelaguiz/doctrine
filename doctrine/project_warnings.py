@@ -17,6 +17,7 @@ from doctrine._compiler.provenance import collect_quotes
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
+from doctrine.passages import place_passages
 from doctrine.runtime_load import loaded_levels
 from doctrine.project_config import project_file_path
 
@@ -24,6 +25,8 @@ from doctrine.project_config import project_file_path
 def near_copy_warnings(session):
     paragraphs, unused, from_files = [], {}, set()
     base = session.project_config.config_dir
+    erased = {name: re.sub(r"[^\r\n]", "", text)
+              for name, text in (session.passages or {}).items()}
     units = {unit.prompt_file.source_path: unit for unit in session.units()}
     for path, unit in units.items():
         declarations = [
@@ -49,20 +52,39 @@ def near_copy_warnings(session):
                 declaration for declaration in reversed(declarations)
                 if declaration.source_span.line <= token.line
             )
+            if isinstance(declaration, model.PassageDecl) and declaration.markdown_path is not None:
+                continue
             name = ".".join((*unit.module_parts, declaration.name))
             texts.append((name, path, token.line, ast.literal_eval(str(token)), False))
         for declaration in declarations:
+            if isinstance(declaration, model.PassageDecl) and declaration.markdown_path:
+                source = base / declaration.markdown_path
+                texts.append((declaration.name, source, 1, source.read_text(), False))
             if (isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl))
                     and declaration.markdown_path):
                 source = base / declaration.markdown_path
                 if source.resolve() not in from_files:
                     from_files.add(source.resolve())
                     name = ".".join((*unit.module_parts, declaration.name))
-                    texts.append((name, source, 1, source.read_text(), False))
+                    text = source.read_text()
+                    if isinstance(declaration, model.FileDecl) and session.passages is not None:
+                        text = place_passages(text, erased, path=source)
+                    texts.append((name, source, 1, text, False))
             if (isinstance(declaration, model.FileDecl) and declaration.body is None and not declaration.markdown_path
                     and (source := project_file_path(session.project_config, declaration.path)).is_file()):
                 name = ".".join((*unit.module_parts, declaration.name))
                 texts.append((name, source, 1, source.read_text(errors="replace"), True))
+        for entry, name, markdown, skill_session in getattr(session, "project_skill_sources", ()):
+            if path != session.root_flow.entrypoint_path:
+                continue
+            for skill_unit in skill_session.units():
+                for skill in skill_unit.declarations.skill_packages_by_name.values():
+                    if skill.markdown_path:
+                        source = base / skill.markdown_path
+                        if source.resolve() not in from_files:
+                            from_files.add(source.resolve())
+                            text = place_passages(source.read_text(), erased, path=source)
+                            texts.append((name, source, 1, text, False))
         for name, source, line, text, kept in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):

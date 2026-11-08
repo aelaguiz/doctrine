@@ -112,7 +112,7 @@ def skill_frontmatter_end(text):
     return None
 
 
-def read_markdown(declaration, *, source_path, project_path, prompt_root):
+def read_markdown(declaration, *, source_path, project_path, prompt_root, passages=None):
     from doctrine._compiler.constants import _RESERVED_AGENT_FIELD_KEYS
 
     base = project_path.parent if project_path is not None else prompt_root.parent
@@ -142,6 +142,9 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
         except UnicodeDecodeError:
             raise error("E652", "Invalid Markdown source",
                         f"`{declaration.markdown_path}` is not UTF-8. Save it as UTF-8.") from None
+        if passages is not None:
+            from doctrine.passages import place_passages
+            skill_text = place_passages(skill_text, passages, path=path)
         end = skill_frontmatter_end(skill_text)
         if end is None:
             raise error("E657", "Invalid skill frontmatter",
@@ -166,6 +169,13 @@ def read_markdown(declaration, *, source_path, project_path, prompt_root):
             path, declaration.name, declaration.markdown_path,
             source_path=source_path, source_span=declaration.source_span,
         )
+        if isinstance(declaration, model.FileDecl) and passages is not None:
+            from doctrine.passages import place_passages
+            text = place_passages(path.read_bytes().decode("utf-8"), passages, path=path)
+            lines = text.splitlines()
+            title = lines.pop(0)[2:] if lines and lines[0].startswith("# ") else None
+            start = 2 if title is not None else 1
+            title = title if title is not None else declaration.name
 
     def literal(text):
         return model.MarkdownProse(text, path)

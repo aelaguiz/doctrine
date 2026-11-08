@@ -358,7 +358,10 @@ shows the canonical formatted shape for one shipped compile error.
 | `E655` | File ref can't go here | A load ref is not at the end of its line, its path has whitespace, it names a folder, or a skill package uses a file ref. |
 | `E656` | Markdown source is the output | A Markdown-backed file or skill reads and writes the same file. Choose a different source or output path. |
 | `E657` | Invalid skill frontmatter | A Markdown-backed skill needs YAML frontmatter with a non-empty `name` and `description`. |
+| `E658` | Unknown passage | A marker names no passage in the homes source. |
+| `E659` | Passage needs a project build | A standalone skill emit cannot place a passage. Build it as a project skill. |
 | `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
+| `E661` | Duplicate passage | Two passages in the homes source have the same name. |
 
 ## Homes And Load
 

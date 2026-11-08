@@ -122,6 +122,7 @@ agent PodQa[QaCraft]: "Pod QA"
 
     section shared_files: "Share A File"
         "A file without a body stays on disk, so agents can add notes to it. A file with a document body is written by the build. This is from `examples/197_shared_files`."
+        "Declare a passage in the homes source and put its marker alone on a line to place it in Markdown-backed skills and shared files. See `examples/205_passages`."
         "A shared file can also take its body from a Markdown page: `file Guide from \"prompts/guide.md\"` with a `path:` line. Write its relative links from the output path."
         "A `file` with no body can name a folder, to link a library or an index, but a folder can't be loaded."
         code:

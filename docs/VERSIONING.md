@@ -5,6 +5,10 @@ breaking-change guidance.
 
 Current Doctrine language version: 6.0
 
+Projects can place declared passages in Markdown-backed skills and shared
+files. Exact marker lines now resolve during a project build. Unknown names
+fail. Other Markdown stays as written.
+
 Skill packages can read `SKILL.md` from a Markdown source. Existing package
 forms keep their output. This is an additive language change.
 

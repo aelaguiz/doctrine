@@ -757,9 +757,12 @@ def index_unit(
     skill_graphs_by_name: dict[str, model.SkillGraphDecl] = {}
 
     for declaration in prompt_file.declarations:
+        if isinstance(declaration, model.PassageDecl):
+            continue
         if isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl, model.SkillPackageDecl)) and declaration.markdown_path:
             declaration = read_markdown(declaration, source_path=prompt_file.source_path,
-                project_path=session.project_config.path, prompt_root=prompt_root)
+                project_path=session.project_config.path, prompt_root=prompt_root,
+                passages=session.passages)
         if isinstance(declaration, model.Quote):
             _register_decl(quotes_by_name, declaration, declaration.name, module_parts,
                            source_path=prompt_file.source_path)

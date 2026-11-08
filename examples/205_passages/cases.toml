@@ -1,0 +1,129 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "one passage fills two skills and a shared file, exactly as the originals"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { ".skills/review/SKILL.md" = "expected/review.md", ".skills/write/SKILL.md" = "expected/write.md", "guides/guide.md" = "expected/guide.md" }
+
+[[cases]]
+name = "a Markdown file supplies a passage and a partial marker stays verbatim"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "guides/guide.md" = "expected/guide.md" }
+
+[[cases]]
+name = "an unknown passage fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/pages/guide.md" = "{{passage:Missing}}\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E658", "Missing"]
+
+[[cases]]
+name = "standalone skill emission rejects a marker"
+status = "active"
+kind = "cli_contract"
+project = "project"
+command = "emit_skill"
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"standalone\"\nentrypoint = \"prompts/skills/review/SKILL.prompt\"\noutput_dir = \"standalone\"\n" }
+args = ["--target", "standalone"]
+expected_exit = 1
+stderr_contains = ["E659", "Shared"]
+
+[[cases]]
+name = "where finds the words at their passage declaration"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "Read every change with care"]
+expected_exit = 0
+stdout_contains = ["passage Shared", "prompts/AGENTS.prompt:1"]
+
+[[cases]]
+name = "three placements do not make near copies"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+args = ["check", "--strict"]
+expected_exit = 0
+stderr_not_contains = ["W301"]
+
+[[cases]]
+name = "two handwritten copies cause a near copy warning"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/review/source.md" = "---\nname: review\ndescription: Review a change.\n---\n\nRead every change with care and test each part that a reader will meet today.\n", "prompts/skills/write/source.md" = "---\nname: write\ndescription: Write a change.\n---\n\nRead every change with care and test each part that a reader will meet today.\n" }
+args = ["check", "--strict"]
+expected_exit = 1
+stderr_contains = ["W301", "Review", "Write"]
+
+[[cases]]
+name = "a passage heading provides a shared file section key"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "passage Shared: \"## Checks\\n\\nRead the plan.\"\nfile Guide from \"prompts/pages/guide.md\"\n    path: \"guides/guide.md\"\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Read {{Guide:checks}}.\"\n", "prompts/pages/guide.md" = "# Guide\n\n{{passage:Shared}}\n" }
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = ["built"]
+
+[[cases]]
+name = "a duplicate passage fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "passage Same: \"One.\"\npassage Same: \"Two.\"\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Help.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E661", "Same"]
+
+[[cases]]
+name = "bundled files keep marker lines as written"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { ".skills/review/notes.md" = "expected/notes.md" }
+
+[[cases]]
+name = "a missing passage in a skill fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/review/source.md" = "---\nname: review\ndescription: Review a change.\n---\n\n{{passage:Missing}}\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E658", "Missing"]
+
+[[cases]]
+name = "a revision build reads a passage outside the prompt folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "passage Shared: \"Read every change with care and test each part that a reader will meet today.\"\npassage Extra from \"passages/extra.md\"\nfile Guide from \"prompts/pages/guide.md\"\n    path: \"guides/guide.md\"\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Help the reader.\"\n" }
+args = ["build", "--rev", "HEAD", "--with", "prompts/AGENTS.prompt", "."]
+expected_exit = 0
+expected_files = { "guides/guide.md" = "expected/guide.md" }
+
+[[cases]]
+name = "a passage declared in another source file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/shared/more.prompt" = "passage Next: \"Name the one thing the reader should do next, and the day it is due.\"\n", "prompts/pages/guide.md" = "# Guide\n\n{{passage:Next}}\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "guides/guide.md" = ["# Guide", "", "Name the one thing the reader should do next, and the day it is due."] }

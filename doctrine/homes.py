@@ -277,7 +277,7 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
             for child in links[path]:
                 if child in written and child not in data["shared_files"]:
                     data["shared_files"].append(child)
-    skill_files, session.project_skill_sources = compile_project_skills(target, files)
+    skill_files, session.project_skill_sources = compile_project_skills(target, files, session.passages or {})
     if whole:
         files.update(skill_files)
     session.project_skill_files = set(skill_files)

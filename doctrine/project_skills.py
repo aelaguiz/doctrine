@@ -24,7 +24,7 @@ def project_path(root, value, label):
     return path
 
 
-def compile_project_skills(target, files):
+def compile_project_skills(target, files, passages):
     if target.skills is None:
         return {}, []
     root = target.project_config.config_dir.resolve()
@@ -38,7 +38,8 @@ def compile_project_skills(target, files):
         if not entry.resolve().is_relative_to(root):
             raise compile_error(code="E521", summary="Skill source must stay within project root",
                                 detail=f"Skill source `{entry}` is outside the project.")
-        session = CompilationSession(parse_file(entry), project_config=target.project_config)
+        session = CompilationSession(parse_file(entry), project_config=target.project_config,
+                                     passages=passages)
         compiled = session.compile_skill_package()
         package = _target_skill_package_decl(session)
         dest = (project_path(root, package.install, "Skill install folder")

@@ -13,6 +13,7 @@ from doctrine.emit_skill import emit_target_skill
 from doctrine.emit_skill_graph import emit_target_skill_graph
 from doctrine.homes import compile_homes
 from doctrine.parser import parse_file
+from doctrine.home_commands import homes_session
 from doctrine.renderer import render_markdown
 
 
@@ -46,8 +47,7 @@ class EmittedFileRefsTests(unittest.TestCase):
                 try:
                     targets = load_emit_targets(config)
                     for target in targets.values():
-                        session = CompilationSession(parse_file(target.entrypoint), project_config=target.project_config)
-                        _, files, _, _ = compile_homes(target, session=session)
+                        _, files, _, _ = compile_homes(target, session=homes_session(target))
                         for path, content in files.items():
                             if isinstance(content, bytes):
                                 self.assert_no_internal_links(content, path)
