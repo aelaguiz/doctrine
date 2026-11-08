@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import replace
 
 from doctrine import model
@@ -14,7 +15,13 @@ def heading_key(title):
 
 
 def heading_anchor(text, seen):
-    anchor = "".join(c for c in text.lower() if c.isalnum() or c in " -_").replace(" ", "-")
+    parts = re.split(r"(?<![\\`])(`+)(?!`)(.*?)(?<!`)\1(?!`)", text.strip(), flags=re.S)
+    for index in range(0, len(parts), 3):
+        parts[index] = re.sub(r"!?\[((?:\\.|[^\]\\])*)\]\((?:\\.|[^()]|\([^()]*\))*\)", r"\1", parts[index])
+        parts[index] = re.sub(r"<[^>]*>", "", parts[index])
+    text = "".join(part for index, part in enumerate(parts) if index % 3 != 1).lower()
+    text = re.sub(r"(?<!\w)_+|_+(?!\w)", "", text.replace("*", ""))
+    anchor = "".join(c for c in text if unicodedata.category(c)[0] in "LMN" or c in " -_").replace(" ", "-")
     seen[anchor] = seen.get(anchor, 0) + 1
     return anchor
 

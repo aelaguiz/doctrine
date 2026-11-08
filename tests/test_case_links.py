@@ -68,6 +68,21 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
         self.assertEqual(heading_anchor("C++ tips & tricks", {}), "c-tips--tricks")
         self.assertEqual(heading_anchor("Snake_case: a guide", {}), "snake_case-a-guide")
 
+    def test_case_anchors_use_rendered_heading_text(self):
+        titles = (("हिन्दी नियम", "हिन्दी-नियम"), ("The _first_ tick", "the-first-tick"),
+                  ("See [the guide](https://x.com)", "see-the-guide"),
+                  ("Use `make` & <b>go</b>", "use-make--go"), ("Plan ahead ", "plan-ahead"))
+        links = "".join(f'        "Read {{{{details:work.c{index}}}}}."\n' for index in range(len(titles)))
+        cases = "".join(f'        details c{index}: "{title}"\n            "Text."\n'
+                        for index, (title, _) in enumerate(titles))
+        root = self.project('team T: "Team"\n    home: "t"\n    work: "Work"\n' + links + cases)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        text = (root / "t/AGENTS.md").read_text()
+        for _, anchor in titles:
+            with self.subTest(anchor=anchor):
+                self.assertIn(f"DETAILS.md#{anchor})", text)
+
     def test_unlinked_cases_keep_only_their_companion_pointer(self):
         root = self.project(example="198_case_links")
         source = root / "prompts/AGENTS.prompt"
