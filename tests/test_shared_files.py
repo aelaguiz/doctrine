@@ -67,25 +67,6 @@ team T: "Team"
         self.assertEqual(report["shared_files"], [])
         self.assertEqual(report["homes"][0]["runtimes"]["codex"]["on_demand"], [])
 
-    def test_file_with_body_rejects_folder_at_revision(self):
-        root = self.project('''file Library: "Library"
-    path: "library"
-    "Text."
-team T: "Team"
-    home: "t"
-    role: "Read {{Library}}."
-''')
-        (root / "library").mkdir()
-        (root / "library/notes.md").write_text("At revision.\n")
-        for args in (("init", "-q"), ("add", "."),
-                     ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.com",
-                      "commit", "-qm", "Fixture [skip ci]")):
-            subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
-        shutil.rmtree(root / "library")
-        code, _, error = self.cli(root, "check", "--rev", "HEAD")
-        self.assertEqual(code, 1)
-        self.assertIn("`Library` has a body, so `library` must be a file, but it's a folder.", error)
-
     def test_guide_is_charged_only_to_the_home_that_loads_it(self):
         root = self.project(example="197_shared_files")
         code, output, error = self.cli(root, "load", "--json")

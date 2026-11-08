@@ -104,13 +104,6 @@ def revision_source(args):
                         file_path = (config.parent / Path(declaration.path).expanduser()).resolve()
                         if file_path.is_relative_to(root):
                             extra.add(file_path.relative_to(root))
-                    if isinstance(declaration, model.FileDecl) and declaration.body is not None:
-                        for target in targets:
-                            file_path = (config.parent / target["output_dir"] / declaration.path).resolve()
-                            if file_path.is_relative_to(root) and subprocess.run(
-                                ["git", "cat-file", "-t", f"{revision}:{file_path.relative_to(root)}"],
-                                cwd=root, capture_output=True).stdout.strip() == b"tree":
-                                extra.add(file_path.relative_to(root))
                     if (
                         isinstance(declaration, (model.Agent, model.WorkflowDecl))
                         and declaration.markdown_path
