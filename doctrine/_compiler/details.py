@@ -9,9 +9,9 @@ from doctrine import model
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
 from doctrine._compiler.late_binding import map_text, reject_case_links
 from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor, heading_link_text
-from doctrine._compiler.naming import model_walk
+from doctrine._compiler.naming import map_model, model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledReadableBlock, CompiledRuleBlock
+from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledRawTextBlock, CompiledReadableBlock, CompiledRuleBlock
 from doctrine.renderer import render_readable_block
 
 
@@ -101,6 +101,14 @@ def split_details(compiled, home, root, home_map, unit):
 
 def render_companion(parts):
     output, previous, previous_path = [], (), ()
+    marker = ""
+    while any(marker in item for item in model_walk(parts) if isinstance(item, str)):
+        marker += ""
+    raw_texts = []
+    def protect(item):
+        if isinstance(item, CompiledRawTextBlock):
+            raw_texts.append("\n".join(item.text.splitlines()).rstrip())
+            return replace(item, text=f"{marker}{len(raw_texts) - 1}{marker}")
     for headings, block in parts:
         path = block.origin.path[:-1]
         offset = len(headings) - len(path)
@@ -111,6 +119,7 @@ def render_companion(parts):
             common += 1
         output.extend("#" * min(index + 2, 6) + " " + title
                       for index, title in enumerate(headings) if index >= common)
+        block = map_model(block, protect, {"origin", "drops"})
         if block.title:
             output.append(render_readable_block(
                 replace(block, kind="section"), depth=min(len(headings) + 2, 6)
@@ -122,8 +131,9 @@ def render_companion(parts):
         previous = headings
         previous_path = path
     text = "\n\n".join(output) + "\n"
-    return "".join(re.sub(r"^#{7,} ", "###### ", line) if not inside else line
+    text = "".join(re.sub(r"^#{7,} ", "###### ", line) if not inside else line
                    for line, inside in fenced_lines(text.splitlines(keepends=True)))
+    return re.sub(marker + r"(\d+)" + marker, lambda match: raw_texts[int(match[1])], text)
 
 
 def details_origin(block, body):

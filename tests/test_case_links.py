@@ -34,6 +34,19 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
         package = session.compile_skill_package("P")
         self.assertIn("Read {{details:path}}.", render_readable_block(package.root))
 
+    def test_deep_case_preserves_verbatim_markdown(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    work: "Work"
+        details case: "Case"
+            markdown:
+                text: """####### Keep {{details:path}}
+"""
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("####### Keep {{details:path}}", (root / "t/DETAILS.md").read_text())
+
     def test_case_links_in_titles_and_headings_are_rejected(self):
         token = "{{details:work.case}}"
         source = '''team T: "Team"
