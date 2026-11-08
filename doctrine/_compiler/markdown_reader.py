@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 from dataclasses import replace
 
 from doctrine import model
@@ -15,8 +14,7 @@ def heading_key(title):
 
 
 def heading_anchor(text, seen):
-    anchor = "".join(c for c in text.lower() if not unicodedata.category(c).startswith("P"))
-    anchor = anchor.replace(" ", "-")
+    anchor = "".join(c for c in text.lower() if c.isalnum() or c in " -_").replace(" ", "-")
     seen[anchor] = seen.get(anchor, 0) + 1
     return anchor
 

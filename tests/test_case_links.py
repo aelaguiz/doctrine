@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
+from doctrine._compiler.markdown_reader import heading_anchor
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
@@ -22,6 +23,11 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
             self.assertIn(f"[Writing a test plan]({shared}shared/testing.md#writing-a-test-plan)", text)
             self.assertIn("The title is Writing a test plan.", text)
             self.assertNotIn("Fuller cases,", text)
+
+    def test_anchor_matches_github_for_hyphens_and_symbols(self):
+        self.assertEqual(heading_anchor("memmove-able", {}), "memmove-able")
+        self.assertEqual(heading_anchor("C++ tips & tricks", {}), "c-tips--tricks")
+        self.assertEqual(heading_anchor("Snake_case: a guide", {}), "snake_case-a-guide")
 
     def test_unlinked_cases_keep_only_their_companion_pointer(self):
         root = self.project(example="198_case_links")
