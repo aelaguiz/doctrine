@@ -410,3 +410,25 @@ agent Other:
         paths = [row["path"] for row in json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]]
         self.assertIn("guide\\", paths)
         self.assertNotIn("guide rest.md", paths)
+
+    def test_from_keeps_handles_and_rebases_only_existing_imports(self):
+        root = self.project(example="179_markdown_backed_declarations", fixture="project_imports")
+        (root / "shared/craft.md").write_text(
+            "A role. Post as @brand and ping @alice before you ship.\n\n"
+            "See [ask @alice](other.md).\n\n@other.md\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        text = (root / "pod/qa/AGENTS.md").read_text()
+        self.assertIn("Post as @brand and ping @alice before you ship.", text)
+        self.assertIn("[ask @alice](../../shared/other.md)", text)
+        self.assertIn("@../../shared/other.md", text)
+
+    def test_handle_in_a_valid_link_does_not_trigger_e636(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "Questions go to [ask @alice](../people.md)."
+''')
+        (root / "people.md").write_text("People.\n")
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        self.assertIn("[ask @alice](../people.md)", (root / "t/AGENTS.md").read_text())
