@@ -1097,10 +1097,12 @@ artifact_scalar_key: "path" -> artifact_scalar_key_path
 
 skill_package_body: skill_package_item+
 ?skill_package_item: package_metadata_block
+                   | package_install_item
                    | package_source_block
                    | package_emit_block
                    | package_host_contract_block
                    | package_record_item
+package_install_item: "install" ":" string _NL?
 package_metadata_block: "metadata" ":" _NL _INDENT package_metadata_item+ _DEDENT
 package_metadata_item: CNAME ":" string _NL?
 package_source_block: "source" ":" _NL _INDENT package_source_item+ _DEDENT

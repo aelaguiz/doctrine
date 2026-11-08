@@ -15,25 +15,37 @@ from doctrine.renderer import render_readable_block
 
 
 HEADER = re.compile(
-    r"^<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. "
+    r"<!-- doctrine sha256=([a-f0-9]{12}) source=(.*)\. Do not edit\. "
     r'Run: doctrine where "<words>" -->\n\n'
 )
 
 
-def file_state(path, fresh):
+def header_match(text, *, frontmatter=False):
+    if frontmatter and text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end >= 0:
+            return HEADER.match(text, end + 5)
+    return HEADER.match(text)
+
+
+def file_state(path, fresh, recorded_hash=None):
     if path.is_symlink():
-        if path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
+        if recorded_hash is None and path.name == "CLAUDE.md" and os.readlink(path) == "AGENTS.md":
             return "unchanged" if isinstance(fresh, Path) else "stale"
         return "edited"
     if not path.exists():
         return "missing"
     content = path.read_bytes()
+    if recorded_hash is not None:
+        if hashlib.sha256(content).hexdigest() != recorded_hash:
+            return "edited"
+        return "unchanged" if content == fresh else "stale"
     if path.suffix == ".md":
         try:
             text = content.decode()
         except UnicodeDecodeError:
             return "edited"
-        match = HEADER.match(text)
+        match = header_match(text, frontmatter=path.name == "SKILL.md")
         if (
             match is None
             or hashlib.sha256(text[match.end() :].encode()).hexdigest()[:12] != match[1]

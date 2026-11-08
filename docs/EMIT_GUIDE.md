@@ -88,21 +88,22 @@ Both runtimes share `AGENTS.md`, with a relative `CLAUDE.md` symlink.
 A Claude-only target writes `CLAUDE.md`. With no runtimes set, the target
 writes `AGENTS.md`.
 
-Every Markdown file `doctrine build` writes has a source and body hash in
-its header, including plain agents. A team or member home begins with a line
+Built home Markdown has a source and body hash in its header. A team or member home begins with a line
 that says who it is for. A plain agent gets a line when it has a title. A root
 team has no line. These lines count toward load. The `python -m doctrine.emit_*` commands
 keep their current output. The build checks every file before any write. A hand edit fails with
 `E634`; move it to the source named by the error. `--force` overwrites it.
 Writes are atomic and use your umask. Equal bytes keep their file's mtime.
 
-A whole build writes `HOMES.contract.json`, which lists every emitted path.
+A whole build writes `HOMES.contract.json`, which lists every emitted path
+and hashes files without a Doctrine header.
 It removes recorded paths the new source no longer emits. It leaves their
 folders alone. A missing record means no files are obsolete. A record that
 won't parse counts as missing, so a build can repair a merge conflict.
 A team with members also writes `TEAM.contract.json`. It lists member names,
 folders, parents, and top-level headings, in member order. Example 178
-proves this contract. Machine contracts have no header or hand-edit guard.
+proves this contract. Machine contracts have no header. The homes contract
+records hashes for the other machine contracts it writes.
 
 ```bash
 doctrine build .
@@ -429,6 +430,23 @@ Useful CLI rules:
   targets.
 
 ## Skill Package Sidecars
+
+### Build skills with homes
+
+Use the homes target to build a project's skills with its homes. Use
+`emit_skill` for a standalone package with its own receipt and lock.
+
+```toml
+skills = { source = "prompts/skills", install = ".claude/skills" }
+```
+
+Each direct child folder of `source` with a `SKILL.prompt` is a package.
+It installs under `install` using that folder's name. A package can set
+`install: "path"` to choose a folder relative to the project instead.
+The paths must stay inside the project. `doctrine build` and `doctrine check`
+guard these files through `HOMES.contract.json`. The build keeps the skill's
+frontmatter first and copies bundled files as written. It writes no skill
+receipt or lock. See example 203.
 
 `emit_skill` always writes `SKILL.md`.
 It also always writes `SKILL.source.json`.

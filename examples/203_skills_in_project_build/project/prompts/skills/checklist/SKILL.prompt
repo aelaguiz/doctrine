@@ -1,0 +1,5 @@
+skill package Checklist: "Checklist"
+    metadata:
+        name: "checklist"
+        description: "Check a draft before sharing."
+    "Read the draft before sharing it."

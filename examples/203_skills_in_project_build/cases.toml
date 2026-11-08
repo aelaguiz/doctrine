@@ -1,0 +1,193 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "one build installs both skills and lists every file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "HOMES.contract.json" = "expected/homes.json", ".claude/skills/checklist/SKILL.md" = "expected/SKILL.md", ".claude/skills/checklist/references/notes.md" = "project/prompts/skills/checklist/references/notes.md", ".claude/skills/checklist/scripts/check.txt" = "project/prompts/skills/checklist/scripts/check.txt", ".claude/skills/checklist/assets/sample.bin" = "project/prompts/skills/checklist/assets/sample.bin", "custom/review/SKILL.contract.json" = "expected/skill_contract.json" }
+absent_files = [".claude/skills/checklist/SKILL.source.json", "custom/review/SKILL.source.json"]
+
+[[cases]]
+name = "unchanged skill and headerless Markdown pass check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+args = ["check", "."]
+expected_exit = 0
+
+[[cases]]
+name = "a hand edit to skill Markdown fails build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/SKILL.md" = "---\nname: \"checklist\"\ndescription: \"Check a draft before sharing.\"\n---\n<!-- doctrine sha256=2060bc00ab41 source=prompts/skills/checklist/SKILL.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\n# Checklist\n\nA hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "SKILL.md"]
+
+[[cases]]
+name = "a hand edit to skill Markdown is reported by check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/SKILL.md" = "---\nname: \"checklist\"\ndescription: \"Check a draft before sharing.\"\n---\n<!-- doctrine sha256=2060bc00ab41 source=prompts/skills/checklist/SKILL.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\n# Checklist\n\nA hand edit.\n" }
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["edited .claude/skills/checklist/SKILL.md"]
+
+[[cases]]
+name = "a hand edit to a bundled file fails build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/scripts/check.txt" = "A hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "scripts/check.txt"]
+
+[[cases]]
+name = "a hand edit to a bundled file is reported by check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/scripts/check.txt" = "A hand edit.\n" }
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["edited .claude/skills/checklist/scripts/check.txt"]
+
+[[cases]]
+name = "a hand edit to bundled Markdown fails build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/references/notes.md" = "A hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "references/notes.md"]
+
+[[cases]]
+name = "a hand edit to bundled Markdown is reported by check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/references/notes.md" = "A hand edit.\n" }
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["edited .claude/skills/checklist/references/notes.md"]
+
+[[cases]]
+name = "a hand edit to a binary file is reported by check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { ".claude/skills/checklist/assets/sample.bin" = "A hand edit.\n" }
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["edited .claude/skills/checklist/assets/sample.bin"]
+
+[[cases]]
+name = "a changed source makes its bundled output stale"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+edit = { "prompts/skills/checklist/scripts/check.txt" = "Check the final line.\n" }
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["stale .claude/skills/checklist/scripts/check.txt"]
+
+[[cases]]
+name = "a missing skill file is reported"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+remove = [".claude/skills/checklist/scripts/check.txt"]
+args = ["check", "."]
+expected_exit = 1
+stderr_contains = ["missing .claude/skills/checklist/scripts/check.txt"]
+
+[[cases]]
+name = "a removed source file is removed from the install"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+remove = ["prompts/skills/checklist/scripts/check.txt"]
+args = ["build", "."]
+expected_exit = 0
+absent_files = [".claude/skills/checklist/scripts/check.txt"]
+
+[[cases]]
+name = "a removed source does not erase an edited installed file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+remove = ["prompts/skills/checklist/scripts/check.txt"]
+edit = { ".claude/skills/checklist/scripts/check.txt" = "A hand edit.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E634", "scripts/check.txt"]
+
+[[cases]]
+name = "where finds a sentence in a skill"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["where", "Read the draft before sharing it."]
+expected_exit = 0
+stdout_contains = ["skill package Checklist", "prompts/skills/checklist/SKILL.prompt:5"]
+
+[[cases]]
+name = "two skills cannot share an install folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/review/SKILL.prompt" = "skill package Review: \"Review\"\n    install: \".claude/skills/checklist\"\n    \"Review the draft.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E607", "Two skills, one path"]
+
+[[cases]]
+name = "skills may install in distinct nested folders"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/review/SKILL.prompt" = "skill package Review: \"Review\"\n    install: \".claude/skills/checklist/extra\"\n    \"Review the draft.\"\n" }
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = ["built 1 home, 7 files changed"]
+
+[[cases]]
+name = "a skill cannot install outside the project"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/review/SKILL.prompt" = "skill package Review: \"Review\"\n    install: \"../outside\"\n    \"Review the draft.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E520", "relative to the project"]
+
+[[cases]]
+name = "a target without skills builds only the home"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "HOMES.contract.json" = "expected/no_skills.json" }
+absent_files = [".claude/skills/checklist/SKILL.md", "custom/review/SKILL.md"]

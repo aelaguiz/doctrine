@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- Project builds can install skills with homes. The homes contract adds hashes
+  for files without a Doctrine header so builds and checks catch hand edits.
+
 ### Build report
 
 - `build --json` prints the same report as `check --json`, with its errors and

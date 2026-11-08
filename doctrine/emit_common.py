@@ -82,6 +82,7 @@ class EmitTarget:
     source_root: Path | None = None
     lock_file: Path | None = None
     runtimes: tuple[str, ...] = ("codex",)
+    skills: dict[str, str] | None = None
 
 
 @dataclass(slots=True, frozen=True)
@@ -299,6 +300,13 @@ def load_emit_targets(
         )
 
         raw_lock_file = optional_str(raw_target, "lock_file", label=f"emit target {name}")
+        skills = raw_target.get("skills")
+        if skills is not None:
+            if not isinstance(skills, dict) or set(skills) != {"source", "install"}:
+                raise emit_error("E512", "Invalid skills settings",
+                                 f"Emit target `{name}` needs `skills.source` and `skills.install`.")
+            for key in ("source", "install"):
+                require_str(skills, key, label=f"emit target {name} skills")
         lock_file: Path | None = None
         if raw_lock_file is not None:
             lock_file = resolve_config_path(config_dir, raw_lock_file)
@@ -332,6 +340,7 @@ def load_emit_targets(
             source_root=source_root,
             lock_file=lock_file,
             runtimes=tuple(raw_target.get("runtimes", ())) or ("codex",),
+            skills=skills,
         )
 
     return targets

@@ -537,6 +537,7 @@ class SkillPackageDecl:
     source: SkillPackageSource = _field(default_factory=SkillPackageSource)
     emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
     host_contract: tuple[SkillPackageHostSlotItem, ...] = ()
+    install: str | None = None
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 
