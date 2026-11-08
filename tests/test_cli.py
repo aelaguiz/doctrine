@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import argparse
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -13,6 +16,7 @@ from unittest.mock import patch
 
 from tests.home_support import HomeProject
 from doctrine import model
+from doctrine import cli
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import DoctrineError
 from doctrine.parser import parse_file
@@ -28,6 +32,33 @@ from doctrine.classes import agent_view
 
 
 class CliTests(HomeProject, unittest.TestCase):
+    def test_every_command_and_argument_has_help(self):
+        parsers = []
+        parse_args = argparse.ArgumentParser.parse_args
+
+        def capture(parser, *args, **kwargs):
+            parsers.append(parser)
+            return parse_args(parser, *args, **kwargs)
+
+        with patch.object(argparse.ArgumentParser, "parse_args", capture):
+            with contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as exit_code:
+                cli.main(["--help"])
+        self.assertEqual(exit_code.exception.code, 0)
+        commands = next(action for action in parsers[0]._actions if isinstance(action, argparse._SubParsersAction))
+        self.assertEqual(set(commands.choices), {"build", "check", "load", "diff", "where", "sources", "classes", "import"})
+        for choice in commands._choices_actions:
+            with self.subTest(command=choice.dest):
+                self.assertTrue(choice.help and choice.help.strip())
+                parser = commands.choices[choice.dest]
+                for action in parser._actions:
+                    self.assertTrue(action.help and action.help.strip(), f"{choice.dest}: {action.dest}")
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as command_exit:
+                    cli.main([choice.dest, "--help"])
+                self.assertEqual(command_exit.exception.code, 0)
+                for action in parser._actions:
+                    self.assertIn(action.help.split()[0], output.getvalue())
+
     def test_dead_links_fail_build_and_check(self):
         for link in ("[missing](missing.md)", "@missing.md"):
             with self.subTest(link=link):

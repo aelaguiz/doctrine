@@ -264,7 +264,7 @@ document FindingCatalog: "Finding Catalog"
             "Why it matters: The role only makes sense inside one private host setup."
             "Default fix: Replace private jargon with neutral language or a grounded owner."
             "Good: `Use the available file-reading tools to inspect the source.`"
-            "Bad: `Kick this through /tmp/agent_mux and write state to $BRAIN_SIDECHANNEL.`"
+            "Bad: `Kick this through agent_mux and write state to $BRAIN_SIDECHANNEL.`"
 
         section al330: "`AL330` Typed Discipline Bash Escape"
             "What it means: Prose carves out a 'permitted via Bash' exception for a named verb set while the rest of the file goes through `$primitive`-typed skills."

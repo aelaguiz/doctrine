@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import tempfile
 import textwrap
 import unittest
@@ -127,6 +128,17 @@ class SkillRootDiscoveryTests(unittest.TestCase):
 
 
 class ShippedSkillExamplesTests(unittest.TestCase):
+    def test_shipped_skills_have_no_absolute_paths(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        paths = (path for path in (repo_root / "skills").rglob("*") if path.is_file())
+        absolute = re.compile(r"(?<![\w./:<>-])/(?!/)[\w.~+-]+(?:/[\w.~+-]+)*|(?<!\w)[A-Za-z]:\\[\w.\\-]+")
+        for example in ("`/Users/someone/project`", "(/opt/project)", r"C:\project\file.md"):
+            self.assertIsNotNone(absolute.search(example), example)
+        for path in paths:
+            for number, line in enumerate(path.read_text(errors="replace").splitlines(), 1):
+                with self.subTest(path=path.relative_to(repo_root), line=number):
+                    self.assertIsNone(absolute.search(line), line)
+
     def test_shipped_skill_fences_parse(self) -> None:
         # Guards the teaching surface: every ```prompt block in shipped skill
         # reference markdown must parse as a standalone prompt file.
