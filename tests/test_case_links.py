@@ -83,6 +83,31 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
             with self.subTest(anchor=anchor):
                 self.assertIn(f"DETAILS.md#{anchor})", text)
 
+    def test_deep_case_and_its_nested_sections_are_headings(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    work: "Work"
+        "Read {{details:work.a.b.c.d.case}}."
+        a: "A"
+            b: "B"
+                c: "C"
+                    d: "D"
+                        details case: "Deep case"
+                            section nested: "Nested"
+                                "Text."
+                            code:
+                                language: markdown
+                                text: """####### Keep
+"""
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("DETAILS.md#deep-case", (root / "t/AGENTS.md").read_text())
+        companion = (root / "t/DETAILS.md").read_text()
+        self.assertIn("###### Deep case\n", companion)
+        self.assertIn("###### Nested\n", companion)
+        self.assertIn("####### Keep", companion)
+
     def test_unlinked_cases_keep_only_their_companion_pointer(self):
         root = self.project(example="198_case_links")
         source = root / "prompts/AGENTS.prompt"

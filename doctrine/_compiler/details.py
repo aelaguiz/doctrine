@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import fields, is_dataclass, replace
 import json
+import re
 from pathlib import PurePosixPath
 
 from doctrine import model
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
 from doctrine._compiler.late_binding import map_text, reject_case_links
-from doctrine._compiler.markdown_reader import heading_anchor
+from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock, CompiledReadableBlock, CompiledRuleBlock
@@ -100,19 +101,21 @@ def render_companion(parts):
             if left != right or previous_path[:index + 1 - offset] != path[:index + 1 - offset]:
                 break
             common += 1
-        output.extend("#" * (index + 2) + " " + title
+        output.extend("#" * min(index + 2, 6) + " " + title
                       for index, title in enumerate(headings) if index >= common)
         if block.title:
             output.append(render_readable_block(
-                replace(block, kind="section"), depth=len(headings) + 2
+                replace(block, kind="section"), depth=min(len(headings) + 2, 6)
             ))
         else:
             output.append(render_readable_block(
-                replace(block, kind="section", title=""), depth=len(headings) + 1
+                replace(block, kind="section", title=""), depth=min(len(headings) + 1, 6)
             ).partition("\n\n")[2])
         previous = headings
         previous_path = path
-    return "\n\n".join(output) + "\n"
+    text = "\n\n".join(output) + "\n"
+    return "".join(re.sub(r"^#{7,} ", "###### ", line) if not inside else line
+                   for line, inside in fenced_lines(text.splitlines(keepends=True)))
 
 
 def details_origin(block, body):
