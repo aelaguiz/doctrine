@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import fields as dataclass_fields, is_dataclass
 from os.path import relpath
 
 from doctrine import model
@@ -9,7 +10,7 @@ from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.constants import LATE_ROOT, _INTERPOLATION_RE
 from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.naming import model_walk, _dotted_ref_name
-from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedTypedAgentSlot
+from doctrine._compiler.resolved_types import ResolvedAgentSlot, ResolvedTypedAgentSlot, ResolvedUseItem, ResolvedWorkflowBody
 from doctrine._compiler.source_graph import declarations_in, declaration_match
 from doctrine._compiler.teams import agent_parents, home_value_sources, team_members
 from doctrine.homes import compile_homes, home_owners
@@ -164,12 +165,31 @@ def walk_classes(nodes):
 
 
 def source_pieces(context, fields, unit):
-    pieces, seen = [], set()
+    pieces, uses, seen = [], [], set()
     def visit(value, scope):
-        for item in model_walk(value):
+        if isinstance(value, ResolvedUseItem):
+            visit(value.workflow_decl, value.target_unit)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
+                visit(item, scope)
+        else:
+            item = value
+            origin = getattr(item, "origin", None)
+            if origin:
+                scope = origin.scope_unit
+            if isinstance(item, ResolvedWorkflowBody) and origin:
+                workflow = scope.declarations.workflows_by_name.get(origin.declaration.rsplit(".", 1)[-1])
+                if workflow:
+                    name = class_name(context.session, scope, workflow)
+                    if name not in uses:
+                        uses.append(name)
+            if isinstance(item, model.WorkflowDecl):
+                name = class_name(context.session, scope, item)
+                if name not in uses:
+                    uses.append(name)
             refs = []
             if isinstance(item, str):
-                pieces.append(item)
+                pieces.append(str(item))
                 for match in _INTERPOLATION_RE.finditer(item):
                     if not LATE_ROOT.fullmatch(match[0]):
                         ref = context._parse_interpolation_expr_ref(match[1].split(",", 1)[0])
@@ -191,8 +211,12 @@ def source_pieces(context, fields, unit):
                     if key not in seen:
                         seen.add(key)
                         visit(decl, owner)
+            if is_dataclass(item):
+                for field in dataclass_fields(item):
+                    if field.compare and field.name not in ("origin", "drops"):
+                        visit(getattr(item, field.name), scope)
     visit(fields, unit)
-    return tuple(pieces)
+    return tuple(pieces), uses
 
 
 def class_view(session, tree, declarations, parents, name):
@@ -205,14 +229,9 @@ def class_view(session, tree, declarations, parents, name):
     resolved = {slot.key: slot.body for slot in slots if isinstance(slot, ResolvedAgentSlot)}
     typed = {slot.key: slot for slot in slots if isinstance(slot, ResolvedTypedAgentSlot)}
     expanded, _ = context._expand_agent_patches(owner, unit=unit)
-    contract = context._resolve_agent_contract(owner, unit=unit)
-    pieces = []
-    for field in expanded.fields:
-        if isinstance(field, (model.RoleScalar, model.RoleBlock)):
-            pieces.append(field)
-        elif isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in resolved:
-            pieces.append(context._compile_resolved_workflow(resolved[field.key], unit=unit,
-                          agent_contract=contract, owner_label=f"agent {name}", slot_key=field.key))
+    fields = (resolved[field.key] if isinstance(field, (model.AuthoredSlotField, model.AuthoredSlotOverride, model.AuthoredSlotInherit)) and field.key in resolved else field
+              for field in expanded.fields if not isinstance(field, (model.ValuesField, model.Member)))
+    pieces, uses = source_pieces(context, tuple(fields), unit)
     team = isinstance(owner, model.Team)
     reads = read_values(context, tuple(pieces), chain, chain if team else [])
     members = []
@@ -229,8 +248,6 @@ def class_view(session, tree, declarations, parents, name):
     descendants = list(walk_classes(node["children"]))
     changed = [{"owner": child["name"], "change": kind, "keys": child[kind]}
                for child in descendants for kind in ("overrides", "adds", "drops") if child[kind]]
-    uses = list(dict.fromkeys(use for decl, scope in chain
-                             for use in nodes[class_name(session, scope, decl)]["uses"]))
     return {"format_version": 1, "view": "class", "name": name,
             "kind": "abstract team" if team and owner.abstract else "team" if team else "abstract agent" if owner.abstract else "agent",
             "site": f'{relpath(unit.prompt_file.source_path, session.project_config.config_dir)}:{owner.source_span.line}',
@@ -330,7 +347,7 @@ def render_mermaid(session, tree, declarations, parents, selector):
     if not nodes:
         return ""
     context = CompilationContext(session)
-    reads = {node["name"]: read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member))), unit), [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
+    reads = {node["name"]: read_values(context, source_pieces(context, tuple(field for field in decl.fields if not isinstance(field, (model.ValuesField, model.Member))), unit)[0], [(decl, unit)], [(decl, unit)] if isinstance(decl, model.Team) else []) for node in nodes for unit, decl, _ in (declarations[node["name"]],)}
     workflows = sorted({use for node in nodes for use in node["uses"]})
     ids = {}
     for prefix, names in (("C_", [node["name"] for node in nodes]), ("W_", workflows)):
