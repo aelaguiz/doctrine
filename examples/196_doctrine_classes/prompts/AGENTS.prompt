@@ -1,0 +1,53 @@
+workflow Craft: "Craft"
+    "Test {{team:unit}} for {{team:audience}}."
+
+abstract agent QA: "How QA works on every team"
+    role: "Test {{agent:subject}}."
+    values:
+        subject: "{{team:unit}}"
+    testing: Craft
+    abstract policy: AccuracyPolicy
+
+abstract agent WebQA[QA]: "How web QA works"
+    inherit *
+    policy: AccuracyPolicy
+
+abstract agent AppQA[QA]: "How app QA works"
+    inherit *
+    policy: AccuracyPolicy
+
+abstract team Pod: "A team that ships work"
+    abstract win
+
+team Growth[Pod]: "growth"
+    home: "pods/growth"
+    win: "Win"
+        "Grow."
+    values:
+        unit: "bet"
+        audience: "new users"
+    member qa[WebQA]: "QA"
+
+team Feature[Pod]: "feature"
+    home: "pods/feature"
+    win: "Win"
+        "Ship."
+    values:
+        unit: "feature"
+        audience: "players"
+    member qa[AppQA]: "QA"
+
+team Product[Pod]: "product"
+    home: "pods/product"
+    win: "Win"
+        "Improve."
+    values:
+        unit: "change"
+        audience: "players"
+    member qa[WebQA]: "QA"
+        override testing: "Testing"
+            "Test the change twice."
+
+document AccuracyPolicy: "Accuracy Policy"
+    section summary: "Summary"
+        "Check the facts."

@@ -372,6 +372,6 @@ shows the canonical formatted shape for one shipped compile error.
 | `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |
 | `E636` | Dead link | A compiled file links to a path that does not exist. An `@` path is checked only at the end of a line. Fix the link or add the file. |
-| `E640` | No home matches | A selector matches no home path or agent name. |
+| `E640` | No home matches | A selector matches no home path or agent name, or no class, team, member, or home in `doctrine classes`. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
 | `W309` | Long file | A compiled level file is over the runtime's per-file limit. |

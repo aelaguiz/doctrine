@@ -144,12 +144,8 @@ def is_level(home, selected):
     return home in selected or any(PurePosixPath(home) in PurePosixPath(child).parents for child in selected)
 
 
-def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
-    selectors = home_selectors(session.root_flow.teams_by_name.values(), selectors)
-    whole = not selectors or "." in selectors
-    session.evaluate_rules = evaluate_rules
+def home_owners(target, session):
     context = CompilationContext(session)
-    homes, files, compiled, companions = {}, {}, {}, {}
     owners, failures = [], []
     for root in _runtime_emit_roots_for_target(session, target=target):
         try:
@@ -182,6 +178,16 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 (member_home(team, member), member, unit, None)
                 for member in members
             )
+    return owners, failures
+
+
+def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
+    selectors = home_selectors(session.root_flow.teams_by_name.values(), selectors)
+    whole = not selectors or "." in selectors
+    session.evaluate_rules = evaluate_rules
+    context = CompilationContext(session)
+    homes, files, compiled, companions = {}, {}, {}, {}
+    owners, failures = home_owners(target, session)
     session.emit_root = target.output_dir
     for home, owner, unit, plan in owners:
         homes.setdefault(home, {"owner": owner, "unit": unit, "plan": plan})

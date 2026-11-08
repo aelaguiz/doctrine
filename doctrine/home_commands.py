@@ -33,6 +33,7 @@ from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
     text_size, padded_rows,
 )
+from doctrine.classes import agent_view, class_tree, class_view, render_agent, render_class, render_mermaid, render_tree
 
 
 @contextmanager
@@ -64,6 +65,8 @@ def resolve_target(args):
                 sessions[target.name] = session
                 if any(not team.abstract for team in session.root_flow.teams_by_name.values()):
                     team_targets.append(target)
+        if not team_targets and len(targets) == 1 and len(sessions) == 1:
+            team_targets = list(targets.values())
         if args.target is None and len(team_targets) != 1:
             print("Choose a target with --target.", file=sys.stderr)
             yield None, None, live_root
@@ -267,6 +270,30 @@ def load(args):
                 rows.extend(("  " + row["path"], *(f"{row['sizes'][runtime]:,}"
                     for runtime in target.runtimes), str(len(row["homes"]))) for row in shared_files)
                 print("\nShared files:\n" + padded_rows(rows))
+        return 0
+
+
+def classes(args):
+    with resolve_target(args) as (target, session, _):
+        if target is None:
+            return 2
+        tree, declarations, parents = class_tree(target, session)
+        name = args.selector if args.selector in declarations else next(
+            (name for name, data in declarations.items() if args.selector and args.selector == data[2]), None)
+        data = declarations.get(name)
+        if args.selector and name is None:
+            raise compile_error(code="E640", summary="No home matches",
+                                detail=f"`{args.selector}` matches no class, team, member or home.")
+        if args.mermaid:
+            diagram = render_mermaid(session, tree, declarations, parents, name)
+            print(diagram, end="\n" if diagram else ""); return 0
+        if name:
+            unit, owner, home = data
+            view = (class_view(session, tree, declarations, parents, name)
+                    if owner.abstract or isinstance(owner, model.Team) or home is None else agent_view(target, session, name, unit, owner, home))
+        else:
+            view = tree
+        print(json.dumps(view) if args.json else {"tree": render_tree, "class": render_class, "agent": render_agent}[view["view"]](view))
         return 0
 
 
