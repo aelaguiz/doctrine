@@ -11,6 +11,75 @@ from tests.home_support import HomeProject
 class RoleParagraphTests(HomeProject, unittest.TestCase):
     session = test_late_binding.LateBindingTests.session
 
+    def test_role_block_resolves_in_each_module(self):
+        session = self.session('''import shared as lib
+workflow Facts: "Child module"
+    "Read."
+agent Child[lib.Base]:
+    role:
+        paragraph opening:
+            "See {{Facts:title}}."
+        override paragraph who:
+            super
+            "See {{Facts:title}}."
+        inherit *
+''', {'prompts/shared/AGENTS.prompt': '''workflow Facts: "Parent module"
+    "Read."
+export abstract agent Base:
+    role:
+        paragraph who:
+            "See {{Facts:title}}."
+        paragraph other:
+            "Also see {{Facts:title}}."
+'''})
+        self.assertEqual(render_markdown(session.compile_agent('Child')), 'See Child module.\n\nSee Parent module.\n\nSee Child module.\n\nAlso see Parent module.\n')
+
+    def test_role_block_diagnostic_messages(self):
+        parent = '''abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+        paragraph two:
+            "Two."
+agent Child[Base]:
+    role:
+'''
+        cases = (
+            ('        inherit one\n', 'E003', 'Missing inherited role paragraph in agent Child: two'),
+            ('        inherit absent\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
+            ('        override paragraph absent:\n            "Text."\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
+            ('        paragraph one:\n            "Text."\n        inherit *\n', 'E612', '`Child` adds the paragraph `role.one`, which it already inherits. Write `override paragraph one:` to replace it.'),
+            ('        inherit one\n        override paragraph one:\n            "Text."\n        inherit *\n', 'E612', '`Child` patches `role.one` twice.'),
+            ('        inherit *\n        inherit *\n', 'E613', '`Child` writes `inherit *` more than once.'),
+        )
+        for body, code, detail in cases:
+            with self.subTest(code=code, body=body):
+                session = self.session(parent + body)
+                with self.assertRaises(CompileError) as caught:
+                    session.compile_agent('Child')
+                self.assertEqual(caught.exception.code, code)
+                self.assertIn(detail, str(caught.exception))
+        session = self.session('abstract agent Base:\n    role: "Words."\nagent Child[Base]:\n    role:\n        inherit *\n')
+        with self.assertRaises(CompileError) as caught:
+            session.compile_agent('Child')
+        self.assertEqual(caught.exception.code, 'E611')
+        self.assertIn('`Child` inherits from `role`, which has no keyed paragraphs.', str(caught.exception))
+
+    def test_role_block_and_path_patch_conflict(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+agent Child[Base]:
+    role:
+        inherit *
+    override role.one:
+        "New."
+''')
+        with self.assertRaises(CompileError) as caught:
+            session.compile_agent('Child')
+        self.assertEqual(caught.exception.code, 'E612')
+
     def test_super_in_role_paragraph_resolves_in_each_module(self):
         session = self.session('''import shared as lib
 workflow Facts: "Child module"

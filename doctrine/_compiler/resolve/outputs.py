@@ -4,9 +4,8 @@ import json
 from dataclasses import replace
 
 from doctrine import model
-from doctrine._compiler.resolve.patches import (
-    expand_patch_items, prepare_body_patches, apply_path_patches,
-)
+from doctrine._compiler.resolve.patches import expand_patch_items, prepare_body_patches
+from doctrine._compiler.resolve.path_patches import apply_path_patches
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.authored_diagnostics import (
     authored_compile_error,

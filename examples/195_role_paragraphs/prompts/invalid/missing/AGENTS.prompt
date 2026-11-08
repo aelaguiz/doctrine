@@ -1,0 +1,9 @@
+abstract agent Base:
+    role:
+        paragraph who:
+            "First."
+        paragraph phones:
+            "Second."
+agent Child[Base]:
+    role:
+        inherit who

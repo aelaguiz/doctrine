@@ -39,6 +39,8 @@ _GRAMMAR_TERMINAL_DEPENDENCIES: frozenset[str] = frozenset({
     "CURRENT",
     "ELSE",
     "IGNORE",
+    "INHERIT",
+    "OVERRIDE",
     "PARAGRAPH",
     "PRESERVE",
     "REJECT",
@@ -86,7 +88,7 @@ def _classify_unexpected_token(
     previous = exc.token_history[-1] if exc.token_history else None
     expected = set(exc.expected or ())
     token_value = exc.token.value
-    if expected == {"PARAGRAPH", "_NL"}:
+    if expected == {"INHERIT", "OVERRIDE", "PARAGRAPH", "_NL"}:
         return (
             "E101", "Unexpected token",
             ("Check the expected token list and the surrounding punctuation.",
@@ -184,6 +186,7 @@ def _is_review_statement_placement_error(
         "ACCEPT",
         "BLOCK",
         "IGNORE",
+    "INHERIT",
         "PRESERVE",
         "REJECT",
         "SUPPORT_ONLY",

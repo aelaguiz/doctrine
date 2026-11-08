@@ -4,7 +4,8 @@ from dataclasses import dataclass, replace
 
 from doctrine import model
 from doctrine._compiler.late_binding import reject_late_roots
-from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
+from doctrine._compiler.resolve.patches import expand_patch_items
+from doctrine._compiler.resolve.path_patches import apply_path_patches
 from doctrine._compiler.indexing import unit_declarations
 from doctrine._compiler.naming import _dotted_ref_name
 from doctrine._compiler.output_schema_diagnostics import (

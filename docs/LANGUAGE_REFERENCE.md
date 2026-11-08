@@ -252,6 +252,19 @@ agent OtherQa[Qa]:
         "Phones are with the field guide."
 ```
 
+A child or member can also add paragraphs and order the inherited ones in a
+`role:` block. Use `inherit <key>` to keep one paragraph, or `inherit *` to
+keep the remaining paragraphs in their parent order. Use `override paragraph`
+to replace one. A role block without `inherit` replaces the whole role.
+
+```prompt
+agent AddedQa[Qa]:
+    role:
+        paragraph opening:
+            "You test the app."
+        inherit *
+```
+
 A role paragraph override holds prose and can use `super` to keep the inherited
 text in place. A missing key is `E610`. See `examples/195_role_paragraphs` and
 `examples/200_role_super`.

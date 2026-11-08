@@ -22,3 +22,31 @@ team Pod: "Pod"
         drop role.who: "This QA is on another team."
         override role.phones:
             "Phones are with the field guide."
+
+agent AddedQa[Qa]:
+    role:
+        paragraph opening:
+            "You test the app."
+        inherit *
+
+agent OrderedQa[Qa]:
+    role:
+        inherit phones
+        paragraph opening:
+            "You test the app."
+        inherit who
+
+agent ExtendedQa[Qa]:
+    role:
+        override paragraph phones:
+            "Check the guide."
+            super
+        inherit *
+
+team NewPod: "Pod"
+    home: "new-pod"
+    member qa[Qa]: "QA"
+        role:
+            paragraph opening:
+                "You test the app."
+            inherit *

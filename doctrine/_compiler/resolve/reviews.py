@@ -3,7 +3,8 @@ from __future__ import annotations
 from doctrine import model
 from doctrine._compiler.constants import _REVIEW_CONTRACT_FACT_KEYS, _REVIEW_VERDICT_TEXT
 from doctrine._compiler.indexing import unit_declarations
-from doctrine._compiler.resolve.patches import expand_patch_items, apply_path_patches
+from doctrine._compiler.resolve.patches import expand_patch_items
+from doctrine._compiler.resolve.path_patches import apply_path_patches
 from doctrine._compiler.review_diagnostics import review_compile_error, review_related_site
 from doctrine._compiler.naming import (
     _dotted_ref_name,
