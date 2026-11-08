@@ -41,6 +41,8 @@ def compile_side(args):
             for _, level in loaded_levels(homes, home):
                 for ref, _ in level["file_refs"]:
                     path = Path(ref[2])
+                    if project_file_path(target.project_config, path).is_dir():
+                        continue
                     name = relpath(real_project_path(target.project_config, path),
                                    real_project_path(target.project_config, base))
                     if name not in shared:

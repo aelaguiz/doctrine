@@ -248,6 +248,8 @@ def home_loads(target, homes, files, settings, selected):
                     on_demand[relpath(path, target.project_config.config_dir)] = text_size(file_text(path), runtime)
                 for ref, always_on in item["file_refs"]:
                     path = Path(ref[2])
+                    if project_file_path(config, path).is_dir():
+                        continue
                     name = relpath(real_project_path(config, path), real_project_path(config, root))
                     if ref[0] == "load" and always_on:
                         if runtime == "codex" and not any(file["path"] == name for file in loaded):
@@ -287,6 +289,7 @@ def home_loads(target, homes, files, settings, selected):
                     path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
                     resolved = (source.parent / Path(path).expanduser()).resolve()
                     if (resolved.is_relative_to(root.resolve()) and resolved not in loaded_paths
+                            and not project_file_path(config, resolved).is_dir()
                             and (content := file_text(resolved)) is not None):
                         on_demand[relpath(resolved, root)] = text_size(content, runtime)
             on_demand = {path: size for path, size in on_demand.items()

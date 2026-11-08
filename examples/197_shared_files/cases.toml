@@ -2,6 +2,56 @@ schema_version = 1
 default_prompt = "project/prompts/AGENTS.prompt"
 
 [[cases]]
+name = "load leaves folders out"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Library}}.\"\n" }
+args = ["load", "pod", "--runtime", "codex"]
+expected_exit = 0
+expected_stdout_lines = ["pod on codex: 278 of 32,768 bytes, 32,490 left", "", "Files:", "  pod/AGENTS.md  278  missing", "", "Biggest parts:", "  Pod: 27"]
+
+[[cases]]
+name = "folder links from two depths"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    member qa: \"QA\"\n        role: \"Read {{Library}} and {{Library:title}}.\"\nteam Deep: \"Deep\"\n    home: \"pod/deep\"\n    member qa: \"QA\"\n        role: \"Read {{Library}}.\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pod/qa/AGENTS.md" = ["If your session started in this folder, you are Pod's QA. If not, this only describes that role.", "", "Read [Library](../../shared/) and Library."], "pod/deep/qa/AGENTS.md" = ["If your session started in this folder, you are Deep's QA. If not, this only describes that role.", "", "Read [Library](../../../shared/)."] }
+
+[[cases]]
+name = "a missing folder fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"missing\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Library}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E652", "`Library` names `missing`, which doesn't exist."]
+
+[[cases]]
+name = "a folder cannot be loaded"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{load:Library}}\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E655", "`{{load:Library}}` can't load `shared`, because it's a folder. Link to it with `{{Library}}`."]
+
+[[cases]]
+name = "a file with a body cannot name a folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\n    \"Text.\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Library}}.\"\n" }
+args = ["build", "pod"]
+expected_exit = 1
+stderr_contains = ["E652", "`Library` has a body, so `shared` must be a file, but it's a folder."]
+
+[[cases]]
 name = "shared files link from a home"
 status = "active"
 kind = "cli_contract"
