@@ -28,9 +28,11 @@ def split_details(compiled, home, root, home_map, unit):
     companions, pointers, cases, linked = {}, [], {}, {}
     paths = {entry.path for entry in home_map.entries}
     for item in model_walk(compiled):
+        if is_dataclass(item):
+            for field in fields(item):
+                if field.name.endswith("title") and isinstance(title := getattr(item, field.name), str):
+                    reject_case_links(str(title), unit=unit)
         if isinstance(item, CompiledReadableBlock) and not isinstance(item, CompiledRuleBlock):
-            if item.title:
-                reject_case_links(str(item.title), unit=unit)
             if item.origin:
                 reject_case_links(item.origin.headings, unit=unit)
     def visit(item, headings, key_path):
@@ -57,6 +59,12 @@ def split_details(compiled, home, root, home_map, unit):
     compiled = replace(compiled, fields=tuple(visit(field, (), (field.key,))
         if isinstance(field, (CompiledSection, CompiledGuardBlock)) else field for field in compiled.fields))
     def link(text, prefix):
+        lines = list(fenced_lines(text.splitlines()))
+        for index, (line, inside) in enumerate(lines):
+            if not inside and re.match(r"^ {0,3}#{1,6}(?:\s|$)", line):
+                reject_case_links(line, unit=unit)
+            if not inside and index and re.fullmatch(r" {0,3}(?:=+|-+)\s*", line):
+                reject_case_links(lines[index - 1][0], unit=unit)
         def resolve(match):
             name = match[1]
             key = (*prefix, *name.split("."))

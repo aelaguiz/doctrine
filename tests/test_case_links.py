@@ -31,6 +31,13 @@ class CaseLinksTests(HomeProject, unittest.TestCase):
                 self.assertIn("E602", error)
                 self.assertIn(f"`{token}` can't be read here: a case link belongs in a sentence the agent always reads.", error)
 
+        for heading in (f"## {token}", f"{token}\\n===="):
+            with self.subTest(heading=heading):
+                root = self.project(source.replace('        details case:', f'        "{heading}"\n        details case:'))
+                code, _, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 1)
+                self.assertIn("E602", error)
+
     def test_case_links_in_soul_and_classic_emit_are_rejected(self):
         source = 'agent A:\n    role: "Read {{details:work.case}}."\n'
         for soul in (False, True):

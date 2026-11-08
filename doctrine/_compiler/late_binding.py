@@ -9,7 +9,7 @@ from doctrine._compiler.naming import map_model
 from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.teams import find_home_team, team_members, home_value_sources, member_home
-from doctrine._compiler.types import CompiledCodeBlock, CompiledRawTextBlock
+from doctrine._compiler.types import CompiledCodeBlock
 from doctrine._compiler.markdown_links import rebase_markdown
 
 
@@ -47,9 +47,9 @@ def reject_case_links(value, *, unit):
                 path=unit.prompt_file.source_path)
         return text
     def leaf(item):
-        if isinstance(item, (CompiledCodeBlock, CompiledRawTextBlock)):
+        if isinstance(item, CompiledCodeBlock):
             return replace(item, title=map_text(item.title, reject))
-        if isinstance(item, (model.ReadableCodeData, model.ReadableRawTextData)):
+        if isinstance(item, model.ReadableCodeData):
             return item
         if isinstance(item, str) and not isinstance(item, model.MarkdownProse):
             return reject(item)
