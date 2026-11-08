@@ -6,7 +6,11 @@ emitted tree, not the source tree.
 This reference teaches the named-target surface. It covers how to wire a
 target, how to run each emit command, what artifacts land on disk, and
 how a harness consumes them. For deep output-layout detail, use
-`/Users/aelaguiz/workspace/doctrine/docs/EMIT_GUIDE.md`."""
+[docs/EMIT_GUIDE.md](https://github.com/aelaguiz/doctrine/blob/main/docs/EMIT_GUIDE.md)."""
+
+    section build_homes: "Build Homes"
+        "Use `doctrine build .` to build all team and agent homes. Use `doctrine build Team.member` to build one member after the whole tree is current. Run `doctrine check` after the build to check the files without writing them. See [example 184](https://github.com/aelaguiz/doctrine/blob/main/examples/184_doctrine_build_modes)."
+        "Use `emit_docs` for its agent package and contract outputs, `emit_skill` for skill packages, and `emit_flow` for diagrams. The sections below explain those outputs."
 
     section why_emit_exists: "Why Emit Exists"
         bullets items:
@@ -67,7 +71,7 @@ output_dir = "examples/07_handoffs/build"
 across two entrypoints."""
 
     section running_emit_commands: "Running Emit Commands"
-        "All emit commands use the same locked Python env:"
+        "For outputs beyond homes, run these commands in the locked Python env:"
         code:
             language: bash
             text: """uv run --locked python -m doctrine.emit_docs --target example_07_handoffs
@@ -96,7 +100,7 @@ name = "example_07_handoffs"
 entrypoint = "examples/07_handoffs/prompts/AGENTS.prompt"
 output_dir = "examples/07_handoffs/build"
 """
-            """The source example is `examples/07_handoffs`. Run it with `doctrine.emit_docs`."""
+            """The source example is `examples/07_handoffs`. Use `doctrine build` for homes. Use `emit_docs` for runtime packages and contracts."""
 
         section workflow_flow_target: "Workflow Flow Target"
             """Same config shape, different emit command. `emit_flow` writes one
@@ -114,7 +118,7 @@ entrypoint = "examples/122_skill_package_emit_documents/prompts/SKILL.prompt"
 output_dir = "examples/122_skill_package_emit_documents/build"
 """
             """Shipped proof lives at
-`/Users/aelaguiz/workspace/doctrine/examples/122_skill_package_emit_documents/`.
+[examples/122_skill_package_emit_documents](https://github.com/aelaguiz/doctrine/blob/main/examples/122_skill_package_emit_documents).
 Run with `doctrine.emit_skill`."""
 
         section skill_graph_target: "Skill Graph Target"
@@ -129,7 +133,7 @@ graph = "ControllerGraph"
 output_dir = "examples/158_skill_graph_emit/build"
 """
             """Shipped proof lives at
-`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`.
+[examples/158_skill_graph_emit](https://github.com/aelaguiz/doctrine/blob/main/examples/158_skill_graph_emit).
 Run with `doctrine.emit_skill_graph`."""
             "Rules:"
             bullets rules:
@@ -164,7 +168,7 @@ lock_file = "doctrine.skill.lock"
 
             "Shipped proof:"
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/149_external_skill_source_target/`"
+                "[examples/149_external_skill_source_target](https://github.com/aelaguiz/doctrine/blob/main/examples/149_external_skill_source_target)"
 
     section dual_emit_pattern: "Dual Emit Pattern For First-Party Skills"
         """First-party skills in this repo ship two targets: one local `build/`
@@ -223,7 +227,7 @@ Rules:"""
 
         "Shipped proof:"
         bullets proof:
-            "`/Users/aelaguiz/workspace/doctrine/examples/115_runtime_agent_packages/`"
+            "[examples/115_runtime_agent_packages](https://github.com/aelaguiz/doctrine/blob/main/examples/115_runtime_agent_packages)"
 
     section provider_supplied_roots: "Provider-Supplied Prompt Roots"
         "Hosts add import search roots two ways:"
@@ -271,9 +275,9 @@ Top-level blocks:"""
 
             "Shipped proof:"
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/119_route_only_final_output_contract/`"
-                "`/Users/aelaguiz/workspace/doctrine/examples/120_route_field_final_output_contract/`"
-                "`/Users/aelaguiz/workspace/doctrine/examples/121_nullable_route_field_final_output_contract/`"
+                "[examples/119_route_only_final_output_contract](https://github.com/aelaguiz/doctrine/blob/main/examples/119_route_only_final_output_contract)"
+                "[examples/120_route_field_final_output_contract](https://github.com/aelaguiz/doctrine/blob/main/examples/120_route_field_final_output_contract)"
+                "[examples/121_nullable_route_field_final_output_contract](https://github.com/aelaguiz/doctrine/blob/main/examples/121_nullable_route_field_final_output_contract)"
 
         section output_schema_file: "`schemas/<output-slug>.schema.json`"
             """For structured final outputs, `emit_docs` also writes the exact lowered
@@ -289,7 +293,7 @@ before rendering Markdown.
 
 Shipped proof:"""
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/79_final_output_output_schema/`"
+                "[examples/79_final_output_output_schema](https://github.com/aelaguiz/doctrine/blob/main/examples/79_final_output_output_schema)"
 
         section skill_contract_json: "`SKILL.contract.json`"
             """`emit_skill` writes this sidecar only when the package has host-binding
@@ -304,7 +308,7 @@ truth through `host_contract:` or `host:` refs. It records:"""
 
 Shipped proof:"""
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/124_skill_package_host_binding/`"
+                "[examples/124_skill_package_host_binding](https://github.com/aelaguiz/doctrine/blob/main/examples/124_skill_package_host_binding)"
 
         section skill_source_json: "`SKILL.source.json`"
             """`emit_skill` writes this sidecar for every skill package. It records
@@ -331,8 +335,8 @@ outputs, a source tree hash, and an output tree hash."""
 
             "Shipped proof:"
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/147_skill_package_source_receipt/`"
-                "`/Users/aelaguiz/workspace/doctrine/examples/148_skill_package_tracked_sources/`"
+                "[examples/147_skill_package_source_receipt](https://github.com/aelaguiz/doctrine/blob/main/examples/147_skill_package_source_receipt)"
+                "[examples/148_skill_package_tracked_sources](https://github.com/aelaguiz/doctrine/blob/main/examples/148_skill_package_tracked_sources)"
 
         section graph_contract_json: "`SKILL_GRAPH.contract.json`"
             """`emit_skill_graph` writes this sidecar for every graph target. It is
@@ -341,7 +345,7 @@ the authoritative graph contract for one resolved `skill_graph`."""
             "Use it when a harness or downstream tool needs graph-owned truth."
             "Shipped proof:"
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`"
+                "[examples/158_skill_graph_emit](https://github.com/aelaguiz/doctrine/blob/main/examples/158_skill_graph_emit)"
 
         section graph_source_json: "`SKILL_GRAPH.source.json`"
             """`emit_skill_graph` writes this sidecar for every graph target. It
@@ -367,7 +371,7 @@ receipt hashes."""
 
             "Shipped proof:"
             bullets proof:
-                "`/Users/aelaguiz/workspace/doctrine/examples/158_skill_graph_emit/`"
+                "[examples/158_skill_graph_emit](https://github.com/aelaguiz/doctrine/blob/main/examples/158_skill_graph_emit)"
 
     section schema_validator_cli: "Schema Validator CLI"
         "Validate any emitted schema file with:"
@@ -408,9 +412,9 @@ not silently prefer one root. Fix the duplicate at the source."""
   and `final_output`."""
             """`references/verify-and-ship.md`: verify commands, Definition of Done,
   and release flow."""
-            """`/Users/aelaguiz/workspace/doctrine/docs/EMIT_GUIDE.md`: canonical
+            """[docs/EMIT_GUIDE.md](https://github.com/aelaguiz/doctrine/blob/main/docs/EMIT_GUIDE.md): canonical
   emit guide."""
-            """`/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md`: stable
+            """[docs/COMPILER_ERRORS.md](https://github.com/aelaguiz/doctrine/blob/main/docs/COMPILER_ERRORS.md): stable
   error catalog for emit and compile errors."""
 
         """**Load when:** The author is configuring an emit target, running an

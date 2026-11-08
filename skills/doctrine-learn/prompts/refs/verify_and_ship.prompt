@@ -3,11 +3,11 @@ document VerifyAndShip: "Verify And Ship"
 align docs, commit. This reference covers the exact commands, the
 Definition of Done, release rules, and the shortcuts to avoid.
 
-The source of truth is `/Users/aelaguiz/workspace/doctrine/AGENTS.md`.
+The source of truth is [AGENTS.md](https://github.com/aelaguiz/doctrine/blob/main/AGENTS.md).
 This file teaches how to apply that truth."""
 
     section verify_commands: "Verify Commands"
-        "Before editing a shared role, run `doctrine classes` for that role and read `Changed below`."
+        "For a lesson in your own project, follow The Loop in `references/getting-good-results.md`."
         """Use the command that matches the surface you changed. Do not run
 every command on every change."""
 
@@ -53,7 +53,7 @@ confirmed:"""
 
     section release_classification: "Release Classification"
         """Every public release uses one class. See
-`/Users/aelaguiz/workspace/doctrine/docs/VERSIONING.md` for the full
+[docs/VERSIONING.md](https://github.com/aelaguiz/doctrine/blob/main/docs/VERSIONING.md) for the full
 rules."""
 
         bullets classes:
@@ -146,7 +146,7 @@ Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution n
             "Implementation, examples, docs, and `AGENTS.md` are aligned."
             """Updated `docs/VERSIONING.md` and `CHANGELOG.md` if public
   compatibility changed."""
-            """Updated `/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md`
+            """Updated [docs/COMPILER_ERRORS.md](https://github.com/aelaguiz/doctrine/blob/main/docs/COMPILER_ERRORS.md)
   if you changed diagnostics, and ran `make verify-diagnostics`."""
             """Re-emitted first-party skill bundles when the `.prompt` source
   changed. The dev `build/` tree and the curated `skills/.curated/`
@@ -180,13 +180,13 @@ Support-surface version changes: package metadata 1.0.1 -> 1.0.2; distribution n
   every verify and ship decision."""
             """`references/emit-targets.md`: emit commands, target config, and
   generated contract files."""
-            """`/Users/aelaguiz/workspace/doctrine/AGENTS.md`: canonical build,
+            """[AGENTS.md](https://github.com/aelaguiz/doctrine/blob/main/AGENTS.md): canonical build,
   verify, and Definition of Done rules."""
-            """`/Users/aelaguiz/workspace/doctrine/docs/VERSIONING.md`: canonical
+            """[docs/VERSIONING.md](https://github.com/aelaguiz/doctrine/blob/main/docs/VERSIONING.md): canonical
   versioning and release policy."""
-            """`/Users/aelaguiz/workspace/doctrine/CHANGELOG.md`: portable release
+            """[CHANGELOG.md](https://github.com/aelaguiz/doctrine/blob/main/CHANGELOG.md): portable release
   history and entry shapes."""
-            """`/Users/aelaguiz/workspace/doctrine/docs/COMPILER_ERRORS.md`: stable
+            """[docs/COMPILER_ERRORS.md](https://github.com/aelaguiz/doctrine/blob/main/docs/COMPILER_ERRORS.md): stable
   error catalog."""
 
         """**Load when:** The author is about to commit, cut a release, delete a
