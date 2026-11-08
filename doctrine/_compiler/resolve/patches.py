@@ -289,9 +289,9 @@ def expand_agent_patches(context, agent, *, unit):
                 fields.append(mark_wildcard(inherited) if field.wildcard else inherited)
         else:
             if isinstance(field, model.RoleScalar) and any(
-                isinstance(item, (model.InheritItem, model.InheritAll)) for item in field.paragraphs
+                isinstance(item, (model.InheritItem, model.InheritAll, model.OverridePath)) for item in field.paragraphs
             ):
-                parent_role = parent_fields["role"][0]
+                parent_role = parent_fields.get("role", [None])[0]
                 if not isinstance(parent_role, model.RoleScalar) or not parent_role.paragraphs:
                     raise compile_error(code="E611", summary="Invalid patch path", path=unit.prompt_file.source_path,
                         source_span=field.source_span, detail=f"`{agent.name}` inherits from `role`, which has no keyed paragraphs.")

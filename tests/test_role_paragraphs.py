@@ -45,6 +45,8 @@ agent Child[Base]:
     role:
 '''
         cases = (
+            ('        override paragraph one:\n            "New."\n', 'E003', 'Missing inherited role paragraph in agent Child: two'),
+            ('        override paragraph absent:\n            "New."\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
             ('        inherit one\n', 'E003', 'Missing inherited role paragraph in agent Child: two'),
             ('        inherit absent\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
             ('        override paragraph absent:\n            "Text."\n        inherit *\n', 'E610', '`Child` patches `role.absent`, but its parent has no such key.'),
@@ -64,6 +66,31 @@ agent Child[Base]:
             session.compile_agent('Child')
         self.assertEqual(caught.exception.code, 'E611')
         self.assertIn('`Child` inherits from `role`, which has no keyed paragraphs.', str(caught.exception))
+
+    def test_override_only_role_block_patches_the_parent(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph one:
+            "One."
+agent Child[Base]:
+    role:
+        override paragraph one:
+            super
+            "New."
+''')
+        self.assertEqual(render_markdown(session.compile_agent('Child')), 'One.\n\nNew.\n')
+
+    def test_role_patch_without_parent_role_fails(self):
+        for parent, child in (
+            ('', 'agent Child:'),
+            ('abstract agent Base:\n    work: "Work"\n        "Do it."\n', 'agent Child[Base]:\n    inherit *'),
+        ):
+            with self.subTest(parent=parent):
+                session = self.session(parent + child + '\n    role:\n        inherit *\n')
+                with self.assertRaises(CompileError) as caught:
+                    session.compile_agent('Child')
+                self.assertEqual(caught.exception.code, 'E611')
+                self.assertIn('`Child` inherits from `role`, which has no keyed paragraphs.', str(caught.exception))
 
     def test_role_block_and_path_patch_conflict(self):
         session = self.session('''abstract agent Base:

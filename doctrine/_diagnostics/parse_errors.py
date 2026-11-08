@@ -186,7 +186,6 @@ def _is_review_statement_placement_error(
         "ACCEPT",
         "BLOCK",
         "IGNORE",
-    "INHERIT",
         "PRESERVE",
         "REJECT",
         "SUPPORT_ONLY",

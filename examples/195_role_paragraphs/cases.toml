@@ -128,3 +128,39 @@ prompt = "prompts/invalid/unkeyed/AGENTS.prompt"
 agent = "Child"
 exception_type = "CompileError"
 error_code = "E611"
+
+[[cases]]
+name = "role patch override only missing target"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/override_only_missing_target/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E610"
+
+[[cases]]
+name = "role patch override only omits parent"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/override_only_omits_parent/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E003"
+
+[[cases]]
+name = "role patch parent without role"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/parent_without_role/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E611"
+
+[[cases]]
+name = "role patch no parent"
+status = "active"
+kind = "compile_fail"
+prompt = "prompts/invalid/no_parent/AGENTS.prompt"
+agent = "Child"
+exception_type = "CompileError"
+error_code = "E611"
