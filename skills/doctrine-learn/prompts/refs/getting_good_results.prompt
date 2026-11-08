@@ -21,6 +21,51 @@ document GettingGoodResults: "Getting Good Results"
         "So do your own thinking on the words, and let the compiler carry them. An author who works the other way ends up with a tidy tree of typed declarations that teach nothing."
         "A clean `doctrine check` proves the text compiles and your load rules hold. It doesn't prove the text teaches. The Loop, at the end of this file, says how to find that out."
         "`examples/193_small_team_end_to_end` shows the whole method on one small team. Read it once before you build your own."
+    section classes: "Design Your Agents As Classes"
+        "`examples/199_class_hierarchy` shows one small company from start to finish."
+        markdown:
+            text: """| If you're thinking | In Doctrine |
+| --- | --- |
+| A class | `abstract agent`, with a title that says what it's for |
+| An attribute | A `values:` key, read with an agent or team reference |
+| An abstract method | `abstract slot` |
+| A method | A keyed slot, section or paragraph |
+| `override` | `override` |
+| `super()` | `super` |
+| A mixin | A slot bound to a shared `workflow` |
+| An instance | `member key[Class]: "Title"` |
+| A module loaded at start | A `file` loaded at start |
+| A lazy import | A `file`, or a `details` case, linked from a sentence that says when |
+| `help()` and `__mro__` | `doctrine classes` |
+| An `issubclass` check | `rule` with `requires inherit` |
+"""
+        code:
+            language: prompt
+            text: """workflow TestCraft: "Testing"
+    "Test the {{agent:subject}} from a user's point of view."
+
+abstract agent QA[Member]: "How QA works"
+    inherit *
+    values:
+        subject: "{{team:unit}}"
+    craft: TestCraft
+    drop planning: "QA joins the plan instead of owning it."
+    checks: "Review"
+        "When a test fails, read {{details:checks.failure}}."
+        "Before testing, read {{TestGuide}}."
+        details failure: "A failed test"
+            "Find what the user would see before choosing a fix."
+
+team Company: "the company"
+    home: "."
+    principles: "Principles"
+        "Read first: {{load:Handbook}}"
+"""
+        "A team is what a member works in, and a role is what it is. Put a word that changes by team in a value, and an idea that holds for a role in its class."
+        "Start from the copies. Two near-identical files are one class saved twice."
+        "Change a word with a value, add with `super`, and use a plain `override` only when the idea differs."
+        "Keep what an agent needs in mind to notice the moment. Move the how out, and leave one sentence that names the moment."
+        "Don't force it. Most of a lead's file is its team's real job, and a difference a team chose is not drift."
     section failures: "Which Failure, Which Tool"
         "Start from what went wrong, not from a feature. Each row names a failure authors really meet."
         table failure_tools: FailureTools
