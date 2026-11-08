@@ -424,6 +424,16 @@ agent Other:
         self.assertIn("[ask @alice](../../shared/other.md)", text)
         self.assertIn("@../../shared/other.md", text)
 
+    def test_from_rebases_an_import_that_points_up_a_folder(self):
+        root = self.project(example="179_markdown_backed_declarations", fixture="project_imports")
+        (root / "shared/roles").mkdir()
+        (root / "shared/roles/craft.md").write_text("A role.\n\nWhat we share loads here: @../other.md\n")
+        prompt = root / "prompts/AGENTS.prompt"
+        prompt.write_text(prompt.read_text().replace('from "shared/craft.md"', 'from "shared/roles/craft.md"'))
+        code, _, error = self.cli(root, "build")
+        self.assertEqual(code, 0, error)
+        self.assertIn("What we share loads here: @../../shared/other.md", (root / "pod/qa/AGENTS.md").read_text())
+
     def test_handle_in_a_valid_link_does_not_trigger_e636(self):
         root = self.project('''team T: "Team"
     home: "t"
