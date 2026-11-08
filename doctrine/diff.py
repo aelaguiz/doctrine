@@ -44,7 +44,7 @@ def compile_side(args):
                     name = relpath(real_project_path(target.project_config, path),
                                    real_project_path(target.project_config, base))
                     if name not in shared:
-                        text = generated[path].decode() if path in generated else path.read_text()
+                        text = generated[path].decode() if path in generated else path.read_text(errors="replace")
                         shared[name] = {"text": text, "homes": set()}
                     shared[name]["homes"].add(home)
         return {

@@ -62,7 +62,7 @@ def near_copy_warnings(session):
             if isinstance(declaration, model.FileDecl) and declaration.body is None:
                 source = project_file_path(session.project_config, declaration.path)
                 name = ".".join((*unit.module_parts, declaration.name))
-                texts.append((name, source, 1, source.read_text()))
+                texts.append((name, source, 1, source.read_text(errors="replace")))
         for name, source, line, text in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):

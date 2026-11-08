@@ -432,3 +432,75 @@ agent Other:
         code, _, error = self.cli(root, "build")
         self.assertEqual(code, 0, error)
         self.assertIn("[ask @alice](../people.md)", (root / "t/AGENTS.md").read_text())
+
+    def test_kept_file_with_invalid_utf8_works_in_all_reports(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        (root / "guide.md").write_bytes(b"Find this needle.\xff\n")
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary) / "base"
+            shutil.copytree(root, base)
+            for command in (("build", "."), ("load",), ("where", "needle"),
+                            ("diff", "--base-tree", str(base))):
+                with self.subTest(command=command):
+                    code, _, error = self.cli(root, *command)
+                    self.assertEqual(code, 0, error)
+
+    def test_home_under_symlinked_folder_loads(self):
+        root = self.project('''team T: "Team"
+    home: "linked/team"
+    role: "Work."
+''')
+        with tempfile.TemporaryDirectory() as temporary:
+            (root / "linked").symlink_to(temporary, target_is_directory=True)
+            for command in (("build", "."), ("load", "linked/team")):
+                code, _, error = self.cli(root, *command)
+                self.assertEqual(code, 0, error)
+            self.assertTrue((Path(temporary) / "team/AGENTS.md").is_file())
+
+    def test_file_limit_must_be_a_positive_integer(self):
+        for value in ('"40000"', "40000.5", "0", "true"):
+            with self.subTest(value=value):
+                root = self.project('team T: "Team"\n    home: "t"\n    role: "Work."\n',
+                                    settings=f'[tool.doctrine.runtimes.claude]\nfile_limit = {value}\n')
+                code, _, error = self.cli(root, "build")
+                self.assertEqual(code, 1, error)
+                self.assertIn("E632", error)
+
+    def test_codex_counts_an_external_root_level_once(self):
+        root = self.project('team T: "Team"\n    home: "t"\n    role: "Work."\n',
+                            settings='[tool.doctrine.runtimes.codex]\nexternal = [{path="AGENTS.md"}]\n')
+        (root / "AGENTS.md").write_text("Root instructions.\n")
+        code, output, error = self.cli(root, "load", "t", "--runtime", "codex", "--json")
+        self.assertEqual(code, 0, error)
+        load = json.loads(output)["homes"][0]["runtimes"]["codex"]
+        self.assertEqual([row["path"] for row in load["files"]].count("AGENTS.md"), 1)
+        self.assertEqual(load["total"], sum(row["size"] for row in load["files"]))
+
+    def test_codex_full_omits_read_first_files(self):
+        root = self.project(example="197_shared_files")
+        (root / "shared/guide.md").write_text("Unique guide text.\n")
+        code, output, error = self.cli(root, "load", "pod/analyst", "--runtime", "codex", "--full")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("Unique guide text.", output)
+        self.assertNotIn("===== shared/guide.md", output)
+
+    def test_loaded_and_linked_file_is_not_on_demand_for_claude(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+    work: "Work"
+        "Read first: {{load:Guide}}"
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        code, output, error = self.cli(root, "load", "t", "--runtime", "claude", "--json")
+        self.assertEqual(code, 0, error)
+        load = json.loads(output)["homes"][0]["runtimes"]["claude"]
+        self.assertIn("guide.md", [row["path"] for row in load["files"]])
+        self.assertNotIn("guide.md", [row["path"] for row in load["on_demand"]])

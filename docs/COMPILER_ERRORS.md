@@ -367,7 +367,7 @@ shows the canonical formatted shape for one shipped compile error.
 | `E621` | Retired | Shared details can read agent and team values. |
 | `E630` | Over load budget | A build or check finds a home past its runtime's limit and lists its biggest source parts. |
 | `E631` | Invalid budget | A budget is not a positive integer, exceeds the runtime limit, or names an unknown runtime. |
-| `E632` | Invalid runtime settings | A runtime name or setting is invalid. |
+| `E632` | Invalid runtime settings | A runtime name or setting is invalid. A `file_limit` must be a positive integer. |
 | `E633` | External file missing | A listed external is absent and has no reserve. |
 | `E634` | Hand edit in a compiled file | Markdown has no valid body hash, or a Claude link has the wrong target. The report names changed sections and their sources. A removed section says `no longer in source`. Companions name only their source file. Move the edit to its source, then build. `--force` overwrites it. |
 | `E635` | Home needs a full build | A loaded level is missing or out of date, or a linked companion is missing. Run `doctrine build .`, then build this home. |

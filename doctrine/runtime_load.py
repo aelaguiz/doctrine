@@ -56,6 +56,7 @@ def runtime_settings(target):
                 "must be greater than 0 and at most 1",
             ),
             ("over", values["over"] in ("error", "warn"), "must be error or warn"),
+            ("file_limit", values["file_limit"] is None or type(values["file_limit"]) is int and values["file_limit"] > 0, "must be a positive integer or none"),
         ):
             if not valid:
                 bad(f"`{key}` for `{runtime}`: {detail}.")
@@ -199,8 +200,8 @@ def home_loads(target, homes, files, settings, selected):
             parts = {}
             on_demand = {}
             root = target.project_config.config_dir.resolve()
-            home_dir = (target.output_dir / home).resolve()
-            by_folder = {(target.output_dir / level).resolve(): (level, item)
+            home_dir = target.output_dir / home
+            by_folder = {(target.output_dir / level): (level, item)
                          for level, item in levels}
             folders = [root, *(root.joinpath(*home_dir.relative_to(root).parts[:i])
                                for i in range(1, len(home_dir.relative_to(root).parts) + 1))]
@@ -249,24 +250,25 @@ def home_loads(target, homes, files, settings, selected):
                                 "kind": "read_first", "text": text, "on_disk": path.is_file()})
                     else:
                         on_demand[name] = text_size(file_text(path), runtime)
-            if runtime == "claude":
-                expanded, seen = [], set()
-                home_paths = {project_file_path(config, root / entry["path"])
-                              for entry in loaded if entry["kind"] == "home"}
-                for entry in loaded:
-                    path = project_file_path(config, root / entry["path"])
-                    if entry["kind"] == "external" and path in home_paths:
-                        continue
-                    if path in seen:
-                        continue
-                    seen.add(path)
-                    expanded.append(entry)
-                    if entry["kind"] != "reserved":
-                        for imported, text in follow_imports(path, entry["text"], file_text, seen, 0, config):
-                            expanded.append({"path": relpath(real_project_path(config, imported), real_project_path(config, root)),
-                                "size": text_size(text, runtime), "kind": "import", "text": text,
-                                "on_disk": real_project_path(config, imported).is_file()})
-                loaded = expanded
+            expanded, seen = [], set()
+            home_paths = {project_file_path(config, root / entry["path"])
+                          for entry in loaded if entry["kind"] == "home"}
+            for entry in loaded:
+                path = project_file_path(config, root / entry["path"])
+                if entry["kind"] == "external" and path in home_paths:
+                    continue
+                if path in seen:
+                    continue
+                seen.add(path)
+                expanded.append(entry)
+                if runtime == "claude" and entry["kind"] != "reserved":
+                    for imported, text in follow_imports(path, entry["text"], file_text, seen, 0, config):
+                        expanded.append({"path": relpath(real_project_path(config, imported), real_project_path(config, root)),
+                            "size": text_size(text, runtime), "kind": "import", "text": text,
+                            "on_disk": real_project_path(config, imported).is_file()})
+            loaded = expanded
+            on_demand = {path: size for path, size in on_demand.items()
+                         if not any(item["path"] == path and item["kind"] != "read_first" for item in loaded)}
             limit = next(
                 (budget[runtime] for budget in budgets if runtime in budget), setting["limit"]
             )
