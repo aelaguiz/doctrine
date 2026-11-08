@@ -9,10 +9,31 @@ from doctrine._compiler.markdown_reader import heading_anchor
 from doctrine.compiler import CompilationSession
 from doctrine.diagnostics import CompileError
 from doctrine.parser import parse_file
+from doctrine.renderer import render_readable_block
 from tests.home_support import HomeProject
 
 
 class CaseLinksTests(HomeProject, unittest.TestCase):
+    def test_case_links_are_literal_in_markdown_blocks(self):
+        block = '''    markdown:
+        text: """Read {{details:path}}.
+"""
+'''
+        root = self.project('team T: "Team"\n    home: "t"\n    work: "Work"\n'
+                            + ''.join('    ' + line if line.strip() else line for line in block.splitlines(keepends=True)))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("Read {{details:path}}.", (root / "t/AGENTS.md").read_text())
+        root = self.project('team T: "Team"\n    home: "t"\n    work: "Work"\n        details case: "Case"\n'
+                            + ''.join('        ' + line if line.strip() else line for line in block.splitlines(keepends=True)))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("Read {{details:path}}.", (root / "t/DETAILS.md").read_text())
+        root = self.project('skill package P: "Package"\n' + block)
+        session = CompilationSession(parse_file(root / "prompts/AGENTS.prompt"))
+        package = session.compile_skill_package("P")
+        self.assertIn("Read {{details:path}}.", render_readable_block(package.root))
+
     def test_case_links_in_titles_and_headings_are_rejected(self):
         token = "{{details:work.case}}"
         source = '''team T: "Team"

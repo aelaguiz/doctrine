@@ -47,7 +47,7 @@ def reject_case_links(value, *, unit):
                 path=unit.prompt_file.source_path)
         return text
     def leaf(item):
-        if isinstance(item, CompiledCodeBlock):
+        if isinstance(item, (CompiledCodeBlock, CompiledRawTextBlock)):
             return replace(item, title=map_text(item.title, reject))
         if isinstance(item, (model.ReadableCodeData, model.ReadableRawTextData)):
             return item

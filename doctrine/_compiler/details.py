@@ -39,10 +39,7 @@ def split_details(compiled, home, root, home_map, unit):
         if not isinstance(item, (CompiledSection, CompiledGuardBlock)):
             return item
         if isinstance(item, CompiledSection) and item.kind == "details":
-            def reject(text):
-                reject_case_links(text, unit=unit)
-                return text
-            map_text(item.body, reject)
+            reject_case_links(item.body, unit=unit)
             origin = item.origin
             if origin is None:
                 reject_details(item, "a declaration without a home")
