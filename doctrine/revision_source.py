@@ -105,7 +105,7 @@ def revision_source(args):
                         if file_path.is_relative_to(root):
                             extra.add(file_path.relative_to(root))
                     if (
-                        isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl))
+                        isinstance(declaration, (model.Agent, model.WorkflowDecl, model.FileDecl, model.SkillPackageDecl))
                         and declaration.markdown_path
                     ):
                         extra.add(

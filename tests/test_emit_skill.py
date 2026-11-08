@@ -10,13 +10,50 @@ import unittest
 from pathlib import Path
 
 from doctrine.diagnostics import CompileError, DoctrineError
+from doctrine.compiler import CompilationSession
 from doctrine.emit_common import load_emit_targets
 from doctrine.emit_skill import emit_target_skill
+from doctrine.parser import parse_file
 from doctrine.verify_skill_receipts import verify_target_skill_receipt
 
 
 class EmitSkillTests(unittest.TestCase):
     ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+
+    def test_markdown_skill_keeps_bytes_and_tracks_a_source_outside_package(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prompts = root / "prompts" / "skills" / "deploy"
+            prompts.mkdir(parents=True)
+            (root / "docs").mkdir()
+            source = root / "docs" / "deploy.md"
+            content = (b"---\r\nname: deploy\r\ndescription: >-\r\n  Send a change.\r\n"
+                       b"---\r\n\r\n## Checks\r\n\r\n{{leave this}} \\\\ \"\"\"\r\n"
+                       b"### Finish\r\n\r\nKeep this line.")
+            source.write_bytes(content)
+            (prompts / "SKILL.prompt").write_text(
+                'skill package Deploy from "docs/deploy.md"\n', encoding="utf-8")
+            (prompts / "notes.txt").write_text("Keep this.\n", encoding="utf-8")
+            config = root / "pyproject.toml"
+            config.write_text(
+                '[[tool.doctrine.emit.targets]]\nname = "deploy"\n'
+                'entrypoint = "prompts/skills/deploy/SKILL.prompt"\n'
+                'output_dir = "build"\n', encoding="utf-8")
+            target = load_emit_targets(config)["deploy"]
+            session = CompilationSession(parse_file(prompts / "SKILL.prompt"), project_config=target.project_config)
+            package = session.root_flow.skill_packages_by_name["Deploy"]
+            section = package.items[0]
+            self.assertEqual((section.key, section.source_span.line), ("checks", 7))
+            self.assertEqual((section.payload[1].key, section.payload[1].source_span.line), ("finish", 10))
+            emit_target_skill(target)
+            output = root / "build" / "skills" / "deploy"
+            self.assertEqual((output / "SKILL.md").read_bytes(), content)
+            self.assertEqual((output / "notes.txt").read_text(), "Keep this.\n")
+            receipt = json.loads((output / "SKILL.source.json").read_text())
+            self.assertIn("../../../docs/deploy.md", [item["path"] for item in receipt["inputs"]])
+            self.assertEqual(verify_target_skill_receipt(target).status, "current")
+            source.write_bytes(content + b" Changed.")
+            self.assertEqual(verify_target_skill_receipt(target).status, "stale_source")
 
     def test_emit_skill_emits_doctrine_agent_linter_bundle_without_scripts(self) -> None:
         # This protects the first-party source bundle shape that maintainers

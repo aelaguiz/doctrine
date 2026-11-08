@@ -538,6 +538,8 @@ class SkillPackageDecl:
     emit_entries: tuple[SkillPackageEmitEntry, ...] = ()
     host_contract: tuple[SkillPackageHostSlotItem, ...] = ()
     install: str | None = None
+    markdown_path: str | None = None
+    markdown_text: str | None = _field(default=None, compare=False)
     source_span: SourceSpan | None = _field(default=None, compare=False)
 
 

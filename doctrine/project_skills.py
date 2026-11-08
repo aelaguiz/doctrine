@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.markdown_reader import skill_frontmatter_end
 from doctrine.compiler import CompilationSession
 from doctrine.emit_skill import (
     _should_emit_skill_package_contract_json,
@@ -52,9 +53,19 @@ def compile_project_skills(target, files):
         destinations[dest] = entry
         source_name = os.path.relpath(entry, root)
         markdown = render_skill_package_markdown(compiled)
-        frontmatter, body = markdown.split("\n---\n", 1)
-        body = body.removeprefix("\n")
-        outputs = {"SKILL.md": (frontmatter + "\n---\n" + with_header(body, source_name)).encode()}
+        if package.markdown_path:
+            end = skill_frontmatter_end(markdown)
+            source_path = (root / package.markdown_path).resolve()
+            if (dest / "SKILL.md").resolve() == source_path:
+                raise compile_error(code="E656", summary="Markdown source is the output",
+                                    detail=f"`{package.name}` reads and writes `{package.markdown_path}`.")
+            separator = "" if markdown[:end].endswith(("\r", "\n")) else "\n"
+            output = markdown[:end] + separator + with_header(markdown[end:], source_name)
+        else:
+            frontmatter, body = markdown.split("\n---\n", 1)
+            body = body.removeprefix("\n")
+            output = frontmatter + "\n---\n" + with_header(body, source_name)
+        outputs = {"SKILL.md": output.encode()}
         if _should_emit_skill_package_contract_json(compiled):
             outputs["SKILL.contract.json"] = render_skill_package_contract_json(compiled).encode()
         outputs.update({item.path: item.content for item in compiled.files})

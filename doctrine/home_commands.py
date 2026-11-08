@@ -382,11 +382,16 @@ def where_source(args):
                     path = unit.prompt_file.source_path
                     if path is None:
                         continue
-                    for line, text in enumerate(path.read_text().splitlines(), 1):
-                        if needle in " ".join(text.casefold().split()):
-                            result.append({"origin": f"skill package {name}",
-                                "site": f"{relpath(path, target.project_config.config_dir)}:{line}",
-                                "homes": []})
+                    paths = [path]
+                    paths.extend(target.project_config.config_dir / decl.markdown_path
+                                 for decl in unit.declarations.skill_packages_by_name.values()
+                                 if decl.markdown_path)
+                    for source in paths:
+                        for line, text in enumerate(source.read_text().splitlines(), 1):
+                            if needle in " ".join(text.casefold().split()):
+                                result.append({"origin": f"skill package {name}",
+                                    "site": f"{relpath(source, target.project_config.config_dir)}:{line}",
+                                    "homes": []})
         generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
                      if isinstance(content, bytes)}
         for unit, declaration in declarations_in(session).values():

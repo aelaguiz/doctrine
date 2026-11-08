@@ -171,6 +171,25 @@ class SkillsTransformerMixin:
         )
 
     @v_args(meta=True, inline=True)
+    def skill_package_markdown(self, meta, name, path, body=None):
+        if body is None:
+            body = self.skill_package_body([])
+        return _with_source_span(model.SkillPackageDecl(
+            name=name, title=name, items=(), metadata=body.metadata,
+            source=body.source, emit_entries=body.emit_entries,
+            host_contract=body.host_contract, install=body.install, markdown_path=path,
+        ), meta)
+
+    def skill_package_from_body(self, items):
+        for item in items:
+            if isinstance(item, SkillPackageMetadataBlockPart):
+                raise TransformParseFailure(
+                    "A Markdown skill package gets metadata from frontmatter; remove `metadata:`.",
+                    line=item.line, column=item.column,
+                )
+        return self.skill_package_body(items)
+
+    @v_args(meta=True, inline=True)
     def skill_decl(self, meta, name, title, body):
         return _with_source_span(
             model.SkillDecl(

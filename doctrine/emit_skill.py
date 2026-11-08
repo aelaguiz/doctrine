@@ -110,7 +110,11 @@ def emit_target_skill(
     contract_path = emitted_dir / "SKILL.contract.json"
     source_receipt_path = emitted_dir / SOURCE_RECEIPT_FILE_NAME
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
-    markdown_path.write_text(render_skill_package_markdown(compiled), encoding="utf-8")
+    markdown = render_skill_package_markdown(compiled)
+    if compiled.markdown_text is not None:
+        markdown_path.write_bytes(markdown.encode("utf-8"))
+    else:
+        markdown_path.write_text(markdown, encoding="utf-8")
     emitted_paths: list[Path] = [markdown_path]
     if _should_emit_skill_package_contract_json(compiled):
         contract_path.write_text(render_skill_package_contract_json(compiled), encoding="utf-8")
@@ -143,6 +147,8 @@ def emit_target_skill(
 
 
 def render_skill_package_markdown(compiled) -> str:
+    if compiled.markdown_text is not None:
+        return compiled.markdown_text
     frontmatter_lines = ["---"]
     for key, value in compiled.frontmatter:
         frontmatter_lines.append(f"{key}: {json.dumps(value)}")

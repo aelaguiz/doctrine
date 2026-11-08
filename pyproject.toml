@@ -13,6 +13,7 @@ dependencies = [
     "interegular>=0.3,<1",
     "jsonschema>=4.25,<5",
     "lark>=1.2,<2",
+    "pyyaml>=6,<7",
 ]
 
 [project.urls]
@@ -276,3 +277,8 @@ name = "example_164_skill_graph_artifacts"
 entrypoint = "examples/164_skill_graph_artifacts/prompts/AGENTS.prompt"
 graph = "ArtifactGraph"
 output_dir = "examples/164_skill_graph_artifacts/build"
+
+[[tool.doctrine.emit.targets]]
+name = "example_204_markdown_backed_skills"
+entrypoint = "examples/204_markdown_backed_skills/prompts/SKILL.prompt"
+output_dir = "examples/204_markdown_backed_skills/build"

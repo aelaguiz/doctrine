@@ -1,0 +1,47 @@
+{
+  "receipt_version": 1,
+  "package": {
+    "name": "Deploy",
+    "title": "Deploy"
+  },
+  "doctrine": {
+    "language_version": "6.0",
+    "package_version": "5.1.0"
+  },
+  "source": {
+    "id": "deploy",
+    "root": "examples/204_markdown_backed_skills/prompts",
+    "entrypoint": "SKILL.prompt"
+  },
+  "inputs": [
+    {
+      "path": "SKILL.prompt",
+      "kind": "entrypoint",
+      "sha256": "c0786536424616a544d7603a4f29862c9b7f8230792b86484be0f218c103ddc6"
+    },
+    {
+      "path": "notes.txt",
+      "kind": "package_file",
+      "sha256": "b7d0326fd8f9c6aea4534fa79f6d8c666025cfeb89581ab38850ea2805096599"
+    },
+    {
+      "path": "source.md",
+      "kind": "package_file",
+      "sha256": "b735b8f6053904632134363dc21ab0c98b5039e3d41e17253038cd6476370f97"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "SKILL.md",
+      "kind": "skill_package_root",
+      "sha256": "b735b8f6053904632134363dc21ab0c98b5039e3d41e17253038cd6476370f97"
+    },
+    {
+      "path": "notes.txt",
+      "kind": "file",
+      "sha256": "b7d0326fd8f9c6aea4534fa79f6d8c666025cfeb89581ab38850ea2805096599"
+    }
+  ],
+  "source_tree_sha256": "9b07b764d88d18dbb825f0d364f5706e697bbe77a9ceb50a34bfe5ef602fd847",
+  "output_tree_sha256": "f7bc32af523d3630ed81511d98d2466df67a7fa915a6f8d01341899c5197364e"
+}

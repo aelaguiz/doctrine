@@ -40,6 +40,7 @@ prompt_file: _NL* declaration+ _NL*
                        | output_schema_decl
                        | output_decl
                        | skill_package_decl
+                       | skill_package_markdown
                        | skill_decl
                        | artifact_decl
                        | receipt_decl
@@ -92,6 +93,7 @@ output_shape_decl: "output" "shape" CNAME inheritance? ":" string _NL _INDENT ou
 output_schema_decl: "output" "schema" CNAME inheritance? ":" string _NL _INDENT output_schema_body _DEDENT
 output_decl: "output" CNAME inheritance? ":" string _NL _INDENT output_body _DEDENT
 skill_package_decl: "skill" "package" CNAME ":" string _NL _INDENT skill_package_body _DEDENT
+skill_package_markdown: "skill" "package" CNAME "from" string _NL (_INDENT skill_package_from_body _DEDENT)?
 skill_decl: "skill" CNAME ":" string _NL _INDENT skill_decl_body _DEDENT
 artifact_decl: "artifact" CNAME ":" string _NL _INDENT artifact_body _DEDENT
 // Top-level reusable receipt declaration. The `receipt` keyword is also used
@@ -1096,6 +1098,7 @@ artifact_scalar_key: "path" -> artifact_scalar_key_path
                    | "intent" -> artifact_scalar_key_intent
 
 skill_package_body: skill_package_item+
+skill_package_from_body: (package_metadata_block | package_install_item | package_source_block | package_emit_block | package_host_contract_block)+
 ?skill_package_item: package_metadata_block
                    | package_install_item
                    | package_source_block
