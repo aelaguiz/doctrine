@@ -1,0 +1,7 @@
+file First: "First"
+    path: "first.md"
+file Second: "Second"
+    path: "second.md"
+team T: "Team"
+    home: "t"
+    role: "Test."

@@ -49,3 +49,12 @@ project = "project_rendered"
 args = ["check", "--strict"]
 expected_exit = 0
 setup = [["build", "."]]
+
+[[cases]]
+name = "two kept files do not warn about near copies"
+status = "active"
+kind = "cli_contract"
+project = "project_kept_files"
+args = ["check", "--strict"]
+expected_exit = 0
+setup = [["build", "."]]

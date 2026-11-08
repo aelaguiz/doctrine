@@ -45,7 +45,8 @@ disable = ["W301"]
 ```
 
 Near-copy checks read source paragraphs, so shared text used by many homes
-is counted once. Each authored string and `from` file is split at blank lines.
+is counted once. They do not compare two kept files with each other. They do
+compare kept files with built text. Each authored string and `from` file is split at blank lines.
 A `from` paragraph names its own file and line. Each file is read once,
 even when several declarations read it.
 Paragraphs with fewer than 12 word tokens are skipped. Tokens ignore case and Markdown

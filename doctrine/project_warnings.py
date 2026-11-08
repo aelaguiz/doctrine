@@ -50,7 +50,7 @@ def near_copy_warnings(session):
                 if declaration.source_span.line <= token.line
             )
             name = ".".join((*unit.module_parts, declaration.name))
-            texts.append((name, path, token.line, ast.literal_eval(str(token))))
+            texts.append((name, path, token.line, ast.literal_eval(str(token)), False))
         for declaration in declarations:
             if (isinstance(declaration, (model.Agent, model.WorkflowDecl))
                     and declaration.markdown_path):
@@ -58,12 +58,12 @@ def near_copy_warnings(session):
                 if source.resolve() not in from_files:
                     from_files.add(source.resolve())
                     name = ".".join((*unit.module_parts, declaration.name))
-                    texts.append((name, source, 1, source.read_text()))
+                    texts.append((name, source, 1, source.read_text(), False))
             if (isinstance(declaration, model.FileDecl) and declaration.body is None
                     and (source := project_file_path(session.project_config, declaration.path)).is_file()):
                 name = ".".join((*unit.module_parts, declaration.name))
-                texts.append((name, source, 1, source.read_text(errors="replace")))
-        for name, source, line, text in texts:
+                texts.append((name, source, 1, source.read_text(errors="replace"), True))
+        for name, source, line, text, kept in texts:
             offset = 0
             for paragraph in re.split(r"(\n\s*\n)", text):
                 paragraph = re.sub(
@@ -71,10 +71,10 @@ def near_copy_warnings(session):
                 )
                 tokens = re.findall(r"\w+", paragraph.casefold())
                 if len(tokens) >= 12:
-                    paragraphs.append((name, f"{relpath(source, base)}:{line + offset}", tokens))
+                    paragraphs.append((name, f"{relpath(source, base)}:{line + offset}", tokens, kept))
                 offset += paragraph.count("\n")
     index, candidates = defaultdict(set), defaultdict(int)
-    for number, (_, _, tokens) in enumerate(paragraphs):
+    for number, (_, _, tokens, _) in enumerate(paragraphs):
         for shingle in set(tuple(tokens[i:i + 4]) for i in range(len(tokens) - 3)):
             for other in index[shingle]:
                 candidates[other, number] += 1
@@ -82,7 +82,7 @@ def near_copy_warnings(session):
     groups = defaultdict(list)
     for (left, right), count in sorted(candidates.items()):
         a, b = paragraphs[left], paragraphs[right]
-        if count < 3 or a[0] == b[0]:
+        if count < 3 or a[0] == b[0] or (a[3] and b[3]):
             continue
         matcher = SequenceMatcher(None, a[2], b[2], autojunk=False)
         if matcher.ratio() < 0.85:
