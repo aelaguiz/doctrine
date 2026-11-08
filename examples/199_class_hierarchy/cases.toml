@@ -1,0 +1,101 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "the company builds its homes"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+stdout_contains = ["built 9 homes"]
+expected_file_lines = { "analyst/AGENTS.md" = [
+  "If your session started in this folder, you are the analyst. If not, this only describes that role.",
+  "", "Help the team ship its work.", "", "## Planning", "", "Plan the work with the team.", "", "## Analysis", "",
+  "Answer the team's questions with numbers.",
+], "AGENTS.md" = [
+  "## Principles", "", "Read first: @shared/handbook.md",
+], "pods/AGENTS.md" = [
+  "This file loads for every session started under `pods/`. If yours started there, you are a member of the pods. If not, it only describes them.",
+  "", "## Working together", "", "Share what the other pod needs to know.",
+], "pods/growth/qa/AGENTS.md" = [
+  "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+  "", "Help the team ship its work.", "", "## Testing", "",
+  "Test the experiment from a user's point of view.", "", "## Review", "",
+  "When a test fails, read [A failed test](../../../_details/q-a.md#a-failed-test).", "",
+  "Before testing, read [Test guide](../../../shared/test-guide.md).", "",
+  "Check the signup path too.",
+], "pods/product/qa/AGENTS.md" = [
+  "If your session started in this folder, you are the product pod's QA. If not, this only describes that role.",
+  "", "Help the team ship its work.", "", "## Testing", "",
+  "Test the feature from a user's point of view.", "", "## Review", "",
+  "When a test fails, read [A failed test](../../../_details/q-a.md#a-failed-test).", "",
+  "Before testing, read [Test guide](../../../shared/test-guide.md).",
+] }
+
+[[cases]]
+name = "the company passes its QA rule"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+setup = [["build", "."]]
+expected_exit = 0
+stdout_contains = ["ok"]
+
+[[cases]]
+name = "the company class tree"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["classes"]
+expected_exit = 0
+expected_stdout_lines = [
+  "Agents",
+  "Member  (abstract)  abstract craft",
+  "├── Analyst  analyst",
+  "├── Contributor  (abstract)",
+  "│   ├── Growth.contributor  pods/growth/contributor",
+  "│   └── Product.contributor  pods/product/contributor",
+  "├── Lead  (abstract)",
+  "│   ├── Growth.lead  pods/growth/lead",
+  "│   └── Product.lead  pods/product/lead",
+  "└── QA  (abstract)  uses TestCraft",
+  "    ├── Growth.qa  pods/growth/qa  overrides checks",
+  "    └── Product.qa  pods/product/qa",
+  "",
+  "Teams",
+  "Company  .",
+  "Pod  (abstract)  members lead, contributor, qa",
+  "├── Growth  pods/growth  overrides qa",
+  "└── Product  pods/product",
+  "Pods  pods",
+]
+
+[[cases]]
+name = "the QA class view"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["classes", "QA"]
+expected_exit = 0
+expected_stdout_lines = [
+  "QA  (abstract agent)  prompts/AGENTS.prompt:28",
+  "How QA works",
+  "",
+  "Parent: Member",
+  "Children: Growth.qa, Product.qa",
+  "Uses: TestCraft",
+  "Homes: 2",
+  "",
+  "Reads:",
+  "  agent:subject  default {{team:unit}}, from QA",
+  "  team:unit",
+  "",
+  "Slots:",
+  "  craft  Testing",
+  "  checks  Review",
+  "",
+  "Changed below:",
+  "  Growth.qa overrides checks",
+]
