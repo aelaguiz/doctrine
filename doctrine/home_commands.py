@@ -93,7 +93,7 @@ def check_homes(target, session, selectors):
     revision_files = set()
     if target.project_config.revision:
         git_root, scratch, _, revision, _ = target.project_config.revision
-        paths = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", "-z", revision], cwd=git_root)
+        paths = subprocess.check_output(["git", "ls-tree", "-r", "-t", "--name-only", "-z", revision], cwd=git_root)
         revision_files = {scratch / name for name in paths.decode().split("\0") if name}
     dead_links = []
     for name, content in files.items():

@@ -516,7 +516,7 @@ team T: "Team"
         self.assertIn("guide.md", [row["path"] for row in load["files"]])
         self.assertNotIn("guide.md", [row["path"] for row in load["on_demand"]])
 
-    def test_flow_with_a_built_file_uses_the_project_root(self):
+    def test_flow_with_a_built_file_uses_the_output_root(self):
         root = self.project('''file Guide: "Guide"
     path: "guide.md"
     "Guide."
@@ -533,8 +533,64 @@ agent Other:
         config.write_text(config.read_text().replace('output_dir = "."', 'output_dir = "out"'))
         target = load_emit_targets(config)["homes"]
         output = emit_target_flow(target, include_svg=False)[0].read_text()
-        self.assertIn("[Guide](../guide.md)", output)
+        self.assertIn("[Guide](guide.md)", output)
         self.assertNotIn("\x1e", output)
+        emit_target(target)
+        self.assertTrue((root / "out/guide.md").is_file())
+
+    def test_from_rebases_an_import_of_a_built_file_on_a_clean_tree(self):
+        root = self.project('''file Guide: "Guide"
+    path: "shared/guide.md"
+    "Guide."
+abstract agent Craft from "shared/craft.md"
+team T: "Team"
+    home: "pod"
+    member qa[Craft]: "QA"
+''')
+        (root / "shared").mkdir()
+        (root / "shared/craft.md").write_text("Role.\n\n## Work\n\n@guide.md\n")
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("@../../shared/guide.md", (root / "pod/qa/AGENTS.md").read_text())
+
+    def test_requires_load_uses_declared_symlink_path(self):
+        for built in (False, True):
+            with self.subTest(built=built), tempfile.TemporaryDirectory() as temporary:
+                root = self.project('''file Guide: "Guide"
+    path: "shared/guide.md"
+''' + ('    "Guide."\n' if built else '') + '''team Pod: "Pod"
+    home: "pod"
+    member qa: "QA"
+        role: "Read {{load:Guide}}"
+rule R: "Load guide"
+    scope:
+        member: qa
+    assertions:
+        requires load Guide
+    message: "Read it."
+''')
+                if not built:
+                    (Path(temporary) / "guide.md").write_text("Guide.\n")
+                (root / "shared").symlink_to(temporary, target_is_directory=True)
+                for command in ("build", "check"):
+                    code, _, error = self.cli(root, command)
+                    self.assertEqual(code, 0, error)
+
+    def test_codex_read_first_is_not_also_on_demand(self):
+        root = self.project('''file Guide: "Guide"
+    path: "guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+    work: "Work"
+        "Read first: {{load:Guide}}"
+''')
+        (root / "guide.md").write_text("Guide.\n")
+        code, output, error = self.cli(root, "load", "t", "--runtime", "codex", "--json")
+        self.assertEqual(code, 0, error)
+        report = json.loads(output)["homes"][0]["runtimes"]["codex"]
+        self.assertEqual([row["kind"] for row in report["files"] if row["path"] == "guide.md"], ["read_first"])
+        self.assertNotIn("guide.md", [row["path"] for row in report["on_demand"]])
 
     def test_built_file_cannot_overwrite_a_home_or_companion(self):
         for path in ("t/one/AGENTS.md", "t/one/DETAILS.md"):

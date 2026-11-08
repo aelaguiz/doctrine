@@ -1459,3 +1459,33 @@ output_dir = "skill"
         self.assertEqual(code, 0, error)
         trees = [entry for entry in call.call_args_list if entry.args[0][:2] == ["git", "ls-tree"]]
         self.assertEqual(len(trees), 1)
+
+    def test_revision_rebases_imports_from_markdown(self):
+        root = self.project(example="179_markdown_backed_declarations", fixture="project_imports")
+        config = root / "pyproject.toml"
+        config.write_text(config.read_text().replace('["codex"]', '["claude", "codex"]'))
+        self.git_project(root)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        code, output, error = self.cli(root, "diff", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["homes"], [])
+        code, output, error = self.cli(root, "load", "pod/qa", "--rev", "HEAD", "--json")
+        self.assertEqual(code, 0, error)
+        rows = json.loads(output)["homes"][0]["runtimes"]["claude"]["files"]
+        self.assertIn("shared/other.md", [row["path"] for row in rows])
+        code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)
+
+    def test_check_revision_sees_directories_in_git(self):
+        root = self.project('''team T: "Team"
+    home: "t"
+    role: "See [docs](../docs/)."
+''')
+        (root / "docs").mkdir()
+        (root / "docs/readme.md").write_text("Docs.\n")
+        self.git_project(root)
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        code, _, error = self.cli(root, "check", "--rev", "HEAD")
+        self.assertEqual(code, 0, error)

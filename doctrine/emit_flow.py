@@ -80,6 +80,7 @@ def emit_target_flow(
         )
 
     output_root = (output_dir_override or target.output_dir).resolve()
+    session.emit_root = output_root
     emitted_dir = output_root / entrypoint_relative_dir(target.entrypoint)
     output_name = f"{target.entrypoint.stem}.flow"
     d2_path = emitted_dir / f"{output_name}.d2"

@@ -271,7 +271,7 @@ def home_loads(target, homes, files, settings, selected):
                             "on_disk": real_project_path(config, imported).is_file()})
             loaded = expanded
             on_demand = {path: size for path, size in on_demand.items()
-                         if not any(item["path"] == path and item["kind"] != "read_first" for item in loaded)}
+                         if not any(item["path"] == path for item in loaded)}
             limit = next(
                 (budget[runtime] for budget in budgets if runtime in budget), setting["limit"]
             )

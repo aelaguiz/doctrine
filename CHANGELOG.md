@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Markdown imports work in revision checks and can point to built files. Load
+  rules keep declared symlink paths, and flow links point to the built files.
+- Revision checks accept links to folders. Codex lists a read-first file only
+  once in each load report.
 - Shared files keep their declared paths through symlinks. Builds catch output
   collisions, and selected checks follow links between built files.
 - Revision checks find links in the requested commit. Load reports count each
