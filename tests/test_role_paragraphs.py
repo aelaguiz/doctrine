@@ -1,6 +1,7 @@
 import unittest
 import json
 
+from doctrine._compiler.home_map import build_home_map
 from doctrine.diagnostics import CompileError, ParseError
 from doctrine.parser import parse_text
 from doctrine.renderer import render_markdown
@@ -158,6 +159,27 @@ agent Child[Base]:
         with self.assertRaises(CompileError) as caught:
             session.compile_agent('Child')
         self.assertEqual(caught.exception.code, 'E612')
+
+    def test_role_block_override_home_map_points_to_child_line(self):
+        session = self.session('''import shared as lib
+agent C[lib.Base]:
+    role:
+        override paragraph a:
+            super
+            "A2."
+        inherit b
+''', {'prompts/shared/AGENTS.prompt': '''export abstract agent Base:
+    role:
+        paragraph a:
+            "A."
+        paragraph b:
+            "B."
+'''})
+        entries = {entry.path: entry for entry in build_home_map(session.compile_agent('C')).entries}
+        self.assertEqual((entries[('role', 'a')].origin, entries[('role', 'a')].origin_path,
+                          entries[('role', 'a')].site), ('C', ('role', 'a'), 'prompts/AGENTS.prompt:4'))
+        self.assertEqual((entries[('role', 'b')].origin, entries[('role', 'b')].site),
+                         ('shared.Base', 'prompts/shared/AGENTS.prompt:5'))
 
     def test_where_reports_role_paragraph_author(self):
         root = self.project('''abstract agent Base:

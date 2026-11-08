@@ -4,7 +4,7 @@ from dataclasses import dataclass, replace
 
 from doctrine import model
 from doctrine._model.core import role_text, interpolate_role_paragraphs
-from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin
+from doctrine._compiler.home_map import stamp_agent, drop_records, child_origin, source_origin
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.naming import patch_item_key, TYPED_FIELDS, map_model, model_walk
 from doctrine._compiler.teams import order_team_fields, validate_team, validate_values
@@ -319,7 +319,8 @@ def expand_agent_patches(context, agent, *, unit):
                                 source_span=item.source_span, detail=f"`{agent.name}` patches `role.{key}` twice.")
                         named.add(key)
                     if isinstance(item, model.OverridePath):
-                        overrides[key] = (item, None)
+                        overrides[key] = (replace(item, origin=item.origin or source_origin(
+                            context, agent, unit, (), item.source_span)), None)
                         item = model.InheritItem(key=key, source_span=item.source_span)
                     items.append(item)
                 role_expansion = expand_patch_items(items, parent_keys=list(parent_by_key), kind="role", owner_label=agent.name, unit=unit)
