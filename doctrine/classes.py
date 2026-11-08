@@ -25,7 +25,7 @@ def class_tree(target, session):
     context = CompilationContext(session)
     owners, _ = home_owners(target, session)
     declarations = {
-        class_name(session, unit, declaration): (unit, declaration, None)
+        class_name(session, unit, declaration): (unit, (unit.declarations.teams_by_name if isinstance(declaration, model.Team) else unit.declarations.agents_by_name)[declaration.name], None)
         for unit, declaration in declarations_in(session).values()
         if isinstance(declaration, (model.Agent, model.Team))
         and not isinstance(declaration, model.Member)

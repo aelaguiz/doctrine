@@ -378,6 +378,21 @@ team T: "team"
         self.assertEqual(code, 0, error)
         self.assertEqual(output, "")
 
+    def test_markdown_slots_appear_in_class_and_mermaid(self):
+        root = self.project('''abstract agent Qa from "specialists/qa.md"
+team Pod: "pod"
+    home: "pod"
+    member qa[Qa]: "QA"
+''')
+        (root / "specialists").mkdir()
+        (root / "specialists/qa.md").write_text('# QA\n\nTest.\n\n## Craft\n\nWork.\n')
+        code, output, error = self.cli(root, "classes", "Qa", "--json")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(json.loads(output)["slots"], [{"key": "craft", "title": "Craft", "abstract": False}])
+        code, output, error = self.cli(root, "classes", "--mermaid")
+        self.assertEqual(code, 0, error)
+        self.assertIn("        craft()", output)
+
     def test_mermaid_draws_classes_with_broken_parents_and_cycles(self):
         root = self.project('''abstract agent First[Second]:
     role: "First."
