@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Use `super` on its own line in an override to keep the parent's text and add
   to it. `E614` reports a `super` outside an override.
+- Role paragraph overrides also accept `super`.
 
 ### Quotes
 
@@ -52,6 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The parse error for a multi-paragraph role explains how to key paragraphs.
+- Doctrine Learn explains how to cut the load from shared start-up files.
 - CLI help explains every command and flag. Doctrine Learn points to the build
   command, gives one path for landing a lesson, and uses portable links.
 - Commands that select homes use the only home target when it has plain agents and no team, so `--target` is no longer needed there.

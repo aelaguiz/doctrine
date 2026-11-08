@@ -1,0 +1,10 @@
+schema_version = 1
+default_prompt = "prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a child adds to its inherited role paragraph"
+status = "active"
+kind = "render_contract"
+agent = "PodQa"
+assertion = "exact_lines"
+expected_lines = ["You test the app.", "", "You test the signup path too."]

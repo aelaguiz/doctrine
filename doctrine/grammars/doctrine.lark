@@ -179,7 +179,8 @@ inherit_all: "inherit" "*" _NL?
 drop_item: "drop" patch_path ":" string _NL?
 patch_path: CNAME ("." CNAME)*
 override_path: "override" CNAME "." patch_path ":" string? _NL _INDENT workflow_section_body _DEDENT
-role_override_path: "override" "role" "." CNAME ":" _NL _INDENT role_prose _DEDENT
+role_override_path: "override" "role" "." CNAME ":" _NL _INDENT role_override_prose _DEDENT
+role_override_prose: (string _NL | super_stmt)+ -> role_prose
 details_path: "details" CNAME "." patch_path ":" string? _NL _INDENT shared_readable_body _DEDENT
 
 // Reserved typed fields stay explicit. Every other non-reserved key is an

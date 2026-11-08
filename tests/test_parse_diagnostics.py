@@ -10,6 +10,14 @@ from doctrine.parser import parse_text
 
 
 class ParseDiagnosticsTests(unittest.TestCase):
+    def test_role_paragraphs_need_keys(self):
+        from doctrine.diagnostics import ParseError
+
+        with self.assertRaises(ParseError) as caught:
+            parse_text('agent A:\n    role:\n        "One."\n        "Two."\n')
+        self.assertEqual(caught.exception.code, 'E101')
+        self.assertIn('A role with more than one paragraph gives each one a key: paragraph who:, then its text indented below.', caught.exception.diagnostic.hints)
+
     def test_unescaped_quote_has_hint_and_clipped_excerpt(self):
         from doctrine.diagnostics import ParseError
 

@@ -5,6 +5,8 @@ breaking-change guidance.
 
 Current Doctrine language version: 6.0
 
+Role paragraph overrides can use `super` to keep the inherited text.
+
 Abstract agents can have titles. These describe the class and do not render
 in homes.
 

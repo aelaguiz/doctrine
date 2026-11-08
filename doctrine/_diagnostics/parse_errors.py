@@ -39,6 +39,7 @@ _GRAMMAR_TERMINAL_DEPENDENCIES: frozenset[str] = frozenset({
     "CURRENT",
     "ELSE",
     "IGNORE",
+    "PARAGRAPH",
     "PRESERVE",
     "REJECT",
     "ROUTE",
@@ -85,6 +86,12 @@ def _classify_unexpected_token(
     previous = exc.token_history[-1] if exc.token_history else None
     expected = set(exc.expected or ())
     token_value = exc.token.value
+    if expected == {"PARAGRAPH", "_NL"}:
+        return (
+            "E101", "Unexpected token",
+            ("Check the expected token list and the surrounding punctuation.",
+             "A role with more than one paragraph gives each one a key: paragraph who:, then its text indented below."),
+        )
     if previous is not None and previous.type == "ROUTE" and exc.token.value == "->":
         return (
             "E131",

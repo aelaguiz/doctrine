@@ -252,8 +252,9 @@ agent OtherQa[Qa]:
         "Phones are with the field guide."
 ```
 
-A role paragraph override holds prose only. A missing key is `E610`. See
-`examples/195_role_paragraphs`.
+A role paragraph override holds prose and can use `super` to keep the inherited
+text in place. A missing key is `E610`. See `examples/195_role_paragraphs` and
+`examples/200_role_super`.
 
 ## Details And Budgets
 

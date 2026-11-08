@@ -11,6 +11,58 @@ from tests.home_support import HomeProject
 class RoleParagraphTests(HomeProject, unittest.TestCase):
     session = test_late_binding.LateBindingTests.session
 
+    def test_super_in_role_paragraph_resolves_in_each_module(self):
+        session = self.session('''import shared as lib
+workflow Facts: "Child module"
+    "Read."
+agent Child[lib.Base]:
+    override role.who:
+        "Before."
+        super
+        "See {{Facts:title}}."
+team T: "Team"
+    home: "t"
+    member qa[lib.Base]: "QA"
+        override role.who:
+            super
+            "Added."
+''', {'prompts/shared/AGENTS.prompt': '''workflow Facts: "Parent module"
+    "Read."
+export abstract agent Base:
+    role:
+        paragraph who:
+            "See {{Facts:title}}."
+'''})
+        self.assertEqual(render_markdown(session.compile_agent('Child')), 'Before.\n\nSee Parent module.\n\nSee Child module.\n')
+        self.assertEqual(render_markdown(session.compile_agent('T.qa')), 'See Parent module.\n\nAdded.\n')
+
+    def test_super_role_paragraph_requires_an_existing_key(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph who:
+            "Words."
+agent Child[Base]:
+    override role.missing:
+        super
+''')
+        with self.assertRaises(CompileError) as caught:
+            session.compile_agent('Child')
+        self.assertEqual(caught.exception.code, 'E610')
+
+    def test_super_twice_in_role_paragraph_fails(self):
+        session = self.session('''abstract agent Base:
+    role:
+        paragraph who:
+            "Words."
+agent Child[Base]:
+    override role.who:
+        super
+        super
+''')
+        with self.assertRaises(CompileError) as caught:
+            session.compile_agent('Child')
+        self.assertEqual(caught.exception.code, 'E612')
+
     def test_where_reports_role_paragraph_author(self):
         root = self.project('''abstract agent Base:
     role:
