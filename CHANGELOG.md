@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Rosters
+
+- A roster with an empty title renders no heading of its own, so it can be the
+  whole body of a section that already names it.
+
 ### Team homes
 
 - The line that opens a team's folder file no longer uses the team's title. It

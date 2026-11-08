@@ -428,7 +428,9 @@ member, even when it has static rows.
 An optional `rows:` block adds static rows after the member rows. It uses
 the same keyed cells as `table`. Each row must fill every column and cannot
 name a column the roster did not declare. A roster in a member home uses
-that member's team. Without a team, it fails with `E609`.
+that member's team. Without a team, it fails with `E609`. A roster with an
+empty title (`roster calls: ""`) has no heading of its own, so it can be the
+whole body of a section that already names it.
 
 See examples [173](../examples/173_late_bound_values),
 [174](../examples/174_team_members), [175](../examples/175_team_value_precedence),
