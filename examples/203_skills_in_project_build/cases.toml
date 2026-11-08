@@ -149,7 +149,7 @@ kind = "cli_contract"
 project = "project"
 args = ["where", "Read the draft before sharing it."]
 expected_exit = 0
-stdout_contains = ["skill package Checklist", "prompts/skills/checklist/SKILL.prompt:5"]
+stdout_contains = ["skill package Checklist", "prompts/skills/checklist/SKILL.prompt:5", "installs at .claude/skills/checklist"]
 
 [[cases]]
 name = "two skills cannot share an install folder"
@@ -191,3 +191,23 @@ args = ["build", "."]
 expected_exit = 0
 expected_files = { "HOMES.contract.json" = "expected/no_skills.json" }
 absent_files = [".claude/skills/checklist/SKILL.md", "custom/review/SKILL.md"]
+
+[[cases]]
+name = "a dead link in a skill's SKILL.md fails the build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/checklist/SKILL.prompt" = "skill package Checklist: \"Checklist\"\n    metadata:\n        name: \"checklist\"\n        description: \"Check a draft before sharing.\"\n    \"Read the draft before sharing it, and [the style notes](references/style.md).\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E636", ".claude/skills/checklist/SKILL.md points at references/style.md"]
+
+[[cases]]
+name = "a dead link in a skill's bundled Markdown fails the build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/skills/checklist/references/notes.md" = "# Notes\n\nKeep the draft short, as [the guide](../guide.md) says.\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E636", "references/notes.md points at ../guide.md"]

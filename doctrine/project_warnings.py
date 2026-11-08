@@ -74,7 +74,7 @@ def near_copy_warnings(session):
                     and (source := project_file_path(session.project_config, declaration.path)).is_file()):
                 name = ".".join((*unit.module_parts, declaration.name))
                 texts.append((name, source, 1, source.read_text(errors="replace"), True))
-        for entry, name, markdown, skill_session in getattr(session, "project_skill_sources", ()):
+        for entry, name, markdown, skill_session, _ in getattr(session, "project_skill_sources", ()):
             if path != session.root_flow.entrypoint_path:
                 continue
             for skill_unit in skill_session.units():

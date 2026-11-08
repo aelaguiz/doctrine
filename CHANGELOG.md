@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- `E636` checks links in project-built skills, in `SKILL.md` and bundled Markdown alike.
+  `doctrine where` names the folder a skill installs at, where it said it reached 0 homes.
 - Projects can declare passages once and place them in Markdown-backed skills and shared files.
   The near-copy check (`W301`) now reads project-built skills too, and counts a
   passage once, where it is declared.
