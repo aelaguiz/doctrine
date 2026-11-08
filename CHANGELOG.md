@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+### Class hierarchy teaching
+
+- Learn how classes fit together through one small company and its teams.
+
 ### Case and section links
 
 - Link a sentence to a case or to a section in a built shared file. The build
