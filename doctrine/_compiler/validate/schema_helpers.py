@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 
 from doctrine import model
-from doctrine.project_config import project_file_path
+from doctrine.project_config import project_file_path, real_project_path
 from doctrine._compiler.authored_diagnostics import authored_compile_error
 from doctrine._compiler.constants import _INTERPOLATION_RE
 from doctrine._compiler.provenance import render_inline_quotes
@@ -175,9 +177,12 @@ class ValidateSchemaHelpersMixin:
                     raise authored_compile_error(code="E655", summary="File ref can't go here",
                         detail=f"`{{{{load:{ref_name}}}}}` can't load `{file_decl.path}`, because an import path ends at a space. Rename the file.", unit=unit, source_span=None)
                 base = (self.session.emit_root or self.session.project_config.config_dir) if file_decl.body is not None else self.session.project_config.config_dir
-                path = ((base / file_decl.path).resolve() if file_decl.body is not None
-                        else project_file_path(self.session.project_config, file_decl.path))
-                if file_decl.body is None and not path.is_file():
+                path = Path(os.path.abspath(base / Path(file_decl.path).expanduser()))
+                for parent in path.parents:
+                    if parent.resolve() == real_project_path(self.session.project_config, base):
+                        path = base / path.relative_to(parent)
+                        break
+                if file_decl.body is None and not project_file_path(self.session.project_config, path).is_file():
                     raise authored_compile_error(code="E652", summary="Missing Markdown source",
                         detail=f"`{file_decl.name}` names `{file_decl.path}`, which doesn't exist.", unit=file_unit, source_span=file_decl.source_span)
                 parts.append(file_decl.title if projection == "title" and not is_load else

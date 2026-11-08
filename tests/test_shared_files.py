@@ -524,3 +524,61 @@ agent Other:
         output = emit_target_flow(target, include_svg=False)[0].read_text()
         self.assertIn("[Guide](../guide.md)", output)
         self.assertNotIn("\x1e", output)
+
+    def test_built_file_cannot_overwrite_a_home_or_companion(self):
+        for path in ("t/one/AGENTS.md", "t/one/DETAILS.md"):
+            with self.subTest(path=path):
+                root = self.project(f'''file Guide: "Guide"
+    path: "{path}"
+    "File body."
+team T: "Team"
+    home: "t"
+    member one: "One"
+        role: "Work."
+        work: "Work"
+            details:
+                "More."
+''')
+                code, _, error = self.cli(root, "build")
+                self.assertEqual(code, 1, error)
+                self.assertIn("E607", error)
+                self.assertIn(path, error)
+
+    def test_symlinked_kept_file_uses_its_declared_path(self):
+        root = self.project('''file Guide: "Guide"
+    path: "shared/guide.md"
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+    work: "Work"
+        "Read first: {{load:Guide}}"
+''')
+        with tempfile.TemporaryDirectory() as temporary:
+            (Path(temporary) / "guide.md").write_text("Guide.\n")
+            (root / "shared").symlink_to(temporary, target_is_directory=True)
+            code, _, error = self.cli(root, "build")
+            self.assertEqual(code, 0, error)
+            text = (root / "t/AGENTS.md").read_text()
+            self.assertIn("[Guide](../shared/guide.md)", text)
+            self.assertIn("@../shared/guide.md", text)
+            code, output, error = self.cli(root, "load", "--json")
+            self.assertEqual(code, 0, error)
+            report = json.loads(output)
+            self.assertEqual(report["shared_files"][0]["path"], "shared/guide.md")
+            rows = report["homes"][0]["runtimes"]["claude"]["files"]
+            self.assertIn("shared/guide.md", [row["path"] for row in rows])
+
+    def test_unreferenced_kept_file_in_imported_flow_is_not_required(self):
+        root = self.project('''from shared import Guide
+team T: "Team"
+    home: "t"
+    role: "Read {{Guide}}."
+''')
+        flow = root / "prompts/shared/AGENTS.prompt"
+        flow.parent.mkdir()
+        flow.write_text('export file Guide: "Guide"\n    path: "guide.md"\n'
+                        'export file Other: "Other"\n    path: "missing.md"\n')
+        (root / "guide.md").write_text("Guide.\n")
+        for command in (("build", "."), ("build", "t")):
+            code, _, error = self.cli(root, *command)
+            self.assertEqual(code, 0, error)

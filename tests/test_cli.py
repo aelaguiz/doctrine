@@ -788,7 +788,7 @@ team T: "Team"
             self.assertEqual(rows["guide.md"]["size"], len(f"Revision guide.\n@nested.md\n@{relative}\n"))
             self.assertEqual(rows["nested.md"]["size"], len("Revision import.\n"))
             self.assertEqual(rows[relative]["size"], len("Changed outside.\n"))
-            self.assertEqual(report["on_demand"], [{"path": relative, "size": len("Changed outside.\n")}])
+            self.assertEqual(report["on_demand"], [])
             code, _, error = self.cli(root, "build", "--rev", "HEAD")
             self.assertEqual(code, 0, error)
             link = os.path.relpath(outside, root / "pods/team/qa")

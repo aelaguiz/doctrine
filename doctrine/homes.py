@@ -253,10 +253,10 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
     files.update(companion_files(homes, companions, target))
     declarations = [(unit, decl) for unit in session.units()
                     for decl in unit.declarations.files_by_name.values()]
-    referenced = {Path(ref[2]) for data in homes.values() for ref, _ in data["file_refs"]}
+    referenced = {project_file_path(target.project_config, ref[2]) for data in homes.values() for ref, _ in data["file_refs"]}
     for unit, decl in declarations:
         path = project_file_path(target.project_config, decl.path)
-        if (decl.body is None and (path in referenced or whole)
+        if (decl.body is None and (path in referenced or whole and session.flow_for_unit(unit) is session.root_flow)
                 and not path.is_file()):
             raise compile_error(code="E652", summary="Missing Markdown source",
                 detail=f"`{decl.name}` names `{decl.path}`, which doesn't exist.",
@@ -273,6 +273,9 @@ def compile_homes(target, *, session, evaluate_rules=False, selectors=()):
                 raise compile_error(code="E607", summary="Two homes, one path",
                     detail=f"`{decl.name}` and `{written[path].name}` both land at `{path}`.")
             continue
+        if path in files:
+            raise compile_error(code="E607", summary="Two homes, one path",
+                detail=f"`{decl.name}` and another output both land at `{path}`.")
         written[path] = decl
         reject_details(decl.body, "a shared file")
         reject_late_roots(decl.body, unit=unit, why="a shared file belongs to no home")

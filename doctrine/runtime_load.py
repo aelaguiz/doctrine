@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tomllib
 import subprocess
+import os
 from os.path import relpath
 from pathlib import Path, PurePosixPath
 
@@ -110,15 +111,16 @@ def follow_imports(path, text, reader, seen, depth, config):
     for start, end, is_import in markdown_destinations(text):
         if not is_import:
             continue
-        imported = project_file_path(config, path.parent / Path(text[start:end]).expanduser())
-        if imported in seen:
+        imported = Path(os.path.abspath(path.parent / Path(text[start:end]).expanduser()))
+        real = project_file_path(config, imported)
+        if real in seen:
             continue
-        seen.add(imported)
-        content = reader(imported)
+        seen.add(real)
+        content = reader(real)
         if content is None:
             continue
         rows.append((imported, content))
-        rows.extend(follow_imports(imported, content, reader, seen, depth + 1, config))
+        rows.extend(follow_imports(real, content, reader, seen, depth + 1, config))
     return rows
 
 
@@ -160,6 +162,7 @@ def home_loads(target, homes, files, settings, selected):
             )
         values["external"] = external
     def file_text(path):
+        path = project_file_path(config, path)
         if path in generated:
             return generated[path].decode("utf-8", errors="replace")
         if config.revision:

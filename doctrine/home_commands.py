@@ -205,7 +205,8 @@ def load(args):
                     name = relpath(real_project_path(target.project_config, path),
                                    real_project_path(target.project_config, target.project_config.config_dir))
                     if name not in shared:
-                        text = (generated[path] if path in generated else path.read_bytes()).decode(errors="replace")
+                        source = project_file_path(target.project_config, path)
+                        text = (generated[source] if source in generated else source.read_bytes()).decode(errors="replace")
                         shared[name] = {"path": name, "sizes": {
                             runtime: text_size(text, runtime) for runtime in target.runtimes}, "homes": []}
                     if home not in shared[name]["homes"]:
@@ -334,7 +335,7 @@ def where_source(args):
             path = ((base / declaration.path).resolve() if declaration.body is not None
                     else project_file_path(target.project_config, declaration.path))
             reached = {home for home in selected for _, level in loaded_levels(homes, home)
-                       if any(ref[2] == str(path) for ref, _ in level["file_refs"])}
+                       if any(project_file_path(target.project_config, ref[2]) == path for ref, _ in level["file_refs"])}
             if (args.home and not reached) or (declaration.body is not None and path not in generated):
                 continue
             text = generated[path].decode() if path in generated else path.read_text(errors="replace")

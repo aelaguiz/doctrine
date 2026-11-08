@@ -20,7 +20,7 @@ from doctrine.diagnostics import DoctrineError
 from doctrine.emit_common import resolve_pyproject_path
 from doctrine.home_commands import resolve_target
 from doctrine.revision_source import copy_overlay
-from doctrine.project_config import real_project_path
+from doctrine.project_config import project_file_path, real_project_path
 from doctrine.homes import compile_homes, home_selectors, select_homes
 from doctrine.runtime_load import home_loads, loaded_levels, runtime_settings, text_size
 
@@ -44,7 +44,8 @@ def compile_side(args):
                     name = relpath(real_project_path(target.project_config, path),
                                    real_project_path(target.project_config, base))
                     if name not in shared:
-                        text = generated[path].decode() if path in generated else path.read_text(errors="replace")
+                        source = project_file_path(target.project_config, path)
+                        text = generated[source].decode() if source in generated else source.read_text(errors="replace")
                         shared[name] = {"text": text, "homes": set()}
                     shared[name]["homes"].add(home)
         return {
