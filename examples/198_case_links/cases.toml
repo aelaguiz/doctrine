@@ -1,0 +1,149 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "shared and local cases link at two depths"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pods/growth/lead/AGENTS.md" = ["If your session started in this folder, you are Growth's Lead. If not, this only describes that role.", "", "Lead the work.", "", "## Morning check-ins", "", "At your first tick, read [Reading the answers](../../../_details/lead.md#reading-the-answers).", "", "## Local work", "", "Before work, read [Plan the feature](DETAILS.md#plan-the-feature).", "", "## Testing", "", "Before planning, read [Writing a test plan](../../../shared/testing.md#writing-a-test-plan). The title is Writing a test plan."], "pods/growth/deep/lead/AGENTS.md" = ["If your session started in this folder, you are Deep's Lead. If not, this only describes that role.", "", "Lead the work.", "", "## Morning check-ins", "", "At your first tick, read [Reading the answers](../../../../_details/lead.md#reading-the-answers).", "", "## Local work", "", "Before work, read [Plan the release](DETAILS.md#plan-the-release).", "", "## Testing", "", "Before planning, read [Writing a test plan](../../../../shared/testing.md#writing-a-test-plan). The title is Writing a test plan."] }
+
+[[cases]]
+name = "load lists linked companions"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["load", "pods/growth/lead", "--runtime", "codex"]
+expected_exit = 0
+stdout_contains = ["On demand:", "_details/lead.md", "pods/growth/lead/DETAILS.md", "shared/testing.md"]
+
+[[cases]]
+name = "case override follows its title"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "abstract agent Base:\n    role: \"Test.\"\n    work: \"Work\"\n        \"Read {{details:work.case}}.\"\n        details case: \"Old title\"\n            \"Old case.\"\nabstract agent Child[Base]:\n    inherit *\n    override work.case: \"New title\"\n        \"New case.\"\nteam T: \"Team\"\n    home: \"t\"\n    member qa[Child]: \"QA\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "t/qa/AGENTS.md" = ["If your session started in this folder, you are Team's QA. If not, this only describes that role.", "", "Test.", "", "## Work", "", "Read [New title](../../_details/child.md#new-title)."] }
+
+[[cases]]
+name = "a dropped case leaves a dead link"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "abstract agent Base:\n    role: \"Test.\"\n    work: \"Work\"\n        \"Read {{details:work.case}}.\"\n        details case: \"Old title\"\n            \"Old case.\"\nabstract agent Child[Base]:\n    inherit *\n    drop work.case: \"No longer needed.\"\nteam T: \"Team\"\n    home: \"t\"\n    member qa[Child]: \"QA\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`t/qa` links to `details:work.case`, which it doesn't have.", "Override the sentence that links to it, or keep the case."]
+
+[[cases]]
+name = "overriding the sentence clears the dropped case"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "abstract agent Base:\n    role: \"Test.\"\n    work: \"Work\"\n        \"Read {{details:work.case}}.\"\n        details case: \"Old title\"\n            \"Old case.\"\nabstract agent Child[Base]:\n    inherit *\n    override work:\n        \"No case needed.\"\n    drop work.case: \"No longer needed.\"\nteam T: \"Team\"\n    home: \"t\"\n    member qa[Child]: \"QA\"\n" }
+args = ["build", "."]
+expected_exit = 0
+
+[[cases]]
+name = "invalid case path work"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team T: \"Team\"\n    home: \"t\"\n    work: \"Work\"\n        \"Read {{details:work}}.\"\n        details:\n            \"A case.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`details:work` isn't a case."]
+
+[[cases]]
+name = "invalid case path work.details"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team T: \"Team\"\n    home: \"t\"\n    work: \"Work\"\n        \"Read {{details:work.details}}.\"\n        details:\n            \"A case.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`details:work.details` has no title to link to. Give the case a title."]
+
+[[cases]]
+name = "invalid case path work.missing"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team T: \"Team\"\n    home: \"t\"\n    work: \"Work\"\n        \"Read {{details:work.missing}}.\"\n        details:\n            \"A case.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`t` links to `details:work.missing`, which it doesn't have."]
+
+[[cases]]
+name = "a case link inside a case fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "team T: \"Team\"\n    home: \"t\"\n    work: \"Work\"\n        details first: \"First\"\n            \"Read {{details:work.second}}.\"\n        details second: \"Second\"\n            \"A case.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E602", "a case link belongs in text the agent always reads"]
+
+[[cases]]
+name = "an unlinked case keeps its companion pointer"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Testing: \"How we test\"\n    path: \"shared/testing.md\"\n    section plans: \"Writing a test plan\"\n        \"Start from what the design promises.\"\n        section review: \"Reviewing the plan\"\n            \"Check the plan.\"\n\nabstract agent Lead:\n    role: \"Lead the work.\"\n    checkins: \"Morning check-ins\"\n        \"At your first tick, read {{details:checkins.reading_answers}}.\"\n        details reading_answers: \"Reading the answers\"\n            \"Take each answer in turn.\"\n        details more: \"More\"\n            \"More cases.\"\n    local: \"Local work\"\n        \"Before work, read {{details:local.plan}}.\"\n        details plan: \"Plan the {{team:unit}}\"\n            \"Use the team's words.\"\n    testing: \"Testing\"\n        \"Before planning, read {{Testing:plans}}. The title is {{Testing:plans.title}}.\"\n\nteam Growth: \"Growth\"\n    home: \"pods/growth\"\n    values:\n        unit: \"feature\"\n    member lead[Lead]: \"Lead\"\n\nteam Deep: \"Deep\"\n    home: \"pods/growth/deep\"\n    values:\n        unit: \"release\"\n    member lead[Lead]: \"Lead\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pods/growth/lead/AGENTS.md" = ["If your session started in this folder, you are Growth's Lead. If not, this only describes that role.", "", "Lead the work.", "", "## Morning check-ins", "", "At your first tick, read [Reading the answers](../../../_details/lead.md#reading-the-answers).", "", "## Local work", "", "Before work, read [Plan the feature](DETAILS.md#plan-the-feature).", "", "## Testing", "", "Before planning, read [Writing a test plan](../../../shared/testing.md#writing-a-test-plan). The title is Writing a test plan.", "", "Fuller cases, under the same headings: [_details/lead.md](../../../_details/lead.md)."] }
+
+[[cases]]
+name = "nested file section links"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Testing: \"How we test\"\n    path: \"shared/testing.md\"\n    section plans: \"Writing a test plan\"\n        \"Start from what the design promises.\"\n        section review: \"Reviewing the plan\"\n            \"Check the plan.\"\n\nabstract agent Lead:\n    role: \"Lead the work.\"\n    checkins: \"Morning check-ins\"\n        \"At your first tick, read {{details:checkins.reading_answers}}.\"\n        details reading_answers: \"Reading the answers\"\n            \"Take each answer in turn.\"\n    local: \"Local work\"\n        \"Before work, read {{details:local.plan}}.\"\n        details plan: \"Plan the {{team:unit}}\"\n            \"Use the team's words.\"\n    testing: \"Testing\"\n        \"Before planning, read {{Testing:plans.review}}. The title is {{Testing:plans.title}}.\"\n\nteam Growth: \"Growth\"\n    home: \"pods/growth\"\n    values:\n        unit: \"feature\"\n    member lead[Lead]: \"Lead\"\n\nteam Deep: \"Deep\"\n    home: \"pods/growth/deep\"\n    values:\n        unit: \"release\"\n    member lead[Lead]: \"Lead\"\n" }
+args = ["build", "."]
+expected_exit = 0
+expected_file_lines = { "pods/growth/lead/AGENTS.md" = ["If your session started in this folder, you are Growth's Lead. If not, this only describes that role.", "", "Lead the work.", "", "## Morning check-ins", "", "At your first tick, read [Reading the answers](../../../_details/lead.md#reading-the-answers).", "", "## Local work", "", "Before work, read [Plan the feature](DETAILS.md#plan-the-feature).", "", "## Testing", "", "Before planning, read [Reviewing the plan](../../../shared/testing.md#reviewing-the-plan). The title is Writing a test plan."] }
+
+[[cases]]
+name = "missing file section"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Testing: \"Testing\"\n    path: \"testing.md\"\n    section plans: \"Plans\"\n        \"Text.\"\nteam T: \"Team\"\n    home: \"t\"\n    role: \"Read {{Testing:missing}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`Testing` has no section `missing`."]
+
+[[cases]]
+name = "kept file sections are unavailable"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Testing: \"Testing\"\n    path: \"testing.md\"\nteam T: \"Team\"\n    home: \"t\"\n    role: \"Read {{Testing:plans}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`Testing` is kept as written, so Doctrine doesn't read its sections. Link to the file."]
+
+[[cases]]
+name = "repeated cases across homes fail the full build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "abstract agent R:\n    role: \"Test.\"\n    first: \"First\"\n        details old: \"Case\"\n            \"First case.\"\n    second: \"Second\"\n        \"Read {{details:second.old}}.\"\n        details old: \"Case\"\n            \"Second case.\"\nteam T: \"Team\"\n    home: \"t\"\n    member qa[R]: \"QA\"\n        inherit role\n        inherit second\n        drop first: \"QA owns second.\"\n    member lead[R]: \"Lead\"\n        inherit role\n        inherit first\n        drop second: \"Lead owns first.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`details:second.old` shares its heading with another in `_details/r.md`. Give it a title of its own."]
+
+[[cases]]
+name = "repeated file sections fail"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/AGENTS.prompt" = "file Testing: \"Testing\"\n    path: \"testing.md\"\n    section plans: \"Plans\"\n        \"Text.\"\n    section more: \"Plans\"\n        \"More.\"\nteam T: \"Team\"\n    home: \"t\"\n    role: \"Read {{Testing:plans}}.\"\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E637", "`Testing:plans` shares its heading with another in `testing.md`. Give it a title of its own."]

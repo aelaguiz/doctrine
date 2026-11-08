@@ -4,7 +4,7 @@ from doctrine import model
 from doctrine._compiler.details import reject_details
 from pathlib import Path
 
-from doctrine._compiler.late_binding import reject_late_roots
+from doctrine._compiler.late_binding import reject_case_links, reject_late_roots
 from doctrine._compiler.indexing import skill_package_id, unit_declarations
 from doctrine._compiler.package_diagnostics import package_compile_error
 from doctrine._compiler.package_layout import (
@@ -181,6 +181,7 @@ class CompileSkillPackageMixin:
             ):
                 compiled_document = self._compile_document_decl(document_decl, unit=target_unit)
             reject_details(compiled_document, "an emitted document")
+            reject_case_links(compiled_document, unit=target_unit)
             reject_late_roots(compiled_document, unit=target_unit, why="an emitted document has no home")
             compiled_files.append(
                 CompiledSkillPackageFile(

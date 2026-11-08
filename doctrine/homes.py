@@ -14,7 +14,7 @@ from doctrine._compiler.late_binding import bind_home, map_text
 from doctrine._compiler.markdown_links import render_file_refs
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
-from doctrine._compiler.markdown_reader import fenced_lines
+from doctrine._compiler.markdown_reader import fenced_lines, heading_anchor
 from doctrine._compiler.teams import team_members, team_contract, member_home, find_home_team
 from doctrine.emit_docs import (
     _runtime_emit_roots_for_target,
@@ -97,14 +97,14 @@ def compile_home(target, session, context, home, owner, unit, plan):
         )
     home_map = build_home_map(map_text(
         compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config)))
-    compiled, parts, pointers = split_details(compiled, home)
+    compiled, parts, pointers, unlinked, case_links = split_details(compiled, home, target.output_dir, home_map)
     refs = [(json.loads(match[1]), always_on)
             for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
             for text in model_walk(value) if isinstance(text, str)
             for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
     contract_compiled = compiled
     compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
-    files = home_files(target, home, owner, unit, compiled, pointers, plan, context)
+    files = home_files(target, home, owner, unit, compiled, unlinked, plan, context)
     data = {
         "owner": owner,
         "unit": unit,
@@ -113,6 +113,7 @@ def compile_home(target, session, context, home, owner, unit, plan):
         "map": home_map,
         "files": list(files),
         "pointers": pointers,
+        "case_links": case_links,
         "budgets": home_budgets(owner, unit, context),
         "file_refs": refs,
     }
@@ -126,6 +127,15 @@ def companion_files(homes, companions, target):
             parts.sort(key=lambda part: part[1].origin.line)
         source = parts[0][1].origin.site.rsplit(":", 1)[0]
         text = render_file_refs(render_companion(parts), (target.output_dir / path).parent, target.project_config)
+        seen = {}
+        for line, inside in fenced_lines(text.splitlines()):
+            if not inside and (heading := re.match(r"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$", line)):
+                heading_anchor(heading[1], seen)
+        for data in homes.values():
+            for companion, anchor, name in data["case_links"]:
+                if companion == path and seen.get(anchor, 0) > 1:
+                    raise compile_error(code="E637", summary="Dead case link",
+                        detail=f"`details:{name}` shares its heading with another in `{path}`. Give it a title of its own.")
         local = [
             data for home, data in homes.items() if str(PurePosixPath(home) / "DETAILS.md") == path
         ]

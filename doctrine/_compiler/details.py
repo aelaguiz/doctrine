@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass, replace
+import json
 from pathlib import PurePosixPath
 
 from doctrine import model
-from doctrine._compiler.constants import LATE_ROOT
+from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT
+from doctrine._compiler.late_binding import map_text
+from doctrine._compiler.markdown_reader import heading_anchor
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.types import CompiledSection, CompiledGuardBlock, CompiledCodeBlock
@@ -20,12 +23,19 @@ def reject_details(value, surface):
         )
 
 
-def split_details(compiled, home):
-    companions, pointers = {}, []
-    def visit(item, headings):
+def split_details(compiled, home, root, home_map):
+    companions, pointers, cases, linked = {}, [], {}, {}
+    paths = {entry.path for entry in home_map.entries}
+    def visit(item, headings, key_path):
         if not isinstance(item, (CompiledSection, CompiledGuardBlock)):
             return item
         if isinstance(item, CompiledSection) and item.kind == "details":
+            def reject(text):
+                if match := DETAILS_LINK.search(text):
+                    raise compile_error(code="E602", summary="Value has no owner here",
+                        detail=f"`{match[0]}` can't be read here: a case link belongs in text the agent always reads.")
+                return text
+            map_text(item.body, reject)
             origin = item.origin
             if origin is None:
                 reject_details(item, "a declaration without a home")
@@ -33,6 +43,7 @@ def split_details(compiled, home):
             if origin.companion:
                 headings = origin.headings
             companions.setdefault(path, []).append((headings, item))
+            cases[key_path] = (path, item)
             if path not in pointers:
                 pointers.append(path)
             return None
@@ -40,9 +51,42 @@ def split_details(compiled, home):
             isinstance(item, CompiledGuardBlock) or item.kind != "paragraph"
         ) else headings)
         return replace(item, body=tuple(result for child in item.body
-                                        if (result := visit(child, nested)) is not None))
-    compiled = replace(compiled, fields=tuple(visit(field, ()) for field in compiled.fields))
-    return compiled, companions, pointers
+            if (result := visit(child, nested, (*key_path, child.key) if isinstance(child, (CompiledSection, CompiledGuardBlock)) and child.key else key_path)) is not None))
+    compiled = replace(compiled, fields=tuple(visit(field, (), (field.key,))
+        if isinstance(field, (CompiledSection, CompiledGuardBlock)) else field for field in compiled.fields))
+    def link(text, prefix):
+        def resolve(match):
+            name = match[1]
+            key = (*prefix, *name.split("."))
+            if key not in cases:
+                detail = (f"`details:{name}` isn't a case." if key in paths else
+                          f"`{home}` links to `details:{name}`, which it doesn't have.")
+                hints = () if key in paths else ("Override the sentence that links to it, or keep the case.",)
+                raise compile_error(code="E637", summary="Dead case link", detail=detail, hints=hints)
+            path, case = cases[key]
+            if not case.title:
+                raise compile_error(code="E637", summary="Dead case link",
+                    detail=f"`details:{name}` has no title to link to. Give the case a title.")
+            anchor = heading_anchor(case.title, {})
+            linked[key] = (path, anchor, name)
+            return "\x1e" + json.dumps(["link", case.title, str(root / path), anchor]) + "\x1f"
+        return type(text)(DETAILS_LINK.sub(resolve, text))
+    def resolve_item(item, key_path, prefix=()):
+        if isinstance(item, (CompiledSection, CompiledGuardBlock)):
+            if item.origin:
+                size = len(item.origin.path)
+                prefix = key_path[:-size] if size else key_path
+            body = tuple(resolve_item(child, (*key_path, child.key)
+                if isinstance(child, (CompiledSection, CompiledGuardBlock)) and child.key else key_path, prefix)
+                for child in item.body)
+            return replace(map_text(replace(item, body=()), lambda text: link(text, prefix)), body=body)
+        return map_text(item, lambda text: link(text, prefix))
+    compiled = replace(compiled, fields=tuple(resolve_item(field, (field.key,))
+        if isinstance(field, (CompiledSection, CompiledGuardBlock)) else resolve_item(field, ())
+        for field in compiled.fields))
+    unlinked = [path for path in pointers if any(case_path not in linked
+        for case_path, (companion, _) in cases.items() if companion == path)]
+    return compiled, companions, pointers, unlinked, tuple(linked.values())
 
 
 def render_companion(parts):

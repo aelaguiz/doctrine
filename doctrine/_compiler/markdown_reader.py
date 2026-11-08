@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import replace
 
 from doctrine import model
@@ -11,6 +12,13 @@ from doctrine._model.core import role_text
 def heading_key(title):
     key = re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")
     return re.sub(r"^([0-9])", r"_\1", key)
+
+
+def heading_anchor(text, seen):
+    anchor = "".join(c for c in text.lower() if not unicodedata.category(c).startswith("P"))
+    anchor = anchor.replace(" ", "-")
+    seen[anchor] = seen.get(anchor, 0) + 1
+    return anchor
 
 
 def fenced_lines(lines):

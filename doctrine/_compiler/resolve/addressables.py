@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import json
+from pathlib import Path
 
 from doctrine import model
-from doctrine._compiler.constants import LATE_ROOT, _INTERPOLATION_EXPR_RE
+from doctrine._compiler.constants import DETAILS_LINK, LATE_ROOT, _INTERPOLATION_EXPR_RE
+from doctrine._compiler.diagnostics import compile_error
+from doctrine._compiler.markdown_reader import heading_anchor
 from doctrine._compiler.naming import (
     _display_addressable_ref,
     _dotted_ref_name,
@@ -130,7 +134,7 @@ class ResolveAddressablesMixin:
         route_semantics: RouteSemanticContext | None = None,
         render_profile: ResolvedRenderProfile | None = None,
     ) -> str:
-        if LATE_ROOT.fullmatch("{{" + expression + "}}"):
+        if LATE_ROOT.fullmatch("{{" + expression + "}}") or DETAILS_LINK.fullmatch("{{" + expression + "}}"):
             return "{{" + expression + "}}"
         ref = _parse_interpolated_addressable_ref(expression)
         match = _INTERPOLATION_EXPR_RE.fullmatch(expression)
@@ -418,6 +422,28 @@ class ResolveAddressablesMixin:
             missing_local_label=missing_local_label,
             review_semantics=review_semantics,
         )
+        if isinstance(decl, model.FileDecl):
+            name = _dotted_ref_name(ref.root)
+            if decl.body is None:
+                raise compile_error(code="E637", summary="Dead case link",
+                    detail=f"`{name}` is kept as written, so Doctrine doesn't read its sections. Link to the file.")
+            segments = ref.path[:-1] if ref.path[-1] == "title" else ref.path
+            items = decl.body.items
+            section = None
+            for segment in segments:
+                section = next((item for item in items if isinstance(item, model.ReadableBlock)
+                                and item.kind == "section" and item.key == segment), None)
+                if section is None:
+                    raise compile_error(code="E637", summary="Dead case link",
+                        detail=f"`{name}` has no section `{'.'.join(segments)}`.")
+                items = section.payload
+            if ref.path[-1] == "title":
+                return DisplayValue(text=section.title, kind="title")
+            anchor = heading_anchor(section.title, {})
+            base = self.session.emit_root or self.session.project_config.config_dir
+            path = base / Path(decl.path)
+            self.session.file_section_links.add((str(path), anchor, f"{name}:{'.'.join(segments)}"))
+            return DisplayValue(text="\x1e" + json.dumps(["link", section.title, str(path), anchor]) + "\x1f", kind="title")
         return self._resolve_addressable_path_value(
             AddressableNode(unit=target_unit, root_decl=decl, target=decl),
             ref.path,
