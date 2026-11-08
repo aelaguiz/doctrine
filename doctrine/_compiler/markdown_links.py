@@ -22,7 +22,7 @@ def render_file_refs(text, folder, config):
             return "@" + relative
         destination = "<" + relative + ">" if any(c.isspace() for c in relative) else relative
         return f"[{title}]({destination})"
-    result = re.sub(r"\x1e([^\x1f]+)\x1f", render, text)
+    result = re.sub(r"([^]+)", render, text)
     return model.AuthoredProse(result) if isinstance(text, model.AuthoredProse) else result
 
 

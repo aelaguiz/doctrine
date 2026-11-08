@@ -69,7 +69,7 @@ def split_details(compiled, home, root, home_map):
                     detail=f"`details:{name}` has no title to link to. Give the case a title.")
             anchor = heading_anchor(case.title, {})
             linked[key] = (path, anchor, name)
-            return "\x1e" + json.dumps(["link", case.title, str(root / path), anchor]) + "\x1f"
+            return "" + json.dumps(["link", case.title, str(root / path), anchor]) + ""
         return type(text)(DETAILS_LINK.sub(resolve, text))
     def resolve_item(item, key_path, prefix=()):
         if isinstance(item, (CompiledSection, CompiledGuardBlock)):

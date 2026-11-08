@@ -220,7 +220,7 @@ def emit_target(
     declarations = [(unit, decl) for unit in session.units() for decl in unit.declarations.files_by_name.values()]
     referenced = {project_file_path(target.project_config, json.loads(match[1])[2])
                   for text in model_walk(compiled_agents) if isinstance(text, str)
-                  for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)}
+                  for match in re.finditer(r"([^]+)", text)}
     written, _ = compile_shared_files(replace(target, output_dir=output_root), CompilationContext(session), files, declarations, referenced, False)
     for name in written:
         if file_state(output_root / name, files[name]) == "edited":

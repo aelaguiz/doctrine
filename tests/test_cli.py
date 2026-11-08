@@ -1148,7 +1148,7 @@ team T: "Team"
                                 )
                             except DoctrineError:
                                 continue
-                            self.assertFalse(any("\x1e" in item for item in model_walk(compiled)
+                            self.assertFalse(any("" in item for item in model_walk(compiled)
                                                  if isinstance(item, str)), str(path))
                             home_map = build_home_map(compiled)
                             home = {"owner": agent, "map": home_map, "budgets": [[]],

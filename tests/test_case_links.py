@@ -257,3 +257,18 @@ team T: "Team"
         self.assertEqual(code, 0, error)
         text = (root / "_details/lead.md").read_text()
         self.assertIn("[Writing a test plan](../shared/testing.md#writing-a-test-plan)", text)
+
+    def test_file_links_in_nested_sections_and_cases(self):
+        root = self.project(example="198_case_links")
+        source = root / "prompts/AGENTS.prompt"
+        source.write_text(source.read_text().replace(
+            '        "Before planning, read {{Testing:plans}}. The title is {{Testing:plans.title}}."',
+            '        nested: "Nested"\n            "Read {{Testing}}."'
+        ).replace('            "Take each answer in turn."',
+            '            section nested: "Nested"\n                "Read {{Testing:plans}}."'))
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn("[How we test](../../../shared/testing.md)",
+                      (root / "pods/growth/lead/AGENTS.md").read_text())
+        self.assertIn("[Writing a test plan](../shared/testing.md#writing-a-test-plan)",
+                      (root / "_details/lead.md").read_text())

@@ -101,7 +101,7 @@ def compile_home(target, session, context, home, owner, unit, plan):
     refs = [(json.loads(match[1]), always_on)
             for value, always_on in [(compiled, True), (tuple(parts.values()), False)]
             for text in model_walk(value) if isinstance(text, str)
-            for match in re.finditer(r"\x1e([^\x1f]+)\x1f", text)]
+            for match in re.finditer(r"([^]+)", text)]
     contract_compiled = compiled
     compiled = map_text(compiled, lambda text: render_file_refs(text, target.output_dir / home, target.project_config))
     files = home_files(target, home, owner, unit, compiled, unlinked, plan, context)

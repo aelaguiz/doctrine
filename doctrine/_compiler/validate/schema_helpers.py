@@ -186,7 +186,7 @@ class ValidateSchemaHelpersMixin:
                     raise authored_compile_error(code="E652", summary="Missing Markdown source",
                         detail=f"`{file_decl.name}` names `{file_decl.path}`, which doesn't exist.", unit=file_unit, source_span=file_decl.source_span)
                 parts.append(file_decl.title if projection == "title" and not is_load else
-                    "\x1e" + json.dumps(["load" if is_load else "link", file_decl.title, str(path), None]) + "\x1f")
+                    "" + json.dumps(["load" if is_load else "link", file_decl.title, str(path), None]) + "")
                 cursor = match.end()
                 continue
             parts.append(

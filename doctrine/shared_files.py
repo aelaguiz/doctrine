@@ -73,7 +73,7 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
                                       source_span=decl.source_span)
         body = context._compile_document_decl(document, unit=unit)
         raw = render_readable_block(body, depth=1) + "\n"
-        refs = [Path(json.loads(match[1])[2]) for match in re.finditer(r"\x1e([^\x1f]+)\x1f", raw)]
+        refs = [Path(json.loads(match[1])[2]) for match in re.finditer(r"([^]+)", raw)]
         referenced.update(refs)
         links[path] = [str(ref.relative_to(target.output_dir)) for ref in refs if ref.is_relative_to(target.output_dir)]
         pending.extend((other_unit, other) for other_unit, other in declarations

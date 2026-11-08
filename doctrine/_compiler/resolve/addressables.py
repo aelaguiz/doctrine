@@ -443,7 +443,7 @@ class ResolveAddressablesMixin:
             base = self.session.emit_root or self.session.project_config.config_dir
             path = base / Path(decl.path)
             self.session.file_section_links.add((str(path), anchor, f"{name}:{'.'.join(segments)}"))
-            return DisplayValue(text="\x1e" + json.dumps(["link", section.title, str(path), anchor]) + "\x1f", kind="title")
+            return DisplayValue(text="" + json.dumps(["link", section.title, str(path), anchor]) + "", kind="title")
         return self._resolve_addressable_path_value(
             AddressableNode(unit=target_unit, root_decl=decl, target=decl),
             ref.path,
