@@ -8,6 +8,7 @@ from pathlib import Path
 
 from doctrine import model
 from doctrine.project_config import real_project_path
+from doctrine._compiler.constants import FILE_REF_MARKER
 from doctrine._compiler.markdown_reader import fenced_lines
 
 
@@ -22,7 +23,7 @@ def render_file_refs(text, folder, config):
             return "@" + relative
         destination = "<" + relative + ">" if any(c.isspace() for c in relative) else relative
         return f"[{title}]({destination})"
-    result = re.sub(r"([^]+)", render, text)
+    result = FILE_REF_MARKER.sub(render, text)
     return model.AuthoredProse(result) if isinstance(text, model.AuthoredProse) else result
 
 

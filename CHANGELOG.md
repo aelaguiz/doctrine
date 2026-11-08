@@ -48,6 +48,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Heading links handle closing hash marks, code, and autolinks. Builds keep
+  private-use characters in authored text.
 - Case links reject titles and output outside a home. Selected builds catch
   stale case headings. Deep headings and nested file links stay usable.
 - Heading links use the rendered Markdown text, including Unicode marks.

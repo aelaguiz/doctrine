@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 from doctrine import model
+from doctrine._compiler.constants import FILE_REF_MARKER
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.home_map import build_home_map
@@ -220,7 +220,7 @@ def emit_target(
     declarations = [(unit, decl) for unit in session.units() for decl in unit.declarations.files_by_name.values()]
     referenced = {project_file_path(target.project_config, json.loads(match[1])[2])
                   for text in model_walk(compiled_agents) if isinstance(text, str)
-                  for match in re.finditer(r"([^]+)", text)}
+                  for match in FILE_REF_MARKER.finditer(text)}
     written, _ = compile_shared_files(replace(target, output_dir=output_root), CompilationContext(session), files, declarations, referenced, False)
     for name in written:
         if file_state(output_root / name, files[name]) == "edited":

@@ -5,6 +5,7 @@ import re
 from pathlib import Path, PurePosixPath
 
 from doctrine import model
+from doctrine._compiler.constants import FILE_REF_MARKER
 from doctrine._compiler.details import reject_details
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.late_binding import reject_case_links, reject_late_roots
@@ -73,7 +74,7 @@ def compile_shared_files(target, context, files, declarations, referenced, whole
                                       source_span=decl.source_span)
         body = context._compile_document_decl(document, unit=unit)
         raw = render_readable_block(body, depth=1) + "\n"
-        refs = [Path(json.loads(match[1])[2]) for match in re.finditer(r"([^]+)", raw)]
+        refs = [Path(json.loads(match[1])[2]) for match in FILE_REF_MARKER.finditer(raw)]
         referenced.update(refs)
         links[path] = [str(ref.relative_to(target.output_dir)) for ref in refs if ref.is_relative_to(target.output_dir)]
         pending.extend((other_unit, other) for other_unit, other in declarations

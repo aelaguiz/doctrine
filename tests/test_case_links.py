@@ -14,6 +14,21 @@ from tests.home_support import HomeProject
 
 
 class CaseLinksTests(HomeProject, unittest.TestCase):
+    def test_private_use_characters_remain_literal_in_role_and_file(self):
+        root = self.project('''file Testing: "Testing"
+    path: "testing.md"
+    section plans: "Plans"
+        "Keep icons."
+team T: "Team"
+    home: "t"
+    role: """Keep icons, , and ["link", false]. Read {{Testing}}."""
+''')
+        code, _, error = self.cli(root, "build", ".")
+        self.assertEqual(code, 0, error)
+        self.assertIn('Keep icons, , and ["link", false]. Read [Testing](../testing.md).',
+                      (root / "t/AGENTS.md").read_text())
+        self.assertIn("Keep icons.", (root / "testing.md").read_text())
+
     def test_values_interpolate_but_case_links_stay_literal_in_markdown_and_html(self):
         for kind in ("markdown", "html"):
             with self.subTest(kind=kind):

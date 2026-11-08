@@ -20,6 +20,7 @@ _INTERPOLATION_EXPR_RE = re.compile(
 _INTERPOLATION_RE = re.compile(r"\{\{([^{}]+)\}\}")
 LATE_ROOT = re.compile(r"\{\{\s*(agent|team):([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 DETAILS_LINK = re.compile(r"\{\{\s*details:([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\}\}")
+FILE_REF_MARKER = re.compile(r'(\["(?:link|load)"(?:, "(?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"){2}, (?:null|"(?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*")\])')
 _RESERVED_AGENT_FIELD_KEYS = {
     "values",
     "budget",

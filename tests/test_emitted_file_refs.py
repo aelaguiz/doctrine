@@ -23,7 +23,7 @@ class EmittedFileRefsTests(unittest.TestCase):
         except UnicodeDecodeError:
             return
         self.assertNotIn("", text, str(name))
-        self.assertNotIn("\\u001e", text, str(name))
+        self.assertNotIn("\\ue000", text, str(name))
 
     def test_all_shipped_example_targets_emit_no_internal_links(self):
         repo = Path(__file__).resolve().parents[1]
