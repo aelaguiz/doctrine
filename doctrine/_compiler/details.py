@@ -90,7 +90,12 @@ def split_details(compiled, home, root, home_map, unit):
                 if isinstance(child, (CompiledSection, CompiledGuardBlock)) and child.key else key_path, prefix)
                 for child in item.body)
             return replace(map_text(replace(item, body=()), lambda text: link(text, prefix)), body=body)
-        return map_text(item, lambda text: link(text, prefix))
+        def leaf(value):
+            if isinstance(value, (CompiledCodeBlock, CompiledRawTextBlock)):
+                return replace(value, title=map_text(value.title, lambda text: link(text, prefix)))
+            if isinstance(value, (str, model.RoleScalar, model.NameRef)):
+                return map_text(value, lambda text: link(text, prefix))
+        return map_model(item, leaf, {"origin", "drops"})
     compiled = replace(compiled, fields=tuple(resolve_item(field, (field.key,))
         if isinstance(field, (CompiledSection, CompiledGuardBlock)) else resolve_item(field, ())
         for field in compiled.fields))

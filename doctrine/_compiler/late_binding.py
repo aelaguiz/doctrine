@@ -22,7 +22,7 @@ def map_text(value, substitute, markdown=None):
             return (markdown(item) if markdown else item) if isinstance(item, model.MarkdownProse) else substitute(item)
         if isinstance(item, model.NameRef):
             return item
-        if isinstance(item, (CompiledCodeBlock, CompiledRawTextBlock)):
+        if isinstance(item, CompiledCodeBlock):
             return replace(item, title=map_text(item.title, substitute, markdown))
     return map_model(value, leaf, {"origin", "drops"})
 

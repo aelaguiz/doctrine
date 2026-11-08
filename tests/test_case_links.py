@@ -14,6 +14,27 @@ from tests.home_support import HomeProject
 
 
 class CaseLinksTests(HomeProject, unittest.TestCase):
+    def test_values_interpolate_but_case_links_stay_literal_in_markdown_and_html(self):
+        for kind in ("markdown", "html"):
+            with self.subTest(kind=kind):
+                root = self.project(f'''team T: "Team"
+    home: "t"
+    values:
+        unit: "changes"
+    work: "Work"
+        {kind} text: "Text"
+            text: """Test {{{{team:unit}}}}. Read {{{{details:path}}}}.
+"""
+        details case: "Case"
+            {kind} text: "Text"
+                text: """Test {{{{team:unit}}}}. Read {{{{details:path}}}}.
+"""
+''')
+                code, _, error = self.cli(root, "build", ".")
+                self.assertEqual(code, 0, error)
+                for output in ("t/AGENTS.md", "t/DETAILS.md"):
+                    self.assertIn("Test changes. Read {{details:path}}.", (root / output).read_text())
+
     def test_case_links_are_literal_in_markdown_blocks(self):
         block = '''    markdown:
         text: """Read {{details:path}}.
