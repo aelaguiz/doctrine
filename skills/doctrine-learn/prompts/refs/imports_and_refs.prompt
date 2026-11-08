@@ -35,6 +35,7 @@ multi-root resolution, addressable refs, self refs, grouped inherit, and
 IO section refs."""
 
     section module_imports: "Module Imports"
+        "Sibling `.prompt` files in a flow share one namespace. A shared file in that folder needs no import; use its declarations by name. Lone module files are different, as explained below."
         """`import module.path` brings in another flow or runtime package. Its exported declarations are available under the dotted path.
 
 `import module.path as Alias` renames the module for this file."""
