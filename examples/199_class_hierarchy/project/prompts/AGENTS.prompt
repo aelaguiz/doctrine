@@ -1,0 +1,74 @@
+file Handbook: "Company handbook"
+    path: "shared/handbook.md"
+    "Treat people with care."
+
+file TestGuide: "Test guide"
+    path: "shared/test-guide.md"
+    "Start with what a user will do."
+
+workflow TestCraft: "Testing"
+    "Test the {{agent:subject}} from a user's point of view."
+
+abstract agent Member: "How everyone works"
+    role: "Help the team ship its work."
+    abstract craft
+    planning: "Planning"
+        "Plan the work with the team."
+
+abstract agent Lead[Member]: "How a team lead works"
+    inherit *
+    craft: "Leading"
+        "Make the next choice clear."
+
+abstract agent Contributor[Member]: "How a contributor works"
+    inherit *
+    craft: "Contributing"
+        "Make the work ready for review."
+
+abstract agent QA[Member]: "How QA works"
+    inherit *
+    values:
+        subject: "{{team:unit}}"
+    craft: TestCraft
+    drop planning: "QA joins the plan instead of owning it."
+    checks: "Review"
+        "When a test fails, read {{details:checks.failure}}."
+        "Before testing, read {{TestGuide}}."
+        details failure: "A failed test"
+            "Find what the user would see before choosing a fix."
+
+team Company: "the company"
+    home: "."
+    principles: "Principles"
+        "Read first: {{load:Handbook}}"
+
+team Pods: "the pods"
+    home: "pods"
+    work: "Working together"
+        "Share what the other pod needs to know."
+
+abstract team Pod: "A team that ships work"
+    member lead[Lead]: "lead"
+    member contributor[Contributor]: "contributor"
+    member qa[QA]: "QA"
+
+team Growth[Pod]: "the growth pod"
+    home: "pods/growth"
+    values:
+        unit: "experiment"
+    override member qa:
+        override checks:
+            super
+            "Check the signup path too."
+
+team Product[Pod]: "the product pod"
+    home: "pods/product"
+    values:
+        unit: "feature"
+
+rule EveryQaInheritsQa: "Every team's QA uses the QA class"
+    scope:
+        member: qa
+    assertions:
+        requires inherit QA
+    message: "Every team's QA inherits the shared QA class."
