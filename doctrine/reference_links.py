@@ -20,8 +20,10 @@ def check_settings(config):
     if not isinstance(entries, list):
         raise compile_error(code="E639", summary="Invalid check settings", detail="`reference` must be an array of paths.")
     for entry in entries:
+        suffix = isinstance(entry, str) and entry.startswith("*")  # `*-record.md`: any name ending so
         if (not isinstance(entry, str) or not entry or entry.startswith(("/", "!"))
-                or any(char in entry for char in "*?[]\\")
+                or (suffix and (len(entry) < 2 or entry[1] == "." or "/" in entry))
+                or any(char in entry[suffix:] for char in "*?[]\\")
                 or any(part in ("", ".", "..") for part in entry.rstrip("/").split("/"))
                 or entry.endswith("//")):
             raise compile_error(code="E639", summary="Invalid check settings", detail=f"Invalid reference entry: {entry!r}.")
@@ -46,6 +48,8 @@ def links(target, files):
 
 
 def matches(entry, path):
+    if entry.startswith("*"):
+        return path.name.endswith(entry[1:])
     folder = entry.endswith("/")
     parts = PurePosixPath(entry.rstrip("/")).parts
     if folder:

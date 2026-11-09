@@ -152,8 +152,11 @@ file in the project only if the build writes it or a `reference` entry names
 it. A file name such as `README.md` matches that name in any folder. A folder
 name such as `research/` matches that folder at any depth. A path such as
 `records/news.md` names one file from the project root. A path ending in `/`,
-such as `archive/2026/`, names one folder from the root. Folder entries cover
-files inside them. Globs and negation are not allowed. An entry that no compiled
+such as `archive/2026/`, names one folder from the root. A name that starts
+with `*`, such as `*-record.md`, matches every file whose name ends with the
+rest, in any folder. The rest can't start with `.`, so `*.md` is refused.
+Folder entries cover files inside them. Other globs and negation are not
+allowed. An entry that no compiled
 link uses is `W310`, so a list that outlives its links gets noticed. The check
 trusts these names: a guide in `research/`
 passes too. Omit `raw_links` or set it to `"off"` to skip this check.

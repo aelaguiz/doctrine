@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- A `reference` entry that starts with `*`, such as `*-record.md`, names every
+  file whose name ends with the rest. `*.md` and other globs stay refused.
 - Projects can opt in to `E638` to check that linked Markdown is built or
   named as reference. `W310` warns about a reference entry no compiled link uses.
 
