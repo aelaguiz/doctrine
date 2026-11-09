@@ -37,6 +37,21 @@ class PassageTests(unittest.TestCase):
                     collect_passages([prompt], root)
                 self.assertEqual(caught.exception.code, "E652")
 
+    def test_values_fill_each_placement_and_keep_line_endings(self):
+        passages = {"P": "See slide {{value:slide}} and {{value:note}}.", "Q": "Plain."}
+        source = '{{passage:P(slide: "15", note: "say \\"hi\\"")}}\r\n{{passage:Q()}}\n{{passage:P}} stays\n'
+        self.assertEqual(place_passages(source, passages, path="page.md"),
+                         'See slide 15 and say "hi".\r\nPlain.\n{{passage:P}} stays\n')
+
+    def test_values_must_match_what_the_passage_reads(self):
+        passages = {"P": "See slide {{value:slide}}."}
+        for line, code in (("{{passage:P}}", "E662"), ('{{passage:P(slide: "1", extra: "2")}}', "E662"),
+                           ("{{passage:P(slide: 1)}}", "E663"), ('{{passage:P(slide: "1", slide: "2")}}', "E663"),
+                           ("{{passage:bad-name}}", "E663")):
+            with self.subTest(line=line), self.assertRaises(CompileError) as caught:
+                place_passages(line + "\n", passages, path="page.md")
+            self.assertEqual(caught.exception.code, code)
+
     def test_unknown_and_standalone_markers_fail(self):
         for passages, code in (({}, "E658"), (None, "E659")):
             with self.assertRaises(CompileError) as caught:

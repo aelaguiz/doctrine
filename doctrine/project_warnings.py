@@ -17,7 +17,7 @@ from doctrine._compiler.provenance import collect_quotes
 from doctrine._compiler.naming import model_walk
 from doctrine._compiler.teams import resolve_message_recipient, team_members
 from doctrine.parser import _build_lark_parser
-from doctrine.passages import place_passages
+from doctrine.passages import READ, place_passages
 from doctrine.runtime_load import loaded_levels
 from doctrine.project_config import project_file_path
 
@@ -25,7 +25,9 @@ from doctrine.project_config import project_file_path
 def near_copy_warnings(session):
     paragraphs, unused, from_files = [], {}, set()
     base = session.project_config.config_dir
-    erased = {name: re.sub(r"[^\r\n]", "", text)
+    # A placement keeps only its line breaks and the values it reads, so a passage counts once, where declared.
+    erased = {name: "".join(f"{{{{value:{key}}}}} " for key in sorted(set(READ.findall(text))))
+              + re.sub(r"[^\r\n]", "", text)
               for name, text in (session.passages or {}).items()}
     units = {unit.prompt_file.source_path: unit for unit in session.units()}
     for path, unit in units.items():

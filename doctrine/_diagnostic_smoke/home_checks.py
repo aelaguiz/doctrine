@@ -38,6 +38,10 @@ HOME_DIAGNOSTICS = {
     "E636": ('team T: "Team"\n    home: "t"\n    role: "[Missing](missing.md)"\n', ""),
     "E661": ('passage P: "One"\npassage P: "Two"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E658": ('file Guide from "guide.md"\n    path: "out.md"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E662": ('passage P: "Read {{value:slide}}."\nfile Guide from "guide.md"\n    path: "out.md"\n'
+             'team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
+    "E663": ('passage P: "Read."\nfile Guide from "guide.md"\n    path: "out.md"\n'
+             'team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E656": ('file Guide from "guide.md"\n    path: "guide.md"\nteam T: "Team"\n    home: "t"\n    role: "Read {{Guide}}."\n', ""),
     "E637": ('team T: "Team"\n    home: "t"\n    role: "Read {{details:missing}}."\n', ""),
     "E640": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
@@ -121,6 +125,10 @@ def run_home_checks():
             args = ["check"]
             if code == "E658":
                 (root / "guide.md").write_text("{{passage:Missing}}\n")
+            elif code == "E662":
+                (root / "guide.md").write_text('{{passage:P(folder: "a/")}}\n')
+            elif code == "E663":
+                (root / "guide.md").write_text("{{passage:P(folder: a/)}}\n")
             elif code == "E656":
                 (root / "guide.md").write_text("# Guide\n")
             elif code == "E634":

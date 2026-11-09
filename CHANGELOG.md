@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- A passage can read `{{value:key}}`, and each marker gives its own values:
+  `{{passage:Name(key: "value")}}`. A missing or unused value fails with `E662`,
+  and a marker line that doesn't parse fails with `E663`.
 - A bundled skill file keeps its executable bit, in project builds and standalone
   emits. `check` calls a built copy with the wrong bit stale.
 - A check counts a file without a header as built when the contract committed at

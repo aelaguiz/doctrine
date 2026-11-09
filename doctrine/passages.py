@@ -1,12 +1,37 @@
 from __future__ import annotations
 
+import json
 import re
 
 from doctrine import model
 from doctrine._compiler.diagnostics import compile_error
 
 
-MARKER = re.compile(r"\{\{passage:([A-Za-z_][A-Za-z0-9_]*)\}\}")
+MARKER = re.compile(r"\{\{passage:([A-Za-z_][A-Za-z0-9_]*)(?:\((.*)\))?\}\}")
+VALUE = r'\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*("(?:[^"\\]|\\.)*")\s*'
+VALUES = re.compile(rf"(?:{VALUE}(?:,{VALUE})*)?")
+READ = re.compile(r"\{\{value:([A-Za-z_][A-Za-z0-9_]*)\}\}")
+
+
+def read_marker(line, path):
+    """The passage a marker line places and the values it gives, or None for any other line."""
+    if not (line.startswith("{{passage:") and line.endswith("}}")):
+        return None
+    match = MARKER.fullmatch(line)
+    values = {}
+    if match and match[2] is not None:
+        if VALUES.fullmatch(match[2]) is None:
+            match = None
+        else:
+            for key, text in re.findall(VALUE, match[2]):
+                if key in values:
+                    match = None
+                values[key] = json.loads(text)
+    if match is None:
+        raise compile_error(code="E663", summary="Bad passage marker",
+            detail=f"`{path}` has a marker line that is not `{{{{passage:Name}}}}` or "
+                   f'`{{{{passage:Name(key: "value")}}}}` with each key once: `{line}`.')
+    return match[1], values
 
 
 def collect_passages(prompts, root):
@@ -38,15 +63,24 @@ def collect_passages(prompts, root):
 def place_passages(text, passages, *, path):
     parts = re.split(r"(\r\n|\r|\n)", text)
     for index in range(0, len(parts), 2):
-        match = MARKER.fullmatch(parts[index])
-        if match is None:
+        marker = read_marker(parts[index], path)
+        if marker is None:
             continue
-        name = match[1]
+        name, values = marker
         if passages is None:
             raise compile_error(code="E659", summary="Passage needs a project build",
                 detail=f"`{path}` uses passage `{name}`. Build it as a project skill.")
         if name not in passages:
             raise compile_error(code="E658", summary="Unknown passage",
                 detail=f"`{path}` uses passage `{name}`, but the homes source does not declare it.")
-        parts[index] = passages[name]
+        reads = set(READ.findall(passages[name]))
+        problems = []
+        if missing := sorted(reads - set(values)):
+            problems.append(f"without {', '.join(f'`{key}`' for key in missing)}, which it reads")
+        if unused := sorted(set(values) - reads):
+            problems.append(f"with {', '.join(f'`{key}`' for key in unused)}, which it never reads")
+        if problems:
+            raise compile_error(code="E662", summary="Passage values don't match",
+                detail=f"`{path}` places passage `{name}` " + ", and ".join(problems) + ".")
+        parts[index] = READ.sub(lambda read: values[read[1]], passages[name])
     return "".join(parts)
