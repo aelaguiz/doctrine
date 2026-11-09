@@ -7,7 +7,7 @@
   },
   "doctrine": {
     "language_version": "6.0",
-    "package_version": "6.0.0"
+    "package_version": "6.1.0"
   },
   "target": {
     "name": "example_161_skill_graph_policy_allowances",

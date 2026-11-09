@@ -8,10 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-- A `reference` entry that starts with `*`, such as `*-record.md`, names every
-  file whose name ends with the rest. `*.md` and other globs stay refused.
+- Next release planning starts after this cut.
+
+## v6.1.0 - 2026-11-08
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v6.1.0
+Language version: unchanged (still 6.0)
+Affected surfaces: `[tool.doctrine.check]` gains `raw_links` and `reference` (exact names, folders, root paths, root folders, and `*` name endings), `doctrine build` and `doctrine check` gain the opt-in raw-link check, the compiler error and warning catalogs gain `E638`, `E639` and `W310`, emitted skill-package receipts record `package_version` 6.1.0, the shipped example corpus gains `207_reference_links`, and the curated `doctrine-learn` skill gains one sentence.
+Who must act: no one; a project that wants the check turns it on with `raw_links = "error"` and names its reference kinds in `reference`.
+Who does not need to act: every project that does not set `raw_links`, which builds exactly as on 6.0.0.
+Upgrade steps: none required. To use the check, add `raw_links = "error"` and a `reference` list to `[tool.doctrine.check]` (see `docs/EMIT_GUIDE.md`), run `doctrine check`, and either build each file `E638` names from source or name its kind in `reference`.
+Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
+Support-surface version changes: package metadata 6.0.0 -> 6.1.0; distribution name `doctrine-agents` unchanged; Doctrine language unchanged at 6.0.
+
+### Raw-link check
+
 - Projects can opt in to `E638` to check that linked Markdown is built or
   named as reference. `W310` warns about a reference entry no compiled link uses.
+- A `reference` entry that starts with `*`, such as `*-record.md`, names every
+  file whose name ends with the rest. `*.md` and other globs stay refused.
 
 ## v6.0.0 - 2026-11-08
 
