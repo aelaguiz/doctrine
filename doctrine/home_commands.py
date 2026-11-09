@@ -28,7 +28,7 @@ from doctrine.parser import parse_file
 from doctrine.passages import collect_passages, place_passages
 from doctrine.project_config import load_project_config, project_file_path, real_project_path
 from doctrine.project_warnings import project_warnings
-from doctrine.reference_links import check_settings, links, matches, unused_references
+from doctrine.reference_links import check_settings, links, matches
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
@@ -109,19 +109,18 @@ def check_homes(target, session, selectors):
         paths = subprocess.check_output(["git", "ls-tree", "-r", "-t", "--name-only", "-z", revision], cwd=git_root)
         revision_files = {scratch / name for name in paths.decode().split("\0") if name}
         checkout = git_root, scratch
-    revision_dirs = ({parent for path in revision_files for parent in path.parents if parent.is_relative_to(root)}
-                     if mode == "error" else set())
-    dead_links, raw_links = [], []
+    dead_links, raw_links, used_references = [], [], set()
     for name, dest, resolved in links(target, files):
         if not resolved.is_relative_to(root):
             continue
         live = checkout[0] / resolved.relative_to(checkout[1]) if checkout else resolved
         if not resolved.exists() and resolved not in built and resolved not in revision_files and not live.exists():
             dead_links.append(f"{name} points at {dest}, which does not exist.")
-        elif (mode == "error" and resolved.suffix == ".md" and resolved not in revision_dirs
-              and not resolved.is_dir() and not live.is_dir()
-              and resolved not in built and not any(matches(entry, resolved.relative_to(root)) for entry in references)):
-            raw_links.append(f"{name} links {dest}, a Markdown file the build doesn't write and the project doesn't name as reference.")
+        elif mode == "error" and resolved.suffix == ".md" and not resolved.is_dir() and not live.is_dir():
+            matched = {entry for entry in references if matches(entry, resolved.relative_to(root))}
+            used_references.update(matched)
+            if resolved not in built and not matched:
+                raw_links.append(f"{name} links {dest}, a Markdown file the build doesn't write and the project doesn't name as reference.")
     if dead_links:
         raise compile_error(code="E636", summary="Dead link", detail="\n".join(dead_links))
     if raw_links:
@@ -138,8 +137,8 @@ def check_homes(target, session, selectors):
         declaration_owners(context, declarations, target.project_config.config_dir)
         warnings = project_warnings(session, homes, loads, context, declarations)
     if mode == "error" and references:
-        live_root = checkout[0] / root.relative_to(checkout[1]) if checkout else None
-        warnings += unused_references(references, root, revision_files, live_root)
+        warnings += [{"code": "W310", "text": f"W310 unused reference: {entry} is used by no compiled link."}
+                     for entry in dict.fromkeys(references) if entry not in used_references]
     warnings += [{"code": finding.split()[0], "text": finding}
                  for finding in findings if finding.startswith("W")]
     disabled = (target.project_config.raw_check or {}).get("disable", [])

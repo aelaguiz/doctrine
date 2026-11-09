@@ -1,5 +1,0 @@
-skill package Review: "Review"
-    metadata:
-        name: "review"
-        description: "Review a draft."
-    "Review the draft."

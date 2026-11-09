@@ -18,7 +18,7 @@ judgment-first authoring review.
 | --- | --- |
 | `W306` | A home's load is at or past its runtime's `warn_at` fraction. The default is 0.95. Over budget, it warns only when `over = "warn"`. |
 | `W309` | A compiled level file is over the runtime's `file_limit`. |
-| `W310` | An `unused_reference` entry matches nothing in the project. This check runs when `raw_links = "error"`. |
+| `W310` | An `unused_reference` entry is used by no compiled link. This check runs when `raw_links = "error"`. |
 
 `doctrine build` and `doctrine check` fail an over-budget home with `E630`, unless the runtime
 sets `over = "warn"`. Warnings fail a check only with `--strict`.

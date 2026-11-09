@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 from html import unescape
 from pathlib import Path, PurePosixPath
@@ -46,33 +45,10 @@ def links(target, files):
             yield name, dest, resolved
 
 
-def matches(entry, path, *, is_dir=False):
+def matches(entry, path):
     folder = entry.endswith("/")
     parts = PurePosixPath(entry.rstrip("/")).parts
     if folder:
-        parents = path.parts if is_dir else path.parts[:-1]
+        parents = path.parts[:-1]
         return parts[0] in parents if len(parts) == 1 else parents[:len(parts)] == parts
-    return not is_dir and (path.name == entry if len(parts) == 1 else path.parts == parts)
-
-
-def unused_references(entries, root, revision_files=(), checkout=None):
-    unmatched = set(entries)
-    def project_paths():
-        for path in revision_files:
-            if path.is_relative_to(root):
-                yield path.relative_to(root), path.is_dir()
-        for base in (root, checkout):
-            if base is None:
-                continue
-            for directory, folders, files in os.walk(base):
-                if Path(directory) == base and ".git" in folders:
-                    folders.remove(".git")
-                relative = Path(directory).relative_to(base)
-                yield from ((relative / name, True) for name in folders)
-                yield from ((relative / name, False) for name in files)
-    for path, is_dir in project_paths():
-        unmatched.difference_update(entry for entry in tuple(unmatched) if matches(entry, path, is_dir=is_dir))
-        if not unmatched:
-            break
-    return [{"code": "W310", "text": f"W310 unused reference: {entry} matches nothing in the project."}
-            for entry in dict.fromkeys(entries) if entry in unmatched]
+    return path.name == entry if len(parts) == 1 else path.parts == parts

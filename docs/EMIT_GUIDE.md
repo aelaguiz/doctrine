@@ -153,8 +153,9 @@ it. A file name such as `README.md` matches that name in any folder. A folder
 name such as `research/` matches that folder at any depth. A path such as
 `records/news.md` names one file from the project root. A path ending in `/`,
 such as `archive/2026/`, names one folder from the root. Folder entries cover
-files inside them. Globs and negation are not allowed. `W310` warns when an
-entry matches nothing. The check trusts these names: a guide in `research/`
+files inside them. Globs and negation are not allowed. An entry that no compiled
+link uses is `W310`, so a list that outlives its links gets noticed. The check
+trusts these names: a guide in `research/`
 passes too. Omit `raw_links` or set it to `"off"` to skip this check.
 
 A selected build writes only the homes it selects. First run `doctrine build .`.

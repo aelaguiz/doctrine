@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## Unreleased
 
 - Projects can opt in to `E638` to check that linked Markdown is built or
-  named as reference. `W310` warns about reference entries that match nothing.
+  named as reference. `W310` warns about a reference entry no compiled link uses.
 
 ## v6.0.0 - 2026-11-08
 
