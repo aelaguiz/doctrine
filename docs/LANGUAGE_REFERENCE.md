@@ -482,6 +482,15 @@ line ending, so a paragraph that became a marker builds back exactly. Other
 text, including partial markers, stays as written. Unknown names fail with `E658`; standalone skill emits
 with a marker fail with `E659`. See [example 205](../examples/205_passages).
 
+A passage can leave words for each placement to fill. Write `{{value:key}}`
+in the passage, and give each key on the marker line:
+`{{passage:Sources(slide: "15", mocks: "mocks/ads/")}}`. Each value is a
+quoted string. A marker that leaves out a value the passage reads, or gives
+one it never reads, fails with `E662`. A line that starts with `{{passage:`
+and ends with `}}` but doesn't read this way fails with `E663`. The near-copy
+check counts the passage once, so two placements with different values are
+not near copies. See [example 206](../examples/206_passage_values).
+
 ## Workflows
 
 `workflow` is Doctrine's reusable instruction surface.

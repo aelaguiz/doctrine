@@ -362,6 +362,8 @@ shows the canonical formatted shape for one shipped compile error.
 | `E659` | Passage needs a project build | A standalone skill emit cannot place a passage. Build it as a project skill. |
 | `E660` | Invalid message | A `Message` has a disallowed field or an invalid `to:` ref. |
 | `E661` | Duplicate passage | Two passages in the homes source have the same name. |
+| `E662` | Passage values don't match | A passage marker leaves out a value the passage reads with `{{value:key}}`, or gives one the passage never reads. |
+| `E663` | Bad passage marker | A line starts with `{{passage:` and ends with `}}`, but isn't `{{passage:Name}}` or `{{passage:Name(key: "value")}}` with each key once. |
 
 ## Homes And Load
 

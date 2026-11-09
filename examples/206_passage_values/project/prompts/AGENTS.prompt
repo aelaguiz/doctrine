@@ -1,0 +1,7 @@
+passage Sources: """- Your goal and your weekly report, in the [team deck](https://example.com/deck): [slide {{value:slide}}](https://example.com/deck#slide={{value:slide}}) and `{{value:report}}`.
+- Your mock folder, `{{value:mocks}}`, holds the approved screens."""
+file Guide from "prompts/pages/guide.md"
+    path: "guides/onboarding.md"
+team Team: "Team"
+    home: "team"
+    role: "Help the reader."

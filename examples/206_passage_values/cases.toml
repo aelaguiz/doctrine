@@ -1,0 +1,61 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "one passage reads each placement's own values"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+expected_files = { "guides/onboarding.md" = "expected/onboarding.md", ".skills/ads/SKILL.md" = "expected/ads.md" }
+
+[[cases]]
+name = "a marker without a value the passage reads fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/pages/guide.md" = "# Onboarding\n\n{{passage:Sources(slide: \"18\", report: \"reports/onboarding.md\")}}\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E662", "without `mocks`"]
+
+[[cases]]
+name = "a marker with a value the passage never reads fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/pages/guide.md" = "# Onboarding\n\n{{passage:Sources(slide: \"18\", report: \"reports/onboarding.md\", mocks: \"mocks/onboarding/\", team: \"growth\")}}\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E662", "with `team`"]
+
+[[cases]]
+name = "a marker whose values are not quoted fails"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/pages/guide.md" = "# Onboarding\n\n{{passage:Sources(slide: 18, report: \"reports/onboarding.md\", mocks: \"mocks/onboarding/\")}}\n" }
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E663"]
+
+[[cases]]
+name = "placements with different values are not near copies"
+status = "active"
+kind = "cli_contract"
+project = "project"
+setup = [["build", "."]]
+args = ["check", "--strict"]
+expected_exit = 0
+stderr_not_contains = ["W301"]
+
+[[cases]]
+name = "the same words written out by hand in both files are near copies"
+status = "active"
+kind = "cli_contract"
+project = "project"
+edit = { "prompts/pages/guide.md" = "# Onboarding\n\nRead these before your first word:\n\n- Your goal and your weekly report, in the [team deck](https://example.com/deck): [slide 18](https://example.com/deck#slide=18) and `reports/onboarding.md`.\n- Your mock folder, `mocks/onboarding/`, holds the approved screens.\n", "prompts/skills/ads/source.md" = "---\nname: ads\ndescription: Make and judge ads.\n---\n\n## Sources\n\n- Your goal and your weekly report, in the [team deck](https://example.com/deck): [slide 15](https://example.com/deck#slide=15) and `reports/ads.md`.\n- Your mock folder, `mocks/ads/`, holds the approved screens.\n" }
+args = ["check", "--strict"]
+expected_exit = 1
+stderr_contains = ["W301", "Guide", "Ads"]
