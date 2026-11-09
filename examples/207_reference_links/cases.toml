@@ -40,6 +40,16 @@ edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\ne
 stderr_not_contains = ["W310"]
 
 [[cases]]
+name = "reference by a name ending"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"*-record.md\"]\n", "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [the setup record](../notes/setup-record.md).\"\n", "notes/setup-record.md" = "Set up on November 8.\n" }
+stderr_not_contains = ["W310", "E638"]
+
+[[cases]]
 name = "reference by notes/runbook.md"
 status = "active"
 kind = "cli_contract"
