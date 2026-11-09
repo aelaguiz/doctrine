@@ -118,7 +118,8 @@ def check_homes(target, session, selectors):
             dead_links.append(f"{name} points at {dest}, which does not exist.")
         elif mode == "error" and resolved.suffix == ".md" and not resolved.is_dir() and not live.is_dir():
             matched = {entry for entry in references if matches(entry, resolved.relative_to(root))}
-            used_references.update(matched)
+            if resolved not in built:
+                used_references.update(matched)
             if resolved not in built and not matched:
                 raw_links.append(f"{name} links {dest}, a Markdown file the build doesn't write and the project doesn't name as reference.")
     if dead_links:
@@ -136,7 +137,7 @@ def check_homes(target, session, selectors):
         declarations = declarations_in(session)
         declaration_owners(context, declarations, target.project_config.config_dir)
         warnings = project_warnings(session, homes, loads, context, declarations)
-    if mode == "error" and references:
+    if mode == "error" and references and whole:
         warnings += [{"code": "W310", "text": f"W310 unused reference: {entry} is used by no compiled link."}
                      for entry in dict.fromkeys(references) if entry not in used_references]
     warnings += [{"code": finding.split()[0], "text": finding}
