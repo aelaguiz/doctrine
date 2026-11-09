@@ -182,7 +182,7 @@ uv run --locked python -m doctrine.emit_flow --target example_73_flow_visualizer
   enums, and workflow law
 - `emit_docs`, `emit_flow`, `emit_skill`, skill source receipts, and
   structured-output schema validation helpers
-- manifest-backed examples through `examples/193_small_team_end_to_end`
+- manifest-backed examples through `examples/206_passage_values`
 
 ## Workflow visualizer
 

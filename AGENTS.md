@@ -55,7 +55,7 @@
 - `doctrine/renderer.py`
 - `doctrine/verify_corpus.py`
 - If code, docs, and examples disagree, trust `doctrine/` and the manifest-backed cases.
-- The corpus covers `examples/01_hello_world` through `examples/193_small_team_end_to_end`.
+- The corpus covers `examples/01_hello_world` through `examples/206_passage_values`.
 
 ## Authoring Rules
 

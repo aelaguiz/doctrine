@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+- Next release planning starts after this cut.
+
+## v6.0.0 - 2026-11-08
+
+Release kind: Breaking
+Release channel: stable
+Release version: v6.0.0
+Language version: 5.7 -> 6.0
+Affected surfaces: the Doctrine language (teams, homes, members, classes, values, rosters, details, `inherit`, `drop` and `super` in roles, `override member`, shared `file` declarations, Markdown-backed declarations and skill packages, and passages with values), the `doctrine` command line (`build`, `check`, `where`, `diff`, `load`, `classes`, `sources` and `import`, with `--rev`, `--with`, `--out` and JSON reports), `HOMES.contract.json` and `TEAM.contract.json`, project-built skills, the compiler error and warning catalogs, emitted skill-package receipts, the shipped example corpus through `206`, and the curated `doctrine-learn` skill.
+Who must act: projects on Doctrine 5.x that inherit head prose, typed fields or routes, split a code fence across prose strings, use a key that is now a keyword, declare their own `output target Message`, run `doctrine build --check`, or keep emitted Markdown, render contracts or skill receipts in their tree.
+Who does not need to act: runtimes that only load emitted files, and projects already pinned to a Doctrine commit made after language 6.0 merged on November 7, 2026.
+Upgrade steps: follow "Upgrade To Language 6.0" in `docs/VERSIONING.md`. (1) Account for each inherited head prose, typed field, role and route with `inherit` or `drop <key>: "Reason"`. (2) Put each code fence in one `"""` string or a `code` block. (3) Regenerate saved Markdown and render contracts. (4) Rename keys that collide with the new keywords. (5) Rename a project `output target Message`. (6) Replace `doctrine build --check` with `doctrine check`, and run a whole build before a selected one. Then emit each skill package again so its receipt records `6.0.0`.
+Verification: `uv sync && npm ci && make verify-examples && make verify-diagnostics && make verify-package`
+Support-surface version changes: Doctrine language 5.7 -> 6.0; package metadata 5.1.0 -> 6.0.0; distribution name `doctrine-agents` unchanged; `HOMES.contract.json` stays `format_version: 1` and adds `hashes`.
+
+### Project build, skills and passages
+
 - A passage can read `{{value:key}}`, and each marker gives its own values:
   `{{passage:Name(key: "value")}}`. A missing or unused value fails with `E662`,
   and a marker line that doesn't parse fails with `E663`.
