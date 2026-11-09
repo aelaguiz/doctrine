@@ -138,6 +138,25 @@ Teams and members can replace a class default with their own value.
 and hand edits. A build writes nothing if a check fails. `--force` allows hand
 edits only. A warning fails `check` only with `--strict`.
 
+Use `[tool.doctrine.check]` to turn off a warning or check raw Markdown links:
+
+```toml
+[tool.doctrine.check]
+disable = ["W301"]
+raw_links = "error"
+reference = ["README.md", "research/", "records/news.md", "archive/2026/"]
+```
+
+With `raw_links = "error"`, a compiled Markdown file may link to a Markdown
+file in the project only if the build writes it or a `reference` entry names
+it. A file name such as `README.md` matches that name in any folder. A folder
+name such as `research/` matches that folder at any depth. A path such as
+`records/news.md` names one file from the project root. A path ending in `/`,
+such as `archive/2026/`, names one folder from the root. Folder entries cover
+files inside them. Globs and negation are not allowed. `W310` warns when an
+entry matches nothing. The check trusts these names: a guide in `research/`
+passes too. Omit `raw_links` or set it to `"off"` to skip this check.
+
 A selected build writes only the homes it selects. First run `doctrine build .`.
 Loaded levels and their local companions must be current. A selected build
 checks shared `_details/` files exist without comparing their bytes. A whole check compares

@@ -1,0 +1,446 @@
+schema_version = 1
+default_prompt = "project/prompts/AGENTS.prompt"
+
+[[cases]]
+name = "a raw link fails the build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+stderr_contains = ["E638", "team/AGENTS.md links ../notes/runbook.md", "Build it from source, or name its kind in [tool.doctrine.check] reference."]
+
+[[cases]]
+name = "a raw link fails check"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["check"]
+expected_exit = 1
+stderr_contains = ["E638", "../notes/runbook.md"]
+
+[[cases]]
+name = "reference by notes/"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\"]\n" }
+
+[[cases]]
+name = "reference by runbook.md"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"runbook.md\"]\n" }
+
+[[cases]]
+name = "reference by notes/runbook.md"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/runbook.md\"]\n" }
+
+[[cases]]
+name = "a nested folder name matches at any depth"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\"]\n", "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [notes](../other/notes/deep.md).\"\n" }
+
+[[cases]]
+name = "a root folder path matches its contents"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"archive/2026/\"]\n", "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [report](../archive/2026/report.md).\"\n" }
+
+[[cases]]
+name = "a root folder path does not match a different folder"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"other/notes/\"]\n" }
+stderr_contains = ["E638"]
+
+[[cases]]
+name = "a shared file the build writes passes"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"guides/guide.md\"\n    \"A guide.\"\n\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Read {{Guide}}.\"\n" }
+
+[[cases]]
+name = "a kept file declaration does not exempt a raw file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"notes/runbook.md\"\n\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Read {{Guide}}.\"\n" }
+stderr_contains = ["E638", "notes/runbook.md"]
+
+[[cases]]
+name = "a companion link is checked"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Help.\"\n    work: \"Work\"\n        \"Work well.\"\n        details:\n            \"Read [the runbook](../notes/runbook.md).\"\n" }
+stderr_contains = ["E638", "team/DETAILS.md"]
+
+[[cases]]
+name = "a shared file body link is checked"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "file Guide: \"Guide\"\n    path: \"guides/guide.md\"\n    \"Read [the runbook](../notes/runbook.md).\"\n\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Read {{Guide}}.\"\n" }
+stderr_contains = ["E638", "guides/guide.md"]
+
+[[cases]]
+name = "a runtime import is checked"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read first: @../notes/runbook.md\"\n" }
+stderr_contains = ["E638", "../notes/runbook.md"]
+
+[[cases]]
+name = "links inside fenced and inline code are ignored"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"```text\\n[runbook](../notes/runbook.md)\\n```\\n\\n`[runbook](../notes/runbook.md)`\"\n" }
+
+[[cases]]
+name = "an absent setting keeps the old behavior"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n" }
+
+[[cases]]
+name = "the off setting keeps the old behavior"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"off\"\n" }
+
+[[cases]]
+name = "a guide under a named reference folder passes"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"research/\"]\n", "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [guide](../research/guide.md).\"\n" }
+
+[[cases]]
+name = "a Markdown-backed shared file passes"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "file Guide from \"prompts/page.md\"\n    path: \"guides/guide.md\"\n\nteam Team: \"Team\"\n    home: \"team\"\n    role: \"Read {{Guide}}.\"\n" }
+
+[[cases]]
+name = "an unused reference warns"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\", \"absent/\"]\n" }
+stderr_contains = ["W310 unused reference: absent/"]
+
+[[cases]]
+name = "a disabled unused reference warning stays silent"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\", \"absent/\"]\ndisable = [\"W310\"]\n" }
+stderr_not_contains = ["W310"]
+
+[[cases]]
+name = "a strict check fails on an unused reference"
+status = "active"
+kind = "cli_contract"
+project = "project_strict"
+args = ["check", "--strict"]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\", \"absent/\"]\n" }
+stderr_contains = ["W310"]
+setup = [["build", "."]]
+
+[[cases]]
+name = "a project skill link is checked"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Help.\"\n", "prompts/skills/review/SKILL.prompt" = "skill package Review: \"Review\"\n    metadata:\n        name: \"review\"\n        description: \"Review a draft.\"\n    \"Read [runbook](../../notes/runbook.md).\"\n" }
+stderr_contains = ["E638", ".skills/review/SKILL.md"]
+
+[[cases]]
+name = "a bundled skill Markdown link is checked"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Help.\"\n", "prompts/skills/review/references/notes.md" = "# Notes\n\nRead [runbook](../../../notes/runbook.md).\n" }
+stderr_contains = ["E638", ".skills/review/references/notes.md"]
+
+[[cases]]
+name = "a missing destination still reports E636"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [missing](../notes/missing.md).\"\n" }
+stderr_contains = ["E636"]
+
+[[cases]]
+name = "URL non Markdown and folder links are ignored"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "notes/info.txt" = "Info\n", "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [web](https://example.com/x.md), [text](../notes/info.txt), and [folder](../notes/).\"\n" }
+
+[[cases]]
+name = "a revision counts a tracked raw file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--rev", "HEAD"]
+expected_exit = 1
+stderr_contains = ["E638"]
+stderr_not_contains = ["E636"]
+remove = ["notes/runbook.md"]
+
+[[cases]]
+name = "a revision counts a checkout raw file"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", ".", "--rev", "HEAD"]
+expected_exit = 1
+edit = { "notes/runbook.md" = "Changed after commit.\n" }
+stderr_contains = ["E638"]
+
+[[cases]]
+name = "a selected build checks its selected home"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "Team"]
+expected_exit = 1
+stderr_contains = ["E638"]
+
+[[cases]]
+name = "invalid raw_links \"bad\""
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"bad\"\n" }
+stderr_contains = ["E639", "raw_links"]
+
+[[cases]]
+name = "invalid raw_links true"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = true\n" }
+stderr_contains = ["E639", "raw_links"]
+
+[[cases]]
+name = "invalid raw_links 42"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = 42\n" }
+stderr_contains = ["E639", "raw_links"]
+
+[[cases]]
+name = "invalid reference \"notes/\""
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = \"notes/\"\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [\"../notes/\"]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"../notes/\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [\"*.md\"]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"*.md\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [\"!notes/\"]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"!notes/\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [\"/notes/\"]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"/notes/\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [\"notes//file.md\"]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes//file.md\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "invalid reference [3]"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [3]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "each raw link is named in one error"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [runbook](../notes/runbook.md) and [guide](../research/guide.md).\"\n" }
+stderr_contains = ["E638", "team/AGENTS.md links ../notes/runbook.md", "team/AGENTS.md links ../research/guide.md"]
+
+[[cases]]
+name = "a selected build ignores another home"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "Team"]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Help.\"\nteam Other: \"Other\"\n    home: \"other\"\n    role: \"Read [runbook](../notes/runbook.md).\"\n" }
+
+[[cases]]
+name = "a link outside the project is ignored"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "prompts/AGENTS.prompt" = "team Team: \"Team\"\n    home: \"team\"\n    role: \"Read [outside](/tmp/doctrine-external.md).\"\n" }
+
+[[cases]]
+name = "a reference in a revision counts a tracked file"
+status = "active"
+kind = "cli_contract"
+project = "project_strict"
+args = ["build", ".", "--rev", "HEAD"]
+expected_exit = 0
+remove = ["notes/runbook.md"]
+stderr_not_contains = ["W310", "E636", "E638"]
+
+[[cases]]
+name = "a malformed reference is rejected when the check is off"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"off\"\nreference = [\"*.md\"]\n" }
+stderr_contains = ["E639"]
+
+[[cases]]
+name = "an unused reference still warns for a selected build"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "Team"]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nraw_links = \"error\"\nreference = [\"notes/\", \"absent/\"]\n" }
+stderr_contains = ["W310"]
+
+[[cases]]
+name = "a malformed reference fails with no raw_links"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 1
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nreference = [\"*.md\"]\n" }
+stderr_contains = ["E639", "reference"]
+
+[[cases]]
+name = "a valid reference alone leaves the check off"
+status = "active"
+kind = "cli_contract"
+project = "project"
+args = ["build", "."]
+expected_exit = 0
+edit = { "pyproject.toml" = "[[tool.doctrine.emit.targets]]\nname = \"homes\"\nentrypoint = \"prompts/AGENTS.prompt\"\noutput_dir = \".\"\nskills = { source = \"prompts/skills\", install = \".skills\" }\n\n[tool.doctrine.check]\nreference = [\"notes/\"]\n" }

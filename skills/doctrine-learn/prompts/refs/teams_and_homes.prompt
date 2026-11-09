@@ -121,6 +121,7 @@ agent PodQa[QaCraft]: "Pod QA"
         "A heading key is lower case; runs of punctuation and spaces become underscores. Duplicate sibling keys fail with both line numbers. Use `drop`, `override`, dotted patches, and checked title refs on these sections. Text stays verbatim, including double braces. Runtime import paths move with the text."
 
     section shared_files: "Share A File"
+        "A project can require that every Markdown file its agents are linked to is built or named as reference; name records and research once by kind in `[tool.doctrine.check] reference`."
         "A file without a body stays on disk, so agents can add notes to it. A file with a document body is written by the build. This is from `examples/197_shared_files`."
         "Declare a passage in the homes source and put its marker alone on a line to place it in Markdown-backed skills and shared files. When the copies differ in a few words, the passage reads named values and each marker line gives its own, as `examples/206_passage_values` shows. See `examples/205_passages`."
         "A shared file can also take its body from a Markdown page: `file Guide from \"prompts/guide.md\"` with a `path:` line. Write its relative links from the output path."

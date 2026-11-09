@@ -88,6 +88,9 @@ links start at the output path. Source and output cannot be the same file.
 A `file` without a body can also link to a folder, but cannot load it.
 Load JSON adds `on_demand`; diff JSON with `--base-tree` adds `shared_files`.
 Builds and checks report `E636` for missing destinations in compiled files.
+Projects can opt in to `E638` to require linked Markdown to be built or named
+as reference. `W310` warns about unused reference entries. This is a
+backward-compatible addition; the check is off by default.
 Case links and links to sections in built files check their targets. A linked
 heading that repeats in its file fails with `E637`.
 

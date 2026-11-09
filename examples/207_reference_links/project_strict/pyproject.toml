@@ -1,0 +1,9 @@
+[[tool.doctrine.emit.targets]]
+name = "homes"
+entrypoint = "prompts/AGENTS.prompt"
+output_dir = "."
+skills = { source = "prompts/skills", install = ".skills" }
+
+[tool.doctrine.check]
+raw_links = "error"
+reference = ["runbook.md"]
