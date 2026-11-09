@@ -380,6 +380,8 @@ shows the canonical formatted shape for one shipped compile error.
 | `E635` | Home needs a full build | A loaded level is missing or out of date, a linked companion is missing, or its linked heading is out of date. Run `doctrine build .`, then build this home. |
 | `E636` | Dead link | A compiled file, including a project-built skill's Markdown, links to a path that does not exist. An `@` path is checked only at the end of a line. A `--rev` build counts a target that isn't source when the revision or the checkout has it. Fix the link or add the file. |
 | `E637` | Dead case link | A case or file section link names a missing or untitled case, a non-case, a missing section, or a section in a kept file. A linked heading also fails if it repeats in its file. |
+| `E638` | Raw guidance link | A compiled Markdown file links to a Markdown file inside the project that the build does not write and the project does not name as reference. Build it from source, or name its kind in `[tool.doctrine.check] reference`. |
+| `E639` | Invalid check settings | `raw_links` or `reference` has a wrong value. Use the forms in the [emit guide](EMIT_GUIDE.md). |
 | `E640` | No home matches | A selector matches no home path or agent name, or no class, team, member, or home in `doctrine classes`. |
 | `E641` | Bad revision | The given revision does not exist in this repository. |
 | `W309` | Long file | A compiled level file is over the runtime's per-file limit. |

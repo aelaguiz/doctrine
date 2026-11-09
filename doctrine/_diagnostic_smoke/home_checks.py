@@ -36,6 +36,9 @@ HOME_DIAGNOSTICS = {
     ),
     "E634": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E636": ('team T: "Team"\n    home: "t"\n    role: "[Missing](missing.md)"\n', ""),
+    "E638": ('team T: "Team"\n    home: "t"\n    role: "[Guide](../guide.md)"\n', '[tool.doctrine.check]\nraw_links = "error"\n'),
+    "E639": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.check]\nraw_links = "bad"\n'),
+    "W310": ('team T: "Team"\n    home: "t"\n    role: "Test."\n', '[tool.doctrine.check]\nraw_links = "error"\nreference = ["absent/"]\n'),
     "E661": ('passage P: "One"\npassage P: "Two"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E658": ('file Guide from "guide.md"\n    path: "out.md"\nteam T: "Team"\n    home: "t"\n    role: "Test."\n', ""),
     "E662": ('passage P: "Read {{value:slide}}."\nfile Guide from "guide.md"\n    path: "out.md"\n'
@@ -123,7 +126,9 @@ def run_home_checks():
                 + settings
             )
             args = ["check"]
-            if code == "E658":
+            if code == "E638":
+                (root / "guide.md").write_text("# Guide\n")
+            elif code == "E658":
                 (root / "guide.md").write_text("{{passage:Missing}}\n")
             elif code == "E662":
                 (root / "guide.md").write_text('{{passage:P(folder: "a/")}}\n')

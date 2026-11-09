@@ -6,19 +6,16 @@ import json
 import re
 import sys
 import subprocess
-from html import unescape
 from contextlib import contextmanager, nullcontext, redirect_stderr
 from dataclasses import replace
 from difflib import SequenceMatcher
 from os.path import relpath
 from pathlib import Path, PurePosixPath
-from urllib.parse import unquote, urlsplit
 
 from doctrine import model
 from doctrine._compiler.session import CompilationSession
 from doctrine._compiler.context import CompilationContext
 from doctrine._compiler.load_rules import validate_load_rules
-from doctrine._compiler.markdown_links import markdown_destinations
 from doctrine._compiler.diagnostics import compile_error
 from doctrine._compiler.flow_boundary import discover_flow_members, flow_boundary_kind_for_path, resolve_flow_entrypoint
 from doctrine._compiler.support import resolve_prompt_root
@@ -31,6 +28,7 @@ from doctrine.parser import parse_file
 from doctrine.passages import collect_passages, place_passages
 from doctrine.project_config import load_project_config, project_file_path, real_project_path
 from doctrine.project_warnings import project_warnings
+from doctrine.reference_links import check_settings, links, matches
 from doctrine.revision_source import revision_source
 from doctrine.runtime_load import (
     RUNTIMES, runtime_settings, home_loads, budget_findings, render_load, loaded_levels, is_missing,
@@ -99,6 +97,7 @@ def resolve_target(args):
 
 
 def check_homes(target, session, selectors):
+    mode, references = check_settings(target.project_config)
     homes, files, selected, whole = compile_homes(
         target, session=session, selectors=selectors, evaluate_rules=True
     )
@@ -110,27 +109,24 @@ def check_homes(target, session, selectors):
         paths = subprocess.check_output(["git", "ls-tree", "-r", "-t", "--name-only", "-z", revision], cwd=git_root)
         revision_files = {scratch / name for name in paths.decode().split("\0") if name}
         checkout = git_root, scratch
-    dead_links = []
-    for name, content in files.items():
-        if not name.endswith(".md") or isinstance(content, Path):
+    dead_links, raw_links, used_references = [], [], set()
+    for name, dest, resolved in links(target, files):
+        if not resolved.is_relative_to(root):
             continue
-        text = content.decode()
-        for start, end, is_import in markdown_destinations(text):
-            if is_import and text[end:].split("\n", 1)[0].strip():
-                continue
-            dest = text[start:end]
-            url = urlsplit(dest)
-            if url.scheme or url.netloc or not url.path:
-                continue
-            path = re.sub(r"\\([ !\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])", r"\1", unquote(unescape(url.path)))
-            resolved = ((target.output_dir / name).parent / Path(path).expanduser()).resolve()
-            if (resolved.is_relative_to(root) and not resolved.exists() and resolved not in built
-                    and resolved not in revision_files
-                    # A revision build reads a link target that isn't source as the checkout has it, as in place.
-                    and not (checkout and (checkout[0] / resolved.relative_to(checkout[1])).exists())):
-                dead_links.append(f"{name} points at {dest}, which does not exist.")
+        live = checkout[0] / resolved.relative_to(checkout[1]) if checkout else resolved
+        if not resolved.exists() and resolved not in built and resolved not in revision_files and not live.exists():
+            dead_links.append(f"{name} points at {dest}, which does not exist.")
+        elif mode == "error" and resolved.suffix == ".md" and not resolved.is_dir() and not live.is_dir():
+            matched = {entry for entry in references if matches(entry, resolved.relative_to(root))}
+            if resolved not in built:
+                used_references.update(matched)
+            if resolved not in built and not matched:
+                raw_links.append(f"{name} links {dest}, a Markdown file the build doesn't write and the project doesn't name as reference.")
     if dead_links:
         raise compile_error(code="E636", summary="Dead link", detail="\n".join(dead_links))
+    if raw_links:
+        raise compile_error(code="E638", summary="Raw guidance link", detail="\n".join(
+            [*raw_links, "Build it from source, or name its kind in [tool.doctrine.check] reference."]))
     settings = runtime_settings(target)
     context = CompilationContext(session)
     validate_load_rules(context, homes, selected, whole)
@@ -141,6 +137,9 @@ def check_homes(target, session, selectors):
         declarations = declarations_in(session)
         declaration_owners(context, declarations, target.project_config.config_dir)
         warnings = project_warnings(session, homes, loads, context, declarations)
+    if mode == "error" and references and whole:
+        warnings += [{"code": "W310", "text": f"W310 unused reference: {entry} is used by no compiled link."}
+                     for entry in dict.fromkeys(references) if entry not in used_references]
     warnings += [{"code": finding.split()[0], "text": finding}
                  for finding in findings if finding.startswith("W")]
     disabled = (target.project_config.raw_check or {}).get("disable", [])
