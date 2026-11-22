@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Next release planning starts after this cut.
 
+## v6.1.1 - 2026-11-21
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v6.1.1
+Language version: unchanged (still 6.0)
+Affected surfaces: `doctrine where` runs faster (it works out each home's levels and files once); its output is unchanged. Emitted skill-package receipts record `package_version` 6.1.1.
+Who must act: no one.
+Who does not need to act: every project; builds, checks and `where` output are the same as on 6.1.0.
+Upgrade steps: none required. To pick it up, move a pinned dependency to `doctrine-agents==6.1.1`.
+Verification: `uv run --locked python -m unittest tests.test_release_flow tests.test_package_release && make verify-package`
+Support-surface version changes: package metadata 6.1.0 -> 6.1.1; distribution name `doctrine-agents` unchanged; Doctrine language unchanged at 6.0.
+
+### Faster `where`
+
+- `doctrine where` no longer recomputes every home's loaded levels and resolved file references for each file it
+  checks. On a project with 144 homes one lookup went from about 42 seconds to about 6, with identical output.
+
 ## v6.1.0 - 2026-11-08
 
 Release kind: Non-breaking

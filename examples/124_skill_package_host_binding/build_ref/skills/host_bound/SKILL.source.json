@@ -6,7 +6,7 @@
   },
   "doctrine": {
     "language_version": "6.0",
-    "package_version": "6.1.0"
+    "package_version": "6.1.1"
   },
   "source": {
     "id": "host-bound-skill",
