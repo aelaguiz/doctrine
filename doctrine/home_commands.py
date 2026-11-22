@@ -356,8 +356,11 @@ def where_source(args):
         for path, line, home in session.value_origins:
             readers.setdefault(home, set()).add((path, line))
         reached_values = {}
+        # Each home's levels, worked out once: the loops below used to recompute them for every file and value,
+        # which made one lookup in psbrain's 144 homes take about 40 CPU-seconds (November 21, 2026).
+        levels_by_home = {home: loaded_levels(homes, home) for home in selected}
         for home in sorted(selected):
-            for level, data in loaded_levels(homes, home):
+            for level, data in levels_by_home[home]:
                 for site in readers.get(level, ()):
                     reached_values.setdefault(site, set()).add(home)
                 for entry, text in data["map"].texts.items():
@@ -420,6 +423,13 @@ def where_source(args):
                                     "homes": [], "installs": install})
         generated = {(target.output_dir / name).resolve(): content for name, content in files.items()
                      if isinstance(content, bytes)}
+        file_homes, ref_paths = {}, {}
+        for home, levels in levels_by_home.items():
+            for level, data in levels:
+                if level not in ref_paths:
+                    ref_paths[level] = {project_file_path(target.project_config, ref[2]) for ref, _ in data["file_refs"]}
+                for ref_path in ref_paths[level]:
+                    file_homes.setdefault(ref_path, set()).add(home)
         for unit, declaration in declarations_in(session).values():
             if not isinstance(declaration, model.FileDecl):
                 continue
@@ -429,8 +439,7 @@ def where_source(args):
                     else project_file_path(target.project_config, declaration.path))
             if path.is_dir():
                 continue
-            reached = {home for home in selected for _, level in loaded_levels(homes, home)
-                       if any(project_file_path(target.project_config, ref[2]) == path for ref, _ in level["file_refs"])}
+            reached = file_homes.get(path, set())
             if (args.home and not reached) or (declaration.body is not None and path not in generated):
                 continue
             text = generated[path].decode() if path in generated else path.read_text(errors="replace")
