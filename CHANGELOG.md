@@ -8,7 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-- Next release planning starts after this cut.
+### Home opening lines
+
+- The line that opens a member's or a titled agent's folder file no longer says
+  the folder alone makes a session the agent. It now reads "If you were started
+  in this folder as the growth pod's QA, you are it. If not, this only describes
+  that role." A session only opened in that folder (a person's own chat, a
+  helper) is not the agent, and the old line told it it was.
+- The team folder line reads "If you work as one of the agents there, it is part
+  of who you are. If not, it only describes them." for the same reason.
+- Every built folder file changes in its first line: the member line is 2
+  characters longer, the team line 4, which `doctrine load` counts.
 
 ## v6.1.1 - 2026-11-21
 

@@ -19,7 +19,7 @@ project = "project_imports"
 args = ["build", "."]
 expected_exit = 0
 expected_file_lines = { "pod/qa/AGENTS.md" = [
-  "If your session started in this folder, you are Pod's QA. If not, this only describes that role.",
+  "If you were started in this folder as Pod's QA, you are it. If not, this only describes that role.",
   "",
   "A role.",
   "",

@@ -9,7 +9,7 @@ project = "project"
 edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    role: \"Read {{Library}}.\"\n" }
 args = ["load", "pod", "--runtime", "codex"]
 expected_exit = 0
-expected_stdout_lines = ["pod on codex: 292 of 32,768 bytes, 32,476 left", "", "Files:", "  pod/AGENTS.md  292  missing", "", "Biggest parts:", "  Pod: 27"]
+expected_stdout_lines = ["pod on codex: 296 of 32,768 bytes, 32,472 left", "", "Files:", "  pod/AGENTS.md  296  missing", "", "Biggest parts:", "  Pod: 27"]
 
 [[cases]]
 name = "folder links from two depths"
@@ -19,7 +19,7 @@ project = "project"
 edit = { "prompts/AGENTS.prompt" = "file Library: \"Library\"\n    path: \"shared\"\nteam Pod: \"Pod\"\n    home: \"pod\"\n    member qa: \"QA\"\n        role: \"Read {{Library}} and {{Library:title}}.\"\nteam Deep: \"Deep\"\n    home: \"pod/deep\"\n    member qa: \"QA\"\n        role: \"Read {{Library}}.\"\n" }
 args = ["build", "."]
 expected_exit = 0
-expected_file_lines = { "pod/qa/AGENTS.md" = ["If your session started in this folder, you are Pod's QA. If not, this only describes that role.", "", "Read [Library](../../shared/) and Library."], "pod/deep/qa/AGENTS.md" = ["If your session started in this folder, you are Deep's QA. If not, this only describes that role.", "", "Read [Library](../../../shared/)."] }
+expected_file_lines = { "pod/qa/AGENTS.md" = ["If you were started in this folder as Pod's QA, you are it. If not, this only describes that role.", "", "Read [Library](../../shared/) and Library."], "pod/deep/qa/AGENTS.md" = ["If you were started in this folder as Deep's QA, you are it. If not, this only describes that role.", "", "Read [Library](../../../shared/)."] }
 
 [[cases]]
 name = "a missing folder fails"
@@ -59,7 +59,7 @@ project = "project"
 args = ["build", "."]
 expected_exit = 0
 expected_file_lines = { "pod/qa/AGENTS.md" = [
-  "If your session started in this folder, you are Pod's QA. If not, this only describes that role.",
+  "If you were started in this folder as Pod's QA, you are it. If not, this only describes that role.",
   "",
   "Before testing, read [Test design](../../shared/guide.md).",
   "",
@@ -71,11 +71,11 @@ expected_file_lines = { "pod/qa/AGENTS.md" = [
   "",
   "Check the result.",
 ], "pod/analyst/AGENTS.md" = [
-  "If your session started in this folder, you are Pod's analyst. If not, this only describes that role.",
+  "If you were started in this folder as Pod's analyst, you are it. If not, this only describes that role.",
   "",
   "Read first: @../../shared/guide.md",
 ], "pod/deep/qa/AGENTS.md" = [
-  "If your session started in this folder, you are Deep team's QA. If not, this only describes that role.",
+  "If you were started in this folder as Deep team's QA, you are it. If not, this only describes that role.",
   "",
   "Before testing, read [Test design](../../../shared/guide.md).",
 ] }
