@@ -10,23 +10,23 @@ args = ["build", "."]
 expected_exit = 0
 stdout_contains = ["built 9 homes"]
 expected_file_lines = { "analyst/AGENTS.md" = [
-  "If your session started in this folder, you are the analyst. If not, this only describes that role.",
+  "If you were started in this folder as the analyst, you are it. If not, this only describes that role.",
   "", "Help the team ship its work.", "", "## Planning", "", "Plan the work with the team.", "", "## Analysis", "",
   "Answer the team's questions with numbers.",
 ], "AGENTS.md" = [
   "## Principles", "", "Read first: @shared/handbook.md",
 ], "pods/AGENTS.md" = [
-  "This file loads for every session started under `pods/`. If yours started there, it is part of who you are. If not, it only describes the agents there.",
+  "This file loads for every session started under `pods/`. If you work as one of the agents there, it is part of who you are. If not, it only describes them.",
   "", "## Working together", "", "Share what the other pod needs to know.",
 ], "pods/growth/qa/AGENTS.md" = [
-  "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+  "If you were started in this folder as the growth pod's QA, you are it. If not, this only describes that role.",
   "", "Help the team ship its work.", "", "## Testing", "",
   "Test the experiment from a user's point of view.", "", "## Review", "",
   "When a test fails, read [A failed test](../../../_details/q-a.md#a-failed-test).", "",
   "Before testing, read [Test guide](../../../shared/test-guide.md).", "",
   "Check the signup path too.",
 ], "pods/product/qa/AGENTS.md" = [
-  "If your session started in this folder, you are the product pod's QA. If not, this only describes that role.",
+  "If you were started in this folder as the product pod's QA, you are it. If not, this only describes that role.",
   "", "Help the team ship its work.", "", "## Testing", "",
   "Test the feature from a user's point of view.", "", "## Review", "",
   "When a test fails, read [A failed test](../../../_details/q-a.md#a-failed-test).", "",

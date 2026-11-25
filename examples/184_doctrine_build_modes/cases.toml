@@ -8,7 +8,7 @@ kind = "cli_contract"
 project = "project_titled"
 args = ["build", ".", "--target", "homes"]
 expected_exit = 0
-expected_file_lines = { "writer/AGENTS.md" = ["If your session started in this folder, you are the writer. If not, this only describes that role.", "", "Write clearly."], "reader/AGENTS.md" = ["Read closely."] }
+expected_file_lines = { "writer/AGENTS.md" = ["If you were started in this folder as the writer, you are it. If not, this only describes that role.", "", "Write clearly."], "reader/AGENTS.md" = ["Read closely."] }
 
 [[cases]]
 name = "a plain agent builds a Claude-only home"
@@ -64,11 +64,11 @@ stderr_contains = [
   "pods/growth/AGENTS.md",
 ]
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
-    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "If you were started in this folder as the growth pod's QA, you are it. If not, this only describes that role.",
     "",
     "QA text.",
 ], "pods/growth/AGENTS.md" = [
-    "This file loads for every session started under `pods/growth/`. If yours started there, it is part of who you are. If not, it only describes the agents there.",
+    "This file loads for every session started under `pods/growth/`. If you work as one of the agents there, it is part of who you are. If not, it only describes them.",
     "",
     "Team text.",
 ] }
@@ -87,7 +87,7 @@ stderr_contains = [
   "stale pods/growth/qa/AGENTS.md",
 ]
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
-    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "If you were started in this folder as the growth pod's QA, you are it. If not, this only describes that role.",
     "",
     "QA text.",
 ] }
@@ -138,7 +138,7 @@ expected_exit = 0
 setup = [["build", "."]]
 edit = { "pods/growth/qa/AGENTS.md" = "<!-- doctrine sha256=000000000000 source=prompts/AGENTS.prompt. Do not edit. Run: doctrine where \"<words>\" -->\n\nA hand edit.\n" }
 expected_file_lines = { "pods/growth/qa/AGENTS.md" = [
-    "If your session started in this folder, you are the growth pod's QA. If not, this only describes that role.",
+    "If you were started in this folder as the growth pod's QA, you are it. If not, this only describes that role.",
     "",
     "QA text.",
 ] }
@@ -168,7 +168,7 @@ stderr_contains = [
   "obsolete pods/growth/analyst/CLAUDE.md",
 ]
 expected_file_lines = { "pods/growth/analyst/AGENTS.md" = [
-    "If your session started in this folder, you are the growth pod's analyst. If not, this only describes that role.",
+    "If you were started in this folder as the growth pod's analyst, you are it. If not, this only describes that role.",
     "",
     "Analyst text.",
 ] }
@@ -211,7 +211,7 @@ expected_exit = 0
 setup = [["build", "."]]
 edit = { "prompts/AGENTS.prompt" = "team GrowthPod: \"the growth pod\"\n    home: \"pods/growth\"\n    role: \"Team text.\"\n    member qa: \"QA\"\n        role: \"QA text.\"\n" }
 expected_file_lines = { "pods/growth/analyst/AGENTS.md" = [
-    "If your session started in this folder, you are the growth pod's analyst. If not, this only describes that role.",
+    "If you were started in this folder as the growth pod's analyst, you are it. If not, this only describes that role.",
     "",
     "Analyst text.",
 ] }

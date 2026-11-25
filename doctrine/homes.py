@@ -64,15 +64,15 @@ def home_files(target, home, owner, unit, compiled, pointers, plan, context):
         }
     if plan is not None or text.strip():
         if isinstance(owner, model.Team) and home != ".":
-            text = f"This file loads for every session started under `{home}/`. If yours started there, it is part of who you are. If not, it only describes the agents there.\n\n" + text
+            text = f"This file loads for every session started under `{home}/`. If you work as one of the agents there, it is part of who you are. If not, it only describes them.\n\n" + text
         elif isinstance(owner, model.Member):
             _, team = find_home_team(context, owner, unit=unit)
             team_title = bind_home(context, team.title, owner, unit=unit)
             title = bind_home(context, owner.title, owner, unit=unit)
-            text = f"If your session started in this folder, you are {team_title}'s {title}. If not, this only describes that role.\n\n" + text
+            text = f"If you were started in this folder as {team_title}'s {title}, you are it. If not, this only describes that role.\n\n" + text
         elif not isinstance(owner, model.Team) and owner.title:
             title = bind_home(context, owner.title, owner, unit=unit)
-            text = f"If your session started in this folder, you are {title}. If not, this only describes that role.\n\n" + text
+            text = f"If you were started in this folder as {title}, you are it. If not, this only describes that role.\n\n" + text
         source_unit = (owner.scope_unit or unit) if isinstance(owner, model.Member) else unit
         source = os.path.relpath(source_unit.prompt_file.source_path, target.project_config.config_dir)
         files[str(PurePosixPath(home) / filename)] = with_header(text, source).encode()
