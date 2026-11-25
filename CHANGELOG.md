@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
+## v6.1.2 - 2026-11-24
+
+Release kind: Non-breaking
+Release channel: stable
+Release version: v6.1.2
+Language version: unchanged (still 6.0)
+Affected surfaces: the first line of every built member, titled-agent and team folder file changes its wording; `doctrine load` counts the member line 2 characters longer and the team line 4. Emitted skill-package receipts record `package_version` 6.1.2.
+Who must act: no one; a project with a home within about 10 characters of its load limit trims it or raises the limit when it upgrades.
+Who does not need to act: every other project; a rebuild rewrites each folder file's first line and nothing else.
+Upgrade steps: none required. To pick it up, move a pinned dependency to `doctrine-agents==6.1.2` and rebuild.
+Verification: `uv run --locked python -m unittest tests.test_release_flow tests.test_package_release && make verify-package`
+Support-surface version changes: package metadata 6.1.1 -> 6.1.2; distribution name `doctrine-agents` unchanged; Doctrine language unchanged at 6.0.
+
 ### Home opening lines
 
 - The line that opens a member's or a titled agent's folder file no longer says
